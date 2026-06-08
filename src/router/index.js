@@ -1,48 +1,66 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { isAuthenticated } from '../auth'
-import loginpage from '../views/login/LoginPage.vue'
-import Dashboard from '../views/Dean/Dean_Dashboard.vue'
-import AccreditorDashboard from '../views/Accreditor/Accreditor_Dashboard.vue'
-import AreaInchargeDashboard from '../views/Area-Incharges/Area_Incharge_Dashboard.vue'
-import QADashboard from '../views/QA/QA_Dashboard.vue'
-import TeamMemberDashboard from '../views/Team-Member/TeamMember_Dashboard.vue'
-import VPAADashboard from '../views/VPAA/DI/DI_Dashboard.vue'
+import LoginPage from '../views/login/LoginPage.vue'
+import Dashboard from '../views/Dashboard.vue'
+import Documents from '../views/Documents.vue'
+import Reports from '../views/Reports.vue'
 
 const routes = [
   {
     path: '/',
+    redirect: '/dashboard'
+  },
+  {
+    path: '/login',
     name: 'login',
-    component: loginpage
+    component: LoginPage
   },
   {
     path: '/dashboard',
-    name: 'dean',
-    component: Dashboard
+    name: 'dashboard',
+    component: Dashboard,
+    meta: { requiresAuth: true }
   },
   {
-    path: '/accreditor',
-    name: 'accreditor',
-    component: AccreditorDashboard
+    path: '/documents',
+    name: 'documents',
+    component: Documents,
+    meta: { requiresAuth: true }
   },
   {
-    path: '/area-incharge',
-    name: 'area-incharge',
-    component: AreaInchargeDashboard
+    path: '/reports',
+    name: 'reports',
+    component: Reports,
+    meta: { requiresAuth: true }
   },
   {
-    path: '/qa',
-    name: 'qa',
-    component: QADashboard
+    path: '/notifications',
+    name: 'notifications',
+    component: { template: '<div class="page-placeholder"><h1>Notifications</h1><p>Coming soon...</p></div>' },
+    meta: { requiresAuth: true }
   },
   {
-    path: '/team-member',
-    name: 'team-member',
-    component: TeamMemberDashboard
+    path: '/users',
+    name: 'users',
+    component: { template: '<div class="page-placeholder"><h1>Manage Users</h1><p>Coming soon...</p></div>' },
+    meta: { requiresAuth: true, requiresRole: 'dean' }
   },
   {
-    path: '/vpaadi',
-    name: 'vpaadi',
-    component: VPAADashboard
+    path: '/areas',
+    name: 'areas',
+    component: { template: '<div class="page-placeholder"><h1>Accreditation Areas</h1><p>Coming soon...</p></div>' },
+    meta: { requiresAuth: true, requiresRole: 'dean' }
+  },
+  {
+    path: '/deadlines',
+    name: 'deadlines',
+    component: { template: '<div class="page-placeholder"><h1>Deadlines</h1><p>Coming soon...</p></div>' },
+    meta: { requiresAuth: true, requiresRole: 'dean' }
+  },
+  {
+    path: '/audit-logs',
+    name: 'audit-logs',
+    component: { template: '<div class="page-placeholder"><h1>Audit Logs</h1><p>Coming soon...</p></div>' },
+    meta: { requiresAuth: true, requiresRole: 'dean' }
   }
 ]
 
@@ -52,18 +70,22 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  if (to.name === 'login') {
-    if (isAuthenticated.value) {
-      return next('/dashboard')
+  const isAuthenticated = localStorage.getItem('auth') === 'true'
+  const userRole = localStorage.getItem('userRole')
+
+  if (to.meta.requiresAuth) {
+    if (!isAuthenticated) {
+      next({ name: 'login', query: { redirect: to.fullPath } })
+    } else if (to.meta.requiresRole && userRole !== to.meta.requiresRole) {
+      next({ name: 'dashboard' })
+    } else {
+      next()
     }
-    return next()
+  } else if (to.name === 'login' && isAuthenticated) {
+    next({ name: 'dashboard' })
+  } else {
+    next()
   }
-
-  if (!isAuthenticated.value) {
-    return next({ name: 'login', query: { redirect: to.fullPath } })
-  }
-
-  next()
 })
 
 export default router

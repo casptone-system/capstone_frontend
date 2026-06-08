@@ -1,153 +1,297 @@
 <template>
-  <section class="login-page">
+  <div class="login-container">
+    <div class="login-background"></div>
+    
     <div class="login-card">
-      <div class="login-brand">
-        <img :src="logoUrl" alt="ADAMS logo" class="login-logo" />
-        <div>
-          <span class="eyebrow">Secure access</span>
-          <h1>Sign in to ADAMS</h1>
-        </div>
+      <div class="login-header">
+        <img src="/src/assets/Archiving_logo.png" alt="Logo">
+        <h1>Accreditation Management System</h1>
+        <p>Sign in to your institutional account</p>
       </div>
 
-      <p class="card-subtitle">Use your email and password to continue to your secured archive dashboards.</p>
+      <form @submit.prevent="handleLogin" class="login-form">
+        <form-input
+          v-model="email"
+          label="Email Address"
+          type="email"
+          placeholder="dean@university.edu"
+          icon="mail-outline"
+          required
+          :error="loginError"
+        />
 
-      <form class="login-form" @submit.prevent="handleSubmit">
-        <label>
-          <span>Email address</span>
-          <input type="email" v-model="email" placeholder="you@company.com" required />
-        </label>
+        <form-input
+          v-model="password"
+          label="Password"
+          type="password"
+          placeholder="••••••••"
+          icon="lock-closed-outline"
+          required
+        />
 
-        <label>
-          <span>Password</span>
-          <input type="password" v-model="password" placeholder="••••••••" required />
-        </label>
+        <div class="form-options">
+          <label class="checkbox">
+            <input v-model="rememberMe" type="checkbox">
+            <span>Remember me</span>
+          </label>
+          <a href="#" class="forgot-password">Forgot password?</a>
+        </div>
 
-        <button type="submit">Sign in</button>
+        <app-button
+          variant="primary"
+          block
+          size="lg"
+          :loading="isLoading"
+        >
+          Sign In
+        </app-button>
       </form>
+
+      <div class="demo-accounts">
+        <p class="demo-title">Demo Accounts</p>
+        <div class="account-buttons">
+          <button 
+            @click="fillDemoAccount('dean')"
+            class="demo-btn"
+            :class="{ active: email.includes('dean') }"
+          >
+            <ion-icon name="person-circle-outline"></ion-icon>
+            Dean
+          </button>
+          <button 
+            @click="fillDemoAccount('chair')"
+            class="demo-btn"
+            :class="{ active: email.includes('chair') }"
+          >
+            <ion-icon name="people-outline"></ion-icon>
+            Program Chair
+          </button>
+          <button 
+            @click="fillDemoAccount('faculty')"
+            class="demo-btn"
+            :class="{ active: email.includes('faculty') }"
+          >
+            <ion-icon name="person-outline"></ion-icon>
+            Faculty
+          </button>
+        </div>
+      </div>
     </div>
-  </section>
+  </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { login } from '../../auth'
-import logoUrl from '../../assets/Archiving_logo.png'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/authStore'
+import AppButton from '@/components/AppButton.vue'
+import FormInput from '@/components/FormInput.vue'
+import { IonIcon } from '@ionic/vue'
 
 const router = useRouter()
-const route = useRoute()
-const email = ref('')
-const password = ref('')
+const authStore = useAuthStore()
 
-const handleSubmit = () => {
-  login()
-  const redirectPath = route.query.redirect || '/dashboard'
-  router.replace(redirectPath)
+const email = ref('dean@university.edu')
+const password = ref('demo')
+const rememberMe = ref(false)
+const isLoading = ref(false)
+const loginError = ref('')
+
+const handleLogin = async () => {
+  loginError.value = ''
+  isLoading.value = true
+  
+  try {
+    await authStore.login(email.value, password.value)
+    router.push('/dashboard')
+  } catch (error: any) {
+    loginError.value = error.message || 'Login failed'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const fillDemoAccount = (role: string) => {
+  email.value = `${role}@university.edu`
+  password.value = 'demo'
 }
 </script>
 
 <style scoped>
-/* .login-page {
-  min-height: calc(100vh - 140px);
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  background: radial-gradient(circle at top left, rgba(67, 193, 178, 0.2), transparent 35%), radial-gradient(circle at bottom right, rgba(66, 243, 158, 0.18), transparent 30%);
-} */
-
-.login-card {
-  width: min(560px, 100%);
-  padding: 34px;
-  border-radius: 32px;
-  background: rgba(8, 19, 26, 0.96);
-  border: 1px solid rgba(67, 193, 178, 0.18);
-  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.28);
-}
-
-.login-brand {
+.login-container {
   display: flex;
   align-items: center;
-  gap: 18px;
-  margin-bottom: 20px;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+  position: relative;
+  overflow: hidden;
+  padding: var(--spacing-lg);
+}
+
+.login-background {
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 600px;
+  height: 600px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.login-background::after {
+  content: '';
+  position: absolute;
+  bottom: -200px;
+  left: -100px;
+  width: 500px;
+  height: 500px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+}
+
+.login-card {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-3xl);
+  box-shadow: var(--shadow-2xl);
+  padding: var(--spacing-3xl);
+  max-width: 420px;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: var(--spacing-3xl);
 }
 
 .login-logo {
-  width: 90px;
-  height: 85px;
-  border-radius: 18px;
-  background: rgba(67, 193, 178, 0.12);
-  padding: 10px;
+  font-size: var(--text-4xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  margin-bottom: var(--spacing-md);
+  letter-spacing: -0.5px;
 }
 
-.eyebrow {
-  display: inline-flex;
-  margin-bottom: 8px;
-  color: #8ef5c7;
-  font-size: 0.85rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+.login-header h1 {
+  margin: var(--spacing-md) 0;
+  font-size: var(--text-2xl);
+  color: var(--color-text);
 }
 
-h1 {
+.login-header p {
+  color: var(--color-text-secondary);
   margin: 0;
-  font-size: clamp(2rem, 2.4vw, 2.4rem);
-  line-height: 1.05;
-  color: #f8fbff;
-}
-
-.card-subtitle {
-  margin: 0 0 28px;
-  color: #b7c9d7;
-  line-height: 1.75;
 }
 
 .login-form {
-  display: grid;
-  gap: 20px;
+  margin-bottom: var(--spacing-2xl);
 }
 
-label {
-  display: grid;
-  gap: 10px;
-  color: #d9e4ef;
-  font-size: 0.95rem;
+.form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+  font-size: var(--text-sm);
 }
 
-input {
-  appearance: none;
-  border: 1px solid rgba(67, 193, 178, 0.18);
-  border-radius: 16px;
-  padding: 16px 18px;
-  font-size: 1rem;
-  background: rgba(255, 255, 255, 0.05);
-  color: #eef6ff;
-  outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-}
-
-input:focus {
-  border-color: #4fd2b9;
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 0 0 4px rgba(67, 193, 178, 0.14);
-}
-
-button {
-  margin-top: 8px;
-  width: 100%;
-  border: none;
-  border-radius: 16px;
-  padding: 16px 20px;
-  font-size: 1rem;
-  font-weight: 700;
-  color: #08131a;
-  background: linear-gradient(135deg, #7df0b4 0%, #4abf8d 100%);
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, background 0.2s ease;
+  color: var(--color-text-secondary);
 }
 
-button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 16px 28px rgba(67, 193, 178, 0.22);
-  background: linear-gradient(135deg, #6ce3ab 0%, #34a67c 100%);
+.checkbox input {
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-md);
+  accent-color: var(--color-primary);
+}
+
+.forgot-password {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: var(--font-weight-semibold);
+  transition: color var(--transition-base);
+}
+
+.forgot-password:hover {
+  color: var(--color-primary-dark);
+}
+
+.demo-accounts {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--spacing-xl);
+}
+
+.demo-title {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--spacing-md);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.account-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-md);
+}
+
+.demo-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-white);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+}
+
+.demo-btn:hover {
+  border-color: var(--color-primary);
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+.demo-btn.active {
+  border-color: var(--color-primary);
+  background-color: rgba(59, 130, 246, 0.1);
+  color: var(--color-primary);
+}
+
+.demo-btn ion-icon {
+  font-size: var(--text-2xl);
+}
+
+@media (max-width: 480px) {
+  .login-card {
+    padding: var(--spacing-xl);
+  }
+
+  .login-header {
+    margin-bottom: var(--spacing-2xl);
+  }
+
+  .login-logo {
+    font-size: var(--text-3xl);
+  }
+
+  .login-header h1 {
+    font-size: var(--text-xl);
+  }
 }
 </style>
