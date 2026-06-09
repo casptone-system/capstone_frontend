@@ -52,7 +52,7 @@ defineEmits<{
 .form-label {
   font-size: var(--text-sm);
   font-weight: var(--font-weight-semibold);
-  color: var(--color-text);
+  color: white;
 }
 
 .required {

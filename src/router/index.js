@@ -7,7 +7,7 @@ import Reports from '../views/Reports.vue'
 const routes = [
   {
     path: '/',
-    redirect: '/dashboard'
+    redirect: '/login'
   },
   {
     path: '/login',
