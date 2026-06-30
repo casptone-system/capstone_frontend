@@ -91,7 +91,6 @@ export const mockComments: AccreditationComment[] = [
   {
     id: 'comment-1',
     accreditationId: 'acc-1',
-    authorId: 'user-2',
     author: 'Jane Smith',
     content: 'Please provide more detailed evidence for section 4.2. The current documentation is incomplete.',
     timestamp: '2024-06-28T14:30:00Z',
@@ -100,16 +99,14 @@ export const mockComments: AccreditationComment[] = [
   {
     id: 'comment-2',
     accreditationId: 'acc-1',
-    authorId: 'user-1',
     author: 'John Doe',
     content: 'We have updated section 4.2 with additional stakeholder analysis. Please review the attached PDF.',
-    timestamp: '2024-06-29T10:15:00Z',
-    type: 'response'
+    timestamp: '2024-06-28T15:45:00Z',
+    type: 'clarification',
   },
   {
     id: 'comment-3',
     accreditationId: 'acc-1',
-    authorId: 'user-3',
     author: 'Bob Wilson',
     content: 'The risk management process looks solid. Looking forward to the review.',
     timestamp: '2024-06-29T16:45:00Z',
@@ -400,7 +397,7 @@ export const mockAccreditationAPI = {
     return { status: 200, data: mockReviews.filter(r => r.accreditationId === id) }
   },
 
-  export: async (id: string, format: string) => {
+  export: async (_id: string, _format: string) => {
     await new Promise(resolve => setTimeout(resolve, 800))
     return { status: 200, data: new Blob() }
   },

@@ -86,25 +86,3 @@ const isPositive = computed(() => props.change && props.change > 0)
   color: var(--color-danger);
 }
 </style>
-
-  opacity: 0.6;
-}
-
-.skeleton {
-  display: block;
-  height: 2.25rem;
-  background: linear-gradient(90deg, var(--color-gray-200) 25%, var(--color-gray-100) 50%, var(--color-gray-200) 75%);
-  background-size: 200% 100%;
-  animation: loading 1.5s infinite;
-  border-radius: var(--radius-lg);
-}
-
-@keyframes loading {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
-}
-</style>
