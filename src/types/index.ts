@@ -76,3 +76,67 @@ export interface QAReview {
   status: 'passed' | 'failed' | 'pending'
   feedback: string
 }
+
+// Accreditation Management
+export interface Accreditation {
+  id: string
+  name: string
+  code: string
+  description: string
+  status: 'draft' | 'submitted' | 'under-review' | 'approved' | 'rejected' | 'renewal'
+  programId?: string
+  startDate: string
+  expiryDate: string
+  reviewerName?: string
+  reviewerEmail?: string
+  reviewDate?: string
+  comments?: string
+  attachments: AccreditationFile[]
+  standards: AccreditationStandard[]
+  createdAt: string
+  updatedAt: string
+  createdBy: string
+}
+
+export interface AccreditationFile {
+  id: string
+  fileName: string
+  fileSize: number
+  fileType: string
+  uploadDate: string
+  uploadedBy: string
+  fileUrl: string
+  category: 'evidence' | 'support' | 'clarification' | 'response'
+  description?: string
+}
+
+export interface AccreditationStandard {
+  id: string
+  standardNumber: string
+  standardName: string
+  description: string
+  complianceStatus: 'compliant' | 'partial' | 'non-compliant' | 'pending'
+  evidence: string
+  notes?: string
+}
+
+export interface AccreditationComment {
+  id: string
+  accreditationId: string
+  author: string
+  content: string
+  timestamp: string
+  type: 'comment' | 'review' | 'clarification'
+}
+
+export interface AccreditationReview {
+  id: string
+  accreditationId: string
+  reviewerId: string
+  reviewerName: string
+  reviewDate: string
+  rating: number
+  status: 'approved' | 'revision-required' | 'rejected'
+  feedback: string
+  recommendations?: string
+}

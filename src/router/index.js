@@ -12,6 +12,9 @@ import Users from '@/views/Users.vue'
 import Audit from '@/views/Audit.vue'
 import QA from '@/views/QA.vue'
 import Settings from '@/views/Settings.vue'
+import AccreditationList from '@/views/AccreditationList.vue'
+import AccreditationDetail from '@/views/AccreditationDetail.vue'
+import AccreditationForm from '@/views/AccreditationForm.vue'
 
 const routes = [
   {
@@ -76,6 +79,30 @@ const routes = [
     path: '/settings',
     name: 'settings',
     component: Settings,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/accreditation',
+    name: 'accreditation',
+    component: AccreditationList,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/accreditation/:id',
+    name: 'accreditation-detail',
+    component: AccreditationDetail,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/accreditation/:id/edit',
+    name: 'accreditation-edit',
+    component: AccreditationForm,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/accreditation/new',
+    name: 'accreditation-new',
+    component: AccreditationForm,
     meta: { requiresAuth: true },
   },
   {

@@ -21,6 +21,10 @@
 import { IonIcon } from '@ionic/vue'
 import { computed } from 'vue'
 
+defineOptions({
+  name: 'StatCard'
+})
+
 interface Props {
   title: string
   value: number | string
@@ -38,7 +42,6 @@ const isPositive = computed(() => props.change && props.change > 0)
 </script>
 
 <style scoped>
-
 .stat-card:hover {
   box-shadow: var(--shadow-md);
   border-color: var(--color-primary);
@@ -59,46 +62,12 @@ const isPositive = computed(() => props.change && props.change > 0)
   letter-spacing: 0.5px;
 }
 
-.stat-badge {
-  display: inline-block;
-  padding: var(--spacing-xs) var(--spacing-md);
-  border-radius: var(--radius-full);
-  font-size: var(--text-xs);
-  font-weight: var(--font-weight-semibold);
-}
-
-.badge-primary {
-  background-color: rgba(59, 130, 246, 0.1);
-  color: var(--color-primary);
-}
-
-.badge-success {
-  background-color: rgba(34, 197, 94, 0.1);
-  color: var(--color-success);
-}
-
-.badge-warning {
-  background-color: rgba(245, 158, 11, 0.1);
-  color: var(--color-warning);
-}
-
-.badge-danger {
-  background-color: rgba(239, 68, 68, 0.1);
-  color: var(--color-danger);
-}
-
 .stat-value {
   font-size: var(--text-4xl);
   font-weight: var(--font-weight-bold);
   color: var(--color-text);
   margin-bottom: var(--spacing-md);
   line-height: 1;
-}
-
-.stat-subtitle {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  margin-bottom: var(--spacing-md);
 }
 
 .stat-trend {
@@ -116,8 +85,8 @@ const isPositive = computed(() => props.change && props.change > 0)
 .trend-down {
   color: var(--color-danger);
 }
+</style>
 
-.stat-loading {
   opacity: 0.6;
 }
 
