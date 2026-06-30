@@ -1,77 +1,78 @@
-export type UserRole = 'dean' | 'program-chair' | 'faculty' | 'admin'
-
+// User and Authentication
 export interface User {
   id: string
   name: string
   email: string
-  role: UserRole
-  institution: string
-  avatar?: string
-  createdAt?: string
+  role: string
 }
 
+// Documents
+export interface Document {
+  id: string
+  title: string
+  fileName: string
+  fileSize: number
+  uploadedBy: string
+  uploadedDate: string
+  status: 'approved' | 'pending' | 'rejected' | 'archived'
+  description?: string
+}
+
+// Programs
 export interface Program {
   id: string
   name: string
-  code: string
-  chair: string
-  accreditationStatus: 'compliant' | 'at-risk' | 'non-compliant'
-  complianceScore: number
+  code?: string
+  status: string
+  description?: string
 }
 
-export interface AccreditationArea {
+// Reports
+export interface Report {
   id: string
-  name: string
-  code: string
-  description: string
-  assignedTo: string[]
-  status: 'not-started' | 'in-progress' | 'completed' | 'submitted'
-  dueDate: string
+  title: string
+  description?: string
+  generatedDate: string
+  generatedBy: string
+  type: string
+  downloadUrl?: string
 }
 
-export interface SubmissionSchedule {
+// Submissions
+export interface Submission {
   id: string
-  areaId: string
   programId: string
-  dueDate: string
+  documentId: string
   status: 'pending' | 'submitted' | 'approved' | 'rejected'
   submittedAt?: string
 }
 
-export interface ComplianceScore {
-  areaId: string
-  programId: string
-  score: number
-  lastUpdated: string
-  trend: number // percentage change
+// Employees
+export interface Employee {
+  id: string
+  name: string
+  email: string
+  role: string
+  department?: string
+  status: 'active' | 'inactive'
 }
 
+// Audit Log
 export interface AuditLog {
   id: string
-  userId: string
   action: string
-  entityType: string
-  entityId: string
+  user: string
   timestamp: string
-  details: Record<string, any>
+  details: string
+  status: 'success' | 'failed'
 }
 
-export interface NotificationMessage {
+// QA Review
+export interface QAReview {
   id: string
-  userId: string
-  title: string
-  message: string
-  type: 'info' | 'success' | 'warning' | 'error'
-  read: boolean
-  createdAt: string
-  actionUrl?: string
-}
-
-export interface DashboardMetrics {
-  totalPrograms: number
-  totalAreas: number
-  complianceScore: number
-  pendingSubmissions: number
-  assignmentCompletion: number
-  performanceTrend: number
+  itemTitle: string
+  reviewer: string
+  reviewDate: string
+  status: 'passed' | 'failed' | 'pending'
+  feedback: string
 }

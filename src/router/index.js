@@ -1,88 +1,102 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import LoginPage from '../views/login/LoginPage.vue'
-import Dashboard from '../views/Dashboard.vue'
-import Documents from '../views/Documents.vue'
-import Reports from '../views/Reports.vue'
+import { createRouter, createWebHistory } from '@ionic/vue-router'
+import { useAuthStore } from '@/stores/authStore'
+
+// Pages
+import LoginPage from '@/views/LoginPage.vue'
+import ForgotPassword from '@/views/ForgotPassword.vue'
+import Dashboard from '@/views/Dashboard.vue'
+import Documents from '@/views/Documents.vue'
+import Upload from '@/views/Upload.vue'
+import Reports from '@/views/Reports.vue'
+import Users from '@/views/Users.vue'
+import Audit from '@/views/Audit.vue'
+import QA from '@/views/QA.vue'
+import Settings from '@/views/Settings.vue'
 
 const routes = [
   {
     path: '/',
-    redirect: '/login'
+    redirect: '/login',
   },
   {
     path: '/login',
     name: 'login',
-    component: LoginPage
+    component: LoginPage,
+    meta: { requiresAuth: false },
+  },
+  {
+    path: '/forgot-password',
+    name: 'forgot-password',
+    component: ForgotPassword,
+    meta: { requiresAuth: false },
   },
   {
     path: '/dashboard',
     name: 'dashboard',
     component: Dashboard,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true },
   },
   {
     path: '/documents',
     name: 'documents',
     component: Documents,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/upload',
+    name: 'upload',
+    component: Upload,
+    meta: { requiresAuth: true },
   },
   {
     path: '/reports',
     name: 'reports',
     component: Reports,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/notifications',
-    name: 'notifications',
-    component: { template: '<div class="page-placeholder"><h1>Notifications</h1><p>Coming soon...</p></div>' },
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true },
   },
   {
     path: '/users',
     name: 'users',
-    component: { template: '<div class="page-placeholder"><h1>Manage Users</h1><p>Coming soon...</p></div>' },
-    meta: { requiresAuth: true, requiresRole: 'dean' }
+    component: Users,
+    meta: { requiresAuth: true },
   },
   {
-    path: '/areas',
-    name: 'areas',
-    component: { template: '<div class="page-placeholder"><h1>Accreditation Areas</h1><p>Coming soon...</p></div>' },
-    meta: { requiresAuth: true, requiresRole: 'dean' }
+    path: '/audit',
+    name: 'audit',
+    component: Audit,
+    meta: { requiresAuth: true },
   },
   {
-    path: '/deadlines',
-    name: 'deadlines',
-    component: { template: '<div class="page-placeholder"><h1>Deadlines</h1><p>Coming soon...</p></div>' },
-    meta: { requiresAuth: true, requiresRole: 'dean' }
+    path: '/qa-review',
+    name: 'qa-review',
+    component: QA,
+    meta: { requiresAuth: true },
   },
   {
-    path: '/audit-logs',
-    name: 'audit-logs',
-    component: { template: '<div class="page-placeholder"><h1>Audit Logs</h1><p>Coming soon...</p></div>' },
-    meta: { requiresAuth: true, requiresRole: 'dean' }
-  }
+    path: '/settings',
+    name: 'settings',
+    component: Settings,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/login',
+  },
 ]
 
 const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
-  routes
+  history: createWebHistory(),
+  routes,
 })
 
 router.beforeEach((to, from, next) => {
-  const isAuthenticated = localStorage.getItem('auth') === 'true'
-  const userRole = localStorage.getItem('userRole')
+  const authStore = useAuthStore()
+  const requiresAuth = to.meta.requiresAuth
 
-  if (to.meta.requiresAuth) {
-    if (!isAuthenticated) {
-      next({ name: 'login', query: { redirect: to.fullPath } })
-    } else if (to.meta.requiresRole && userRole !== to.meta.requiresRole) {
-      next({ name: 'dashboard' })
-    } else {
-      next()
-    }
-  } else if (to.name === 'login' && isAuthenticated) {
-    next({ name: 'dashboard' })
+  if (requiresAuth && !authStore.isAuthenticated) {
+    next('/login')
+  } else if (!requiresAuth && authStore.isAuthenticated && (to.path === '/login' || to.path === '/forgot-password')) {
+    next('/dashboard')
   } else {
     next()
   }

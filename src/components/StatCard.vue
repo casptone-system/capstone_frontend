@@ -1,53 +1,43 @@
 <template>
-  <div :class="['stat-card', { 'stat-loading': isLoading }]">
-    <div class="stat-header">
-      <div class="stat-title">{{ title }}</div>
-      <div v-if="badge" :class="['stat-badge', `badge-${badge.variant}`]">
-        {{ badge.label }}
+  <div class="bg-white rounded-lg shadow p-6 border-l-4" :style="{ borderLeftColor: color }">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-gray-500 text-sm font-medium">{{ title }}</p>
+        <p class="text-3xl font-bold text-gray-900 mt-2">{{ value }}</p>
+      </div>
+      <div class="text-4xl" :style="{ color }">
+        <ion-icon :icon="icon"></ion-icon>
       </div>
     </div>
-    
-    <div class="stat-value">
-      <span v-if="isLoading" class="skeleton"></span>
-      <span v-else>{{ value }}</span>
-    </div>
-    
-    <div v-if="subtitle" class="stat-subtitle">{{ subtitle }}</div>
-    
-    <div v-if="trend" :class="['stat-trend', `trend-${trend.direction}`]">
-      <ion-icon :name="trend.direction === 'up' ? 'arrow-up' : 'arrow-down'"></ion-icon>
-      <span>{{ trend.value }}%</span>
-    </div>
+    <p v-if="change" class="text-xs mt-2" :class="isPositive ? 'text-green-600' : 'text-red-600'">
+      <span v-if="isPositive">↑</span>
+      <span v-else>↓</span>
+      {{ Math.abs(change) }}% from last period
+    </p>
   </div>
 </template>
 
 <script setup lang="ts">
 import { IonIcon } from '@ionic/vue'
+import { computed } from 'vue'
 
-defineProps<{
+interface Props {
   title: string
-  value: string | number
-  subtitle?: string
-  isLoading?: boolean
-  badge?: {
-    label: string
-    variant: 'primary' | 'success' | 'warning' | 'danger'
-  }
-  trend?: {
-    value: number
-    direction: 'up' | 'down'
-  }
-}>()
+  value: number | string
+  icon: any
+  color?: string
+  change?: number
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  color: '#3b82f6',
+  change: undefined,
+})
+
+const isPositive = computed(() => props.change && props.change > 0)
 </script>
 
 <style scoped>
-.stat-card {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-2xl);
-  padding: var(--spacing-lg);
-  transition: all var(--transition-base);
-}
 
 .stat-card:hover {
   box-shadow: var(--shadow-md);
