@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/authStore'
 import LoginPage from '../views/login/LoginPage.vue'
+import RegisterPage from '../views/login/RegisterPage.vue'
 import Dashboard from '../views/Dashboard.vue'
 import Documents from '../views/Documents.vue'
 import Reports from '../views/Reports.vue'
@@ -13,6 +15,11 @@ const routes = [
     path: '/login',
     name: 'login',
     component: LoginPage
+  },
+  {
+    path: '/register',
+    name: 'register',
+    component: RegisterPage
   },
   {
     path: '/dashboard',
@@ -70,8 +77,11 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  const isAuthenticated = localStorage.getItem('auth') === 'true'
-  const userRole = localStorage.getItem('userRole')
+  // Use the Pinia auth store — not raw localStorage — so that
+  // authentication is always backed by the real Supabase session.
+  const authStore = useAuthStore()
+  const isAuthenticated = authStore.isAuthenticated
+  const userRole = authStore.userRole
 
   if (to.meta.requiresAuth) {
     if (!isAuthenticated) {

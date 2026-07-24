@@ -4,19 +4,29 @@
       {{ label }}
       <span v-if="required" class="required">*</span>
     </label>
-    
+
     <div class="input-wrapper">
-      <ion-icon v-if="icon" :name="icon" class="input-icon"></ion-icon>
+      <ion-icon v-if="icon && type !== 'select'" :name="icon" class="input-icon"></ion-icon>
+      <select
+        v-if="type === 'select'"
+        :value="modelValue"
+        :disabled="disabled"
+        @change="handleSelectChange"
+        :class="['form-input', { 'input-error': error }]"
+      >
+        <slot></slot>
+      </select>
       <input
+        v-else
         :type="type"
         :placeholder="placeholder"
         :value="modelValue"
         :disabled="disabled"
-        @input="$emit('update:modelValue', $event.target.value)"
+        @input="handleInput"
         :class="['form-input', { 'input-error': error }]"
       />
     </div>
-    
+
     <div v-if="error" class="form-error">{{ error }}</div>
     <div v-if="hint" class="form-hint">{{ hint }}</div>
   </div>
@@ -37,9 +47,19 @@ defineProps<{
   icon?: string
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
+
+const handleInput = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  emit('update:modelValue', target.value)
+}
+
+const handleSelectChange = (event: Event) => {
+  const target = event.target as HTMLSelectElement
+  emit('update:modelValue', target.value)
+}
 </script>
 
 <style scoped>
@@ -52,7 +72,7 @@ defineEmits<{
 .form-label {
   font-size: var(--text-sm);
   font-weight: var(--font-weight-semibold);
-  color: white;
+  color: var(--color-text);
 }
 
 .required {
@@ -67,15 +87,17 @@ defineEmits<{
 
 .input-icon {
   position: absolute;
-  left: var(--spacing-lg);
+  left: var(--spacing-md);
   color: var(--color-text-secondary);
   pointer-events: none;
+  font-size: var(--text-lg);
+  transition: color var(--transition-base);
 }
 
 .form-input {
   width: 100%;
   padding: var(--spacing-md) var(--spacing-lg);
-  padding-left: var(--spacing-xl) calc(var(--spacing-xl) + 8px);
+  padding-left: calc(var(--spacing-xl) + 8px);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   font-size: var(--text-sm);
@@ -83,12 +105,17 @@ defineEmits<{
   transition: all var(--transition-base);
   background-color: var(--color-white);
   color: var(--color-text);
+  box-shadow: var(--shadow-sm);
 }
 
 .form-input:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+}
+
+.form-input:focus + .input-icon {
+  color: var(--color-primary);
 }
 
 .form-input:disabled {
@@ -103,6 +130,15 @@ defineEmits<{
 
 .form-input.input-error:focus {
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+select.form-input {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--spacing-md) center;
+  padding-right: var(--spacing-3xl);
 }
 
 .form-error {

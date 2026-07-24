@@ -29,6 +29,19 @@ export interface AccreditationArea {
   dueDate: string
 }
 
+export interface AppDocument {
+  id: string
+  title: string
+  area: string
+  program: string
+  uploadedBy: string
+  uploadedAt: string
+  fileUrl?: string
+  fileSize?: number
+  version: number
+  status: 'pending' | 'approved' | 'rejected' | 'revision'
+}
+
 export interface SubmissionSchedule {
   id: string
   areaId: string

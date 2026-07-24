@@ -6,14 +6,14 @@
         {{ badge.label }}
       </div>
     </div>
-    
+
     <div class="stat-value">
       <span v-if="isLoading" class="skeleton"></span>
       <span v-else>{{ value }}</span>
     </div>
-    
+
     <div v-if="subtitle" class="stat-subtitle">{{ subtitle }}</div>
-    
+
     <div v-if="trend" :class="['stat-trend', `trend-${trend.direction}`]">
       <ion-icon :name="trend.direction === 'up' ? 'arrow-up' : 'arrow-down'"></ion-icon>
       <span>{{ trend.value }}%</span>
@@ -45,25 +45,27 @@ defineProps<{
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-2xl);
-  padding: var(--spacing-lg);
+  padding: var(--spacing-xl);
   transition: all var(--transition-base);
+  box-shadow: var(--shadow-sm);
 }
 
 .stat-card:hover {
   box-shadow: var(--shadow-md);
-  border-color: var(--color-primary);
+  border-color: var(--color-border-hover);
+  transform: translateY(-2px);
 }
 
 .stat-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
 }
 
 .stat-title {
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-medium);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -71,14 +73,14 @@ defineProps<{
 
 .stat-badge {
   display: inline-block;
-  padding: var(--spacing-xs) var(--spacing-md);
+  padding: var(--spacing-2xs) var(--spacing-sm);
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
   font-weight: var(--font-weight-semibold);
 }
 
 .badge-primary {
-  background-color: rgba(59, 130, 246, 0.1);
+  background-color: rgba(30, 64, 175, 0.1);
   color: var(--color-primary);
 }
 
@@ -99,7 +101,7 @@ defineProps<{
 
 .stat-value {
   font-size: var(--text-4xl);
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-extrabold);
   color: var(--color-text);
   margin-bottom: var(--spacing-md);
   line-height: 1;
@@ -114,7 +116,7 @@ defineProps<{
 .stat-trend {
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
+  gap: var(--spacing-2xs);
   font-size: var(--text-sm);
   font-weight: var(--font-weight-semibold);
 }
@@ -134,6 +136,7 @@ defineProps<{
 .skeleton {
   display: block;
   height: 2.25rem;
+  width: 60%;
   background: linear-gradient(90deg, var(--color-gray-200) 25%, var(--color-gray-100) 50%, var(--color-gray-200) 75%);
   background-size: 200% 100%;
   animation: loading 1.5s infinite;
@@ -141,11 +144,7 @@ defineProps<{
 }
 
 @keyframes loading {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 </style>

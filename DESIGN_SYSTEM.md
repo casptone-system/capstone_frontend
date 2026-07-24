@@ -1,5 +1,6 @@
 # ADAMS - Accreditation & Compliance Management System
 ## Modern Professional UI/UX Design Guide
+### Minimalist White-and-Blue Aesthetic
 
 ---
 
@@ -7,8 +8,9 @@
 
 ADAMS is a comprehensive accreditation and compliance management system designed for academic institutions. The system provides role-based dashboards and workflows for Deans, Program Chairs, and Faculty members to collaborate on accreditation, assessment, and compliance documentation.
 
-**Current Version**: 1.0.0  
-**Technology Stack**: Vue 3 + Vite, TypeScript, Pinia, Vue Router, Chart.js, Ionic Vue, Ionicons
+**Current Version**: 1.1.0  
+**Technology Stack**: Vue 3 + Vue CLI, TypeScript, Pinia, Vue Router, Chart.js, Ionic Vue, Ionicons  
+**Design Theme**: Minimalist, sleek, modern white-and-blue aesthetic
 
 ---
 
@@ -16,31 +18,48 @@ ADAMS is a comprehensive accreditation and compliance management system designed
 
 ### Color Palette
 
-**Primary Colors**
-- `--color-primary: #3b82f6` - Main brand blue
+**Primary Colors - Deep Professional Navy & Royal Blue**
+- `--color-primary: #1e40af` - Deep navy blue (primary buttons, headers, active states)
+- `--color-primary-light: #3b82f6` - Royal blue (gradients, accents)
+- `--color-primary-dark: #1e3a8a` - Indigo navy (hover states)
+- `--color-primary-hover: #1d4ed8` - Blue-700 (interactive hover)
+- `--color-primary-fg: #ffffff` - White text/icon on primary backgrounds
+
+**Accent Colors**
 - `--color-accent: #10b981` - Success green
+- `--color-accent-light: #34d399`
+- `--color-accent-dark: #059669`
+
+**Status Colors**
 - `--color-warning: #f59e0b` - Alert orange
 - `--color-danger: #ef4444` - Error red
+- `--color-success: #22c55e` - Success green
 
-**Neutral Palette**
+**Neutral Colors - Soft Slate Gray Scale**
 - `--color-white: #ffffff`
 - `--color-gray-50` through `--color-gray-900` - 10-step gray scale
-- `--color-background: #f8fafc` - Page background
-- `--color-surface: #ffffff` - Card/container background
-- `--color-border: #e5e7eb` - Border color
+- `--color-background: #f8fafc` - Crisp off-white page background
+- `--color-surface: #ffffff` - White card/container background
+- `--color-surface-alt: #f1f5f9` - Subtle surface variant
+- `--color-border: #e2e8f0` - Soft slate gray border
+- `--color-text: #0f172a` - Dark slate text (high contrast)
+- `--color-text-secondary: #64748b` - Medium slate gray
+- `--color-text-muted: #94a3b8` - Light slate gray
 
 ### Typography
 
-**Font Family**: System fonts (Roboto / Inter alternative)
+**Font Family**: Inter (Google Fonts) with system font fallback
 ```css
--apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif
+--font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 ```
 
 **Font Weights**
+- Light (300) - Subtle text
 - Regular (400) - Body text
 - Medium (500) - Subheadings
 - Semibold (600) - Headings
 - Bold (700) - Primary headings
+- Extrabold (800) - Display headings
 
 **Type Scale**
 - `--text-xs: 0.75rem` (12px)
@@ -52,12 +71,19 @@ ADAMS is a comprehensive accreditation and compliance management system designed
 - `--text-3xl: 1.875rem` (30px)
 - `--text-4xl: 2.25rem` (36px)
 
+**Line Heights**
+- `--line-height-tight: 1.25` - Headings
+- `--line-height-normal: 1.5` - Body text
+- `--line-height-relaxed: 1.625` - Paragraphs
+
 ### Spacing System
 
 **Base Unit**: 1rem (16px)
 
-- `--spacing-xs: 0.25rem` (4px)
-- `--spacing-sm: 0.5rem` (8px)
+- `--spacing-3xs: 0.125rem` (2px)
+- `--spacing-2xs: 0.25rem` (4px)
+- `--spacing-xs: 0.5rem` (8px)
+- `--spacing-sm: 0.75rem` (12px)
 - `--spacing-md: 1rem` (16px)
 - `--spacing-lg: 1.5rem` (24px)
 - `--spacing-xl: 2rem` (32px)
@@ -66,27 +92,29 @@ ADAMS is a comprehensive accreditation and compliance management system designed
 
 ### Border Radius
 
+Consistent 8px to 12px range for modern, clean appearance:
 - `--radius-sm: 0.25rem` (4px)
 - `--radius-md: 0.375rem` (6px)
-- `--radius-lg: 0.5rem` (8px)
-- `--radius-xl: 0.75rem` (12px)
-- `--radius-2xl: 1rem` (16px)
-- `--radius-3xl: 1.5rem` (24px)
-- `--radius-full: 9999px` (Fully rounded)
+- `--radius-lg: 0.5rem` (8px) - Buttons, inputs, cards
+- `--radius-xl: 0.75rem` (12px) - Cards, modals
+- `--radius-2xl: 1rem` (16px) - Card containers
+- `--radius-3xl: 1.5rem` (24px) - Login card
+- `--radius-full: 9999px` - Badges, avatars, circular elements
 
-### Shadows
+### Shadows - Subtle Drop Shadows
 
-- `--shadow-sm`: Subtle elevation (cards)
-- `--shadow-md`: Standard elevation (hover states)
-- `--shadow-lg`: Elevated elevation (modals)
-- `--shadow-xl`: High elevation (dropdowns)
-- `--shadow-2xl`: Maximum elevation (full modals)
+- `--shadow-none: none`
+- `--shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.02)` - Cards, inputs
+- `--shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -1px rgba(0, 0, 0, 0.04)` - Elevated cards, hover
+- `--shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.05)` - Dropdowns, modals
+- `--shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.04)` - Tooltips
+- `--shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.12)` - Full modals
 
-### Transitions
+### Transitions - Smooth Effects
 
-- `--transition-fast: 150ms` - Micro-interactions
-- `--transition-base: 200ms` - Standard animations
-- `--transition-slow: 300ms` - Long-form animations
+- `--transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1)` - Micro-interactions
+- `--transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1)` - Standard animations
+- `--transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1)` - Long-form animations
 
 ---
 
@@ -94,49 +122,15 @@ ADAMS is a comprehensive accreditation and compliance management system designed
 
 ### Core Components
 
-#### 1. **AppCard**
-Container component for content grouping with three variants.
+#### 1. **AppButton**
+Flexible button component with multiple variants and smooth hover transitions.
 
 **Variants:**
-- `default` - Basic card with subtle border
-- `elevated` - Card with shadow elevation
-- `outlined` - Bordered card
-
-**Props:**
-```typescript
-interface Props {
-  variant?: 'default' | 'elevated' | 'outlined'
-  clickable?: boolean
-}
-```
-
-**Slots:**
-- `header` - Card header section
-- `default` - Main content
-- `footer` - Footer section
-
-**Usage:**
-```vue
-<app-card variant="elevated">
-  <template #header>
-    <h3>Title</h3>
-  </template>
-  Content here
-  <template #footer>
-    Actions here
-  </template>
-</app-card>
-```
-
-#### 2. **AppButton**
-Flexible button component with multiple variants and sizes.
-
-**Variants:**
-- `primary` - Blue background (default action)
-- `secondary` - Gray background
-- `danger` - Red background (destructive)
+- `primary` - Deep navy blue background with hover elevation
+- `secondary` - Light gray with border
+- `danger` - Red background
 - `success` - Green background
-- `outline` - Bordered with no fill
+- `outline` - Transparent with blue border
 
 **Sizes:**
 - `sm` - Small (12px text)
@@ -155,12 +149,32 @@ interface Props {
 }
 ```
 
-**Usage:**
-```vue
-<app-button variant="primary" size="lg" block icon="download-outline">
-  Export Report
-</app-button>
+**Design Features:**
+- Subtle box-shadow on all buttons
+- Smooth `transform: translateY(-1px)` on hover
+- Focus rings for accessibility
+- Icon scaling on hover
+
+#### 2. **AppCard**
+Container component for content grouping with three variants.
+
+**Variants:**
+- `default` - Subtle border with light shadow
+- `elevated` - No border, medium shadow
+- `outlined` - Double border, no shadow
+
+**Props:**
+```typescript
+interface Props {
+  variant?: 'default' | 'elevated' | 'outlined'
+  clickable?: boolean
+}
 ```
+
+**Slots:**
+- `header` - Card header section
+- `default` - Main content
+- `footer` - Footer section
 
 #### 3. **StatCard**
 Displays key metrics with optional trending and badge indicators.
@@ -172,27 +186,16 @@ interface Props {
   value: string | number
   subtitle?: string
   isLoading?: boolean
-  badge?: {
-    label: string
-    variant: 'primary' | 'success' | 'warning' | 'danger'
-  }
-  trend?: {
-    value: number
-    direction: 'up' | 'down'
-  }
+  badge?: { label: string; variant: 'primary' | 'success' | 'warning' | 'danger' }
+  trend?: { value: number; direction: 'up' | 'down' }
 }
 ```
 
-**Usage:**
-```vue
-<stat-card
-  title="Total Programs"
-  value="28"
-  subtitle="Active programs"
-  :trend="{ value: 12, direction: 'up' }"
-  :badge="{ label: '+2 this year', variant: 'success' }"
-/>
-```
+**Design Features:**
+- Large, bold value display
+- Uppercase title with letter spacing
+- Subtle hover lift effect
+- Skeleton loading animation
 
 #### 4. **FormInput**
 Text input with label, validation, icon support, and error handling.
@@ -203,27 +206,20 @@ interface Props {
   modelValue: string
   label?: string
   placeholder?: string
-  type?: string                    // 'email', 'password', etc.
-  error?: string                   // Validation message
-  hint?: string                    // Helper text
+  type?: string
+  error?: string
+  hint?: string
   required?: boolean
   disabled?: boolean
-  icon?: string                    // Ionicon name
+  icon?: string
 }
 ```
 
-**Usage:**
-```vue
-<form-input
-  v-model="email"
-  label="Email Address"
-  type="email"
-  placeholder="user@institution.edu"
-  icon="mail-outline"
-  :error="validationError"
-  required
-/>
-```
+**Design Features:**
+- Floating label style
+- Blue focus ring (3px glow)
+- Icon color transition on focus
+- Subtle shadow on inputs
 
 #### 5. **AppModal**
 Modal dialog with header, body, and footer sections.
@@ -231,41 +227,43 @@ Modal dialog with header, body, and footer sections.
 **Props:**
 ```typescript
 interface Props {
-  modelValue: boolean              // v-model for open/close
-  title: string                    // Modal title
+  modelValue: boolean
+  title: string
   size?: 'sm' | 'md' | 'lg'
 }
 ```
 
-**Slots:**
-- `default` - Modal body content
-- `footer` - Footer actions
+**Design Features:**
+- Slide-up animation
+- Semi-transparent overlay
+- Scrollable content
+- Body scroll lock when open
 
-**Usage:**
-```vue
-<app-modal v-model="isOpen" title="Confirm Action">
-  <p>Are you sure you want to proceed?</p>
-  <template #footer>
-    <app-button variant="secondary" @click="isOpen = false">Cancel</app-button>
-    <app-button variant="danger">Confirm</app-button>
-  </template>
-</app-modal>
-```
+#### 6. **AppLayout**
+Main layout wrapper for authenticated users.
+
+**Features:**
+- Sticky header with logo and navigation
+- User profile dropdown with logout
+- Notification bell with badge
+- Responsive sidebar navigation
+- Role-based menu items
+- Active route highlighting
 
 ---
 
 ## Page Templates
 
 ### 1. **Login Page** (`/login`)
-Authentication entry point with role-based demo account selection.
+Clean white card on off-white to light-blue gradient background.
 
 **Features:**
-- Email and password inputs
+- Email and password inputs with icons
 - Remember me checkbox
 - Forgot password link
 - Demo account quick-fill buttons
-- Gradient background design
-- Form validation
+- Soft decorative background shapes
+- Card hover elevation effect
 
 ### 2. **Dashboard** (`/dashboard`)
 Role-aware overview dashboard showing key metrics and recent activity.
@@ -276,8 +274,8 @@ Role-aware overview dashboard showing key metrics and recent activity.
 - **Faculty**: Personal submissions, assigned areas, revision status
 
 **Components:**
-- Overview statistics grid
-- Compliance distribution chart (Chart.js)
+- Overview statistics grid (6 stat cards)
+- Compliance distribution chart (Chart.js doughnut)
 - Recent activity timeline
 - Quick action buttons
 
@@ -308,7 +306,6 @@ Analytics and report generation interface.
 ### AppLayout
 Main layout wrapper for authenticated users.
 
-**Components:**
 ```
 ┌─────────────────────────────────────┐
 │         App Header                   │
@@ -323,22 +320,22 @@ Main layout wrapper for authenticated users.
 ```
 
 **Header Features:**
-- ADAMS logo
+- ADAMS logo in deep navy blue
 - Horizontal navigation (desktop)
-- Notification bell with badge
-- User profile dropdown
+- Notification bell with red badge
+- User profile dropdown with avatar gradient
 - Quick logout
 
 **Sidebar Features:**
 - Navigation links per role
-- Active route highlighting
+- Active route highlighting with blue background
 - Icons from Ionicons
 - Grouped sections (Main, Management)
 - Sticky positioning
 
 **Main Content:**
 - Responsive padding
-- Page header with title
+- Page header with title and description
 - Scrollable content area
 
 ---
@@ -430,6 +427,7 @@ uploadDocument(file: File, metadata: any)
 - Expanded touch targets (48px minimum)
 - Stacked navigation
 - Full-width cards
+- Reduced horizontal padding
 
 **Tablet:**
 - Two-column grid
@@ -440,7 +438,7 @@ uploadDocument(file: File, metadata: any)
 **Desktop:**
 - Full multi-column layouts
 - Sticky sidebar navigation
-- Maximum content width
+- Maximum content width (1280px container)
 - Hover states and interactions
 
 ---
@@ -450,6 +448,7 @@ uploadDocument(file: File, metadata: any)
 ### Color Contrast
 - All text meets 4.5:1 contrast ratio (normal text)
 - Buttons and interactive elements meet 3:1 contrast ratio
+- Dark slate text (#0f172a) on white background
 
 ### Semantic HTML
 - Proper heading hierarchy (h1, h2, h3...)
@@ -460,7 +459,7 @@ uploadDocument(file: File, metadata: any)
 ### Keyboard Navigation
 - All interactive elements focusable
 - Logical tab order
-- Visible focus indicators
+- Visible focus indicators (2px solid blue outline)
 - Escape key closes modals
 
 ### Screen Reader Support
@@ -481,6 +480,40 @@ All icons use Ionicons v7 convention: `{name}-outline`
 - Status: `checkmark-circle-outline`, `alert-circle-outline`
 - User: `person-outline`, `people-outline`, `log-out-outline`
 - Settings: `settings-outline`, `lock-closed-outline`
+
+---
+
+## Global Utility Classes
+
+The design system includes a comprehensive set of utility classes:
+
+**Layout:**
+- `.container` - Max-width 1280px centered
+- `.grid`, `.grid-cols-2/3/4` - Grid layouts
+- `.flex`, `.flex-col`, `.flex-between`, `.flex-center`
+- `.items-center`, `.justify-between`, `.justify-center`
+
+**Spacing:**
+- `.gap-xs/sm/md/lg/xl` - Gap utilities
+- `.p-xs/sm/md/lg/xl` - Padding utilities
+- `.px-md`, `.py-md` - Directional padding
+- `.m-xs/sm/md/lg/xl` - Margin utilities
+- `.mt-*`, `.mb-*` - Directional margins
+
+**Typography:**
+- `.text-xs/sm/base/lg/xl` - Font sizes
+- `.font-medium/semibold/bold` - Font weights
+- `h1/h2/h3/h4` - Heading styles
+
+**Backgrounds:**
+- `.bg-primary`, `.bg-primary-light`, `.bg-surface`, `.bg-surface-alt`, `.bg-accent`
+
+**Borders:**
+- `.border`, `.border-t`, `.border-b`
+- `.rounded-sm/md/lg/xl/2xl/full`
+
+**Shadows:**
+- `.shadow-sm`, `.shadow-md`, `.shadow-lg`
 
 ---
 
@@ -513,12 +546,13 @@ All icons use Ionicons v7 convention: `{name}-outline`
 
 ### Code Style
 
-- Use Composition API over Options API
+- Use Composition API with `<script setup>`
 - TypeScript for all new code
 - Consistent naming conventions
 - DRY principle for component logic
 - Reusable utility functions
 - Descriptive variable names
+- CSS variables for all design tokens
 
 ---
 
@@ -545,7 +579,7 @@ npm run build
 ### Type Check
 
 ```bash
-npm run type-check
+npx tsc --noEmit
 ```
 
 ---
@@ -584,5 +618,41 @@ src/
 
 ---
 
-**Last Updated**: June 4, 2026  
-**Status**: Production Ready v1.0.0
+**Last Updated**: July 22, 2026  
+**Version**: 1.1.0  
+**Status**: Production Ready
+
+---
+
+## Design Changes Summary (v1.1.0)
+
+### Color Palette Updates
+- **Primary**: Changed from `#3b82f6` (blue-500) to `#1e40af` (deep navy blue-800)
+- **Background**: `#f8fafc` (off-white) with soft blue gradient accents
+- **Text**: `#0f172a` (dark slate) for high contrast readability
+- **Borders**: `#e2e8f0` (soft slate gray) for subtle separation
+
+### Typography Updates
+- **Font**: Added Inter (Google Fonts) as primary font family
+- **Font weights**: Added Light (300) and Extrabold (800)
+- **Line heights**: Added tight (1.25), normal (1.5), relaxed (1.625)
+
+### Spacing Updates
+- **Increased whitespace**: Added `--spacing-3xs` (2px) and `--spacing-sm` (12px)
+- **Mobile spacing**: Reduced padding on mobile for better fit
+
+### Component Updates
+- **AppButton**: Added box-shadow, focus rings, icon hover scaling
+- **AppCard**: Refined shadow values, consistent border-radius
+- **StatCard**: Increased padding to `var(--spacing-xl)`, added hover lift
+- **FormInput**: Fixed label color (was white, now dark slate), added icon focus transition
+- **AppModal**: Added size variants (sm, md, lg), max-width constraints
+- **AppLayout**: Updated active nav state to use deep navy blue background
+- **LoginPage**: Complete redesign - clean white card on off-white/blue gradient background, removed dark theme
+
+### Login Page Redesign
+- **Background**: Soft off-white to light-blue gradient (was dark navy/teal)
+- **Card**: Clean white with subtle shadow (was deep navy)
+- **Decorative elements**: Soft blue gradient shapes (was white circles)
+- **Text**: Dark slate for readability (was white)
+- **Buttons**: Blue accent for demo account selection (was green)

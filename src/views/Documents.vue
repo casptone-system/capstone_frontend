@@ -32,7 +32,7 @@
             <div :class="['document-status', `status-${doc.status}`]">
               {{ doc.status }}
             </div>
-            <button class="btn-action">
+            <button class="btn-action" aria-label="More options">
               <ion-icon name="ellipsis-vertical-outline"></ion-icon>
             </button>
           </div>
@@ -70,6 +70,8 @@ const searchDocuments = (e: Event) => {
 .page-header h1 {
   margin: 0;
   font-size: var(--text-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
 }
 
 .page-header p {
@@ -91,9 +93,10 @@ const searchDocuments = (e: Event) => {
 
 .search-bar ion-icon {
   position: absolute;
-  left: var(--spacing-lg);
+  left: var(--spacing-md);
   color: var(--color-text-secondary);
   pointer-events: none;
+  font-size: var(--text-lg);
 }
 
 .search-bar input {
@@ -103,6 +106,17 @@ const searchDocuments = (e: Event) => {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   font-size: var(--text-sm);
+  font-family: var(--font-family);
+  transition: all var(--transition-base);
+  background-color: var(--color-white);
+  color: var(--color-text);
+  box-shadow: var(--shadow-sm);
+}
+
+.search-bar input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
 }
 
 .documents-content {
@@ -139,7 +153,7 @@ const searchDocuments = (e: Event) => {
   justify-content: center;
   width: 48px;
   height: 48px;
-  background-color: rgba(59, 130, 246, 0.1);
+  background-color: rgba(30, 64, 175, 0.08);
   border-radius: var(--radius-lg);
 }
 
@@ -156,7 +170,7 @@ const searchDocuments = (e: Event) => {
 .document-meta {
   font-size: var(--text-xs);
   color: var(--color-text-secondary);
-  margin-top: var(--spacing-xs);
+  margin-top: var(--spacing-2xs);
 }
 
 .document-date {
@@ -167,7 +181,7 @@ const searchDocuments = (e: Event) => {
 
 .document-status {
   display: inline-block;
-  padding: var(--spacing-xs) var(--spacing-md);
+  padding: var(--spacing-2xs) var(--spacing-sm);
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
   font-weight: var(--font-weight-semibold);
@@ -190,7 +204,7 @@ const searchDocuments = (e: Event) => {
 }
 
 .status-revision {
-  background-color: rgba(59, 130, 246, 0.1);
+  background-color: rgba(30, 64, 175, 0.08);
   color: var(--color-primary);
 }
 
@@ -207,5 +221,10 @@ const searchDocuments = (e: Event) => {
 .btn-action:hover {
   background-color: var(--color-gray-100);
   color: var(--color-text);
+}
+
+.btn-action:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 </style>

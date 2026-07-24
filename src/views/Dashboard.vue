@@ -43,7 +43,7 @@
               <p class="text-muted">By area and program status</p>
             </div>
             <div class="header-actions-inline">
-              <button class="btn-icon" aria-label="Refresh">
+              <button class="btn-icon" aria-label="Refresh" @click="initializeChart">
                 <ion-icon name="refresh-outline"></ion-icon>
               </button>
               <button class="btn-icon" aria-label="More options">
@@ -96,7 +96,7 @@ Chart.register(...registerables)
 
 const dashboardStore = useDashboardStore()
 const authStore = useAuthStore()
-const complianceChart = ref<HTMLCanvasElement>(null)
+const complianceChart = ref<HTMLCanvasElement | null>(null)
 const isLoadingStats = ref(false)
 
 const userRole = computed(() => authStore.userRole)
@@ -125,42 +125,42 @@ const dashboardStats = computed(() => [
     title: 'Total Programs',
     value: dashboardStore.stats.totalPrograms,
     subtitle: 'Active programs',
-    badge: { label: '+2 this year', variant: 'success' }
+    badge: { label: '+2 this year', variant: 'success' } as const
   },
   {
     id: 2,
     title: 'Total Areas',
     value: dashboardStore.stats.totalAreas,
     subtitle: 'Assessment areas',
-    trend: { value: 12, direction: 'up' }
+    trend: { value: 12, direction: 'up' } as const
   },
   {
     id: 3,
     title: 'Compliance Score',
     value: `${dashboardStore.stats.complianceScore}%`,
     subtitle: 'Institutional average',
-    trend: { value: 8, direction: 'up' }
+    trend: { value: 8, direction: 'up' } as const
   },
   {
     id: 4,
     title: 'Pending Submissions',
     value: dashboardStore.stats.pendingSubmissions,
     subtitle: 'Awaiting review',
-    badge: { label: 'Action needed', variant: 'warning' }
+    badge: { label: 'Action needed', variant: 'warning' } as const
   },
   {
     id: 5,
     title: 'Assignment Completion',
     value: `${dashboardStore.stats.assignmentCompletion}%`,
     subtitle: 'Overall progress',
-    trend: { value: 5, direction: 'up' }
+    trend: { value: 5, direction: 'up' } as const
   },
   {
     id: 6,
     title: 'Security Status',
     value: 'Protected',
     subtitle: 'Zero-trust active',
-    badge: { label: 'Secure', variant: 'success' }
+    badge: { label: 'Secure', variant: 'success' } as const
   }
 ])
 
@@ -266,6 +266,7 @@ const initializeChart = () => {
 .page-header h1 {
   margin: 0;
   font-size: var(--text-3xl);
+  font-weight: var(--font-weight-bold);
   color: var(--color-text);
 }
 
@@ -289,7 +290,8 @@ const initializeChart = () => {
 
 .section-title {
   margin: 0;
-  font-size: var(--text-xl);
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-bold);
   color: var(--color-text);
 }
 
@@ -308,6 +310,7 @@ const initializeChart = () => {
 .card-header-content h3 {
   margin: 0 0 var(--spacing-xs);
   font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text);
 }
 
@@ -332,6 +335,11 @@ const initializeChart = () => {
   color: var(--color-primary);
 }
 
+.btn-icon:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .chart-container {
   position: relative;
   height: 320px;
@@ -350,13 +358,13 @@ const initializeChart = () => {
   align-items: center;
   gap: var(--spacing-lg);
   padding: var(--spacing-lg);
-  border-radius: var(--radius-lg);
-  background-color: var(--color-gray-50);
+  border-radius: var(--radius-xl);
+  background-color: var(--color-surface-alt);
   transition: all var(--transition-base);
 }
 
 .activity-item:hover {
-  background-color: var(--color-gray-100);
+  background-color: var(--color-gray-50);
 }
 
 .activity-icon {
@@ -383,12 +391,12 @@ const initializeChart = () => {
 .activity-time {
   font-size: var(--text-xs);
   color: var(--color-text-secondary);
-  margin-top: var(--spacing-xs);
+  margin-top: var(--spacing-2xs);
 }
 
 .activity-status {
   display: inline-block;
-  padding: var(--spacing-xs) var(--spacing-md);
+  padding: var(--spacing-2xs) var(--spacing-sm);
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
   font-weight: var(--font-weight-semibold);

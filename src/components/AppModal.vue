@@ -7,11 +7,11 @@
           <ion-icon name="close"></ion-icon>
         </button>
       </div>
-      
+
       <div class="modal-body">
         <slot></slot>
       </div>
-      
+
       <div v-if="$slots.footer" class="modal-footer">
         <slot name="footer"></slot>
       </div>
@@ -64,12 +64,8 @@ watch(() => props.modelValue, (isOpen) => {
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .modal-dialog {
@@ -79,6 +75,16 @@ watch(() => props.modelValue, (isOpen) => {
   max-height: 90vh;
   overflow-y: auto;
   animation: slideUp var(--transition-base);
+  width: 100%;
+  max-width: 560px;
+}
+
+.modal-dialog.size-sm {
+  max-width: 384px;
+}
+
+.modal-dialog.size-lg {
+  max-width: 800px;
 }
 
 @keyframes slideUp {
@@ -126,6 +132,11 @@ watch(() => props.modelValue, (isOpen) => {
   color: var(--color-text);
 }
 
+.modal-close:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .modal-body {
   padding: var(--spacing-xl);
 }
@@ -135,7 +146,7 @@ watch(() => props.modelValue, (isOpen) => {
   gap: var(--spacing-md);
   padding: var(--spacing-lg) var(--spacing-xl);
   border-top: 1px solid var(--color-border);
-  background-color: var(--color-gray-50);
+  background-color: var(--color-surface-alt);
   justify-content: flex-end;
 }
 </style>

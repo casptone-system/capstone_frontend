@@ -7,7 +7,7 @@
           <div class="logo">ADAMS</div>
           <span class="logo-text">Accreditation Management</span>
         </div>
-        
+
         <nav class="header-nav" v-if="isAuthenticated">
           <router-link to="/dashboard" :class="{ active: isActiveRoute('dashboard') }">
             Dashboard
@@ -25,8 +25,8 @@
             <ion-icon name="notifications-outline"></ion-icon>
             <span class="badge">3</span>
           </button>
-          
-          <button class="profile-button" @click="showProfileMenu = !showProfileMenu">
+
+          <button class="profile-button" @click="showProfileMenu = !showProfileMenu" aria-haspopup="true" :aria-expanded="showProfileMenu">
             <div class="avatar">{{ userName.charAt(0).toUpperCase() }}</div>
             <span>{{ userName }}</span>
             <ion-icon name="chevron-down" :style="{ transform: showProfileMenu ? 'rotate(180deg)' : 'rotate(0)' }"></ion-icon>
@@ -57,8 +57,8 @@
         <nav class="sidebar-nav">
           <div class="nav-section">
             <div class="nav-label">Main</div>
-            <router-link 
-              v-for="item in navItems" 
+            <router-link
+              v-for="item in navItems"
               :key="item.path"
               :to="item.path"
               :class="{ active: isActiveRoute(item.path) }"
@@ -71,8 +71,8 @@
 
           <div class="nav-section" v-if="isDean">
             <div class="nav-label">Management</div>
-            <router-link 
-              v-for="item in adminNavItems" 
+            <router-link
+              v-for="item in adminNavItems"
               :key="item.path"
               :to="item.path"
               :class="{ active: isActiveRoute(item.path) }"
@@ -144,6 +144,7 @@ const handleLogout = () => {
   background-color: var(--color-background);
 }
 
+/* Header */
 .app-header {
   background-color: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
@@ -191,7 +192,7 @@ const handleLogout = () => {
 
 .header-nav {
   display: none;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-xl);
   flex: 1;
 }
 
@@ -232,10 +233,17 @@ const handleLogout = () => {
   color: var(--color-text-secondary);
   transition: color var(--transition-base);
   padding: var(--spacing-md);
+  border-radius: var(--radius-lg);
 }
 
 .notification-button:hover {
   color: var(--color-primary);
+  background-color: var(--color-gray-50);
+}
+
+.notification-button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .badge {
@@ -243,7 +251,7 @@ const handleLogout = () => {
   top: 0;
   right: 0;
   background-color: var(--color-danger);
-  color: white;
+  color: var(--color-white);
   font-size: var(--text-xs);
   font-weight: var(--font-weight-bold);
   border-radius: var(--radius-full);
@@ -265,19 +273,24 @@ const handleLogout = () => {
   color: var(--color-text);
   font-size: var(--text-sm);
   border-radius: var(--radius-lg);
-  transition: background-color var(--transition-base);
+  transition: all var(--transition-base);
 }
 
 .profile-button:hover {
-  background-color: var(--color-gray-100);
+  background-color: var(--color-gray-50);
+}
+
+.profile-button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .avatar {
   width: 32px;
   height: 32px;
   border-radius: var(--radius-full);
-  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
-  color: white;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+  color: var(--color-white);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -291,7 +304,7 @@ const handleLogout = () => {
   right: 0;
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
   min-width: 240px;
   margin-top: var(--spacing-sm);
@@ -309,13 +322,14 @@ const handleLogout = () => {
   font-size: var(--text-sm);
   text-decoration: none;
   cursor: pointer;
-  transition: background-color var(--transition-base);
+  transition: all var(--transition-base);
   width: 100%;
   text-align: left;
 }
 
 .menu-item:hover {
   background-color: var(--color-gray-50);
+  color: var(--color-primary);
 }
 
 .menu-divider {
@@ -329,9 +343,11 @@ const handleLogout = () => {
 }
 
 .logout-item:hover {
-  background-color: rgba(239, 68, 68, 0.08);
+  background-color: rgba(239, 68, 68, 0.05);
+  color: var(--color-danger);
 }
 
+/* Main Content Layout */
 .app-content {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -389,12 +405,12 @@ const handleLogout = () => {
 }
 
 .nav-link:hover {
-  background-color: var(--color-gray-100);
+  background-color: var(--color-gray-50);
   color: var(--color-primary);
 }
 
 .nav-link.active {
-  background-color: rgba(59, 130, 246, 0.1);
+  background-color: rgba(30, 64, 175, 0.08);
   color: var(--color-primary);
   font-weight: var(--font-weight-semibold);
 }
@@ -408,11 +424,11 @@ const handleLogout = () => {
   .app-content {
     grid-template-columns: 1fr;
   }
-  
+
   .header-content {
     padding: var(--spacing-md);
   }
-  
+
   .app-main {
     padding: var(--spacing-lg);
   }
@@ -422,11 +438,11 @@ const handleLogout = () => {
   .header-content {
     flex-wrap: wrap;
   }
-  
+
   .header-nav {
     display: none;
   }
-  
+
   .app-main {
     padding: var(--spacing-md);
   }

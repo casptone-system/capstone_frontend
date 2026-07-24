@@ -11,7 +11,7 @@
           <h3>Compliance Report</h3>
         </template>
         <p>Generate institutional compliance scorecards and area-by-area breakdowns.</p>
-        <div style="margin-top: var(--spacing-lg);">
+        <div class="card-action">
           <app-button variant="primary" block>
             Generate Report
           </app-button>
@@ -23,7 +23,7 @@
           <h3>Submission Trends</h3>
         </template>
         <p>Track submission rates and timeline adherence across the academic year.</p>
-        <div style="margin-top: var(--spacing-lg);">
+        <div class="card-action">
           <app-button variant="primary" block>
             View Trends
           </app-button>
@@ -35,7 +35,7 @@
           <h3>Area Performance</h3>
         </template>
         <p>Analyze performance metrics by accreditation area and program.</p>
-        <div style="margin-top: var(--spacing-lg);">
+        <div class="card-action">
           <app-button variant="primary" block>
             View Analysis
           </app-button>
@@ -47,7 +47,7 @@
           <h3>Export Data</h3>
         </template>
         <p>Export compliance data in PDF, Excel, or CSV formats for external review.</p>
-        <div style="margin-top: var(--spacing-lg);">
+        <div class="card-action">
           <app-button variant="primary" block>
             Export
           </app-button>
@@ -76,6 +76,8 @@ import AppButton from '@/components/AppButton.vue'
 .page-header h1 {
   margin: 0;
   font-size: var(--text-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
 }
 
 .page-header p {
@@ -87,5 +89,9 @@ import AppButton from '@/components/AppButton.vue'
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: var(--spacing-lg);
+}
+
+.card-action {
+  margin-top: var(--spacing-lg);
 }
 </style>
