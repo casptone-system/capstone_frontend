@@ -42,6 +42,7 @@ const routes = [
   {
     path: '/documents',
     name: 'documents',
+    
     component: Documents,
     meta: { requiresAuth: true },
   },

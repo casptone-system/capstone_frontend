@@ -38,8 +38,25 @@ export interface Report {
   downloadUrl?: string
 }
 
+<<<<<<< HEAD
 // Submissions
 export interface Submission {
+=======
+export interface AppDocument {
+  id: string
+  title: string
+  area: string
+  program: string
+  uploadedBy: string
+  uploadedAt: string
+  fileUrl?: string
+  fileSize?: number
+  version: number
+  status: 'pending' | 'approved' | 'rejected' | 'revision'
+}
+
+export interface SubmissionSchedule {
+>>>>>>> 3c4a98959b6b6532b97c22c03523a7964c38f154
   id: string
   programId: string
   documentId: string

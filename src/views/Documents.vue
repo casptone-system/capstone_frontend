@@ -30,10 +30,34 @@
           </ion-card-content>
         </ion-card>
 
+<<<<<<< HEAD
         <!-- Loading State -->
         <div v-if="isLoading" class="space-y-4">
           <ion-skeleton-text animated style="width: 100%"></ion-skeleton-text>
           <ion-skeleton-text animated style="width: 100%"></ion-skeleton-text>
+=======
+    <div class="documents-content">
+      <app-card variant="default">
+        <div class="document-list">
+          <div v-for="doc in documentStore.filteredDocuments" :key="doc.id" class="document-row">
+            <div class="document-icon">
+              <ion-icon name="document-outline"></ion-icon>
+            </div>
+            <div class="document-info">
+              <div class="document-title">{{ doc.title }}</div>
+              <div class="document-meta">
+                {{ doc.area }} • {{ doc.program }} • v{{ doc.version }}
+              </div>
+            </div>
+            <div class="document-date">{{ doc.uploadedAt }}</div>
+            <div :class="['document-status', `status-${doc.status}`]">
+              {{ doc.status }}
+            </div>
+            <button class="btn-action" aria-label="More options">
+              <ion-icon name="ellipsis-vertical-outline"></ion-icon>
+            </button>
+          </div>
+>>>>>>> 3c4a98959b6b6532b97c22c03523a7964c38f154
         </div>
 
         <!-- Documents Grid -->
@@ -125,6 +149,8 @@ const loadDocuments = async () => {
 .page-header h1 {
   margin: 0;
   font-size: var(--text-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
 }
 
 .page-header p {
@@ -146,9 +172,10 @@ const loadDocuments = async () => {
 
 .search-bar ion-icon {
   position: absolute;
-  left: var(--spacing-lg);
+  left: var(--spacing-md);
   color: var(--color-text-secondary);
   pointer-events: none;
+  font-size: var(--text-lg);
 }
 
 .search-bar input {
@@ -158,6 +185,17 @@ const loadDocuments = async () => {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   font-size: var(--text-sm);
+  font-family: var(--font-family);
+  transition: all var(--transition-base);
+  background-color: var(--color-white);
+  color: var(--color-text);
+  box-shadow: var(--shadow-sm);
+}
+
+.search-bar input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
 }
 
 .documents-content {
@@ -194,7 +232,7 @@ const loadDocuments = async () => {
   justify-content: center;
   width: 48px;
   height: 48px;
-  background-color: rgba(59, 130, 246, 0.1);
+  background-color: rgba(30, 64, 175, 0.08);
   border-radius: var(--radius-lg);
 }
 
@@ -211,7 +249,7 @@ const loadDocuments = async () => {
 .document-meta {
   font-size: var(--text-xs);
   color: var(--color-text-secondary);
-  margin-top: var(--spacing-xs);
+  margin-top: var(--spacing-2xs);
 }
 
 .document-date {
@@ -222,7 +260,7 @@ const loadDocuments = async () => {
 
 .document-status {
   display: inline-block;
-  padding: var(--spacing-xs) var(--spacing-md);
+  padding: var(--spacing-2xs) var(--spacing-sm);
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
   font-weight: var(--font-weight-semibold);
@@ -245,7 +283,7 @@ const loadDocuments = async () => {
 }
 
 .status-revision {
-  background-color: rgba(59, 130, 246, 0.1);
+  background-color: rgba(30, 64, 175, 0.08);
   color: var(--color-primary);
 }
 
@@ -262,5 +300,10 @@ const loadDocuments = async () => {
 .btn-action:hover {
   background-color: var(--color-gray-100);
   color: var(--color-text);
+}
+
+.btn-action:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 </style>

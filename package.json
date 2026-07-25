@@ -9,7 +9,11 @@
   },
   "dependencies": {
     "@ionic/vue": "^7.5.0",
+<<<<<<< HEAD
     "@ionic/vue-router": "^7.5.0",
+=======
+    "@supabase/supabase-js": "^2.110.8",
+>>>>>>> 3c4a98959b6b6532b97c22c03523a7964c38f154
     "axios": "^1.16.1",
     "chart.js": "^4.5.1",
     "core-js": "^3.8.3",

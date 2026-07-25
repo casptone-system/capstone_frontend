@@ -1,4 +1,5 @@
 <template>
+<<<<<<< HEAD
   <ion-page>
       <ion-header :translucent="true">
       <ion-toolbar>
@@ -6,6 +7,60 @@
           <ion-buttons>
             <ion-menu-button></ion-menu-button>
           </ion-buttons>
+=======
+  <div class="dashboard-page">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div>
+        <h1>{{ pageTitle }}</h1>
+        <p class="page-description">{{ pageDescription }}</p>
+      </div>
+      <div class="header-actions">
+        <app-button variant="outline" icon="filter-outline" size="md">
+          Filters
+        </app-button>
+        <app-button variant="primary" icon="download-outline" size="md">
+          Export
+        </app-button>
+      </div>
+    </div>
+
+    <!-- Statistics Grid -->
+    <div class="stats-section">
+      <h2 class="section-title">Overview</h2>
+      <div class="stats-grid">
+        <stat-card
+          v-for="stat in dashboardStats"
+          :key="stat.id"
+          :title="stat.title"
+          :value="stat.value"
+          :subtitle="stat.subtitle"
+          :trend="stat.trend"
+          :badge="stat.badge"
+          :isLoading="isLoadingStats"
+        />
+      </div>
+    </div>
+
+    <!-- Compliance Chart Section -->
+    <div class="chart-section">
+      <app-card variant="elevated">
+        <template #header>
+          <div class="card-header-content">
+            <div>
+              <h3>Compliance Distribution</h3>
+              <p class="text-muted">By area and program status</p>
+            </div>
+            <div class="header-actions-inline">
+              <button class="btn-icon" aria-label="Refresh" @click="initializeChart">
+                <ion-icon name="refresh-outline"></ion-icon>
+              </button>
+              <button class="btn-icon" aria-label="More options">
+                <ion-icon name="ellipsis-vertical-outline"></ion-icon>
+              </button>
+            </div>
+          </div>
+>>>>>>> 3c4a98959b6b6532b97c22c03523a7964c38f154
         </template>
         <ion-title>Dashboard</ion-title>
       </ion-toolbar>
@@ -117,6 +172,7 @@ import StatCard from '@/components/StatCard.vue'
 import { ref, onMounted } from 'vue'
 import api from '@/services/api'
 
+<<<<<<< HEAD
 const isLoading = ref(false)
 const error = ref('')
 const stats = ref({
@@ -126,6 +182,115 @@ const stats = ref({
   activePrograms: 0,
 })
 
+=======
+Chart.register(...registerables)
+
+const dashboardStore = useDashboardStore()
+const authStore = useAuthStore()
+const complianceChart = ref<HTMLCanvasElement | null>(null)
+const isLoadingStats = ref(false)
+
+const userRole = computed(() => authStore.userRole)
+
+const pageTitle = computed(() => {
+  const titles: Record<string, string> = {
+    'dean': 'Dean Dashboard',
+    'program-chair': 'Program Chair Dashboard',
+    'faculty': 'Faculty Dashboard'
+  }
+  return titles[userRole.value as string] || 'Dashboard'
+})
+
+const pageDescription = computed(() => {
+  const descriptions: Record<string, string> = {
+    'dean': 'Monitor institutional compliance, approve submissions, and manage accreditation teams.',
+    'program-chair': 'Track program compliance progress and review faculty submissions.',
+    'faculty': 'Upload documents and track submission status.'
+  }
+  return descriptions[userRole.value as string] || 'Welcome to your dashboard'
+})
+
+const dashboardStats = computed(() => [
+  {
+    id: 1,
+    title: 'Total Programs',
+    value: dashboardStore.stats.totalPrograms,
+    subtitle: 'Active programs',
+    badge: { label: '+2 this year', variant: 'success' } as const
+  },
+  {
+    id: 2,
+    title: 'Total Areas',
+    value: dashboardStore.stats.totalAreas,
+    subtitle: 'Assessment areas',
+    trend: { value: 12, direction: 'up' } as const
+  },
+  {
+    id: 3,
+    title: 'Compliance Score',
+    value: `${dashboardStore.stats.complianceScore}%`,
+    subtitle: 'Institutional average',
+    trend: { value: 8, direction: 'up' } as const
+  },
+  {
+    id: 4,
+    title: 'Pending Submissions',
+    value: dashboardStore.stats.pendingSubmissions,
+    subtitle: 'Awaiting review',
+    badge: { label: 'Action needed', variant: 'warning' } as const
+  },
+  {
+    id: 5,
+    title: 'Assignment Completion',
+    value: `${dashboardStore.stats.assignmentCompletion}%`,
+    subtitle: 'Overall progress',
+    trend: { value: 5, direction: 'up' } as const
+  },
+  {
+    id: 6,
+    title: 'Security Status',
+    value: 'Protected',
+    subtitle: 'Zero-trust active',
+    badge: { label: 'Secure', variant: 'success' } as const
+  }
+])
+
+const recentActivity = [
+  {
+    id: 1,
+    title: 'Program Learning Outcomes approved',
+    time: '2 hours ago',
+    status: 'approved',
+    icon: 'checkmark-circle-outline',
+    color: 'rgba(34, 197, 94, 0.1)'
+  },
+  {
+    id: 2,
+    title: 'Assessment report submitted',
+    time: '5 hours ago',
+    status: 'submitted',
+    icon: 'document-outline',
+    color: 'rgba(59, 130, 246, 0.1)'
+  },
+  {
+    id: 3,
+    title: 'Revision requested for outcomes document',
+    time: '1 day ago',
+    status: 'revision',
+    icon: 'alert-circle-outline',
+    color: 'rgba(245, 158, 11, 0.1)'
+  },
+  {
+    id: 4,
+    title: 'New faculty member added',
+    time: '2 days ago',
+    status: 'completed',
+    icon: 'person-add-outline',
+    color: 'rgba(34, 197, 94, 0.1)'
+  }
+]
+
+>>>>>>> 3c4a98959b6b6532b97c22c03523a7964c38f154
 onMounted(async () => {
   await loadDashboardData()
 })
@@ -166,6 +331,7 @@ const loadDashboardData = async () => {
 .page-header h1 {
   margin: 0;
   font-size: var(--text-3xl);
+  font-weight: var(--font-weight-bold);
   color: var(--color-text);
 }
 
@@ -189,7 +355,8 @@ const loadDashboardData = async () => {
 
 .section-title {
   margin: 0;
-  font-size: var(--text-xl);
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-bold);
   color: var(--color-text);
 }
 
@@ -208,6 +375,7 @@ const loadDashboardData = async () => {
 .card-header-content h3 {
   margin: 0 0 var(--spacing-xs);
   font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text);
 }
 
@@ -232,6 +400,11 @@ const loadDashboardData = async () => {
   color: var(--color-primary);
 }
 
+.btn-icon:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .chart-container {
   position: relative;
   height: 320px;
@@ -250,13 +423,13 @@ const loadDashboardData = async () => {
   align-items: center;
   gap: var(--spacing-lg);
   padding: var(--spacing-lg);
-  border-radius: var(--radius-lg);
-  background-color: var(--color-gray-50);
+  border-radius: var(--radius-xl);
+  background-color: var(--color-surface-alt);
   transition: all var(--transition-base);
 }
 
 .activity-item:hover {
-  background-color: var(--color-gray-100);
+  background-color: var(--color-gray-50);
 }
 
 .activity-icon {
@@ -283,12 +456,12 @@ const loadDashboardData = async () => {
 .activity-time {
   font-size: var(--text-xs);
   color: var(--color-text-secondary);
-  margin-top: var(--spacing-xs);
+  margin-top: var(--spacing-2xs);
 }
 
 .activity-status {
   display: inline-block;
-  padding: var(--spacing-xs) var(--spacing-md);
+  padding: var(--spacing-2xs) var(--spacing-sm);
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
   font-weight: var(--font-weight-semibold);
