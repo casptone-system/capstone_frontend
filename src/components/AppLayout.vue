@@ -69,7 +69,7 @@
             </router-link>
           </div>
 
-          <div class="nav-section" v-if="isDean">
+          <div class="nav-section" v-if="isManagementRole">
             <div class="nav-label">Management</div>
             <router-link
               v-for="item in adminNavItems"
@@ -108,7 +108,8 @@ const showProfileMenu = ref(false)
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const userName = computed(() => authStore.userName)
-const isDean = computed(() => authStore.userRole === 'dean')
+const roleKey = computed(() => (authStore.userRole || 'faculty').toLowerCase())
+const isManagementRole = computed(() => ['dean', 'admin', 'super-admin'].includes(roleKey.value))
 
 const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: 'grid-outline' },

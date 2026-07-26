@@ -32,6 +32,12 @@
   </div>
 </template>
 
+<script lang="ts">
+export default {
+  name: 'FormInput'
+}
+</script>
+
 <script setup lang="ts">
 import { IonIcon } from '@ionic/vue'
 

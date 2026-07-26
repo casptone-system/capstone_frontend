@@ -17,6 +17,12 @@
   </button>
 </template>
 
+<script lang="ts">
+export default {
+  name: 'AppButton'
+}
+</script>
+
 <script setup lang="ts">
 import { IonIcon } from '@ionic/vue'
 

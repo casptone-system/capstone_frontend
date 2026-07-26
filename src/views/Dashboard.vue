@@ -16,6 +16,15 @@
       </div>
     </div>
 
+    <div class="role-banner" :class="`role-${roleKey}`">
+      <div>
+        <p class="role-eyebrow">{{ roleEyebrow }}</p>
+        <h2>{{ roleBannerTitle }}</h2>
+        <p>{{ roleBannerDescription }}</p>
+      </div>
+      <div class="role-pill">{{ roleLabel }}</div>
+    </div>
+
     <!-- Statistics Grid -->
     <div class="stats-section">
       <h2 class="section-title">Overview</h2>
@@ -99,70 +108,206 @@ const authStore = useAuthStore()
 const complianceChart = ref<HTMLCanvasElement | null>(null)
 const isLoadingStats = ref(false)
 
-const userRole = computed(() => authStore.userRole)
+
+const roleKey = computed(() => (authStore.userRole || 'faculty').toLowerCase())
 
 const pageTitle = computed(() => {
   const titles: Record<string, string> = {
-    'dean': 'Dean Dashboard',
+    dean: 'Dean Dashboard',
     'program-chair': 'Program Chair Dashboard',
-    'faculty': 'Faculty Dashboard'
+    faculty: 'Faculty Dashboard',
+    qa: 'QA Dashboard',
+    admin: 'Super Admin Dashboard',
+    'super-admin': 'Super Admin Dashboard',
+    'area-in-charge': 'Area In-Charge Dashboard',
+    vpaa: 'VPAA / DI Dashboard',
+    'vpaa-di': 'VPAA / DI Dashboard'
   }
-  return titles[userRole.value as string] || 'Dashboard'
+  return titles[roleKey.value] || 'Dashboard'
 })
 
 const pageDescription = computed(() => {
   const descriptions: Record<string, string> = {
-    'dean': 'Monitor institutional compliance, approve submissions, and manage accreditation teams.',
+    dean: 'Monitor institutional compliance, approve submissions, and manage accreditation teams.',
     'program-chair': 'Track program compliance progress and review faculty submissions.',
-    'faculty': 'Upload documents and track submission status.'
+    faculty: 'Upload documents and track submission status.',
+    qa: 'Review findings, monitor readiness, and keep quality assurance activities on track.',
+    admin: 'Govern users, roles, security, and system health from a centralized command center.',
+    'super-admin': 'Govern users, roles, security, and system health from a centralized command center.',
+    'area-in-charge': 'Coordinate evidence reviews and keep your assigned areas aligned with deadlines.',
+    vpaa: 'Track institutional readiness and oversee accreditation milestones across programs.',
+    'vpaa-di': 'Track institutional readiness and oversee accreditation milestones across programs.'
   }
-  return descriptions[userRole.value as string] || 'Welcome to your dashboard'
+  return descriptions[roleKey.value] || 'Welcome to your dashboard'
 })
 
-const dashboardStats = computed(() => [
-  {
-    id: 1,
-    title: 'Total Programs',
-    value: dashboardStore.stats.totalPrograms,
-    subtitle: 'Active programs',
-    badge: { label: '+2 this year', variant: 'success' } as const
-  },
-  {
-    id: 2,
-    title: 'Total Areas',
-    value: dashboardStore.stats.totalAreas,
-    subtitle: 'Assessment areas',
-    trend: { value: 12, direction: 'up' } as const
-  },
-  {
-    id: 3,
-    title: 'Compliance Score',
-    value: `${dashboardStore.stats.complianceScore}%`,
-    subtitle: 'Institutional average',
-    trend: { value: 8, direction: 'up' } as const
-  },
-  {
-    id: 4,
-    title: 'Pending Submissions',
-    value: dashboardStore.stats.pendingSubmissions,
-    subtitle: 'Awaiting review',
-    badge: { label: 'Action needed', variant: 'warning' } as const
-  },
-  {
-    id: 5,
-    title: 'Assignment Completion',
-    value: `${dashboardStore.stats.assignmentCompletion}%`,
-    subtitle: 'Overall progress',
-    trend: { value: 5, direction: 'up' } as const
-  },
-  {
-    id: 6,
-    title: 'Security Status',
-    value: 'Protected',
-    subtitle: 'Zero-trust active',
-    badge: { label: 'Secure', variant: 'success' } as const
+const roleEyebrow = computed(() => {
+  const labels: Record<string, string> = {
+    dean: 'Dean Workspace',
+    'program-chair': 'Program Leadership',
+    faculty: 'Faculty Workflow',
+    qa: 'Quality Assurance',
+    admin: 'System Administration',
+    'super-admin': 'System Administration',
+    'area-in-charge': 'Area Coordination',
+    vpaa: 'Institutional Oversight',
+    'vpaa-di': 'Institutional Oversight'
   }
-])
+  return labels[roleKey.value] || 'Role-Based Workspace'
+})
+
+const roleBannerTitle = computed(() => {
+  const titles: Record<string, string> = {
+    dean: 'Approve submissions and guide your accreditation teams.',
+    'program-chair': 'Coordinate reviews, deadlines, and team progress.',
+    faculty: 'Manage evidence, submissions, and document readiness.',
+    qa: 'Monitor findings, risks, and quality review cycles.',
+    admin: 'Oversee users, permissions, and system health.',
+    'super-admin': 'Oversee users, permissions, and system health.',
+    'area-in-charge': 'Keep assigned areas moving toward compliance.',
+    vpaa: 'Review institution-wide accreditation readiness.',
+    'vpaa-di': 'Review institution-wide accreditation readiness.'
+  }
+  return titles[roleKey.value] || 'Stay on top of your accreditation workflow.'
+})
+
+const roleBannerDescription = computed(() => {
+  const descriptions: Record<string, string> = {
+    dean: 'Use the dashboard to review approvals, track program progress, and keep institutional compliance on schedule.',
+    'program-chair': 'Prioritize pending reviews, assigned members, and upcoming deadlines from one clear view.',
+    faculty: 'Prepare evidence packages, monitor submission status, and respond to review requests quickly.',
+    qa: 'Focus on open findings, compliance gaps, and readiness checkpoints for quality review.',
+    admin: 'Manage governance and operational visibility across the accreditation platform.',
+    'super-admin': 'Manage governance and operational visibility across the accreditation platform.',
+    'area-in-charge': 'Coordinate evidence review tasks and resolve blockers for your assigned areas.',
+    vpaa: 'Monitor institutional progress, readiness, and milestone completion from a top-level view.',
+    'vpaa-di': 'Monitor institutional progress, readiness, and milestone completion from a top-level view.'
+  }
+  return descriptions[roleKey.value] || 'Stay on top of your accreditation workflow.'
+})
+
+const roleLabel = computed(() => {
+  const labels: Record<string, string> = {
+    dean: 'Dean',
+    'program-chair': 'Program Chair',
+    faculty: 'Faculty',
+    qa: 'QA',
+    admin: 'Admin',
+    'super-admin': 'Super Admin',
+    'area-in-charge': 'Area In-Charge',
+    vpaa: 'VPAA / DI',
+    'vpaa-di': 'VPAA / DI'
+  }
+  return labels[roleKey.value] || 'User'
+})
+
+const dashboardStats = computed(() => {
+  const baseStats = [
+    {
+      id: 1,
+      title: 'Total Programs',
+      value: dashboardStore.stats.totalPrograms,
+      subtitle: 'Active programs',
+      badge: { label: '+2 this year', variant: 'success' } as const
+    },
+    {
+      id: 2,
+      title: 'Total Areas',
+      value: dashboardStore.stats.totalAreas,
+      subtitle: 'Assessment areas',
+      trend: { value: 12, direction: 'up' } as const
+    },
+    {
+      id: 3,
+      title: 'Compliance Score',
+      value: `${dashboardStore.stats.complianceScore}%`,
+      subtitle: 'Institutional average',
+      trend: { value: 8, direction: 'up' } as const
+    },
+    {
+      id: 4,
+      title: 'Pending Submissions',
+      value: dashboardStore.stats.pendingSubmissions,
+      subtitle: 'Awaiting review',
+      badge: { label: 'Action needed', variant: 'warning' } as const
+    },
+    {
+      id: 5,
+      title: 'Assignment Completion',
+      value: `${dashboardStore.stats.assignmentCompletion}%`,
+      subtitle: 'Overall progress',
+      trend: { value: 5, direction: 'up' } as const
+    },
+    {
+      id: 6,
+      title: 'Security Status',
+      value: 'Protected',
+      subtitle: 'Zero-trust active',
+      badge: { label: 'Secure', variant: 'success' } as const
+    }
+  ]
+
+  switch (roleKey.value) {
+    case 'program-chair':
+      return [
+        { ...baseStats[0], title: 'Programs Under Review', value: dashboardStore.stats.totalPrograms },
+        { ...baseStats[1], title: 'Assigned Teams', value: 8 },
+        { ...baseStats[2], title: 'Review Cycle', value: 'On Track' },
+        { ...baseStats[3], title: 'Pending Reviews', value: dashboardStore.stats.pendingSubmissions },
+        { ...baseStats[4], title: 'Faculty Follow-ups', value: 4 },
+        { ...baseStats[5], title: 'Escalations', value: 'Low' }
+      ]
+    case 'faculty':
+      return [
+        { ...baseStats[0], title: 'Evidence Files', value: 12 },
+        { ...baseStats[1], title: 'Assigned Areas', value: 3 },
+        { ...baseStats[2], title: 'Submission Readiness', value: 'High' },
+        { ...baseStats[3], title: 'Pending Review', value: 2 },
+        { ...baseStats[4], title: 'Upcoming Deadline', value: '4 days' },
+        { ...baseStats[5], title: 'Notifications', value: '3 new' }
+      ]
+    case 'qa':
+      return [
+        { ...baseStats[0], title: 'Open Findings', value: 7 },
+        { ...baseStats[1], title: 'Inspections Due', value: 4 },
+        { ...baseStats[2], title: 'Compliance Score', value: '93%' },
+        { ...baseStats[3], title: 'Resolved Issues', value: 28 },
+        { ...baseStats[4], title: 'Risk Level', value: 'Moderate' },
+        { ...baseStats[5], title: 'Next Review', value: 'Tomorrow' }
+      ]
+    case 'admin':
+    case 'super-admin':
+      return [
+        { ...baseStats[0], title: 'Active Users', value: 96 },
+        { ...baseStats[1], title: 'Role Groups', value: 7 },
+        { ...baseStats[2], title: 'System Health', value: 'Stable' },
+        { ...baseStats[3], title: 'Audit Events', value: 182 },
+        { ...baseStats[4], title: 'Security Alerts', value: 1 },
+        { ...baseStats[5], title: 'Backup Status', value: 'Current' }
+      ]
+    case 'area-in-charge':
+      return [
+        { ...baseStats[0], title: 'Assigned Areas', value: 4 },
+        { ...baseStats[1], title: 'Pending Evidence', value: 6 },
+        { ...baseStats[2], title: 'Area Readiness', value: '82%' },
+        { ...baseStats[3], title: 'Review Requests', value: 3 },
+        { ...baseStats[4], title: 'Upcoming Deadlines', value: 2 },
+        { ...baseStats[5], title: 'Escalations', value: 'Low' }
+      ]
+    case 'vpaa':
+    case 'vpaa-di':
+      return [
+        { ...baseStats[0], title: 'Institutional Readiness', value: '88%' },
+        { ...baseStats[1], title: 'Programs Reviewed', value: 12 },
+        { ...baseStats[2], title: 'Compliance Trend', value: '+6%' },
+        { ...baseStats[3], title: 'Pending Approvals', value: 5 },
+        { ...baseStats[4], title: 'Executive Summary', value: 'Ready' },
+        { ...baseStats[5], title: 'Watchlist', value: '2 units' }
+      ]
+    default:
+      return baseStats
+  }
+})
 
 const recentActivity = [
   {
