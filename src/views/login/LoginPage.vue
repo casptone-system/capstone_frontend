@@ -26,7 +26,6 @@
 
     <!-- RIGHT: Form panel -->
     <div class="form-panel">
-
       <div class="form-wrap">
         <center><img :src="require('@/assets/Archiving_logo.png')" alt="ADAMS Logo" class="login-logo"></center>
         <h2 class="form-title">Sign in to your account</h2>
@@ -70,8 +69,11 @@
             :loading="isLoading"
             class="submit-btn"
           >
-            Sign In
+            Log In
           </app-button>
+          <div @click="$router.push('/register')" class="register-btn">
+            Create new Account
+          </div>
         </form>
 
         <div class="social-divider">
@@ -86,7 +88,7 @@
             class="social-btn google-btn"
             :disabled="isSocialLoading"
           >
-            <ion-icon name="logo-google"></ion-icon>
+          <img :src="require('@/assets/google.png')" alt="ADAMS Logo" width="20" height="20" />
             <span>Google</span>
           </button>
           <button
@@ -94,7 +96,7 @@
             class="social-btn github-btn"
             :disabled="isSocialLoading"
           >
-            <ion-icon name="logo-github"></ion-icon>
+            <img :src="require('@/assets/Github-Logo.png')" alt="GitHub" width="40" height="20" />
             <span>GitHub</span>
           </button>
         </div>
@@ -109,7 +111,6 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import AppButton from '@/components/AppButton.vue'
 import FormInput from '@/components/FormInput.vue'
-import { IonIcon } from '@ionic/vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -163,7 +164,6 @@ const handleGoogleLogin = async () => {
   isSocialLoading.value = true
   try {
     await authStore.loginWithGoogle()
-    // OAuth redirects, so navigation happens automatically
   } catch (error: any) {
     loginError.value = error.message || 'Google login failed'
   } finally {
@@ -176,7 +176,6 @@ const handleGithubLogin = async () => {
   isSocialLoading.value = true
   try {
     await authStore.loginWithGithub()
-    // OAuth redirects, so navigation happens automatically
   } catch (error: any) {
     loginError.value = error.message || 'GitHub login failed'
   } finally {
@@ -188,7 +187,6 @@ const handleGithubLogin = async () => {
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap');
 
-/* ---- Design tokens (scoped locally so this component is self-contained) ---- */
 .login-container {
   --ink: #09491c;
   --ink-soft: #1e2f4e;
@@ -212,7 +210,6 @@ const handleGithubLogin = async () => {
   font-family: var(--font-body);
 }
 
-/* ================= LEFT: Brand / institutional panel ================= */
 .brand-panel {
   position: relative;
   background: linear-gradient(160deg, var(--ink) 0%, var(--ink-soft) 100%);
@@ -286,7 +283,6 @@ const handleGithubLogin = async () => {
   list-style: none;
   margin: 0;
   padding: 1.5rem 0 0;
-  /* border-top: 1px solid var(--hairline-on-ink); */
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
@@ -317,83 +313,14 @@ const handleGithubLogin = async () => {
   margin: 0;
 }
 
-/* ================= RIGHT: Form panel ================= */
 .form-panel {
-  max-height: 730px;  
-  overflow-y: auto; 
+  max-height: 730px;
+  overflow-y: auto;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 3rem 2.5rem;
-}
-
-/* Seal, stamped across the seam between panels */
-.seal {
-  position: absolute;
-  top: 15.25rem;
-  left: 0;
-  transform: translateX(-50%);
-  width: 230px;
-  height: 200px;
-  z-index: 2;
-  filter: drop-shadow(1px 10px 28px rgba(19, 31, 53, 0.35));
-  animation: stamp-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  animation-delay: 0.5s;
-}
-
-@keyframes stamp-in {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) scale(1.4) rotate(-8deg);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) scale(1) rotate(0deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .seal {
-    animation: none;
-  }
-}
-
-.seal-svg {
-  width: 100%;
-  height: 100%;
-}
-
-.seal-outer {
-  fill: var(--parchment);
-  stroke: var(--brass);
-  stroke-width: 2;
-}
-
-.seal-mid {
-  fill: none;
-  stroke: var(--brass);
-  stroke-width: 1;
-  opacity: 0.6;
-}
-
-.seal-inner {
-  fill: none;
-  stroke: var(--crimson);
-  stroke-width: 1;
-  opacity: 0.5;
-}
-
-.seal-text {
-  font-family: var(--font-mono);
-  font-size: 8.2px;
-  letter-spacing: 0.5px;
-  fill: var(--ink);
-}
-
-.seal-mark {
-  fill: var(--crimson);
-  opacity: 0.9;
 }
 
 .form-wrap {
@@ -407,7 +334,24 @@ const handleGithubLogin = async () => {
   margin-bottom: 1rem;
   filter: drop-shadow(1px 10px 28px rgba(19, 31, 53, 0.35));
   animation: stamp-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  animation-delay: 1s;
+  animation-delay: 0.3s;
+}
+
+@keyframes stamp-in {
+  from {
+    opacity: 0;
+    transform: scale(1.3) rotate(-6deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-logo {
+    animation: none;
+  }
 }
 
 .form-title {
@@ -430,7 +374,6 @@ const handleGithubLogin = async () => {
   gap: 1.1rem;
 }
 
-/* Form Options */
 .form-options {
   display: flex;
   justify-content: space-between;
@@ -472,7 +415,36 @@ const handleGithubLogin = async () => {
   border-radius: 8px;
 }
 
-/* Social Login */
+.login-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0.85rem 1rem;
+  background: #fff;
+  border: 1px solid #dadde1;
+  border-radius: 0.75rem;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.login-error::before {
+  content: "!";
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid #e41e3f;
+  color: #e41e3f;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-top: 0.1rem;
+}
+
 .social-divider {
   display: flex;
   align-items: center;
@@ -534,10 +506,6 @@ input:focus-visible {
   cursor: not-allowed;
 }
 
-.social-btn ion-icon {
-  font-size: 1.1rem;
-}
-
 .google-btn:hover:not(:disabled) {
   border-color: #4285f4;
   color: #4285f4;
@@ -548,7 +516,40 @@ input:focus-visible {
   color: #333;
 }
 
-/* ================= Responsive ================= */
+.register-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+  padding: 0.5rem 1.5rem;
+  border: 1.5px solid #15803d;
+  border-radius: 0.75rem;
+  color: #15803d;
+  background: transparent;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+.register-btn:hover {
+  background: #15803d;
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(21, 128, 61, 0.25);
+}
+
+.register-btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.register-btn:focus-visible {
+  outline: 2px solid #15803d;
+  outline-offset: 2px;
+}
+
 @media (max-width: 900px) {
   .login-container {
     grid-template-columns: 1fr;
@@ -567,28 +568,13 @@ input:focus-visible {
     display: none;
   }
 
-  .login-error {
-    margin: 1rem 0 0;
-    color: #b91c1c;
-    background: rgba(254, 226, 226, 0.92);
-    border: 1px solid #fecaca;
-    border-radius: 0.75rem;
-    padding: 0.85rem 1rem;
-    font-size: 0.95rem;
-    line-height: 1.4;
-  }
-
   .brand-footer {
     display: none;
   }
 
-  .seal {
-    left: 50%;
-    top: -1.5rem;
-  }
-
   .form-panel {
     padding: 4rem 1.75rem 3rem;
+    max-height: none;
   }
 }
 

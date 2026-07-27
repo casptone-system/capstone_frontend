@@ -2,32 +2,43 @@
   <div class="dashboard-page">
     <!-- Page Header -->
     <div class="page-header">
-      <div>
+      <div class="page-header-main">
+        <p class="page-eyebrow">{{ roleEyebrow }}</p>
         <h1>{{ pageTitle }}</h1>
         <p class="page-description">{{ pageDescription }}</p>
       </div>
       <div class="header-actions">
-        <app-button variant="outline" icon="filter-outline" size="md">
-          Filters
-        </app-button>
-        <app-button variant="primary" icon="download-outline" size="md">
-          Export
-        </app-button>
+        <p class="report-date">As of {{ formattedToday }}</p>
+        <div class="header-actions-row">
+          <app-button variant="outline" icon="filter-outline" size="md">
+            Filters
+          </app-button>
+          <app-button variant="primary" icon="download-outline" size="md">
+            Export report
+          </app-button>
+        </div>
       </div>
     </div>
 
+    <!-- Role Summary Banner -->
     <div class="role-banner" :class="`role-${roleKey}`">
-      <div>
-        <p class="role-eyebrow">{{ roleEyebrow }}</p>
+      <div class="role-banner-mark" aria-hidden="true"></div>
+      <div class="role-banner-body">
         <h2>{{ roleBannerTitle }}</h2>
         <p>{{ roleBannerDescription }}</p>
       </div>
-      <div class="role-pill">{{ roleLabel }}</div>
+      <div class="role-pill">
+        <ion-icon name="shield-checkmark-outline" aria-hidden="true"></ion-icon>
+        {{ roleLabel }}
+      </div>
     </div>
 
     <!-- Statistics Grid -->
     <div class="stats-section">
-      <h2 class="section-title">Overview</h2>
+      <div class="section-heading">
+        <h2 class="section-title">Overview</h2>
+        <p class="section-subtitle">Key figures for the current accreditation cycle</p>
+      </div>
       <div class="stats-grid">
         <stat-card
           v-for="stat in dashboardStats"
@@ -48,14 +59,14 @@
         <template #header>
           <div class="card-header-content">
             <div>
-              <h3>Compliance Distribution</h3>
-              <p class="text-muted">By area and program status</p>
+              <h3>Compliance distribution</h3>
+              <p class="text-muted">By assessment area and program status</p>
             </div>
             <div class="header-actions-inline">
-              <button class="btn-icon" aria-label="Refresh" @click="initializeChart">
+              <button class="btn-icon" aria-label="Refresh chart data" @click="initializeChart">
                 <ion-icon name="refresh-outline"></ion-icon>
               </button>
-              <button class="btn-icon" aria-label="More options">
+              <button class="btn-icon" aria-label="More chart options">
                 <ion-icon name="ellipsis-vertical-outline"></ion-icon>
               </button>
             </div>
@@ -63,28 +74,48 @@
         </template>
 
         <div class="chart-container">
-          <canvas ref="complianceChart"></canvas>
+          <canvas ref="complianceChart" role="img" aria-label="Doughnut chart showing compliance distribution across compliant, at risk, and pending review categories"></canvas>
+        </div>
+
+        <div class="chart-footnote">
+          <ion-icon name="information-circle-outline" aria-hidden="true"></ion-icon>
+          Figures reflect submissions reviewed as of {{ formattedToday }}.
         </div>
       </app-card>
     </div>
 
     <!-- Recent Activity Section -->
     <div class="activity-section">
-      <h2 class="section-title">Recent Activity</h2>
+      <div class="section-heading">
+        <h2 class="section-title">Recent activity</h2>
+        <p class="section-subtitle">Latest submissions, approvals, and review actions</p>
+      </div>
       <app-card variant="default">
-        <div class="activity-list">
-          <div v-for="activity in recentActivity" :key="activity.id" class="activity-item">
+        <div v-if="recentActivity.length" class="activity-list" role="list">
+          <div
+            v-for="activity in recentActivity"
+            :key="activity.id"
+            class="activity-item"
+            role="listitem"
+          >
             <div class="activity-icon" :style="{ backgroundColor: activity.color }">
-              <ion-icon :name="activity.icon"></ion-icon>
+              <ion-icon :name="activity.icon" aria-hidden="true"></ion-icon>
             </div>
             <div class="activity-details">
               <div class="activity-title">{{ activity.title }}</div>
               <div class="activity-time">{{ activity.time }}</div>
             </div>
             <div class="activity-status" :class="`status-${activity.status}`">
-              {{ activity.status }}
+              {{ activityStatusLabels[activity.status] || activity.status }}
             </div>
           </div>
+        </div>
+        <div v-else class="activity-empty">
+          <ion-icon name="time-outline" aria-hidden="true"></ion-icon>
+          <p>No activity has been recorded yet.</p>
+        </div>
+        <div class="activity-footer">
+          <button class="link-button" type="button">View full activity log</button>
         </div>
       </app-card>
     </div>
@@ -108,17 +139,32 @@ const authStore = useAuthStore()
 const complianceChart = ref<HTMLCanvasElement | null>(null)
 const isLoadingStats = ref(false)
 
-
 const roleKey = computed(() => (authStore.userRole || 'faculty').toLowerCase())
+
+const formattedToday = computed(() =>
+  new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+)
+
+const activityStatusLabels: Record<string, string> = {
+  approved: 'Approved',
+  submitted: 'Submitted',
+  revision: 'Revision requested',
+  completed: 'Completed'
+}
 
 const pageTitle = computed(() => {
   const titles: Record<string, string> = {
     dean: 'Dean Dashboard',
     'program-chair': 'Program Chair Dashboard',
     faculty: 'Faculty Dashboard',
-    qa: 'QA Dashboard',
-    admin: 'Super Admin Dashboard',
-    'super-admin': 'Super Admin Dashboard',
+    qa: 'Quality Assurance Dashboard',
+    admin: 'System Administration Dashboard',
+    'super-admin': 'System Administration Dashboard',
     'area-in-charge': 'Area In-Charge Dashboard',
     vpaa: 'VPAA / DI Dashboard',
     'vpaa-di': 'VPAA / DI Dashboard'
@@ -128,37 +174,37 @@ const pageTitle = computed(() => {
 
 const pageDescription = computed(() => {
   const descriptions: Record<string, string> = {
-    dean: 'Monitor institutional compliance, approve submissions, and manage accreditation teams.',
+    dean: 'Monitor institutional compliance, review approvals, and oversee accreditation teams.',
     'program-chair': 'Track program compliance progress and review faculty submissions.',
-    faculty: 'Upload documents and track submission status.',
-    qa: 'Review findings, monitor readiness, and keep quality assurance activities on track.',
-    admin: 'Govern users, roles, security, and system health from a centralized command center.',
-    'super-admin': 'Govern users, roles, security, and system health from a centralized command center.',
-    'area-in-charge': 'Coordinate evidence reviews and keep your assigned areas aligned with deadlines.',
+    faculty: 'Submit evidence documents and monitor review status.',
+    qa: 'Review findings, monitor readiness, and manage quality assurance activities.',
+    admin: 'Manage users, roles, security, and system health from a central console.',
+    'super-admin': 'Manage users, roles, security, and system health from a central console.',
+    'area-in-charge': 'Coordinate evidence reviews and keep assigned areas aligned with deadlines.',
     vpaa: 'Track institutional readiness and oversee accreditation milestones across programs.',
     'vpaa-di': 'Track institutional readiness and oversee accreditation milestones across programs.'
   }
-  return descriptions[roleKey.value] || 'Welcome to your dashboard'
+  return descriptions[roleKey.value] || 'Welcome to your dashboard.'
 })
 
 const roleEyebrow = computed(() => {
   const labels: Record<string, string> = {
-    dean: 'Dean Workspace',
+    dean: 'Office of the Dean',
     'program-chair': 'Program Leadership',
-    faculty: 'Faculty Workflow',
-    qa: 'Quality Assurance',
+    faculty: 'Faculty Workspace',
+    qa: 'Quality Assurance Office',
     admin: 'System Administration',
     'super-admin': 'System Administration',
     'area-in-charge': 'Area Coordination',
     vpaa: 'Institutional Oversight',
     'vpaa-di': 'Institutional Oversight'
   }
-  return labels[roleKey.value] || 'Role-Based Workspace'
+  return labels[roleKey.value] || 'Accreditation Workspace'
 })
 
 const roleBannerTitle = computed(() => {
   const titles: Record<string, string> = {
-    dean: 'Approve submissions and guide your accreditation teams.',
+    dean: 'Review approvals and guide your accreditation teams.',
     'program-chair': 'Coordinate reviews, deadlines, and team progress.',
     faculty: 'Manage evidence, submissions, and document readiness.',
     qa: 'Monitor findings, risks, and quality review cycles.',
@@ -173,10 +219,10 @@ const roleBannerTitle = computed(() => {
 
 const roleBannerDescription = computed(() => {
   const descriptions: Record<string, string> = {
-    dean: 'Use the dashboard to review approvals, track program progress, and keep institutional compliance on schedule.',
-    'program-chair': 'Prioritize pending reviews, assigned members, and upcoming deadlines from one clear view.',
-    faculty: 'Prepare evidence packages, monitor submission status, and respond to review requests quickly.',
-    qa: 'Focus on open findings, compliance gaps, and readiness checkpoints for quality review.',
+    dean: 'Use this dashboard to review approvals, track program progress, and keep institutional compliance on schedule.',
+    'program-chair': 'Prioritize pending reviews, assigned members, and upcoming deadlines from a single view.',
+    faculty: 'Prepare evidence packages, monitor submission status, and respond to review requests promptly.',
+    qa: 'Focus on open findings, compliance gaps, and readiness checkpoints for the current cycle.',
     admin: 'Manage governance and operational visibility across the accreditation platform.',
     'super-admin': 'Manage governance and operational visibility across the accreditation platform.',
     'area-in-charge': 'Coordinate evidence review tasks and resolve blockers for your assigned areas.',
@@ -191,9 +237,9 @@ const roleLabel = computed(() => {
     dean: 'Dean',
     'program-chair': 'Program Chair',
     faculty: 'Faculty',
-    qa: 'QA',
-    admin: 'Admin',
-    'super-admin': 'Super Admin',
+    qa: 'Quality Assurance',
+    admin: 'Administrator',
+    'super-admin': 'Administrator',
     'area-in-charge': 'Area In-Charge',
     vpaa: 'VPAA / DI',
     'vpaa-di': 'VPAA / DI'
@@ -316,7 +362,7 @@ const recentActivity = [
     time: '2 hours ago',
     status: 'approved',
     icon: 'checkmark-circle-outline',
-    color: 'rgba(34, 197, 94, 0.1)'
+    color: 'rgba(34, 197, 94, 0.12)'
   },
   {
     id: 2,
@@ -324,7 +370,7 @@ const recentActivity = [
     time: '5 hours ago',
     status: 'submitted',
     icon: 'document-outline',
-    color: 'rgba(59, 130, 246, 0.1)'
+    color: 'rgba(59, 130, 246, 0.12)'
   },
   {
     id: 3,
@@ -332,7 +378,7 @@ const recentActivity = [
     time: '1 day ago',
     status: 'revision',
     icon: 'alert-circle-outline',
-    color: 'rgba(245, 158, 11, 0.1)'
+    color: 'rgba(245, 158, 11, 0.12)'
   },
   {
     id: 4,
@@ -340,7 +386,7 @@ const recentActivity = [
     time: '2 days ago',
     status: 'completed',
     icon: 'person-add-outline',
-    color: 'rgba(34, 197, 94, 0.1)'
+    color: 'rgba(34, 197, 94, 0.12)'
   }
 ]
 
@@ -363,17 +409,17 @@ const initializeChart = () => {
       datasets: [{
         data: [62, 18, 20],
         backgroundColor: [
-          'rgba(34, 197, 94, 0.8)',
-          'rgba(239, 68, 68, 0.8)',
-          'rgba(245, 158, 11, 0.8)'
+          'rgba(34, 197, 94, 0.85)',
+          'rgba(220, 38, 38, 0.85)',
+          'rgba(217, 119, 6, 0.85)'
         ],
         borderColor: [
-          'rgb(34, 197, 94)',
-          'rgb(239, 68, 68)',
-          'rgb(245, 158, 11)'
+          'rgb(21, 128, 61)',
+          'rgb(185, 28, 28)',
+          'rgb(180, 83, 9)'
         ],
         borderWidth: 2,
-        borderRadius: 8
+        borderRadius: 6
       }]
     },
     options: {
@@ -384,7 +430,7 @@ const initializeChart = () => {
         legend: {
           position: 'bottom',
           labels: {
-            font: { size: 12 },
+            font: { size: 12, family: 'inherit' },
             padding: 20,
             usePointStyle: true
           }
@@ -401,11 +447,27 @@ const initializeChart = () => {
   gap: var(--spacing-2xl);
 }
 
+/* Header */
 .page-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: flex-end;
   gap: var(--spacing-lg);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border, var(--color-gray-100));
+}
+
+.page-header-main {
+  max-width: 640px;
+}
+
+.page-eyebrow {
+  margin: 0 0 var(--spacing-2xs);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-primary);
 }
 
 .page-header h1 {
@@ -413,19 +475,95 @@ const initializeChart = () => {
   font-size: var(--text-3xl);
   font-weight: var(--font-weight-bold);
   color: var(--color-text);
+  letter-spacing: -0.01em;
 }
 
 .page-description {
   margin: var(--spacing-sm) 0 0;
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
+  line-height: 1.5;
 }
 
 .header-actions {
   display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--spacing-sm);
+  flex-shrink: 0;
+}
+
+.report-date {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.header-actions-row {
+  display: flex;
   gap: var(--spacing-md);
 }
 
+/* Role banner: restrained, institutional, not a marketing gradient */
+.role-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-xl) var(--spacing-xl);
+  border-radius: var(--radius-xl);
+  background-color: var(--color-surface-alt);
+  border: 1px solid var(--color-gray-100);
+  overflow: hidden;
+}
+
+.role-banner-mark {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background-color: var(--color-primary);
+}
+
+.role-banner-body {
+  flex: 1;
+}
+
+.role-banner-body h2 {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.role-banner-body p {
+  margin: var(--spacing-xs) 0 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  max-width: 60ch;
+  line-height: 1.5;
+}
+
+.role-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2xs);
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-gray-100);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.role-pill ion-icon {
+  font-size: var(--text-sm);
+  color: var(--color-primary);
+}
+
+/* Sections */
 .stats-section,
 .chart-section,
 .activity-section {
@@ -433,11 +571,22 @@ const initializeChart = () => {
   gap: var(--spacing-lg);
 }
 
+.section-heading {
+  display: grid;
+  gap: var(--spacing-2xs);
+}
+
 .section-title {
   margin: 0;
   font-size: var(--text-2xl);
   font-weight: var(--font-weight-bold);
   color: var(--color-text);
+}
+
+.section-subtitle {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
 }
 
 .stats-grid {
@@ -493,9 +642,26 @@ const initializeChart = () => {
   justify-content: center;
 }
 
+.chart-footnote {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2xs);
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-gray-100);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+.chart-footnote ion-icon {
+  font-size: var(--text-sm);
+  flex-shrink: 0;
+}
+
+/* Activity */
 .activity-list {
   display: grid;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-sm);
 }
 
 .activity-item {
@@ -503,28 +669,36 @@ const initializeChart = () => {
   align-items: center;
   gap: var(--spacing-lg);
   padding: var(--spacing-lg);
-  border-radius: var(--radius-xl);
-  background-color: var(--color-surface-alt);
+  border-radius: var(--radius-lg);
+  border: 1px solid transparent;
   transition: all var(--transition-base);
 }
 
+.activity-item:not(:last-child) {
+  border-bottom: 1px solid var(--color-gray-100);
+  border-radius: 0;
+}
+
 .activity-item:hover {
-  background-color: var(--color-gray-50);
+  background-color: var(--color-surface-alt);
+  border-radius: var(--radius-lg);
 }
 
 .activity-icon {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--text-xl);
+  font-size: var(--text-lg);
   color: var(--color-primary);
+  flex-shrink: 0;
 }
 
 .activity-details {
   flex: 1;
+  min-width: 0;
 }
 
 .activity-title {
@@ -545,27 +719,67 @@ const initializeChart = () => {
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
   font-weight: var(--font-weight-semibold);
-  text-transform: capitalize;
+  white-space: nowrap;
 }
 
-.status-approved {
-  background-color: rgba(34, 197, 94, 0.1);
-  color: var(--color-success);
+.status-approved,
+.status-completed {
+  background-color: rgba(21, 128, 61, 0.1);
+  color: var(--color-success, #15803d);
 }
 
 .status-submitted {
-  background-color: rgba(59, 130, 246, 0.1);
+  background-color: rgba(29, 78, 216, 0.1);
   color: var(--color-primary);
 }
 
 .status-revision {
-  background-color: rgba(245, 158, 11, 0.1);
-  color: var(--color-warning);
+  background-color: rgba(180, 83, 9, 0.1);
+  color: var(--color-warning, #b45309);
 }
 
-.status-completed {
-  background-color: rgba(34, 197, 94, 0.1);
-  color: var(--color-success);
+.activity-empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-2xl) 0;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.activity-empty ion-icon {
+  font-size: var(--text-2xl);
+}
+
+.activity-empty p {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.activity-footer {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-gray-100);
+  text-align: right;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.link-button:hover {
+  text-decoration: underline;
+}
+
+.link-button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .text-muted {
@@ -579,13 +793,21 @@ const initializeChart = () => {
     align-items: stretch;
   }
 
-  .stats-grid {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  .header-actions {
+    align-items: stretch;
   }
 
-  .header-actions {
+  .header-actions-row {
     width: 100%;
-    justify-content: flex-start;
+  }
+
+  .role-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   }
 }
 </style>
