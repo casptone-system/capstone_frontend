@@ -4,6 +4,7 @@
     <div class="brand-panel">
       <div class="ledger-lines" aria-hidden="true"></div>
       <div class="brand-content">
+         <center><img :src="require('@/assets/isu_logo.png')" alt="ADAMS Logo" class="login-logo"></center>
         <span class="eyebrow">Est. Registry &middot; Institutional Access</span>
         <h1 class="brand-title">
           Accreditation<br />
