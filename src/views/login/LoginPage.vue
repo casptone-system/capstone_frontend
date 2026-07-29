@@ -4,7 +4,7 @@
     <div class="brand-panel">
       <div class="ledger-lines" aria-hidden="true"></div>
       <div class="brand-content">
-         <center><img :src="require('@/assets/isu_logo.png')" alt="ADAMS Logo" class="login-logo"></center>
+         <center><img :src="require('@/assets/isu_logo.png')" alt="ADAMS Logo" class="left-login-logo"></center>
         <span class="eyebrow">Est. Registry &middot; Institutional Access</span>
         <h1 class="brand-title">
           Accreditation<br />
@@ -28,7 +28,7 @@
     <!-- RIGHT: Form panel -->
     <div class="form-panel">
       <div class="form-wrap">
-        <center><img :src="require('@/assets/Archiving_logo.png')" alt="ADAMS Logo" class="login-logo"></center>
+        <center><img :src="require('@/assets/Archiving_logo.png')" alt="ADAMS Logo" class="right-login-logo"></center>
         <h2 class="form-title">Sign in to your account</h2>
         <p class="form-subtitle">Use your institutional credentials to continue.</p>
 
@@ -37,7 +37,7 @@
             v-model="email"
             label="Email Address"
             type="email"
-            placeholder="dean@university.edu"
+            placeholder="ISU email address"
             icon="mail-outline"
             required
           />
@@ -110,8 +110,8 @@
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
-import AppButton from '@/components/AppButton.vue'
-import FormInput from '@/components/FormInput.vue'
+import AppButton from '../../components/AppButton.vue'
+import FormInput from '../../components/FormInput.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -134,9 +134,9 @@ const getRedirectPath = () => {
   const roleRedirects: Record<string, string> = {
     dean: '/dashboard',
     admin: '/dashboard',
-    'super-admin': '/dashboard',
+    'super-admin': '/super-admin',
     'program-chair': '/dashboard',
-    faculty: '/dashboard',
+    faculty: '/faculty',
     qa: '/dashboard',
     'area-in-charge': '/dashboard',
     vpaa: '/dashboard',
@@ -329,7 +329,16 @@ const handleGithubLogin = async () => {
   max-width: 380px;
 }
 
-.login-logo {
+.left-login-logo {
+  width: 100px;
+  height: auto;
+  margin-bottom: 1rem;
+  filter: drop-shadow(1px 10px 28px rgba(19, 31, 53, 0.35));
+  animation: stamp-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: 0.3s;
+}
+
+.right-login-logo {
   width: 100px;
   height: auto;
   margin-bottom: 1rem;

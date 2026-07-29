@@ -1,4 +1,4 @@
-export type UserRole = 'dean' | 'program-chair' | 'faculty' | 'admin'
+export type UserRole = 'dean' | 'program-chair' | 'faculty' | 'admin' | 'super-admin' | 'qa' | 'area-in-charge' | 'vpaa' | 'vpaa-di'
 
 export interface User {
   id: string
@@ -56,7 +56,7 @@ export interface ComplianceScore {
   programId: string
   score: number
   lastUpdated: string
-  trend: number // percentage change
+  trend: number
 }
 
 export interface AuditLog {

@@ -111,12 +111,31 @@ const userName = computed(() => authStore.userName)
 const roleKey = computed(() => (authStore.userRole || 'faculty').toLowerCase())
 const isManagementRole = computed(() => ['dean', 'admin', 'super-admin'].includes(roleKey.value))
 
-const navItems = [
-  { path: '/dashboard', label: 'Dashboard', icon: 'grid-outline' },
-  { path: '/documents', label: 'Documents', icon: 'document-text-outline' },
-  { path: '/reports', label: 'Reports', icon: 'bar-chart-outline' },
-  { path: '/notifications', label: 'Notifications', icon: 'notifications-outline' }
-]
+const homePath = computed(() => {
+  switch (roleKey.value) {
+    case 'faculty':
+      return '/faculty'
+    case 'super-admin':
+      return '/super-admin'
+    default:
+      return '/dashboard'
+  }
+})
+
+const navItems = computed(() => {
+  const coreNav = [
+    { path: homePath.value, label: 'Dashboard', icon: 'grid-outline' },
+    { path: '/documents', label: 'Documents', icon: 'document-text-outline' },
+    { path: '/reports', label: 'Reports', icon: 'bar-chart-outline' },
+    { path: '/notifications', label: 'Notifications', icon: 'notifications-outline' }
+  ]
+
+  if (roleKey.value === 'faculty' && !authStore.hasJoinedProgram) {
+    return [{ path: homePath.value, label: 'Dashboard', icon: 'grid-outline' }]
+  }
+
+  return coreNav
+})
 
 const adminNavItems = [
   { path: '/users', label: 'Manage Users', icon: 'people-outline' },
@@ -129,10 +148,16 @@ const isActiveRoute = (path: string) => {
   return route.path === path || route.path.startsWith(path + '/')
 }
 
-const handleLogout = () => {
-  authStore.logout()
-  showProfileMenu.value = false
-  router.push('/login')
+const handleLogout = async () => {
+  try {
+    showProfileMenu.value = false
+    await authStore.logout()
+    localStorage.clear()
+    sessionStorage.clear()
+    await router.replace('/login')
+  } catch (error) {
+    console.error('Logout failed:', error)
+  }
 }
 </script>
 

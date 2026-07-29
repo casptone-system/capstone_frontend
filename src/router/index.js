@@ -2,9 +2,9 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import LoginPage from '../views/login/LoginPage.vue'
 import RegisterPage from '../views/login/RegisterPage.vue'
-import Dashboard from '../views/Dashboard.vue'
-import Documents from '../views/Documents.vue'
-import Reports from '../views/Reports.vue'
+import StarterDashboard from '../views/starter_Dashboard.vue'
+import FacultyDashboard from '../views/Faculty.vue'
+import SuperAdminDashboard from '../views/SuperAdmin.vue'
 
 const routes = [
   {
@@ -26,20 +26,20 @@ const routes = [
   {
     path: '/dashboard',
     name: 'dashboard',
-    component: Dashboard,
+    component: StarterDashboard,
     meta: { requiresAuth: true }
   },
   {
-    path: '/documents',
-    name: 'documents',
-    component: Documents,
-    meta: { requiresAuth: true }
+    path: '/faculty',
+    name: 'faculty',
+    component: FacultyDashboard,
+    meta: { requiresAuth: true, requiresRole: 'faculty' }
   },
   {
-    path: '/reports',
-    name: 'reports',
-    component: Reports,
-    meta: { requiresAuth: true }
+    path: '/super-admin',
+    name: 'super-admin',
+    component: SuperAdminDashboard,
+    meta: { requiresAuth: true, requiresRole: 'super-admin' }
   },
   {
     path: '/notifications',
@@ -85,19 +85,44 @@ router.beforeEach((to, from, next) => {
   const isAuthenticated = authStore.isAuthenticated
   const userRole = authStore.userRole
 
+  const roleRedirects = {
+    dean: { name: 'dashboard' },
+    'program-chair': { name: 'dashboard' },
+    faculty: { name: 'faculty' },
+    qa: { name: 'dashboard' },
+    admin: { name: 'dashboard' },
+    'super-admin': { name: 'super-admin' },
+    'area-in-charge': { name: 'dashboard' },
+    vpaa: { name: 'dashboard' },
+    'vpaa-di': { name: 'dashboard' }
+  }
+
   if (to.meta.requiresAuth) {
     if (!isAuthenticated) {
       next({ name: 'login', query: { redirect: to.fullPath } })
-    } else if (to.meta.requiresRole && userRole !== to.meta.requiresRole) {
-      next({ name: 'dashboard' })
-    } else {
-      next()
+      return
     }
-  } else if (to.name === 'login' && isAuthenticated) {
-    next({ name: 'dashboard' })
-  } else {
+
+    if (to.meta.requiresRole && userRole !== to.meta.requiresRole) {
+      next(roleRedirects[userRole] || { name: 'dashboard' })
+      return
+    }
+
     next()
+    return
   }
+
+  if (to.name === 'login' && isAuthenticated) {
+    next(roleRedirects[userRole] || { name: 'dashboard' })
+    return
+  }
+
+  if (to.name === 'register' && isAuthenticated) {
+    next(roleRedirects[userRole] || { name: 'dashboard' })
+    return
+  }
+
+  next()
 })
 
 export default router

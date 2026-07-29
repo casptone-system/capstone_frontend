@@ -11,9 +11,6 @@ export interface SessionResponse {
   error: string | null
 }
 
-// eslint-disable-next-line no-unused-vars
-type AuthStateCallback = (user: unknown) => void
-
 export async function signInWithEmail(email: string, password: string): Promise<AuthResponse> {
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -23,31 +20,33 @@ export async function signInWithEmail(email: string, password: string): Promise<
 
     if (error) throw error
 
-    if (!data.user) {
-      return { user: null, error: 'No user returned' }
+    if (data.user) {
+      // Fetch the user's profile from the profiles table
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', data.user.id)
+        .single()
+
+      if (profileError && profileError.code !== 'PGRST116') {
+        // PGRST116 means no rows found, which is okay for new users
+        console.warn('Profile fetch error:', profileError)
+      }
+
+      const user: User = {
+        id: data.user.id,
+        name: profile?.name || data.user.email?.split('@')[0] || 'User',
+        email: data.user.email || '',
+        role: profile?.role || 'faculty',
+        institution: profile?.institution || 'State University',
+        avatar: profile?.avatar || undefined,
+        createdAt: data.user.created_at
+      }
+
+      return { user, error: null }
     }
 
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', data.user.id)
-      .single()
-
-    if (profileError && profileError.code !== 'PGRST116') {
-      console.warn('Profile fetch error:', profileError)
-    }
-
-    const user: User = {
-      id: data.user.id,
-      name: profile?.name || data.user.email?.split('@')[0] || 'User',
-      email: data.user.email || '',
-      role: profile?.role || 'faculty',
-      institution: profile?.institution || 'State University',
-      avatar: profile?.avatar || undefined,
-      createdAt: data.user.created_at
-    }
-
-    return { user, error: null }
+    return { user: null, error: 'No user returned' }
   } catch (err: any) {
     return { user: null, error: err.message || 'Login failed' }
   }
@@ -58,12 +57,13 @@ export async function signInWithGoogle(): Promise<AuthResponse> {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/dashboard`
+        redirectTo: window.location.origin + '/dashboard'
       }
     })
 
     if (error) throw error
 
+    // OAuth redirects away, so we won't get user data here
     return { user: null, error: null }
   } catch (err: any) {
     return { user: null, error: err.message || 'Google login failed' }
@@ -75,7 +75,7 @@ export async function signInWithGithub(): Promise<AuthResponse> {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'github',
       options: {
-        redirectTo: `${window.location.origin}/dashboard`
+        redirectTo: window.location.origin + '/dashboard'
       }
     })
 
@@ -87,13 +87,7 @@ export async function signInWithGithub(): Promise<AuthResponse> {
   }
 }
 
-export async function signUp(
-  email: string,
-  password: string,
-  name: string,
-  role: string = 'faculty',
-  institution: string = 'State University'
-): Promise<AuthResponse> {
+export async function signUp(email: string, password: string, name: string, role: string = 'faculty', institution: string = 'State University'): Promise<AuthResponse> {
   try {
     const { error } = await supabase.auth.signUp({
       email,
@@ -137,40 +131,42 @@ export async function getCurrentSession(): Promise<SessionResponse> {
 
 export async function getCurrentUser(): Promise<AuthResponse> {
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
     if (authError) throw authError
-    if (!user) return { user: null, error: 'No authenticated user' }
+    if (!authUser) return { user: null, error: 'No authenticated user' }
 
+    // Fetch the user's profile
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', user.id)
+      .eq('id', authUser.id)
       .single()
 
     if (profileError && profileError.code !== 'PGRST116') {
       console.warn('Profile fetch error:', profileError)
     }
 
-    const currentUser: User = {
-      id: user.id,
-      name: profile?.name || user.email?.split('@')[0] || 'User',
-      email: user.email || '',
+    const user: User = {
+      id: authUser.id,
+      name: profile?.name || authUser.email?.split('@')[0] || 'User',
+      email: authUser.email || '',
       role: profile?.role || 'faculty',
       institution: profile?.institution || 'State University',
       avatar: profile?.avatar || undefined,
-      createdAt: user.created_at
+      createdAt: authUser.created_at
     }
 
-    return { user: currentUser, error: null }
+    return { user, error: null }
   } catch (err: any) {
     return { user: null, error: err.message || 'Failed to get user' }
   }
 }
 
-export function onAuthStateChange(callback: AuthStateCallback) {
-  return supabase.auth.onAuthStateChange(({ event, session }: any) => {
+// eslint-disable-next-line no-unused-vars
+export function onAuthStateChange(callback: (user: any) => void) {
+  return supabase.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-      callback(session?.user ?? null)
+      callback(session?.user || null)
     } else if (event === 'SIGNED_OUT') {
       callback(null)
     }

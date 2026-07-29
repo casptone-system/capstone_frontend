@@ -20,18 +20,32 @@ const router = useRouter()
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 
-onMounted(async () => {
-  // Restore the real Supabase session (no localStorage fallback).
-  await authStore.restoreSession()
+const roleRedirects: Record<string, string> = {
+  dean: '/dashboard',
+  'program-chair': '/dashboard',
+  faculty: '/faculty',
+  qa: '/dashboard',
+  admin: '/dashboard',
+  'super-admin': '/super-admin',
+  'area-in-charge': '/dashboard',
+  vpaa: '/dashboard',
+  'vpaa-di': '/dashboard'
+}
 
-  // Listen for auth state changes (OAuth redirects, token refresh, etc.)
+const getHomePath = () => {
+  const role = authStore.userRole?.toLowerCase() || ''
+  return roleRedirects[role] || '/dashboard'
+}
+
+onMounted(async () => {
+  await authStore.restoreSession()
   authStore.setupAuthListener()
 
-  // Navigate based on auth state
-  if (!isAuthenticated.value && !['login', 'register'].includes(router.currentRoute.value.name as string)) {
-    router.push('/login')
-  } else if (isAuthenticated.value && ['login', 'register'].includes(router.currentRoute.value.name as string)) {
-    router.push('/dashboard')
+  const currentRoute = router.currentRoute.value.name as string
+  if (!isAuthenticated.value && !['login', 'register'].includes(currentRoute)) {
+    router.replace('/login')
+  } else if (isAuthenticated.value && ['login', 'register'].includes(currentRoute)) {
+    router.replace(getHomePath())
   }
 })
 

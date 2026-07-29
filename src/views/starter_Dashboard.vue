@@ -127,9 +127,9 @@ import { ref, onMounted, computed } from 'vue'
 import { useDashboardStore } from '@/stores/dashboardStore'
 import { useAuthStore } from '@/stores/authStore'
 import { Chart, registerables } from 'chart.js'
-import AppCard from '@/components/AppCard.vue'
-import AppButton from '@/components/AppButton.vue'
-import StatCard from '@/components/StatCard.vue'
+import AppCard from '../components/AppCard.vue'
+import AppButton from '../components/AppButton.vue'
+import StatCard from '../components/StatCard.vue'
 import { IonIcon } from '@ionic/vue'
 
 Chart.register(...registerables)

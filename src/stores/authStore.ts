@@ -1,174 +1,119 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { signInWithEmail, signInWithGoogle, signInWithGithub, signOutUser, getCurrentUser, onAuthStateChange, signUp } from '@/lib/auth'
+import {
+  signInWithEmail,
+  signInWithGoogle,
+  signInWithGithub,
+  signUp,
+  signOutUser,
+  getCurrentUser,
+  onAuthStateChange
+} from '@/lib/auth'
 import type { User } from '@/types'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
-  const isAuthenticated = ref(false)
-  const isLoading = ref(false)
-  const error = ref<string | null>(null)
-  let authListener: { subscription: { unsubscribe: () => void } } | null = null
+  const hasJoinedProgram = ref(localStorage.getItem('hasJoinedProgram') === 'true')
+  let authSubscription: any = null
 
-  const userRole = computed(() => user.value?.role || null)
-  const userName = computed(() => user.value?.name || 'Guest')
+  const isAuthenticated = computed(() => !!user.value)
+  const userRole = computed(() => user.value?.role ?? '')
+  const userName = computed(() => user.value?.name ?? '')
 
-  const login = async (email: string, password: string) => {
-    isLoading.value = true
-    error.value = null
-    try {
-      const { user: authenticatedUser, error: authError } = await signInWithEmail(email, password)
-
-      if (authError) {
-        // Supabase login failed — do NOT fall back to a mock.
-        // Surface the real error so the password is actually validated.
-        throw new Error(authError)
-      }
-
-      if (authenticatedUser) {
-        user.value = authenticatedUser
-        isAuthenticated.value = true
-      } else {
-        throw new Error('Login failed - no user returned')
-      }
-    } catch (err: any) {
-      error.value = err.message || 'Login failed'
-      throw err
-    } finally {
-      isLoading.value = false
+  async function restoreSession() {
+    const { user: currentUser, error } = await getCurrentUser()
+    if (error) {
+      console.warn('restoreSession failed:', error)
+      return
     }
+    user.value = currentUser
   }
 
-  const loginWithGoogle = async () => {
-    isLoading.value = true
-    error.value = null
-    try {
-      const { error: authError } = await signInWithGoogle()
-      if (authError) throw new Error(authError)
-      // OAuth redirects, so state is handled by onAuthStateChange
-    } catch (err: any) {
-      error.value = err.message || 'Google login failed'
-      throw err
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  const loginWithGithub = async () => {
-    isLoading.value = true
-    error.value = null
-    try {
-      const { error: authError } = await signInWithGithub()
-      if (authError) throw new Error(authError)
-      // OAuth redirects, so state is handled by onAuthStateChange
-    } catch (err: any) {
-      error.value = err.message || 'GitHub login failed'
-      throw err
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  const logout = async () => {
-    isLoading.value = true
-    try {
-      const { error: logoutError } = await signOutUser()
-      if (logoutError) {
-        console.warn('Supabase logout warning:', logoutError)
-      }
-    } finally {
-      user.value = null
-      isAuthenticated.value = false
-      error.value = null
-      isLoading.value = false
-    }
-  }
-
-  const restoreSession = async () => {
-    // Only restore from the real Supabase session — no localStorage fallback.
-    try {
-      const { user: currentUser, error: sessionError } = await getCurrentUser()
-      if (!sessionError && currentUser) {
-        user.value = currentUser
-        isAuthenticated.value = true
-        return
-      }
-    } catch (e) {
-      console.warn('Supabase session restore failed:', e)
-    }
-
-    // If we reach here, there is no valid Supabase session.
-    user.value = null
-    isAuthenticated.value = false
-  }
-
-  const setupAuthListener = () => {
-    authListener = onAuthStateChange(async (authUser: any) => {
-      if (authUser) {
-        // Fetch fresh profile data on auth state change
-        const { user: currentUser } = await getCurrentUser()
-        if (currentUser) {
-          user.value = currentUser
-          isAuthenticated.value = true
+  function setupAuthListener() {
+    if (authSubscription) return
+    authSubscription = onAuthStateChange(async (currentUser: any) => {
+      if (currentUser) {
+        user.value = {
+          id: currentUser.id,
+          name: currentUser.user_metadata?.name || currentUser.email?.split('@')[0] || 'User',
+          email: currentUser.email || '',
+          role: currentUser.user_metadata?.role || 'faculty',
+          institution: currentUser.user_metadata?.institution || 'State University',
+          avatar: currentUser.user_metadata?.avatar,
+          createdAt: currentUser.created_at
         }
       } else {
         user.value = null
-        isAuthenticated.value = false
       }
-    }) as any
+    })
   }
 
-  const cleanupAuthListener = () => {
-    if (authListener?.subscription) {
-      authListener.subscription.unsubscribe()
+  function cleanupAuthListener() {
+    if (authSubscription?.unsubscribe) {
+      authSubscription.unsubscribe()
+    }
+    authSubscription = null
+  }
+
+  async function login(email: string, password: string) {
+    const { user: signedInUser, error } = await signInWithEmail(email, password)
+    if (error) {
+      throw new Error(error)
+    }
+    user.value = signedInUser
+    return signedInUser
+  }
+
+  async function loginWithGoogle() {
+    const { error } = await signInWithGoogle()
+    if (error) {
+      throw new Error(error)
     }
   }
 
-  const register = async (name: string, email: string, password: string, role: string, institution: string) => {
-    isLoading.value = true
-    error.value = null
-
-    try {
-      const { user: newUser, error: signUpError } = await signUp(email, password, name, role, institution)
-
-      if (signUpError) {
-        throw new Error(signUpError)
-      }
-
-      if (newUser) {
-        // Fetch the updated profile
-        const { user: updatedUser } = await getCurrentUser()
-        if (updatedUser) {
-          user.value = updatedUser
-          isAuthenticated.value = true
-        }
-      } else {
-        // Signup succeeded but we need to wait for auth state change
-        // The auth listener will handle setting the user
-        throw new Error('Registration successful. Please check your email to verify your account.')
-      }
-    } catch (err: any) {
-      error.value = err.message || 'Registration failed'
-      throw err
-    } finally {
-      isLoading.value = false
+  async function loginWithGithub() {
+    const { error } = await signInWithGithub()
+    if (error) {
+      throw new Error(error)
     }
+  }
+
+  async function register(name: string, email: string, password: string, role: string, institution: string) {
+    const { error } = await signUp(email, password, name, role, institution)
+    if (error) {
+      throw new Error(error)
+    }
+  }
+
+  async function logout() {
+    const { error } = await signOutUser()
+    if (error) {
+      throw new Error(error)
+    }
+    user.value = null
+    hasJoinedProgram.value = false
+    localStorage.removeItem('hasJoinedProgram')
+  }
+
+  function markProgramJoined() {
+    hasJoinedProgram.value = true
+    localStorage.setItem('hasJoinedProgram', 'true')
   }
 
   return {
     user,
     isAuthenticated,
-    isLoading,
-    error,
     userRole,
     userName,
-    login,
-    loginWithGoogle,
-    loginWithGithub,
-    logout,
+    hasJoinedProgram,
     restoreSession,
     setupAuthListener,
     cleanupAuthListener,
-    register
+    login,
+    loginWithGoogle,
+    loginWithGithub,
+    register,
+    logout,
+    markProgramJoined
   }
 })

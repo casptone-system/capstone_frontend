@@ -4,6 +4,7 @@
     <div class="brand-panel">
       <div class="ledger-lines" aria-hidden="true"></div>
       <div class="brand-content">
+        <center><img :src="require('@/assets/isu_logo.png')" alt="ADAMS Logo" class="left-register-logo"></center>
         <span class="eyebrow">Est. Registry &middot; Institutional Access</span>
         <h1 class="brand-title">
           Join the<br />
@@ -27,7 +28,7 @@
     <!-- RIGHT: Form panel -->
     <div class="form-panel">
       <div class="form-wrap">
-        <center><img :src="require('@/assets/Archiving_logo.png')" alt="ADAMS Logo" class="login-logo"></center>
+        <center><img :src="require('@/assets/Archiving_logo.png')" alt="ADAMS Logo" class="right-register-logo"></center>
         <h2 class="form-title">Create your account</h2>
         <p class="form-subtitle">Join the Accreditation Management System.</p>
 
@@ -60,9 +61,9 @@
             icon="business-outline"
             required
             :error="institutionError"
-          /> -->
+          />
 
-          <!-- <form-input
+          <form-input
             v-model="role"
             label="Role"
             type="select"
@@ -120,32 +121,48 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
-import AppButton from '@/components/AppButton.vue'
-import FormInput from '@/components/FormInput.vue'
+import AppButton from '../../components/AppButton.vue'
+import FormInput from '../../components/FormInput.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
 const name = ref('')
 const email = ref('')
-const institution = ref('')
-const role = ref('')
+// const institution = ref('')
+// const role = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 
 const isLoading = ref(false)
 const nameError = ref('')
 const emailError = ref('')
-const institutionError = ref('')
-const roleError = ref('')
+// const institutionError = ref('')
+// const roleError = ref('')
 const passwordError = ref('')
 const confirmPasswordError = ref('')
+
+const getHomePath = () => {
+  const role = authStore.userRole?.toLowerCase()
+  const roleRedirects: Record<string, string> = {
+    dean: '/dashboard',
+    admin: '/dashboard',
+    'super-admin': '/super-admin',
+    'program-chair': '/dashboard',
+    faculty: '/faculty',
+    qa: '/dashboard',
+    'area-in-charge': '/dashboard',
+    vpaa: '/dashboard',
+    'vpaa-di': '/dashboard'
+  }
+  return roleRedirects[role || ''] || '/dashboard'
+}
 
 const handleRegister = async () => {
   nameError.value = ''
   emailError.value = ''
-  institutionError.value = ''
-  roleError.value = ''
+  // institutionError.value = ''
+  // roleError.value = ''
   passwordError.value = ''
   confirmPasswordError.value = ''
 
@@ -159,15 +176,15 @@ const handleRegister = async () => {
     return
   }
 
-  if (!institution.value.trim()) {
-    institutionError.value = 'Institution is required'
-    return
-  }
+  // if (!institution.value.trim()) {
+  //   institutionError.value = 'Institution is required'
+  //   return
+  // }
 
-  if (!role.value) {
-    roleError.value = 'Please select a role'
-    return
-  }
+  // if (!role.value) {
+  //   roleError.value = 'Please select a role'
+  //   return
+  // }
 
   if (!password.value) {
     passwordError.value = 'Password is required'
@@ -187,8 +204,8 @@ const handleRegister = async () => {
   isLoading.value = true
 
   try {
-    await authStore.register(name.value, email.value, password.value, role.value, institution.value)
-    router.push('/dashboard')
+    await authStore.register(name.value, email.value, password.value, 'faculty', 'State University')
+    router.push(getHomePath())
   } catch (error: any) {
     if (error.message?.includes('email')) {
       emailError.value = error.message
@@ -350,7 +367,17 @@ const handleRegister = async () => {
   max-width: 380px;
 }
 
-.login-logo {
+.right-register-logo {
+  width: 100px;
+  height: auto;
+  margin: 0 auto 1rem;
+  display: block;
+  filter: drop-shadow(1px 10px 28px rgba(19, 31, 53, 0.35));
+  animation: stamp-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: 0.3s;
+}
+
+.left-register-logo {
   width: 100px;
   height: auto;
   margin: 0 auto 1rem;
