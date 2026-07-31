@@ -17,10 +17,10 @@ const router = useRouter()
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 
 onMounted(async () => {
-  // Restore the real Supabase session (no localStorage fallback).
+  // Restore the session by verifying the stored token against the API.
   await authStore.restoreSession()
 
-  // Listen for auth state changes (OAuth redirects, token refresh, etc.)
+  // Listen for auth state changes.
   authStore.setupAuthListener()
 
   // Navigate based on auth state

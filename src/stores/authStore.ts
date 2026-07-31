@@ -20,8 +20,6 @@ export const useAuthStore = defineStore('auth', () => {
       const { user: authenticatedUser, error: authError } = await signInWithEmail(email, password)
 
       if (authError) {
-        // Supabase login failed — do NOT fall back to a mock.
-        // Surface the real error so the password is actually validated.
         throw new Error(authError)
       }
 
@@ -74,7 +72,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const { error: logoutError } = await signOutUser()
       if (logoutError) {
-        console.warn('Supabase logout warning:', logoutError)
+        console.warn('Logout warning:', logoutError)
       }
     } finally {
       user.value = null
@@ -85,7 +83,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const restoreSession = async () => {
-    // Only restore from the real Supabase session — no localStorage fallback.
+    // Restore the session by verifying the stored token against the API.
     try {
       const { user: currentUser, error: sessionError } = await getCurrentUser()
       if (!sessionError && currentUser) {
@@ -94,10 +92,10 @@ export const useAuthStore = defineStore('auth', () => {
         return
       }
     } catch (e) {
-      console.warn('Supabase session restore failed:', e)
+      console.warn('Session restore failed:', e)
     }
 
-    // If we reach here, there is no valid Supabase session.
+    // If we reach here, there is no valid session.
     user.value = null
     isAuthenticated.value = false
   }

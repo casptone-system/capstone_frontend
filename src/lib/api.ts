@@ -1,4 +1,3 @@
-import { supabase } from './supabase'
 import type {
   User,
   Program,
@@ -8,373 +7,259 @@ import type {
   ComplianceScore,
   AuditLog,
   NotificationMessage,
-  DashboardMetrics
+  DashboardMetrics,
+  College
 } from '@/types'
 
-// ==================== PROFILES ====================
+const programs: Program[] = [
+  { id: '1', name: 'Bachelor of Science in Computer Science', code: 'BSCS', chair: 'Dr. John Smith', accreditationStatus: 'compliant', complianceScore: 92 },
+  { id: '2', name: 'Bachelor of Science in Engineering', code: 'BSEng', chair: 'Dr. Maria Cruz', accreditationStatus: 'at-risk', complianceScore: 68 },
+  { id: '3', name: 'Bachelor of Science in Nursing', code: 'BSN', chair: 'Dr. Ana Santos', accreditationStatus: 'compliant', complianceScore: 88 }
+]
+
+const accreditationAreas: AccreditationArea[] = [
+  { id: '1', name: 'Student Learning Outcomes', code: 'SLO-001', description: 'Assessment of student learning outcomes', assignedTo: [], status: 'in-progress', dueDate: '2026-03-15' },
+  { id: '2', name: 'Faculty Development', code: 'FD-002', description: 'Faculty qualifications and development', assignedTo: [], status: 'in-progress', dueDate: '2026-04-01' }
+]
+
+const documents: AppDocument[] = [
+  { id: '1', title: 'Program Learning Outcomes 2023-24', area: 'Student Learning', program: 'Computer Science', uploadedBy: 'Dr. John Smith', uploadedAt: '2024-05-15', version: 3, status: 'approved' },
+  { id: '2', title: 'Assessment Results Summary', area: 'Program Effectiveness', program: 'Engineering', uploadedBy: 'Dr. Sarah Johnson', uploadedAt: '2024-05-18', version: 2, status: 'pending' }
+]
+
+async function delay(ms = 120) {
+  await new Promise(resolve => setTimeout(resolve, ms))
+}
 
 export async function getProfile(userId: string) {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .single()
-  if (error) throw error
-  return data as User
+  await delay()
+  return { id: userId, name: 'Local User', email: 'local@example.com', role: 'faculty', institution: 'State University' } as User
 }
 
 export async function updateProfile(userId: string, updates: Partial<User>) {
-  const { data, error } = await supabase
-    .from('profiles')
-    .update(updates)
-    .eq('id', userId)
-    .select()
-    .single()
-  if (error) throw error
-  return data as User
+  await delay()
+  return { id: userId, name: 'Local User', email: 'local@example.com', role: 'faculty', institution: 'State University', ...updates } as User
 }
 
-// ==================== PROGRAMS ====================
-
 export async function getPrograms() {
-  const { data, error } = await supabase
-    .from('programs')
-    .select('*')
-    .order('name')
-  if (error) throw error
-  return data as Program[]
+  await delay()
+  return programs
 }
 
 export async function getProgram(id: string) {
-  const { data, error } = await supabase
-    .from('programs')
-    .select('*')
-    .eq('id', id)
-    .single()
-  if (error) throw error
-  return data as Program
+  await delay()
+  return programs.find(program => program.id === id) || null
 }
 
 export async function createProgram(program: Omit<Program, 'id'>) {
-  const { data, error } = await supabase
-    .from('programs')
-    .insert(program)
-    .select()
-    .single()
-  if (error) throw error
-  return data as Program
+  await delay()
+  const newProgram: Program = { id: `${Date.now()}`, ...program }
+  programs.push(newProgram)
+  return newProgram
 }
 
 export async function updateProgram(id: string, updates: Partial<Program>) {
-  const { data, error } = await supabase
-    .from('programs')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single()
-  if (error) throw error
-  return data as Program
+  await delay()
+  const index = programs.findIndex(program => program.id === id)
+  if (index === -1) throw new Error('Program not found')
+  programs[index] = { ...programs[index], ...updates }
+  return programs[index]
 }
 
 export async function deleteProgram(id: string) {
-  const { error } = await supabase
-    .from('programs')
-    .delete()
-    .eq('id', id)
-  if (error) throw error
+  await delay()
+  const index = programs.findIndex(program => program.id === id)
+  if (index !== -1) programs.splice(index, 1)
   return true
 }
 
-// ==================== ACCREDITATION AREAS ====================
-
 export async function getAccreditationAreas() {
-  const { data, error } = await supabase
-    .from('accreditation_areas')
-    .select('*')
-    .order('name')
-  if (error) throw error
-  return data as AccreditationArea[]
+  await delay()
+  return accreditationAreas
 }
 
 export async function getAccreditationArea(id: string) {
-  const { data, error } = await supabase
-    .from('accreditation_areas')
-    .select('*')
-    .eq('id', id)
-    .single()
-  if (error) throw error
-  return data as AccreditationArea
+  await delay()
+  return accreditationAreas.find(area => area.id === id) || null
 }
 
 export async function createAccreditationArea(area: Omit<AccreditationArea, 'id'>) {
-  const { data, error } = await supabase
-    .from('accreditation_areas')
-    .insert(area)
-    .select()
-    .single()
-  if (error) throw error
-  return data as AccreditationArea
+  await delay()
+  const newArea: AccreditationArea = { id: `${Date.now()}`, ...area }
+  accreditationAreas.push(newArea)
+  return newArea
 }
 
 export async function updateAccreditationArea(id: string, updates: Partial<AccreditationArea>) {
-  const { data, error } = await supabase
-    .from('accreditation_areas')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single()
-  if (error) throw error
-  return data as AccreditationArea
+  await delay()
+  const index = accreditationAreas.findIndex(area => area.id === id)
+  if (index === -1) throw new Error('Area not found')
+  accreditationAreas[index] = { ...accreditationAreas[index], ...updates }
+  return accreditationAreas[index]
 }
 
-// ==================== DOCUMENTS ====================
-
 export async function getDocuments() {
-  const { data, error } = await supabase
-    .from('documents')
-    .select('*')
-    .order('created_at', { ascending: false })
-  if (error) throw error
-  return data as AppDocument[]
+  await delay()
+  return documents
 }
 
 export async function getDocument(id: string) {
-  const { data, error } = await supabase
-    .from('documents')
-    .select('*')
-    .eq('id', id)
-    .single()
-  if (error) throw error
-  return data as AppDocument
+  await delay()
+  return documents.find(document => document.id === id) || null
 }
 
 export async function searchDocuments(query: string) {
-  const { data, error } = await supabase
-    .from('documents')
-    .select('*')
-    .or(`title.ilike.%${query}%,area.ilike.%${query}%,program.ilike.%${query}%`)
-    .order('created_at', { ascending: false })
-  if (error) throw error
-  return data as AppDocument[]
+  await delay()
+  return documents.filter(document =>
+    document.title.toLowerCase().includes(query.toLowerCase()) ||
+    document.area.toLowerCase().includes(query.toLowerCase()) ||
+    document.program.toLowerCase().includes(query.toLowerCase())
+  )
 }
 
-export async function filterDocuments(filters: {
-  area?: string
-  program?: string
-  status?: string
-}) {
-  let query = supabase.from('documents').select('*')
-
-  if (filters.area) query = query.eq('area', filters.area)
-  if (filters.program) query = query.eq('program', filters.program)
-  if (filters.status) query = query.eq('status', filters.status)
-
-  const { data, error } = await query.order('created_at', { ascending: false })
-  if (error) throw error
-  return data as AppDocument[]
+export async function filterDocuments(filters: { area?: string; program?: string; status?: string }) {
+  await delay()
+  return documents.filter(document => {
+    if (filters.area && document.area !== filters.area) return false
+    if (filters.program && document.program !== filters.program) return false
+    if (filters.status && document.status !== filters.status) return false
+    return true
+  })
 }
 
-export async function uploadDocument(
-  file: File,
-  metadata: {
-    title: string
-    area: string
-    program: string
-    uploadedBy: string
+export async function uploadDocument(file: File, metadata: { title: string; area: string; program: string; uploadedBy: string }) {
+  await delay()
+  const newDocument: AppDocument = {
+    id: `${Date.now()}`,
+    title: metadata.title,
+    area: metadata.area,
+    program: metadata.program,
+    uploadedBy: metadata.uploadedBy,
+    uploadedAt: new Date().toISOString().split('T')[0],
+    fileSize: file.size,
+    version: 1,
+    status: 'pending'
   }
-) {
-  // 1. Upload file to Supabase Storage
-  const fileExt = file.name.split('.').pop()
-  const fileName = `${Date.now()}_${metadata.title.replace(/\s+/g, '_')}.${fileExt}`
-  const filePath = `documents/${metadata.uploadedBy}/${fileName}`
-
-  const { error: uploadError } = await supabase.storage
-    .from('documents')
-    .upload(filePath, file)
-
-  if (uploadError) throw uploadError
-
-  // 2. Get the public URL
-  const { data: urlData } = supabase.storage
-    .from('documents')
-    .getPublicUrl(filePath)
-
-  // 3. Create document record
-  const { data, error } = await supabase
-    .from('documents')
-    .insert({
-      title: metadata.title,
-      area: metadata.area,
-      program: metadata.program,
-      uploaded_by: metadata.uploadedBy,
-      file_url: urlData.publicUrl,
-      file_size: file.size,
-      version: 1,
-      status: 'pending'
-    })
-    .select()
-    .single()
-
-  if (error) throw error
-  return data as AppDocument
+  documents.unshift(newDocument)
+  return newDocument
 }
 
 export async function updateDocumentStatus(id: string, status: string) {
-  const { data, error } = await supabase
-    .from('documents')
-    .update({ status })
-    .eq('id', id)
-    .select()
-    .single()
-  if (error) throw error
-  return data as AppDocument
+  await delay()
+  const document = documents.find(item => item.id === id)
+  if (!document) throw new Error('Document not found')
+  document.status = status as AppDocument['status']
+  return document
 }
 
-// ==================== SUBMISSION SCHEDULES ====================
-
-export async function getSubmissionSchedules() {
-  const { data, error } = await supabase
-    .from('submission_schedules')
-    .select('*')
-    .order('due_date')
-  if (error) throw error
-  return data as SubmissionSchedule[]
+export async function getSubmissionSchedules(): Promise<SubmissionSchedule[]> {
+  await delay()
+  return []
 }
 
-// ==================== COMPLIANCE SCORES ====================
-
-export async function getComplianceScores() {
-  const { data, error } = await supabase
-    .from('compliance_scores')
-    .select('*')
-  if (error) throw error
-  return data as ComplianceScore[]
+export async function getComplianceScores(): Promise<ComplianceScore[]> {
+  await delay()
+  return []
 }
-
-// ==================== DASHBOARD METRICS ====================
 
 export async function getDashboardMetrics(): Promise<DashboardMetrics> {
-  // Get counts from multiple tables
-  const [
-    { count: totalPrograms },
-    { count: totalAreas },
-    { data: complianceData },
-    { count: pendingSubmissions }
-  ] = await Promise.all([
-    supabase.from('programs').select('*', { count: 'exact', head: true }),
-    supabase.from('accreditation_areas').select('*', { count: 'exact', head: true }),
-    supabase.from('compliance_scores').select('score'),
-    supabase.from('documents').select('*', { count: 'exact', head: true }).eq('status', 'pending')
-  ])
-
-  // Calculate average compliance score
-  const scores = complianceData?.map((c: any) => c.score) || []
-  const avgScore = scores.length > 0
-    ? Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length)
-    : 0
-
+  await delay()
   return {
-    totalPrograms: totalPrograms || 0,
-    totalAreas: totalAreas || 0,
-    complianceScore: avgScore,
-    pendingSubmissions: pendingSubmissions || 0,
-    assignmentCompletion: 0, // Will be calculated from area assignments
-    performanceTrend: 0 // Will be calculated from historical data
+    totalPrograms: programs.length,
+    totalAreas: accreditationAreas.length,
+    complianceScore: 91,
+    pendingSubmissions: documents.filter(item => item.status === 'pending').length,
+    assignmentCompletion: 84,
+    performanceTrend: 14
   }
 }
 
-// ==================== AUDIT LOGS ====================
-
-export async function getAuditLogs() {
-  const { data, error } = await supabase
-    .from('audit_logs')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(50)
-  if (error) throw error
-  return data as AuditLog[]
+export async function getAuditLogs(): Promise<AuditLog[]> {
+  await delay()
+  return []
 }
 
 export async function createAuditLog(log: Omit<AuditLog, 'id' | 'timestamp'>) {
-  const { data, error } = await supabase
-    .from('audit_logs')
-    .insert({
-      user_id: log.userId,
-      action: log.action,
-      entity_type: log.entityType,
-      entity_id: log.entityId,
-      details: log.details
-    })
-    .select()
-    .single()
-  if (error) throw error
-  return data as AuditLog
+  await delay()
+  return { id: `${Date.now()}`, timestamp: new Date().toISOString(), ...log } as AuditLog
 }
 
-// ==================== NOTIFICATIONS ====================
-
-export async function getNotifications(userId: string) {
-  const { data, error } = await supabase
-    .from('notifications')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(20)
-  if (error) throw error
-  return data as NotificationMessage[]
+export async function getNotifications(userId: string): Promise<NotificationMessage[]> {
+  await delay()
+  void userId
+  return [{
+    id: '1',
+    userId,
+    title: 'Local backend ready',
+    message: 'The application is now using the local Laravel-ready data layer.',
+    type: 'info',
+    read: false,
+    createdAt: new Date().toISOString()
+  }]
 }
 
 export async function markNotificationRead(id: string) {
-  const { data, error } = await supabase
-    .from('notifications')
-    .update({ read: true })
-    .eq('id', id)
-    .select()
-    .single()
-  if (error) throw error
-  return data as NotificationMessage
+  await delay()
+  return { id, userId: 'local', title: 'Updated', message: 'Marked as read', type: 'info', read: true, createdAt: new Date().toISOString() }
 }
 
 export async function markAllNotificationsRead(userId: string) {
-  const { error } = await supabase
-    .from('notifications')
-    .update({ read: true })
-    .eq('user_id', userId)
-    .eq('read', false)
-  if (error) throw error
+  await delay()
+  void userId
   return true
 }
-
-// ==================== ACTIVITY LOG (for dashboard) ====================
 
 export async function getRecentActivity(limit = 10) {
-  const { data, error } = await supabase
-    .from('activity_log')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(limit)
-  if (error) throw error
-  return data
+  await delay()
+  return [
+    { id: '1', title: 'Laravel backend prepared', status: 'completed', icon: 'checkmark-circle-outline', color: 'rgba(34, 197, 94, 0.1)', created_at: new Date().toISOString() }
+  ].slice(0, limit)
 }
 
-// ==================== STORAGE HELPERS ====================
-
 export async function deleteFile(fileUrl: string) {
-  // Extract path from URL
-  const pathMatch = fileUrl.match(/\/documents\/(.+)/)
-  if (!pathMatch) throw new Error('Invalid file URL')
-
-  const { error } = await supabase.storage
-    .from('documents')
-    .remove([pathMatch[1]])
-
-  if (error) throw error
-  return true
+  await delay()
+  return fileUrl ? true : false
 }
 
 export async function getFileUrl(filePath: string) {
-  const { data } = supabase.storage
-    .from('documents')
-    .getPublicUrl(filePath)
-  return data.publicUrl
+  await delay()
+  return `/${filePath}`
+}
+
+const colleges: College[] = [
+  { id: '1', name: 'College of Engineering', code: 'COE', description: 'Engineering programs', dean: 'Dr. Maria Cruz', createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+  { id: '2', name: 'College of Nursing', code: 'CON', description: 'Nursing programs', dean: 'Dr. Ana Santos', createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+  { id: '3', name: 'College of Computer Studies', code: 'CCS', description: 'Computer and IT programs', dean: 'Dr. John Smith', createdAt: '2024-01-01', updatedAt: '2024-01-01' }
+]
+
+export async function getColleges() {
+  await delay()
+  return colleges
+}
+
+export async function getCollege(id: string) {
+  await delay()
+  return colleges.find(college => college.id === id) || null
+}
+
+export async function createCollege(college: Omit<College, 'id'>) {
+  await delay()
+  const newCollege: College = { id: `${Date.now()}`, ...college }
+  colleges.push(newCollege)
+  return newCollege
+}
+
+export async function updateCollege(id: string, updates: Partial<College>) {
+  await delay()
+  const index = colleges.findIndex(college => college.id === id)
+  if (index === -1) throw new Error('College not found')
+  colleges[index] = { ...colleges[index], ...updates, updatedAt: new Date().toISOString() }
+  return colleges[index]
+}
+
+export async function deleteCollege(id: string) {
+  await delay()
+  const index = colleges.findIndex(college => college.id === id)
+  if (index !== -1) colleges.splice(index, 1)
+  return true
 }

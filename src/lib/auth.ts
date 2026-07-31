@@ -1,5 +1,5 @@
-import { supabase } from './supabase'
 import type { User } from '@/types'
+import apiClient, { TOKEN_KEY } from '@/lib/apiClient'
 
 export interface AuthResponse {
   user: User | null
@@ -11,164 +11,142 @@ export interface SessionResponse {
   error: string | null
 }
 
+function getToken(): string | null {
+  if (typeof window === 'undefined') return null
+  return window.localStorage.getItem(TOKEN_KEY)
+}
+
+function setToken(token: string | null) {
+  if (typeof window === 'undefined') return
+  if (token) {
+    window.localStorage.setItem(TOKEN_KEY, token)
+  } else {
+    window.localStorage.removeItem(TOKEN_KEY)
+  }
+}
+
+function mapApiUser(apiUser: any): User {
+  const roles: string[] = apiUser.roles || []
+  return {
+    id: String(apiUser.id),
+    name: apiUser.name || '',
+    email: apiUser.email || '',
+    role: (roles[0] || 'faculty') as User['role'],
+    institution: apiUser.institution || '',
+    avatar: apiUser.avatar,
+    createdAt: apiUser.created_at,
+  }
+}
+
 export async function signInWithEmail(email: string, password: string): Promise<AuthResponse> {
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    })
-
-    if (error) throw error
-
-    if (data.user) {
-      // Fetch the user's profile from the profiles table
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', data.user.id)
-        .single()
-
-      if (profileError && profileError.code !== 'PGRST116') {
-        // PGRST116 means no rows found, which is okay for new users
-        console.warn('Profile fetch error:', profileError)
-      }
-
-      const user: User = {
-        id: data.user.id,
-        name: profile?.name || data.user.email?.split('@')[0] || 'User',
-        email: data.user.email || '',
-        role: profile?.role || 'faculty',
-        institution: profile?.institution || 'State University',
-        avatar: profile?.avatar || undefined,
-        createdAt: data.user.created_at
-      }
-
-      return { user, error: null }
-    }
-
-    return { user: null, error: 'No user returned' }
+    const response = await apiClient.post('/login', { email, password })
+    const { token, user: apiUser } = response.data.data
+    setToken(token)
+    const user = mapApiUser(apiUser)
+    return { user, error: null }
   } catch (err: any) {
-    return { user: null, error: err.message || 'Login failed' }
+    const message =
+      err.response?.data?.message ||
+      err.response?.data?.errors?.email?.[0] ||
+      'Login failed'
+    return { user: null, error: message }
   }
 }
 
 export async function signInWithGoogle(): Promise<AuthResponse> {
-  try {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin + '/dashboard'
-      }
-    })
-
-    if (error) throw error
-
-    // OAuth redirects away, so we won't get user data here
-    return { user: null, error: null }
-  } catch (err: any) {
-    return { user: null, error: err.message || 'Google login failed' }
+  return {
+    user: null,
+    error: 'Google login is not available. Please sign in with your email and password.',
   }
 }
 
 export async function signInWithGithub(): Promise<AuthResponse> {
-  try {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'github',
-      options: {
-        redirectTo: window.location.origin + '/dashboard'
-      }
-    })
-
-    if (error) throw error
-
-    return { user: null, error: null }
-  } catch (err: any) {
-    return { user: null, error: err.message || 'GitHub login failed' }
+  return {
+    user: null,
+    error: 'GitHub login is not available. Please sign in with your email and password.',
   }
 }
 
-export async function signUp(email: string, password: string, name: string, role: string = 'faculty', institution: string = 'State University'): Promise<AuthResponse> {
+export async function signUp(
+  email: string,
+  password: string,
+  name: string,
+  role: string = 'faculty',
+  institution: string = 'State University',
+): Promise<AuthResponse> {
   try {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          name,
-          role,
-          institution
-        }
-      }
-    })
-
-    if (error) throw error
-
-    return { user: null, error: null }
+    const response = await apiClient.post('/register', { email, password, name, role, institution })
+    const { token, user: apiUser } = response.data.data
+    setToken(token)
+    const user = mapApiUser(apiUser)
+    return { user, error: null }
   } catch (err: any) {
-    return { user: null, error: err.message || 'Sign up failed' }
+    const message =
+      err.response?.data?.message ||
+      err.response?.data?.errors?.email?.[0] ||
+      err.response?.data?.errors?.password?.[0] ||
+      'Registration failed'
+    return { user: null, error: message }
   }
 }
 
 export async function signOutUser(): Promise<{ error: string | null }> {
   try {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
-    return { error: null }
+    await apiClient.post('/logout')
   } catch (err: any) {
-    return { error: err.message || 'Logout failed' }
+    console.warn('Logout API warning:', err.response?.data?.message || err.message)
+  } finally {
+    setToken(null)
   }
+  return { error: null }
 }
 
 export async function getCurrentSession(): Promise<SessionResponse> {
+  const token = getToken()
+  if (!token) {
+    return { session: null, error: null }
+  }
   try {
-    const { data, error } = await supabase.auth.getSession()
-    if (error) throw error
-    return { session: data.session, error: null }
+    const response = await apiClient.get('/me')
+    return { session: { user: response.data.data }, error: null }
   } catch (err: any) {
-    return { session: null, error: err.message }
+    setToken(null)
+    return { session: null, error: null }
   }
 }
 
 export async function getCurrentUser(): Promise<AuthResponse> {
+  const token = getToken()
+  if (!token) {
+    return { user: null, error: 'No authenticated user' }
+  }
   try {
-    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
-    if (authError) throw authError
-    if (!authUser) return { user: null, error: 'No authenticated user' }
-
-    // Fetch the user's profile
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', authUser.id)
-      .single()
-
-    if (profileError && profileError.code !== 'PGRST116') {
-      console.warn('Profile fetch error:', profileError)
-    }
-
-    const user: User = {
-      id: authUser.id,
-      name: profile?.name || authUser.email?.split('@')[0] || 'User',
-      email: authUser.email || '',
-      role: profile?.role || 'faculty',
-      institution: profile?.institution || 'State University',
-      avatar: profile?.avatar || undefined,
-      createdAt: authUser.created_at
-    }
-
+    const response = await apiClient.get('/me')
+    const user = mapApiUser(response.data.data)
     return { user, error: null }
   } catch (err: any) {
-    return { user: null, error: err.message || 'Failed to get user' }
+    const message = err.response?.data?.message || 'Failed to fetch user profile'
+    setToken(null)
+    return { user: null, error: message }
   }
 }
 
 // eslint-disable-next-line no-unused-vars
-export function onAuthStateChange(callback: (user: any) => void) {
-  return supabase.auth.onAuthStateChange((event, session) => {
-    if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-      callback(session?.user || null)
-    } else if (event === 'SIGNED_OUT') {
-      callback(null)
-    }
-  })
+export function onAuthStateChange(callback: (user: User | null) => void) {
+  // Token-based auth has no real-time subscription.
+  // Check the token once and notify the listener. The listener
+  // callback will fetch the user profile if a token is present.
+  const token = getToken()
+  if (token) {
+    callback({} as User)
+  } else {
+    callback(null)
+  }
+
+  return {
+    subscription: {
+      unsubscribe: () => undefined,
+    },
+  }
 }

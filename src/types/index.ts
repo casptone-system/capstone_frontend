@@ -5,7 +5,7 @@ export interface User {
   name: string
   email: string
   role: UserRole
-  institution: string
+  institution?: string
   avatar?: string
   createdAt?: string
 }
@@ -87,4 +87,14 @@ export interface DashboardMetrics {
   pendingSubmissions: number
   assignmentCompletion: number
   performanceTrend: number
+}
+
+export interface College {
+  id: string
+  name: string
+  code: string
+  description?: string
+  dean?: string
+  createdAt?: string
+  updatedAt?: string
 }

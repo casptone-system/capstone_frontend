@@ -77,8 +77,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  // Use the Pinia auth store — not raw localStorage — so that
-  // authentication is always backed by the real Supabase session.
+  // Use the Pinia auth store with the local Laravel-ready session state.
   const authStore = useAuthStore()
   const isAuthenticated = authStore.isAuthenticated
   const userRole = authStore.userRole

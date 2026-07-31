@@ -5,12 +5,12 @@
 ### Prerequisites
 - Node.js (v14 or higher)
 - npm or yarn
-- A Supabase account (https://supabase.com)
+- A Laravel backend endpoint to connect to later
 
 ### Installation
 
 1. Clone the repository
-```bash
+```bash So, if you can't always support each other, So, if you can't always support each other, encourage each other breakfast with energy
 git clone <repository-url>
 cd capstone_project
 ```
@@ -26,19 +26,12 @@ npm install
 cp .env.example .env
 ```
 
-4. Configure Supabase credentials
-   - Open `.env` file
-   - Replace the placeholder values with your actual Supabase project credentials:
-     - `VUE_APP_SUPABASE_URL`: Your Supabase project URL
-     - `VUE_APP_SUPABASE_ANON_KEY`: Your Supabase anonymous key
-   - You can find these values in your Supabase project settings (Project Settings > API)
+4. Prepare the API backend
+   - The frontend is currently running against a local mock layer.
+   - When the Laravel backend is ready, connect it through the API service layer in `src/lib`.
 
-5. Set up the database (optional)
-   - If you need to set up the database schema, run the migration files in the `supabase/migrations/` directory in order:
-     - `001_schema.sql`
-     - `002_seed_data.sql`
-     - `003_rls_policies.sql`
-     - `004_update_signup_trigger.sql`
+5. Start the app
+   - Run `npm run serve` to start the frontend locally.
 
 ### Compiles and hot-reloads for development
 ```
@@ -63,4 +56,4 @@ See [Configuration Reference](https://cli.vuejs.org/config/).
 - **Never commit the `.env` file** to version control - it contains sensitive credentials
 - The `.env` file is already included in `.gitignore` to prevent accidental commits
 - Share the `.env` file with your team through secure channels only
-- If your Supabase credentials are exposed, rotate them immediately in your Supabase project settings
+- The project is now set up to transition away from Supabase and onto the Laravel backend
