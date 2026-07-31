@@ -1,11 +1,21 @@
 <template>
-  <div :class="['stat-card', { 'stat-loading': isLoading }]">
-    <div class="stat-header">
-      <div class="stat-title">{{ title }}</div>
-      <div v-if="badge" :class="['stat-badge', `badge-${badge.variant}`]">
-        {{ badge.label }}
+  <div class="bg-white rounded-lg shadow p-6 border-l-4" :style="{ borderLeftColor: color }">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-gray-500 text-sm font-medium">{{ title }}</p>
+        <p class="text-3xl font-bold text-gray-900 mt-2">{{ value }}</p>
+      </div>
+      <div class="text-4xl" :style="{ color }">
+        <ion-icon :icon="icon"></ion-icon>
       </div>
     </div>
+<<<<<<< HEAD
+    <p v-if="change" class="text-xs mt-2" :class="isPositive ? 'text-green-600' : 'text-red-600'">
+      <span v-if="isPositive">↑</span>
+      <span v-else>↓</span>
+      {{ Math.abs(change) }}% from last period
+    </p>
+=======
 
     <div class="stat-value">
       <span v-if="isLoading" class="skeleton"></span>
@@ -18,29 +28,37 @@
       <ion-icon :name="trend.direction === 'up' ? 'arrow-up' : 'arrow-down'"></ion-icon>
       <span>{{ trend.value }}%</span>
     </div>
+>>>>>>> 3c4a98959b6b6532b97c22c03523a7964c38f154
   </div>
 </template>
 
 <script setup lang="ts">
 import { IonIcon } from '@ionic/vue'
+import { computed } from 'vue'
 
-defineProps<{
+defineOptions({
+  name: 'StatCard'
+})
+
+interface Props {
   title: string
-  value: string | number
-  subtitle?: string
-  isLoading?: boolean
-  badge?: {
-    label: string
-    variant: 'primary' | 'success' | 'warning' | 'danger'
-  }
-  trend?: {
-    value: number
-    direction: 'up' | 'down'
-  }
-}>()
+  value: number | string
+  icon: any
+  color?: string
+  change?: number
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  color: '#3b82f6',
+  change: undefined,
+})
+
+const isPositive = computed(() => props.change && props.change > 0)
 </script>
 
 <style scoped>
+<<<<<<< HEAD
+=======
 .stat-card {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -50,6 +68,7 @@ defineProps<{
   box-shadow: var(--shadow-sm);
 }
 
+>>>>>>> 3c4a98959b6b6532b97c22c03523a7964c38f154
 .stat-card:hover {
   box-shadow: var(--shadow-md);
   border-color: var(--color-border-hover);
@@ -71,6 +90,8 @@ defineProps<{
   letter-spacing: 0.5px;
 }
 
+<<<<<<< HEAD
+=======
 .stat-badge {
   display: inline-block;
   padding: var(--spacing-2xs) var(--spacing-sm);
@@ -99,18 +120,13 @@ defineProps<{
   color: var(--color-danger);
 }
 
+>>>>>>> 3c4a98959b6b6532b97c22c03523a7964c38f154
 .stat-value {
   font-size: var(--text-4xl);
   font-weight: var(--font-weight-extrabold);
   color: var(--color-text);
   margin-bottom: var(--spacing-md);
   line-height: 1;
-}
-
-.stat-subtitle {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  margin-bottom: var(--spacing-md);
 }
 
 .stat-trend {
@@ -128,6 +144,8 @@ defineProps<{
 .trend-down {
   color: var(--color-danger);
 }
+<<<<<<< HEAD
+=======
 
 .stat-loading {
   opacity: 0.6;
@@ -147,4 +165,5 @@ defineProps<{
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+>>>>>>> 3c4a98959b6b6532b97c22c03523a7964c38f154
 </style>

@@ -1,4 +1,13 @@
 <template>
+<<<<<<< HEAD
+  <ion-page>
+      <ion-header :translucent="true">
+      <ion-toolbar>
+        <template #start>
+          <ion-buttons>
+            <ion-menu-button></ion-menu-button>
+          </ion-buttons>
+=======
   <div class="dashboard-page">
     <!-- Page Header -->
     <div class="page-header">
@@ -51,47 +60,129 @@
               </button>
             </div>
           </div>
+>>>>>>> 3c4a98959b6b6532b97c22c03523a7964c38f154
         </template>
+        <ion-title>Dashboard</ion-title>
+      </ion-toolbar>
+    </ion-header>
 
-        <div class="chart-container">
-          <canvas ref="complianceChart"></canvas>
+    <ion-content :fullscreen="true" class="p-4">
+      <div class="space-y-6">
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            title="Total Documents"
+            :value="stats.totalDocuments"
+            :icon="documentTextOutline"
+            color="#3b82f6"
+            :change="12"
+          />
+          <StatCard
+            title="Approved"
+            :value="stats.approvedDocuments"
+            :icon="checkmarkDoneOutline"
+            color="#10b981"
+            :change="8"
+          />
+          <StatCard
+            title="Pending Review"
+            :value="stats.pendingDocuments"
+            :icon="hourglassOutline"
+            color="#f59e0b"
+            :change="-5"
+          />
+          <StatCard
+            title="Active Programs"
+            :value="stats.activePrograms"
+            :icon="folderOpenOutline"
+            color="#8b5cf6"
+            :change="0"
+          />
         </div>
-      </app-card>
-    </div>
 
-    <!-- Recent Activity Section -->
-    <div class="activity-section">
-      <h2 class="section-title">Recent Activity</h2>
-      <app-card variant="default">
-        <div class="activity-list">
-          <div v-for="activity in recentActivity" :key="activity.id" class="activity-item">
-            <div class="activity-icon" :style="{ backgroundColor: activity.color }">
-              <ion-icon :name="activity.icon"></ion-icon>
-            </div>
-            <div class="activity-details">
-              <div class="activity-title">{{ activity.title }}</div>
-              <div class="activity-time">{{ activity.time }}</div>
-            </div>
-            <div class="activity-status" :class="`status-${activity.status}`">
-              {{ activity.status }}
-            </div>
-          </div>
+        <!-- Skeleton Loading -->
+        <div v-if="isLoading" class="space-y-4">
+          <ion-skeleton-text animated></ion-skeleton-text>
+          <ion-skeleton-text animated></ion-skeleton-text>
         </div>
-      </app-card>
-    </div>
-  </div>
+
+        <!-- Error Message -->
+        <div v-if="error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          {{ error }}
+        </div>
+
+        <!-- Quick Links -->
+        <ion-card class="shadow-md">
+          <ion-card-header>
+            <ion-card-title>Quick Actions</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <div class="grid grid-cols-2 gap-2">
+              <ion-button expand="block" fill="outline" :router-link="'/documents'">
+                <template #start><ion-icon :icon="documentTextOutline"></ion-icon></template>
+                Documents
+              </ion-button>
+              <ion-button expand="block" fill="outline" :router-link="'/upload'">
+                <template #start><ion-icon :icon="cloudUploadOutline"></ion-icon></template>
+                Upload
+              </ion-button>
+              <ion-button expand="block" fill="outline" :router-link="'/reports'">
+                <template #start><ion-icon :icon="barChartOutline"></ion-icon></template>
+                Reports
+              </ion-button>
+              <ion-button expand="block" fill="outline" :router-link="'/users'">
+                <template #start><ion-icon :icon="peopleOutline"></ion-icon></template>
+                Users
+              </ion-button>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </div>
+    </ion-content>
+  </ion-page>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useDashboardStore } from '@/stores/dashboardStore'
-import { useAuthStore } from '@/stores/authStore'
-import { Chart, registerables } from 'chart.js'
-import AppCard from '@/components/AppCard.vue'
-import AppButton from '@/components/AppButton.vue'
+import {
+  IonPage,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  IonCard,
+  IonCardContent,
+  IonCardHeader,
+  IonCardTitle,
+  IonButton,
+  IonIcon,
+  IonButtons,
+  IonMenuButton,
+  IonSkeletonText,
+} from '@ionic/vue'
+import {
+  documentTextOutline,
+  checkmarkDoneOutline,
+  folderOpenOutline,
+  cloudUploadOutline,
+  barChartOutline,
+  peopleOutline,
+  hourglassOutline,
+} from 'ionicons/icons'
 import StatCard from '@/components/StatCard.vue'
-import { IonIcon } from '@ionic/vue'
+import { ref, onMounted } from 'vue'
+import api from '@/services/api'
 
+<<<<<<< HEAD
+const isLoading = ref(false)
+const error = ref('')
+const stats = ref({
+  totalDocuments: 0,
+  approvedDocuments: 0,
+  pendingDocuments: 0,
+  activePrograms: 0,
+})
+
+=======
 Chart.register(...registerables)
 
 const dashboardStore = useDashboardStore()
@@ -199,56 +290,30 @@ const recentActivity = [
   }
 ]
 
+>>>>>>> 3c4a98959b6b6532b97c22c03523a7964c38f154
 onMounted(async () => {
-  isLoadingStats.value = true
-  await dashboardStore.fetchDashboardStats()
-  isLoadingStats.value = false
-
-  initializeChart()
+  await loadDashboardData()
 })
 
-const initializeChart = () => {
-  const canvas = complianceChart.value
-  if (!canvas) return
+const loadDashboardData = async () => {
+  isLoading.value = true
+  error.value = ''
 
-  new Chart(canvas, {
-    type: 'doughnut',
-    data: {
-      labels: ['Compliant', 'At Risk', 'Pending Review'],
-      datasets: [{
-        data: [62, 18, 20],
-        backgroundColor: [
-          'rgba(34, 197, 94, 0.8)',
-          'rgba(239, 68, 68, 0.8)',
-          'rgba(245, 158, 11, 0.8)'
-        ],
-        borderColor: [
-          'rgb(34, 197, 94)',
-          'rgb(239, 68, 68)',
-          'rgb(245, 158, 11)'
-        ],
-        borderWidth: 2,
-        borderRadius: 8
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      cutout: '65%',
-      plugins: {
-        legend: {
-          position: 'bottom',
-          labels: {
-            font: { size: 12 },
-            padding: 20,
-            usePointStyle: true
-          }
-        }
-      }
-    }
-  })
+  try {
+    // Update with your actual dashboard endpoint
+    const response = await api.get('/dashboard/stats')
+    stats.value = response.data
+  } catch (err: any) {
+    error.value = err.response?.data?.message || 'Failed to load dashboard data'
+    console.error('Dashboard error:', err)
+  } finally {
+    isLoading.value = false
+  }
 }
 </script>
+
+<style scoped>
+</style>
 
 <style scoped>
 .dashboard-page {

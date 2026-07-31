@@ -1,19 +1,26 @@
 <template>
-  <div id="app">
-    <app-layout v-if="isAuthenticated" />
-    <router-view v-else />
-  </div>
+  <ion-app>
+    <ion-router-outlet />
+  </ion-app>
 </template>
 
 <script setup lang="ts">
+<<<<<<< HEAD
+import { IonApp, IonRouterOutlet } from '@ionic/vue'
+import { useAuthStore } from './stores/authStore'
+=======
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import AppLayout from '@/components/AppLayout.vue'
+>>>>>>> 3c4a98959b6b6532b97c22c03523a7964c38f154
 
 const authStore = useAuthStore()
-const router = useRouter()
 
+<<<<<<< HEAD
+// Initialize auth check on app load
+authStore.restoreSession()
+=======
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 
 onMounted(async () => {
@@ -34,11 +41,8 @@ onMounted(async () => {
 onUnmounted(() => {
   authStore.cleanupAuthListener()
 })
+>>>>>>> 3c4a98959b6b6532b97c22c03523a7964c38f154
 </script>
 
-<style>
-#app {
-  width: 100%;
-  min-height: 100vh;
-}
+<style scoped>
 </style>

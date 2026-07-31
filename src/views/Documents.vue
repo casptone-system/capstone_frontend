@@ -1,20 +1,41 @@
 <template>
-  <div class="page-container">
-    <div class="page-header">
-      <h1>Documents & Evidence</h1>
-      <p>Manage accreditation documents, evidence packages, and file submissions.</p>
-    </div>
+  <ion-page>
+    <ion-header :translucent="true">
+      <ion-toolbar>
+          <template #start>
+            <ion-buttons>
+              <ion-menu-button></ion-menu-button>
+            </ion-buttons>
+          </template>
+          <ion-title>Documents</ion-title>
+        </ion-toolbar>
+    </ion-header>
 
-    <div class="documents-toolbar">
-      <div class="search-bar">
-        <ion-icon name="search-outline"></ion-icon>
-        <input type="text" placeholder="Search documents..." @input="searchDocuments">
-      </div>
-      <app-button variant="primary" icon="cloud-upload-outline">
-        Upload Document
-      </app-button>
-    </div>
+    <ion-content :fullscreen="true" class="p-4">
+      <div class="space-y-4">
+        <!-- Filter Bar -->
+        <ion-card class="shadow-md">
+          <ion-card-content class="pt-6">
+            <ion-list>
+              <ion-item>
+                <ion-label>Filter by Status</ion-label>
+                <ion-select v-model="selectedStatus" @ion-change="loadDocuments">
+                  <ion-select-option value="">All</ion-select-option>
+                  <ion-select-option value="approved">Approved</ion-select-option>
+                  <ion-select-option value="pending">Pending</ion-select-option>
+                  <ion-select-option value="rejected">Rejected</ion-select-option>
+                </ion-select>
+              </ion-item>
+            </ion-list>
+          </ion-card-content>
+        </ion-card>
 
+<<<<<<< HEAD
+        <!-- Loading State -->
+        <div v-if="isLoading" class="space-y-4">
+          <ion-skeleton-text animated style="width: 100%"></ion-skeleton-text>
+          <ion-skeleton-text animated style="width: 100%"></ion-skeleton-text>
+=======
     <div class="documents-content">
       <app-card variant="default">
         <div class="document-list">
@@ -36,25 +57,83 @@
               <ion-icon name="ellipsis-vertical-outline"></ion-icon>
             </button>
           </div>
+>>>>>>> 3c4a98959b6b6532b97c22c03523a7964c38f154
         </div>
-      </app-card>
-    </div>
-  </div>
+
+        <!-- Documents Grid -->
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <DocumentCard v-for="doc in documents" :key="doc.id" :doc="doc" />
+        </div>
+
+        <!-- Empty State -->
+        <div v-if="!isLoading && documents.length === 0" class="text-center py-12">
+          <ion-icon :icon="documentTextOutline" class="text-6xl text-gray-300 mb-4"></ion-icon>
+          <p class="text-gray-600">No documents found</p>
+        </div>
+
+        <!-- Error State -->
+        <div v-if="error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          {{ error }}
+        </div>
+      </div>
+    </ion-content>
+  </ion-page>
 </template>
 
 <script setup lang="ts">
-import { useDocumentStore } from '@/stores/documentStore'
-import AppCard from '@/components/AppCard.vue'
-import AppButton from '@/components/AppButton.vue'
-import { IonIcon } from '@ionic/vue'
+import {
+  IonPage,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  IonCard,
+  IonCardContent,
+  IonIcon,
+  IonList,
+  IonItem,
+  IonLabel,
+  IonSelect,
+  IonSelectOption,
+  IonButtons,
+  IonMenuButton,
+  IonSkeletonText,
+} from '@ionic/vue'
+import { documentTextOutline } from 'ionicons/icons'
+import DocumentCard from '@/components/DocumentCard.vue'
+import { ref, onMounted } from 'vue'
+import api from '@/services/api'
+import type { Document } from '@/types'
 
-const documentStore = useDocumentStore()
+const selectedStatus = ref('')
+const documents = ref<Document[]>([])
+const isLoading = ref(false)
+const error = ref('')
 
-const searchDocuments = (e: Event) => {
-  const query = (e.target as HTMLInputElement).value
-  documentStore.searchDocuments(query)
+onMounted(() => {
+  loadDocuments()
+})
+
+const loadDocuments = async () => {
+  isLoading.value = true
+  error.value = ''
+
+  try {
+    // Update with your actual documents endpoint
+    const params = selectedStatus.value ? { status: selectedStatus.value } : {}
+    const response = await api.get('/documents', { params })
+    documents.value = response.data
+  } catch (err: any) {
+    error.value = err.response?.data?.message || 'Failed to load documents'
+    console.error('Documents error:', err)
+  } finally {
+    isLoading.value = false
+  }
 }
 </script>
+
+<style scoped>
+</style>
 
 <style scoped>
 .page-container {

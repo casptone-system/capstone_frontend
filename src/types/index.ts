@@ -1,34 +1,38 @@
-export type UserRole = 'dean' | 'program-chair' | 'faculty' | 'admin'
-
+// User and Authentication
 export interface User {
   id: string
   name: string
   email: string
   role: UserRole
-  institution?: string
+  institution: string
   avatar?: string
   createdAt?: string
 }
 
+// Programs
 export interface Program {
   id: string
   name: string
-  code: string
-  chair: string
-  accreditationStatus: 'compliant' | 'at-risk' | 'non-compliant'
-  complianceScore: number
+  code?: string
+  status: string
+  description?: string
 }
 
-export interface AccreditationArea {
+// Reports
+export interface Report {
   id: string
-  name: string
-  code: string
-  description: string
-  assignedTo: string[]
-  status: 'not-started' | 'in-progress' | 'completed' | 'submitted'
-  dueDate: string
+  title: string
+  description?: string
+  generatedDate: string
+  generatedBy: string
+  type: string
+  downloadUrl?: string
 }
 
+<<<<<<< HEAD
+// Submissions
+export interface Submission {
+=======
 export interface AppDocument {
   id: string
   title: string
@@ -43,50 +47,106 @@ export interface AppDocument {
 }
 
 export interface SubmissionSchedule {
+>>>>>>> 3c4a98959b6b6532b97c22c03523a7964c38f154
   id: string
-  areaId: string
   programId: string
-  dueDate: string
+  documentId: string
   status: 'pending' | 'submitted' | 'approved' | 'rejected'
   submittedAt?: string
 }
 
-export interface ComplianceScore {
-  areaId: string
-  programId: string
-  score: number
-  lastUpdated: string
-  trend: number // percentage change
+// Employees
+export interface Employee {
+  id: string
+  name: string
+  email: string
+  role: string
+  department?: string
+  status: 'active' | 'inactive'
 }
 
+// Audit Log
 export interface AuditLog {
   id: string
-  userId: string
   action: string
-  entityType: string
-  entityId: string
+  user: string
   timestamp: string
-  details: Record<string, any>
+  details: string
+  status: 'success' | 'failed'
 }
 
-export interface NotificationMessage {
+// QA Review
+export interface QAReview {
   id: string
-  userId: string
-  title: string
-  message: string
-  type: 'info' | 'success' | 'warning' | 'error'
-  read: boolean
-  createdAt: string
-  actionUrl?: string
+  itemTitle: string
+  reviewer: string
+  reviewDate: string
+  status: 'passed' | 'failed' | 'pending'
+  feedback: string
 }
 
-export interface DashboardMetrics {
-  totalPrograms: number
-  totalAreas: number
-  complianceScore: number
-  pendingSubmissions: number
-  assignmentCompletion: number
-  performanceTrend: number
+// Accreditation Management
+export interface Accreditation {
+  id: string
+  name: string
+  code: string
+  description: string
+  status: 'draft' | 'submitted' | 'under-review' | 'approved' | 'rejected' | 'renewal'
+  programId?: string
+  startDate: string
+  expiryDate: string
+  reviewerName?: string
+  reviewerEmail?: string
+  reviewDate?: string
+  comments?: string
+  attachments: AccreditationFile[]
+  standards: AccreditationStandard[]
+  createdAt: string
+  updatedAt: string
+  createdBy: string
+}
+
+export interface AccreditationFile {
+  id: string
+  fileName: string
+  fileSize: number
+  fileType: string
+  uploadDate: string
+  uploadedBy: string
+  fileUrl: string
+  category: 'evidence' | 'support' | 'clarification' | 'response'
+  description?: string
+}
+
+export interface AccreditationStandard {
+  id: string
+  standardNumber: string
+  standardName: string
+  description: string
+  complianceStatus: 'compliant' | 'partial' | 'non-compliant' | 'pending'
+  evidence: string
+  notes?: string
+}
+
+export interface AccreditationComment {
+  id: string
+  accreditationId: string
+  author: string
+  content: string
+  timestamp: string
+  type: 'comment' | 'review' | 'clarification'
+}
+
+export interface AccreditationReview {
+  id: string
+  accreditationId: string
+  reviewerId: string
+  reviewerName: string
+  reviewDate: string
+  rating: number
+  status: 'approved' | 'revision-required' | 'rejected'
+  feedback: string
+  recommendations?: string
 }
 
 export interface College {

@@ -1,10 +1,43 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+<<<<<<< HEAD
+=======
 import { signInWithEmail, signInWithGoogle, signInWithGithub, signOutUser, getCurrentUser, onAuthStateChange, signUp } from '@/lib/auth'
+>>>>>>> 3c4a98959b6b6532b97c22c03523a7964c38f154
 import type { User } from '@/types'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
+<<<<<<< HEAD
+  const isAuthenticated = computed(() => user.value !== null)
+
+  const checkAuth = () => {
+    const savedUser = localStorage.getItem('user')
+    if (savedUser) {
+      try {
+        user.value = JSON.parse(savedUser)
+      } catch (err) {
+        console.error('Failed to parse saved user:', err)
+        localStorage.removeItem('user')
+        localStorage.removeItem('authToken')
+      }
+    }
+  }
+
+  const setUser = (userData: User) => {
+    user.value = userData
+    localStorage.setItem('user', JSON.stringify(userData))
+  }
+
+  const logout = () => {
+    user.value = null
+    localStorage.removeItem('user')
+    localStorage.removeItem('authToken')
+  }
+
+  const restoreSession = () => {
+    checkAuth()
+=======
   const isAuthenticated = ref(false)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
@@ -151,11 +184,18 @@ export const useAuthStore = defineStore('auth', () => {
     } finally {
       isLoading.value = false
     }
+>>>>>>> 3c4a98959b6b6532b97c22c03523a7964c38f154
   }
 
   return {
     user,
     isAuthenticated,
+<<<<<<< HEAD
+    checkAuth,
+    setUser,
+    logout,
+    restoreSession,
+=======
     isLoading,
     error,
     userRole,
@@ -168,5 +208,6 @@ export const useAuthStore = defineStore('auth', () => {
     setupAuthListener,
     cleanupAuthListener,
     register
+>>>>>>> 3c4a98959b6b6532b97c22c03523a7964c38f154
   }
 })
