@@ -285,7 +285,7 @@ import {
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import StatCard from '@/components/StatCard.vue'
-import { mockAccreditationAPI } from '@/services/mockData'
+import { accreditationAPI } from '@/services/api'
 import type { Accreditation } from '@/types'
 
 const router = useRouter()
@@ -367,8 +367,8 @@ const loadAccreditations = async () => {
   try {
     isLoading.value = true
     error.value = ''
-    const response = await mockAccreditationAPI.list()
-    accreditations.value = response.data
+    const response = await accreditationAPI.list()
+    accreditations.value = response.data?.data ?? response.data
     await calculateStats()
   } catch (err: any) {
     error.value = 'Failed to load accreditations. Please try again.'
@@ -380,12 +380,13 @@ const loadAccreditations = async () => {
 
 const calculateStats = async () => {
   try {
-    const statsResponse = await mockAccreditationAPI.getStats()
+    const statsResponse = await accreditationAPI.getStats()
+    const data = statsResponse.data?.data ?? statsResponse.data
     stats.value = {
-      total: statsResponse.data.total,
-      active: statsResponse.data.byStatus.approved,
-      underReview: statsResponse.data.byStatus['under-review'],
-      expiringSoon: statsResponse.data.expiringSoon
+      total: data.total,
+      active: data.byStatus.approved,
+      underReview: data.byStatus['under-review'],
+      expiringSoon: data.expiringSoon
     }
   } catch (err) {
     console.error('Error calculating stats:', err)
@@ -418,7 +419,7 @@ const deleteAccreditation = async (id: string) => {
         role: 'destructive',
         handler: async () => {
           try {
-            await mockAccreditationAPI.delete(id)
+            await accreditationAPI.delete(id)
             accreditations.value = accreditations.value.filter(acc => acc.id !== id)
             await calculateStats()
           } catch (err) {

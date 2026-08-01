@@ -348,7 +348,7 @@ import {
 } from 'ionicons/icons'
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { mockAccreditationAPI } from '@/services/mockData'
+import { accreditationAPI } from '@/services/api'
 import type { Accreditation, AccreditationStandard } from '@/types'
 
 const router = useRouter()
@@ -471,10 +471,11 @@ const submitForm = async () => {
         formData.append('files', sf.file)
         formData.append('categories', sf.category)
       })
-      const uploadResponse = await mockAccreditationAPI.uploadFiles(formData)
-      
-      if (uploadResponse.data.files) {
-        form.value.attachments = [...(form.value.attachments || []), ...uploadResponse.data.files]
+      const uploadResponse = await accreditationAPI.uploadFiles(formData)
+      const uploadedFiles = uploadResponse.data?.data?.files ?? uploadResponse.data?.files
+
+      if (uploadedFiles) {
+        form.value.attachments = [...(form.value.attachments || []), ...uploadedFiles]
       }
 
       selectedFiles.value = []
@@ -482,10 +483,10 @@ const submitForm = async () => {
 
     // Save accreditation
     if (isEditMode.value && route.params.id) {
-      await mockAccreditationAPI.update(route.params.id as string, form.value as Accreditation)
+      await accreditationAPI.update(route.params.id as string, form.value as Accreditation)
       successMessage.value = 'Accreditation updated successfully!'
     } else {
-      await mockAccreditationAPI.create(form.value as Accreditation)
+      await accreditationAPI.create(form.value as Accreditation)
       successMessage.value = 'Accreditation created successfully!'
     }
 
@@ -502,8 +503,8 @@ const submitForm = async () => {
 const loadAccreditation = async () => {
   if (route.params.id && route.params.id !== 'new') {
     try {
-      const response = await mockAccreditationAPI.get(route.params.id as string)
-      form.value = response.data
+      const response = await accreditationAPI.get(route.params.id as string)
+      form.value = response.data?.data ?? response.data
       isEditMode.value = true
     } catch (err: any) {
       error.value = 'Failed to load accreditation'

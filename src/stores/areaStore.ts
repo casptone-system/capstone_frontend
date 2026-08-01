@@ -17,7 +17,7 @@ export const useAreaStore = defineStore('areas', () => {
         const data = await getAccreditationAreas()
         areas.value = data
       } catch (apiError) {
-        console.warn('Supabase fetch failed, using mock data:', apiError)
+        console.warn('Backend fetch failed, using mock data:', apiError)
         setMockAreas()
       }
     } catch (err: any) {

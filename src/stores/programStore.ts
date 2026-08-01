@@ -17,7 +17,7 @@ export const useProgramStore = defineStore('programs', () => {
         const data = await getPrograms()
         programs.value = data
       } catch (apiError) {
-        console.warn('Supabase fetch failed, using mock data:', apiError)
+        console.warn('Backend fetch failed, using mock data:', apiError)
         setMockPrograms()
       }
     } catch (err: any) {
@@ -110,7 +110,7 @@ export const useProgramStore = defineStore('programs', () => {
       try {
         await deleteProgram(id)
       } catch {
-        console.warn('Supabase delete failed, removing locally')
+        console.warn('Backend delete failed, removing locally')
       }
       programs.value = programs.value.filter(p => p.id !== id)
     } catch (err: any) {

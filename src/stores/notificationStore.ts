@@ -23,7 +23,7 @@ export const useNotificationStore = defineStore('notifications', () => {
         const data = await getNotifications(userId)
         notifications.value = data
       } catch {
-        console.warn('Supabase fetch failed, using mock data')
+        console.warn('Backend fetch failed, using mock data')
         setMockNotifications()
       }
 
@@ -51,7 +51,7 @@ export const useNotificationStore = defineStore('notifications', () => {
       try {
         await markNotificationRead(id)
       } catch {
-        console.warn('Supabase mark read failed, updating locally')
+        console.warn('Backend mark read failed, updating locally')
       }
       const notification = notifications.value.find(n => n.id === id)
       if (notification) {
@@ -70,7 +70,7 @@ export const useNotificationStore = defineStore('notifications', () => {
         try {
           await markAllNotificationsRead(userId)
         } catch {
-          console.warn('Supabase mark all read failed, updating locally')
+          console.warn('Backend mark all read failed, updating locally')
         }
       }
       notifications.value.forEach(n => { n.read = true })

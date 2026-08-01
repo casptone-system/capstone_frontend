@@ -126,7 +126,7 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   // Use the Pinia auth store — not raw localStorage — so that
-  // authentication is always backed by the real Supabase session.
+  // authentication is backed by the real backend session.
   const authStore = useAuthStore()
   const requiresAuth = to.meta.requiresAuth
 

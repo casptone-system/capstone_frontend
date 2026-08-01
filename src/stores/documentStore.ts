@@ -26,7 +26,7 @@ export const useDocumentStore = defineStore('documents', () => {
         documents.value = data
         filteredDocuments.value = data
       } catch (apiError) {
-        console.warn('Supabase fetch failed, using mock data:', apiError)
+        console.warn('Backend fetch failed, using mock data:', apiError)
         setMockDocuments()
       }
     } catch (err: any) {
@@ -151,7 +151,7 @@ export const useDocumentStore = defineStore('documents', () => {
         filteredDocuments.value = documents.value
         return newDoc
       } catch (apiError) {
-        console.warn('Supabase upload failed, using local mock:', apiError)
+        console.warn('Backend upload failed, using local mock:', apiError)
         // Fallback: mock upload
         const newDoc: AppDocument = {
           id: Date.now().toString(),
@@ -183,7 +183,7 @@ export const useDocumentStore = defineStore('documents', () => {
       try {
         await apiUpdateDocumentStatus(id, status)
       } catch {
-        console.warn('Supabase update failed, updating locally')
+        console.warn('Backend update failed, updating locally')
       }
       // Update locally regardless
       const doc = documents.value.find(d => d.id === id)

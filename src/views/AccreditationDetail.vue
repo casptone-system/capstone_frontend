@@ -229,7 +229,7 @@ import {
 } from 'ionicons/icons'
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { mockAccreditationAPI } from '@/services/mockData'
+import { accreditationAPI } from '@/services/api'
 import type { Accreditation } from '@/types'
 
 const router = useRouter()
@@ -322,8 +322,8 @@ const loadAccreditation = async () => {
     isLoading.value = true
     error.value = ''
     const id = route.params.id as string
-    const response = await mockAccreditationAPI.get(id)
-    accreditation.value = response.data
+    const response = await accreditationAPI.get(id)
+    accreditation.value = response.data?.data ?? response.data
   } catch (err: any) {
     error.value = 'Failed to load accreditation'
     console.error('Error loading accreditation:', err)
@@ -350,7 +350,7 @@ const deleteAccreditation = async () => {
         role: 'destructive',
         handler: async () => {
           try {
-            await mockAccreditationAPI.delete(route.params.id as string)
+            await accreditationAPI.delete(route.params.id as string)
             router.push('/accreditation')
           } catch (err) {
             error.value = 'Failed to delete accreditation'

@@ -66,7 +66,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
     isLoading.value = true
     error.value = null
     try {
-      // Try to fetch from Supabase API
+      // Try to fetch from backend API
       try {
         const metrics = await getDashboardMetrics()
         stats.value = {
@@ -79,7 +79,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
           performanceTrend: metrics.performanceTrend
         }
       } catch (apiError) {
-        console.warn('Supabase fetch failed, using mock data:', apiError)
+        console.warn('Backend fetch failed, using mock data:', apiError)
         // Fallback to mock data
         stats.value = {
           totalPrograms: 28,

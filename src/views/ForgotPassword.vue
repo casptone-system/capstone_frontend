@@ -1,117 +1,255 @@
 <template>
   <ion-page>
-    <ion-header :translucent="true">
-      <ion-toolbar>
-        <template #start>
-          <ion-buttons>
-            <ion-back-button default-href="/"></ion-back-button>
-          </ion-buttons>
-        </template>
-        <ion-title>Forgot Password</ion-title>
-      </ion-toolbar>
-    </ion-header>
+    <ion-content class="forgot-page">
 
-    <ion-content :fullscreen="true" class="flex items-center justify-center">
-      <div class="w-full max-w-md px-6">
-        <ion-card class="shadow-lg">
-          <ion-card-content class="pt-8">
-            <h2 class="text-2xl font-bold text-gray-900 mb-2">Reset Password</h2>
-            <p class="text-gray-600 mb-6">
-              Enter your email address and we'll send you a link to reset your password.
-            </p>
+      <div class="forgot-container">
 
-            <form @submit.prevent="handleSubmit">
-              <div class="mb-6">
-                <ion-label class="form-label">Email Address</ion-label>
-                <ion-input
-                  v-model="email"
-                  type="email"
-                  placeholder="your@email.com"
-                  class="form-input"
-                ></ion-input>
-              </div>
+        <div class="forgot-card">
 
-              <ion-button
-                v-if="!isLoading"
-                type="submit"
-                expand="block"
-                color="primary"
-                size="large"
-                class="mb-4"
-              >
-                Send Reset Link
-              </ion-button>
-              <ion-button v-else expand="block" color="primary" size="large" class="mb-4" disabled>
-                <ion-spinner name="crescent"></ion-spinner>
-              </ion-button>
+          <img
+            src="@/assets/Archiving_logo.png"
+            alt="ADAMS Logo"
+            class="logo"
+          />
 
-              <div v-if="message" class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
-                {{ message }}
-              </div>
+          <h1>Forgot Password</h1>
 
-              <div v-if="error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-                {{ error }}
-              </div>
+          <p class="subtitle">
+            Enter your institutional email address and we'll send you a password reset link.
+          </p>
 
-              <div class="text-center">
-                <ion-button fill="clear" :router-link="'/login'" class="text-blue-600">
-                  Back to Login
-                </ion-button>
-              </div>
-            </form>
-          </ion-card-content>
-        </ion-card>
+          <form @submit.prevent="handleSubmit">
+
+            <label>Email Address</label>
+
+            <div class="input-wrapper">
+              <ion-icon :icon="mailOutline"></ion-icon>
+
+              <ion-input
+                v-model="email"
+                type="email"
+                placeholder="dean@isu.edu.ph"
+                class="email-input"
+              />
+            </div>
+
+            <div
+              v-if="message"
+              class="success-message"
+            >
+              {{ message }}
+            </div>
+
+            <div
+              v-if="error"
+              class="error-message"
+            >
+              {{ error }}
+            </div>
+
+            <ion-button
+              v-if="!isLoading"
+              expand="block"
+              type="submit"
+              class="submit-btn"
+            >
+              Send Reset Link
+            </ion-button>
+
+            <ion-button
+              v-else
+              expand="block"
+              disabled
+              class="submit-btn"
+            >
+              <ion-spinner name="crescent"></ion-spinner>
+            </ion-button>
+
+          </form>
+          <router-link
+            to="/login"
+            class="back-link"
+          >
+            ← Back to Login
+          </router-link>
+        </div>
       </div>
     </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
+import { ref } from "vue";
+import api from "@/services/api";
+
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
-  IonCard,
-  IonCardContent,
-  IonButton,
   IonInput,
-  IonLabel,
+  IonButton,
   IonSpinner,
-  IonButtons,
-  IonBackButton,
-} from '@ionic/vue'
-import { ref } from 'vue'
-import api from '@/services/api'
+  IonIcon
+} from "@ionic/vue";
 
-const email = ref('')
-const error = ref('')
-const message = ref('')
-const isLoading = ref(false)
+import { mailOutline } from "ionicons/icons";
+
+const email = ref("");
+const error = ref("");
+const message = ref("");
+const isLoading = ref(false);
 
 const handleSubmit = async () => {
+
   if (!email.value) {
-    error.value = 'Please enter your email'
-    return
+    error.value = "Please enter your email address.";
+    return;
   }
 
-  isLoading.value = true
-  error.value = ''
-  message.value = ''
+  error.value = "";
+  message.value = "";
+  isLoading.value = true;
 
   try {
-    // Update with your actual forgot password endpoint
-    await api.post('/auth/forgot-password', { email: email.value })
-    message.value = 'Reset link has been sent to your email'
-    email.value = ''
-  } catch (err: any) {
-    error.value = err.response?.data?.message || 'Failed to send reset link. Please try again.'
-  } finally {
-    isLoading.value = false
-  }
-}
+    await api.post("/auth/forgot-password", {
+      email: email.value
+    });
+        message.value =
+          "If an account exists with this email, a password reset link has been sent.";
+        email.value = "";
+      } catch (err: any) {
+        error.value =
+          err.response?.data?.message ||
+          "Unable to send reset link.";
+      } finally {
+        isLoading.value = false;
+      }
+    };
 </script>
 
 <style scoped>
+
+.forgot-page{
+    --background:#f5f7fb;
+}
+
+.forgot-container{
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:30px;
+}
+
+.forgot-card{
+    width:100%;
+    max-width:420px;
+    background:#ffffff;
+    border-radius:18px;
+    padding:40px;
+    box-shadow:0 15px 35px rgba(0,0,0,.08);
+}
+
+.logo{
+    width:80px;
+    display:block;
+    margin:0 auto 20px;
+}
+
+h1{
+    text-align:center;
+    color:#0b5d3f;
+    font-size:28px;
+    margin-bottom:12px;
+}
+
+.subtitle{
+    text-align:center;
+    color:#6b7280;
+    line-height:1.6;
+    margin-bottom:30px;
+}
+
+label{
+    display:block;
+    margin-bottom:10px;
+    font-weight:600;
+    color:#374151;
+}
+
+.input-wrapper{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    border:1px solid #d1d5db;
+    border-radius:12px;
+    padding:14px 16px;
+    margin-bottom:25px;
+    transition:.25s;
+    background:white;
+}
+
+.input-wrapper:focus-within{
+    border-color:#0b5d3f;
+    box-shadow:0 0 0 4px rgba(11,93,63,.10);
+}
+
+.input-wrapper ion-icon{
+    color:#6b7280;
+    font-size:20px;
+}
+
+.email-input{
+    flex:1;
+}
+
+.submit-btn{
+    --background:#0b5d3f;
+    --border-radius:12px;
+    height:50px;
+    font-weight:600;
+    margin-top:10px;
+}
+
+.success-message{
+    background:#ecfdf5;
+    color:#166534;
+    border:1px solid #bbf7d0;
+    border-radius:10px;
+    padding:14px;
+    margin-bottom:20px;
+    font-size:14px;
+}
+
+.error-message{
+    background:#fef2f2;
+    color:#dc2626;
+    border:1px solid #fecaca;
+    border-radius:10px;
+    padding:14px;
+    margin-bottom:20px;
+    font-size:14px;
+}
+
+.back-link{
+    display:block;
+    text-align:center;
+    margin-top:25px;
+    color:#0b5d3f;
+    font-weight:600;
+    text-decoration:none;
+}
+
+.back-link:hover{
+    text-decoration:underline;
+}
+
+/* Mobile */
+@media(max-width:480px){
+    .forgot-card{
+        padding:30px 24px;
+    }
+    h1{
+        font-size:24px;
+    }
+}
 </style>
