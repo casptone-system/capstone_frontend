@@ -34,6 +34,7 @@
           required
         />
 
+       
         <div class="form-options">
           <label class="checkbox">
             <input v-model="rememberMe" type="checkbox">

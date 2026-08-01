@@ -1,22 +1,13 @@
 import { createApp } from 'vue'
 import { IonicVue } from '@ionic/vue'
 import { createPinia } from 'pinia'
-import { IonicVue } from '@ionic/vue'
 import App from './App.vue'
 import router from './router'
 import './assets/styles.css'
 import '@ionic/vue/css/core.css'
-
-/* Core CSS required for Ionic components to work properly */
-import '@ionic/vue/css/core.css'
-
-<<<<<<< HEAD
-/* Basic CSS for apps built with Ionic */
 import '@ionic/vue/css/normalize.css'
 import '@ionic/vue/css/structure.css'
 import '@ionic/vue/css/typography.css'
-
-/* Optional CSS utils that can be commented out */
 import '@ionic/vue/css/padding.css'
 import '@ionic/vue/css/float-elements.css'
 import '@ionic/vue/css/text-alignment.css'
@@ -25,14 +16,9 @@ import '@ionic/vue/css/flex-utils.css'
 import '@ionic/vue/css/display.css'
 
 const app = createApp(App)
-const pinia = createPinia()
 
 app.use(IonicVue)
-app.use(pinia)
-=======
-app.use(IonicVue)
 app.use(createPinia())
->>>>>>> 3c4a98959b6b6532b97c22c03523a7964c38f154
 app.use(router)
 
 router.isReady().then(() => {

@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { Accreditation, AccreditationComment, AccreditationReview } from '@/types'
+import type { Accreditation, AccreditationReview } from '@/types'
 
 // Update this with your backend URL
 const API_BASE_URL = process.env.VUE_APP_API_URL || 'http://localhost:3000/api'

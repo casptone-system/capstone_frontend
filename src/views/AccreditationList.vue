@@ -260,7 +260,6 @@ import {
   IonButton,
   IonIcon,
   IonBadge,
-  IonButtons,
   IonMenuButton,
   IonInput,
   IonSegment,
@@ -273,7 +272,6 @@ import {
 } from '@ionic/vue'
 import {
   addCircleOutline,
-  folderOutline,
   checkmarkDoneOutline,
   timeOutline,
   warningOutline,

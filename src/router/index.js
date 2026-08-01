@@ -2,7 +2,8 @@ import { createRouter, createWebHistory } from '@ionic/vue-router'
 import { useAuthStore } from '@/stores/authStore'
 
 // Pages
-import LoginPage from '@/views/LoginPage.vue'
+import LoginPage from '@/views/login/LoginPage.vue'
+import RegisterPage from '@/views/login/RegisterPage.vue'
 import ForgotPassword from '@/views/ForgotPassword.vue'
 import Dashboard from '@/views/Dashboard.vue'
 import Documents from '@/views/Documents.vue'
@@ -25,6 +26,12 @@ const routes = [
     path: '/login',
     name: 'login',
     component: LoginPage,
+    meta: { requiresAuth: false },
+  },
+  {
+    path: '/register',
+    name: 'register',
+    component: RegisterPage,
     meta: { requiresAuth: false },
   },
   {

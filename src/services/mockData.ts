@@ -337,6 +337,7 @@ export const mockAccreditationAPI = {
   },
 
   downloadFile: async (fileId: string) => {
+    void fileId
     await new Promise(resolve => setTimeout(resolve, 300))
     return { status: 200, data: new Blob() }
   },
@@ -346,7 +347,6 @@ export const mockAccreditationAPI = {
     const comment: AccreditationComment = {
       id: `comment-${Date.now()}`,
       accreditationId,
-      authorId: 'user-current',
       author: 'Current User',
       content,
       timestamp: new Date().toISOString(),
@@ -362,6 +362,7 @@ export const mockAccreditationAPI = {
   },
 
   submitForReview: async (id: string, reviewerEmail: string) => {
+    void reviewerEmail
     await new Promise(resolve => setTimeout(resolve, 400))
     const index = mockAccreditations.findIndex(acc => acc.id === id)
     if (index === -1) {
@@ -397,7 +398,9 @@ export const mockAccreditationAPI = {
     return { status: 200, data: mockReviews.filter(r => r.accreditationId === id) }
   },
 
-  export: async (_id: string, _format: string) => {
+  export: async (fileId: string, format: string) => {
+    void fileId
+    void format
     await new Promise(resolve => setTimeout(resolve, 800))
     return { status: 200, data: new Blob() }
   },

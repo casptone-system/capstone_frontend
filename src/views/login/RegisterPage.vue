@@ -6,7 +6,7 @@
     <div class="register-card">
       <div class="register-header">
         <img :src="require('@/assets/Archiving_logo.png')" alt="ADAMS Logo" class="register-logo">
-        <h1>Create Account</h1>
+        <h1>register Account</h1>
         <p>Join the Accreditation Management System</p>
       </div>
 

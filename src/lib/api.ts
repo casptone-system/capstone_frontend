@@ -12,9 +12,9 @@ import type {
 } from '@/types'
 
 const programs: Program[] = [
-  { id: '1', name: 'Bachelor of Science in Computer Science', code: 'BSCS', chair: 'Dr. John Smith', accreditationStatus: 'compliant', complianceScore: 92 },
-  { id: '2', name: 'Bachelor of Science in Engineering', code: 'BSEng', chair: 'Dr. Maria Cruz', accreditationStatus: 'at-risk', complianceScore: 68 },
-  { id: '3', name: 'Bachelor of Science in Nursing', code: 'BSN', chair: 'Dr. Ana Santos', accreditationStatus: 'compliant', complianceScore: 88 }
+  { id: '1', name: 'Bachelor of Science in Computer Science', code: 'BSCS', status: 'active', chair: 'Dr. John Smith', accreditationStatus: 'compliant', complianceScore: 92 },
+  { id: '2', name: 'Bachelor of Science in Engineering', code: 'BSEng', status: 'active', chair: 'Dr. Maria Cruz', accreditationStatus: 'at-risk', complianceScore: 68 },
+  { id: '3', name: 'Bachelor of Science in Nursing', code: 'BSN', status: 'active', chair: 'Dr. Ana Santos', accreditationStatus: 'compliant', complianceScore: 88 }
 ]
 
 const accreditationAreas: AccreditationArea[] = [

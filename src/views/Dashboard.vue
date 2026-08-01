@@ -1,14 +1,5 @@
 <template>
-<<<<<<< HEAD
-  <ion-page>
-      <ion-header :translucent="true">
-      <ion-toolbar>
-        <template #start>
-          <ion-buttons>
-            <ion-menu-button></ion-menu-button>
-          </ion-buttons>
-=======
-  <div class="dashboard-page">
+  <ion-page class="dashboard-page">
     <!-- Page Header -->
     <div class="page-header">
       <div>
@@ -29,11 +20,12 @@
     <div class="stats-section">
       <h2 class="section-title">Overview</h2>
       <div class="stats-grid">
-        <stat-card
+        <StatCard
           v-for="stat in dashboardStats"
           :key="stat.id"
           :title="stat.title"
           :value="stat.value"
+          :icon="stat.icon"
           :subtitle="stat.subtitle"
           :trend="stat.trend"
           :badge="stat.badge"
@@ -60,11 +52,12 @@
               </button>
             </div>
           </div>
->>>>>>> 3c4a98959b6b6532b97c22c03523a7964c38f154
         </template>
-        <ion-title>Dashboard</ion-title>
-      </ion-toolbar>
-    </ion-header>
+        <div class="chart-container">
+          <p class="text-gray-500">Chart content coming soon.</p>
+        </div>
+      </app-card>
+    </div>
 
     <ion-content :fullscreen="true" class="p-4">
       <div class="space-y-6">
@@ -145,9 +138,6 @@
 <script setup lang="ts">
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
   IonCard,
   IonCardContent,
@@ -155,8 +145,6 @@ import {
   IonCardTitle,
   IonButton,
   IonIcon,
-  IonButtons,
-  IonMenuButton,
   IonSkeletonText,
 } from '@ionic/vue'
 import {
@@ -168,44 +156,34 @@ import {
   peopleOutline,
   hourglassOutline,
 } from 'ionicons/icons'
+import AppCard from '@/components/AppCard.vue'
 import StatCard from '@/components/StatCard.vue'
-import { ref, onMounted } from 'vue'
-import api from '@/services/api'
-
-<<<<<<< HEAD
-const isLoading = ref(false)
-const error = ref('')
-const stats = ref({
-  totalDocuments: 0,
-  approvedDocuments: 0,
-  pendingDocuments: 0,
-  activePrograms: 0,
-})
-
-=======
-Chart.register(...registerables)
+import { ref, computed, onMounted } from 'vue'
+import { useDashboardStore } from '@/stores/dashboardStore'
+import { useAuthStore } from '@/stores/authStore'
 
 const dashboardStore = useDashboardStore()
 const authStore = useAuthStore()
-const complianceChart = ref<HTMLCanvasElement | null>(null)
 const isLoadingStats = ref(false)
+const isLoading = ref(false)
+const error = ref<string | null>(null)
 
 const userRole = computed(() => authStore.userRole)
 
 const pageTitle = computed(() => {
   const titles: Record<string, string> = {
-    'dean': 'Dean Dashboard',
+    dean: 'Dean Dashboard',
     'program-chair': 'Program Chair Dashboard',
-    'faculty': 'Faculty Dashboard'
+    faculty: 'Faculty Dashboard',
   }
   return titles[userRole.value as string] || 'Dashboard'
 })
 
 const pageDescription = computed(() => {
   const descriptions: Record<string, string> = {
-    'dean': 'Monitor institutional compliance, approve submissions, and manage accreditation teams.',
+    dean: 'Monitor institutional compliance, approve submissions, and manage accreditation teams.',
     'program-chair': 'Track program compliance progress and review faculty submissions.',
-    'faculty': 'Upload documents and track submission status.'
+    faculty: 'Upload documents and track submission status.',
   }
   return descriptions[userRole.value as string] || 'Welcome to your dashboard'
 })
@@ -216,100 +194,65 @@ const dashboardStats = computed(() => [
     title: 'Total Programs',
     value: dashboardStore.stats.totalPrograms,
     subtitle: 'Active programs',
-    badge: { label: '+2 this year', variant: 'success' } as const
+    icon: documentTextOutline,
+    badge: { label: '+2 this year', variant: 'success' } as const,
   },
   {
     id: 2,
     title: 'Total Areas',
     value: dashboardStore.stats.totalAreas,
     subtitle: 'Assessment areas',
-    trend: { value: 12, direction: 'up' } as const
+    icon: checkmarkDoneOutline,
+    trend: { value: 12, direction: 'up' } as const,
   },
   {
     id: 3,
     title: 'Compliance Score',
     value: `${dashboardStore.stats.complianceScore}%`,
     subtitle: 'Institutional average',
-    trend: { value: 8, direction: 'up' } as const
+    icon: folderOpenOutline,
+    trend: { value: 8, direction: 'up' } as const,
   },
   {
     id: 4,
     title: 'Pending Submissions',
     value: dashboardStore.stats.pendingSubmissions,
     subtitle: 'Awaiting review',
-    badge: { label: 'Action needed', variant: 'warning' } as const
+    icon: hourglassOutline,
+    badge: { label: 'Action needed', variant: 'warning' } as const,
   },
   {
     id: 5,
     title: 'Assignment Completion',
     value: `${dashboardStore.stats.assignmentCompletion}%`,
     subtitle: 'Overall progress',
-    trend: { value: 5, direction: 'up' } as const
+    icon: documentTextOutline,
+    trend: { value: 5, direction: 'up' } as const,
   },
   {
     id: 6,
     title: 'Security Status',
     value: 'Protected',
     subtitle: 'Zero-trust active',
-    badge: { label: 'Secure', variant: 'success' } as const
-  }
+    icon: checkmarkDoneOutline,
+    badge: { label: 'Secure', variant: 'success' } as const,
+  },
 ])
 
-const recentActivity = [
-  {
-    id: 1,
-    title: 'Program Learning Outcomes approved',
-    time: '2 hours ago',
-    status: 'approved',
-    icon: 'checkmark-circle-outline',
-    color: 'rgba(34, 197, 94, 0.1)'
-  },
-  {
-    id: 2,
-    title: 'Assessment report submitted',
-    time: '5 hours ago',
-    status: 'submitted',
-    icon: 'document-outline',
-    color: 'rgba(59, 130, 246, 0.1)'
-  },
-  {
-    id: 3,
-    title: 'Revision requested for outcomes document',
-    time: '1 day ago',
-    status: 'revision',
-    icon: 'alert-circle-outline',
-    color: 'rgba(245, 158, 11, 0.1)'
-  },
-  {
-    id: 4,
-    title: 'New faculty member added',
-    time: '2 days ago',
-    status: 'completed',
-    icon: 'person-add-outline',
-    color: 'rgba(34, 197, 94, 0.1)'
-  }
-]
+const stats = computed(() => ({
+  totalDocuments: dashboardStore.stats.totalPrograms,
+  approvedDocuments: dashboardStore.stats.totalAreas,
+  pendingDocuments: dashboardStore.stats.pendingSubmissions,
+  activePrograms: dashboardStore.stats.collaborationActivity,
+}))
 
->>>>>>> 3c4a98959b6b6532b97c22c03523a7964c38f154
-onMounted(async () => {
-  await loadDashboardData()
-})
-
-const loadDashboardData = async () => {
-  isLoading.value = true
-  error.value = ''
-
-  try {
-    // Update with your actual dashboard endpoint
-    const response = await api.get('/dashboard/stats')
-    stats.value = response.data
-  } catch (err: any) {
-    error.value = err.response?.data?.message || 'Failed to load dashboard data'
-    console.error('Dashboard error:', err)
-  } finally {
-    isLoading.value = false
-  }
+const initializeChart = () => {
+  // Placeholder for chart refresh logic.
 }
+
+onMounted(async () => {
+  await dashboardStore.fetchDashboardStats()
+})
 </script>
 
 <style scoped>

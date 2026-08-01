@@ -30,34 +30,10 @@
           </ion-card-content>
         </ion-card>
 
-<<<<<<< HEAD
         <!-- Loading State -->
         <div v-if="isLoading" class="space-y-4">
           <ion-skeleton-text animated style="width: 100%"></ion-skeleton-text>
           <ion-skeleton-text animated style="width: 100%"></ion-skeleton-text>
-=======
-    <div class="documents-content">
-      <app-card variant="default">
-        <div class="document-list">
-          <div v-for="doc in documentStore.filteredDocuments" :key="doc.id" class="document-row">
-            <div class="document-icon">
-              <ion-icon name="document-outline"></ion-icon>
-            </div>
-            <div class="document-info">
-              <div class="document-title">{{ doc.title }}</div>
-              <div class="document-meta">
-                {{ doc.area }} • {{ doc.program }} • v{{ doc.version }}
-              </div>
-            </div>
-            <div class="document-date">{{ doc.uploadedAt }}</div>
-            <div :class="['document-status', `status-${doc.status}`]">
-              {{ doc.status }}
-            </div>
-            <button class="btn-action" aria-label="More options">
-              <ion-icon name="ellipsis-vertical-outline"></ion-icon>
-            </button>
-          </div>
->>>>>>> 3c4a98959b6b6532b97c22c03523a7964c38f154
         </div>
 
         <!-- Documents Grid -->
@@ -103,10 +79,10 @@ import { documentTextOutline } from 'ionicons/icons'
 import DocumentCard from '@/components/DocumentCard.vue'
 import { ref, onMounted } from 'vue'
 import api from '@/services/api'
-import type { Document } from '@/types'
+import type { AppDocument } from '@/types'
 
 const selectedStatus = ref('')
-const documents = ref<Document[]>([])
+const documents = ref<AppDocument[]>([])
 const isLoading = ref(false)
 const error = ref('')
 

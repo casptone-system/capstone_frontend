@@ -39,7 +39,8 @@
   </ion-card>
 </template>
 
-<script setup lang="ts">
+<script lang="ts">
+import { defineComponent, computed } from 'vue'
 import {
   IonCard,
   IonCardContent,
@@ -50,20 +51,41 @@ import {
   IonBadge,
 } from '@ionic/vue'
 import { downloadOutline, eyeOutline } from 'ionicons/icons'
-import type { Document } from '@/types'
-import { computed } from 'vue'
+import type { AppDocument } from '@/types'
 
-const props = defineProps<{
-  doc: Document
-}>()
+export default defineComponent({
+  name: 'DocumentCard',
+  components: {
+    IonCard,
+    IonCardContent,
+    IonCardHeader,
+    IonCardTitle,
+    IonButton,
+    IonIcon,
+    IonBadge,
+  },
+  props: {
+    doc: {
+      type: Object as () => AppDocument,
+      required: true,
+    },
+  },
+  setup(props) {
+    const statusColor = computed(() => {
+      const colors: Record<string, string> = {
+        approved: 'success',
+        pending: 'warning',
+        rejected: 'danger',
+      }
+      return colors[props.doc?.status] || 'secondary'
+    })
 
-const statusColor = computed(() => {
-  const colors: Record<string, string> = {
-    approved: 'success',
-    pending: 'warning',
-    rejected: 'danger',
-  }
-  return colors[props.doc?.status] || 'secondary'
+    return {
+      statusColor,
+      downloadOutline,
+      eyeOutline,
+    }
+  },
 })
 </script>
 

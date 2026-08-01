@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
@@ -7,7 +7,6 @@
             <ion-menu-button></ion-menu-button>
           </ion-buttons>
         </template>
-<<<<<<< HEAD
         <ion-title>Reports</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -28,40 +27,8 @@
         <div v-if="isLoading" class="space-y-4">
           <ion-skeleton-text animated></ion-skeleton-text>
           <ion-skeleton-text animated></ion-skeleton-text>
-=======
-        <p>Generate institutional compliance scorecards and area-by-area breakdowns.</p>
-        <div class="card-action">
-          <app-button variant="primary" block>
-            Generate Report
-          </app-button>
-        </div>
-      </app-card>
-
-      <app-card variant="elevated" clickable>
-        <template #header>
-          <h3>Submission Trends</h3>
-        </template>
-        <p>Track submission rates and timeline adherence across the academic year.</p>
-        <div class="card-action">
-          <app-button variant="primary" block>
-            View Trends
-          </app-button>
-        </div>
-      </app-card>
-
-      <app-card variant="elevated" clickable>
-        <template #header>
-          <h3>Area Performance</h3>
-        </template>
-        <p>Analyze performance metrics by accreditation area and program.</p>
-        <div class="card-action">
-          <app-button variant="primary" block>
-            View Analysis
-          </app-button>
->>>>>>> 3c4a98959b6b6532b97c22c03523a7964c38f154
         </div>
 
-<<<<<<< HEAD
         <!-- Reports List -->
         <div v-else class="space-y-3">
           <ion-card v-for="report in reports" :key="report.id" class="shadow-md">
@@ -95,17 +62,6 @@
               </div>
             </ion-card-content>
           </ion-card>
-=======
-      <app-card variant="elevated" clickable>
-        <template #header>
-          <h3>Export Data</h3>
-        </template>
-        <p>Export compliance data in PDF, Excel, or CSV formats for external review.</p>
-        <div class="card-action">
-          <app-button variant="primary" block>
-            Export
-          </app-button>
->>>>>>> 3c4a98959b6b6532b97c22c03523a7964c38f154
         </div>
 
         <div v-if="!isLoading && reports.length === 0" class="text-center py-12">
@@ -163,7 +119,6 @@ const loadReports = async () => {
   error.value = ''
 
   try {
-    // Update with your actual reports endpoint
     const response = await api.get('/reports')
     reports.value = response.data
   } catch (err: any) {
@@ -179,7 +134,6 @@ const generateReport = async () => {
   error.value = ''
 
   try {
-    // Update with your actual generate report endpoint
     const response = await api.post('/reports/generate', {})
     reports.value = [response.data, ...reports.value]
   } catch (err: any) {
@@ -191,38 +145,8 @@ const generateReport = async () => {
 </script>
 
 <style scoped>
-<<<<<<< HEAD
-=======
-.page-container {
+.report-page {
   display: grid;
-  gap: var(--spacing-2xl);
+  gap: 1.5rem;
 }
-
-.page-header {
-  display: grid;
-  gap: var(--spacing-md);
-}
-
-.page-header h1 {
-  margin: 0;
-  font-size: var(--text-3xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text);
-}
-
-.page-header p {
-  margin: 0;
-  color: var(--color-text-secondary);
-}
-
-.reports-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: var(--spacing-lg);
-}
-
-.card-action {
-  margin-top: var(--spacing-lg);
-}
->>>>>>> 3c4a98959b6b6532b97c22c03523a7964c38f154
 </style>

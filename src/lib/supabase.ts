@@ -1,11 +1,12 @@
+/* eslint-disable no-unused-vars */
 type MockAuthClient = {
-  signInWithPassword: (credentials: { email: string; password: string }) => Promise<{ data: any; error: any }>
-  signInWithOAuth: (options: any) => Promise<{ data: any; error: any }>
-  signUp: (options: any) => Promise<{ data: any; error: any }>
+  signInWithPassword: (_credentials: { email: string; password: string }) => Promise<{ data: any; error: any }>
+  signInWithOAuth: (_options: any) => Promise<{ data: any; error: any }>
+  signUp: (_options: any) => Promise<{ data: any; error: any }>
   signOut: () => Promise<{ error: any }>
   getSession: () => Promise<{ data: any; error: any }>
   getUser: () => Promise<{ data: { user: any | null }; error: any }>
-  onAuthStateChange: (callback: (event: string, session: any) => void) => { subscription: { unsubscribe: () => void } }
+  onAuthStateChange: (_callback: (event: string, session: any) => void) => { subscription: { unsubscribe: () => void } }
 }
 
 const mockAuth: MockAuthClient = {

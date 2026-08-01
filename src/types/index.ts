@@ -1,4 +1,6 @@
 // User and Authentication
+export type UserRole = 'dean' | 'program-chair' | 'faculty' | 'admin' | 'staff'
+
 export interface User {
   id: string
   name: string
@@ -14,8 +16,11 @@ export interface Program {
   id: string
   name: string
   code?: string
-  status: string
+  status: 'active' | 'inactive' | 'archived' | 'pending'
   description?: string
+  chair?: string
+  accreditationStatus?: string
+  complianceScore?: number
 }
 
 // Reports
@@ -29,10 +34,7 @@ export interface Report {
   downloadUrl?: string
 }
 
-<<<<<<< HEAD
-// Submissions
-export interface Submission {
-=======
+// Documents
 export interface AppDocument {
   id: string
   title: string
@@ -40,19 +42,32 @@ export interface AppDocument {
   program: string
   uploadedBy: string
   uploadedAt: string
-  fileUrl?: string
+  fileName?: string
+  size?: string | number
   fileSize?: number
   version: number
   status: 'pending' | 'approved' | 'rejected' | 'revision'
 }
 
-export interface SubmissionSchedule {
->>>>>>> 3c4a98959b6b6532b97c22c03523a7964c38f154
+// Submissions
+export interface Submission {
   id: string
   programId: string
   documentId: string
   status: 'pending' | 'submitted' | 'approved' | 'rejected'
   submittedAt?: string
+}
+
+export interface SubmissionSchedule {
+  id: string
+  programId: string
+  dueDate: string
+  status: string
+}
+
+export interface ComplianceScore {
+  programId: string
+  score: number
 }
 
 // Employees
@@ -135,6 +150,39 @@ export interface AccreditationComment {
   content: string
   timestamp: string
   type: 'comment' | 'review' | 'clarification'
+}
+
+// ✅ Added missing AccreditationArea type
+export interface AccreditationArea {
+  id: string
+  name: string
+  code?: string
+  description?: string
+  assignedTo?: string[]
+  dueDate?: string
+  status: 'pending' | 'submitted' | 'in-progress' | 'not-started' | 'completed' | 'compliant' | 'at-risk' | 'non-compliant'
+  programId?: string
+}
+
+// ✅ Added missing NotificationMessage type
+export interface NotificationMessage {
+  id: string
+  userId: string
+  title: string
+  message: string
+  type: 'info' | 'warning' | 'error' | 'success'
+  read: boolean
+  createdAt: string
+}
+
+// ✅ Added missing DashboardMetrics type
+export interface DashboardMetrics {
+  totalPrograms: number
+  totalAreas: number
+  complianceScore: number
+  pendingSubmissions: number
+  assignmentCompletion: number
+  performanceTrend: number
 }
 
 export interface AccreditationReview {

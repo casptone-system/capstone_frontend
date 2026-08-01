@@ -30,11 +30,11 @@ export const useProgramStore = defineStore('programs', () => {
 
   const setMockPrograms = () => {
     programs.value = [
-      { id: '1', name: 'Bachelor of Science in Computer Science', code: 'BSCS', chair: 'Dr. John Smith', accreditationStatus: 'compliant', complianceScore: 92 },
-      { id: '2', name: 'Bachelor of Science in Engineering', code: 'BSEng', chair: 'Dr. Maria Cruz', accreditationStatus: 'at-risk', complianceScore: 68 },
-      { id: '3', name: 'Bachelor of Science in Nursing', code: 'BSN', chair: 'Dr. Ana Santos', accreditationStatus: 'compliant', complianceScore: 88 },
-      { id: '4', name: 'Bachelor of Business Administration', code: 'BBA', chair: 'Dr. Robert Lim', accreditationStatus: 'non-compliant', complianceScore: 45 },
-      { id: '5', name: 'Bachelor of Arts in Education', code: 'BAEd', chair: 'Dr. Sarah Reyes', accreditationStatus: 'compliant', complianceScore: 95 }
+      { id: '1', name: 'Bachelor of Science in Computer Science', code: 'BSCS', status: 'active', chair: 'Dr. John Smith', accreditationStatus: 'compliant', complianceScore: 92 },
+      { id: '2', name: 'Bachelor of Science in Engineering', code: 'BSEng', status: 'active', chair: 'Dr. Maria Cruz', accreditationStatus: 'at-risk', complianceScore: 68 },
+      { id: '3', name: 'Bachelor of Science in Nursing', code: 'BSN', status: 'active', chair: 'Dr. Ana Santos', accreditationStatus: 'compliant', complianceScore: 88 },
+      { id: '4', name: 'Bachelor of Business Administration', code: 'BBA', status: 'active', chair: 'Dr. Robert Lim', accreditationStatus: 'non-compliant', complianceScore: 45 },
+      { id: '5', name: 'Bachelor of Arts in Education', code: 'BAEd', status: 'active', chair: 'Dr. Sarah Reyes', accreditationStatus: 'compliant', complianceScore: 95 }
     ]
   }
 
