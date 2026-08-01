@@ -32,34 +32,63 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts">
+import { defineComponent } from 'vue'
 import { IonIcon } from '@ionic/vue'
 
-defineProps<{
-  modelValue: string
-  label?: string
-  placeholder?: string
-  type?: string
-  error?: string
-  hint?: string
-  required?: boolean
-  disabled?: boolean
-  icon?: string
-}>()
-
-const emit = defineEmits<{
-  'update:modelValue': [value: string]
-}>()
-
-const handleInput = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  emit('update:modelValue', target.value)
-}
-
-const handleSelectChange = (event: Event) => {
-  const target = event.target as HTMLSelectElement
-  emit('update:modelValue', target.value)
-}
+export default defineComponent({
+  name: 'FormInput',
+  components: { IonIcon },
+  props: {
+    modelValue: {
+      type: String,
+      required: true
+    },
+    label: {
+      type: String,
+      default: ''
+    },
+    placeholder: {
+      type: String,
+      default: ''
+    },
+    type: {
+      type: String,
+      default: 'text'
+    },
+    error: {
+      type: String,
+      default: ''
+    },
+    hint: {
+      type: String,
+      default: ''
+    },
+    required: {
+      type: Boolean,
+      default: false
+    },
+    disabled: {
+      type: Boolean,
+      default: false
+    },
+    icon: {
+      type: String,
+      default: ''
+    }
+  },
+  emits: ['update:modelValue'],
+  methods: {
+    handleInput(event: Event) {
+      const target = event.target as HTMLInputElement
+      this.$emit('update:modelValue', target.value)
+    },
+    handleSelectChange(event: Event) {
+      const target = event.target as HTMLSelectElement
+      this.$emit('update:modelValue', target.value)
+    }
+  }
+})
 </script>
 
 <style scoped>

@@ -17,17 +17,40 @@
   </button>
 </template>
 
-<script setup lang="ts">
+<script lang="ts">
+import { defineComponent, PropType } from 'vue'
 import { IonIcon } from '@ionic/vue'
 
-defineProps<{
-  variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'outline'
-  size?: 'sm' | 'md' | 'lg'
-  block?: boolean
-  disabled?: boolean
-  loading?: boolean
-  icon?: string
-}>()
+export default defineComponent({
+  name: 'AppButton',
+  components: { IonIcon },
+  props: {
+    variant: {
+      type: String as PropType<'primary' | 'secondary' | 'danger' | 'success' | 'outline'>,
+      default: 'primary'
+    },
+    size: {
+      type: String as PropType<'sm' | 'md' | 'lg'>,
+      default: 'md'
+    },
+    block: {
+      type: Boolean,
+      default: false
+    },
+    disabled: {
+      type: Boolean,
+      default: false
+    },
+    loading: {
+      type: Boolean,
+      default: false
+    },
+    icon: {
+      type: String,
+      default: ''
+    }
+  }
+})
 </script>
 
 <style scoped>
