@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { getDocuments, searchDocuments as apiSearchDocuments, filterDocuments as apiFilterDocuments, uploadDocument as apiUploadDocument, updateDocumentStatus as apiUpdateDocumentStatus } from '@/lib/api'
+import { getDocuments, uploadDocument as apiUploadDocument } from '@/lib/api'
 import type { AppDocument } from '@/types'
 
 export interface DocumentFilter {
@@ -98,20 +98,11 @@ export const useDocumentStore = defineStore('documents', () => {
     filters.value = newFilters
     // Try API filter first
     if (newFilters.area || newFilters.program || newFilters.status) {
-      apiFilterDocuments({
-        area: newFilters.area,
-        program: newFilters.program,
-        status: newFilters.status
-      }).then(data => {
-        filteredDocuments.value = data
-      }).catch(() => {
-        // Fallback to local filter
-        filteredDocuments.value = documents.value.filter(doc => {
-          if (newFilters.area && doc.area !== newFilters.area) return false
-          if (newFilters.program && doc.program !== newFilters.program) return false
-          if (newFilters.status && doc.status !== newFilters.status) return false
-          return true
-        })
+      filteredDocuments.value = documents.value.filter(doc => {
+        if (newFilters.area && doc.area !== newFilters.area) return false
+        if (newFilters.program && doc.program !== newFilters.program) return false
+        if (newFilters.status && doc.status !== newFilters.status) return false
+        return true
       })
     } else {
       filteredDocuments.value = documents.value
@@ -122,8 +113,11 @@ export const useDocumentStore = defineStore('documents', () => {
     isLoading.value = true
     try {
       try {
-        const data = await apiSearchDocuments(query)
-        filteredDocuments.value = data
+        filteredDocuments.value = documents.value.filter(doc =>
+          doc.title.toLowerCase().includes(query.toLowerCase()) ||
+          doc.area.toLowerCase().includes(query.toLowerCase()) ||
+          doc.program.toLowerCase().includes(query.toLowerCase())
+        )
       } catch {
         // Fallback to local search
         filteredDocuments.value = documents.value.filter(doc =>
@@ -144,7 +138,9 @@ export const useDocumentStore = defineStore('documents', () => {
       const userId = localStorage.getItem('userId') || 'unknown'
       try {
         const newDoc = await apiUploadDocument(file, {
-          ...metadata,
+          title: metadata.title,
+          area: metadata.area,
+          program: metadata.program,
           uploadedBy: userId
         })
         documents.value.unshift(newDoc)
@@ -180,12 +176,6 @@ export const useDocumentStore = defineStore('documents', () => {
     isLoading.value = true
     error.value = null
     try {
-      try {
-        await apiUpdateDocumentStatus(id, status)
-      } catch {
-        console.warn('Backend update failed, updating locally')
-      }
-      // Update locally regardless
       const doc = documents.value.find(d => d.id === id)
       if (doc) {
         doc.status = status as AppDocument['status']

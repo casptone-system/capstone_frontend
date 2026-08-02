@@ -40,7 +40,7 @@
               <ion-icon name="person-outline" class="input-icon" aria-hidden="true"></ion-icon>
               <input
                 id="name"
-                v-model="name"
+                v-model="last_name"
                 type="text"
                 placeholder="Dela Cruz"
                 required
@@ -52,7 +52,7 @@
           <!-- Middle Name -->
           <div class="field-group">
             <label class="field-label" for="middle-name">Middle Name <span class="req">*</span></label>
-            <div class="input-wrap" :class="{ error: middleNameError }">
+            <div class="input-wrap" :class="{ error: nameError }">
               <ion-icon name="person-outline" class="input-icon" aria-hidden="true"></ion-icon>
               <input
                 id="middle-name"
@@ -63,12 +63,12 @@
                 class="field-input"
               />
             </div>
-            <span v-if="middleNameError" class="field-error">{{ middleNameError }}</span>
+            <span v-if="nameError" class="field-error">{{ nameError }}</span>
           </div>
           <!-- First Name -->
          <div class="field-group">
             <label class="field-label" for="first-name">First Name <span class="req">*</span></label>
-            <div class="input-wrap" :class="{ error: firstNameError }">
+            <div class="input-wrap" :class="{ error: nameError }">
               <ion-icon name="person-outline" class="input-icon" aria-hidden="true"></ion-icon>
               <input
                 id="first-name"
@@ -79,7 +79,7 @@
                 class="field-input"
               />
             </div>
-            <span v-if="firstNameError" class="field-error">{{ firstNameError }}</span>
+            <span v-if="nameError" class="field-error">{{ nameError }}</span>
           </div>
 
           <!-- Email -->
@@ -131,40 +131,6 @@
             </div>
             <span v-if="birthdateError" class="field-error">{{ birthdateError }}</span>
           </div>
-
-          <!-- Institution -->
-          <!-- <div class="field-group">
-            <label class="field-label" for="institution">Institution <span class="req">*</span></label>
-            <div class="input-wrap" :class="{ error: institutionError }">
-              <ion-icon name="business-outline" class="input-icon" aria-hidden="true"></ion-icon>
-              <input
-                id="institution"
-                v-model="institution"
-                type="text"
-                placeholder="State University"
-                required
-                class="field-input"
-              />
-            </div>
-            <span v-if="institutionError" class="field-error">{{ institutionError }}</span>
-          </div> -->
-
-          <!-- Role -->
-          <!-- <div class="field-group">
-            <label class="field-label" for="role">Role <span class="req">*</span></label>
-            <div class="input-wrap select-wrap" :class="{ error: roleError }">
-              <ion-icon name="shield-outline" class="input-icon" aria-hidden="true"></ion-icon>
-              <select id="role" v-model="role" required class="field-input field-select">
-                <option value="" disabled>Select your role</option>
-                <option value="faculty">Faculty</option>
-                <option value="program-chair">Program Chair</option>
-                <option value="dean">Dean</option>
-                <option value="admin">Admin</option>
-              </select>
-              <ion-icon name="chevron-down-outline" class="select-caret" aria-hidden="true"></ion-icon>
-            </div>
-            <span v-if="roleError" class="field-error">{{ roleError }}</span>
-          </div> -->
 
           <!-- Password row -->
           <div class="two-col">
@@ -225,57 +191,130 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
-import AppButton from '@/components/AppButton.vue'
 import { IonIcon } from '@ionic/vue'
+import AppButton from '@/components/AppButton.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
-const name = ref('')
+// Form Fields
+const lastName = ref('')
+const middleName = ref('')
+const firstName = ref('')
 const email = ref('')
-const institution = ref('')
-const role = ref('')
+const phone = ref('')
+const birthdate = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 
+// Loading
 const isLoading = ref(false)
+
+// Errors
 const nameError = ref('')
 const emailError = ref('')
-const institutionError = ref('')
-const roleError = ref('')
+const phoneError = ref('')
+const birthdateError = ref('')
 const passwordError = ref('')
 const confirmPasswordError = ref('')
 
 const handleRegister = async () => {
+  // Reset errors
   nameError.value = ''
   emailError.value = ''
-  institutionError.value = ''
-  roleError.value = ''
+  phoneError.value = ''
+  birthdateError.value = ''
   passwordError.value = ''
   confirmPasswordError.value = ''
 
-  if (!name.value.trim())        { nameError.value = 'Name is required'; return }
-  if (!email.value.trim())       { emailError.value = 'Email is required'; return }
-  if (!institution.value.trim()) { institutionError.value = 'Institution is required'; return }
-  if (!role.value)               { roleError.value = 'Please select a role'; return }
-  if (!password.value)           { passwordError.value = 'Password is required'; return }
-  if (password.value.length < 6) { passwordError.value = 'Must be at least 6 characters'; return }
+  // Validation
+  if (!lastName.value.trim()) {
+    nameError.value = 'Last name is required'
+    return
+  }
+
+  if (!firstName.value.trim()) {
+    nameError.value = 'First name is required'
+    return
+  }
+
+  if (!email.value.trim()) {
+    emailError.value = 'Email is required'
+    return
+  }
+
+  if (!phone.value.trim()) {
+    phoneError.value = 'Phone number is required'
+    return
+  }
+
+  if (!birthdate.value) {
+    birthdateError.value = 'Birth date is required'
+    return
+  }
+
+  if (!password.value) {
+    passwordError.value = 'Password is required'
+    return
+  }
+
+  if (password.value.length < 8) {
+    passwordError.value = 'Password must be at least 8 characters'
+    return
+  }
+
   if (password.value !== confirmPassword.value) {
     confirmPasswordError.value = 'Passwords do not match'
     return
   }
 
   isLoading.value = true
+
   try {
-    await authStore.register(name.value, email.value, password.value, role.value, institution.value)
-    router.push('/dashboard')
-  } catch (error: any) {
-    if (error.message?.includes('email')) {
-      emailError.value = error.message
-    } else if (error.message?.includes('password')) {
-      passwordError.value = error.message
-    } else {
-      emailError.value = error.message || 'Registration failed'
+    await authStore.register({
+      last_name: lastName.value,
+      middle_name: middleName.value,
+      first_name: firstName.value,
+      email: email.value,
+      phone: phone.value,
+      birthdate: birthdate.value,
+      password: password.value,
+      password_confirmation: confirmPassword.value,
+    })
+
+    alert('Registration successful!')
+
+    router.push('/login')
+  } catch (err: any) {
+    const errors = err.response?.data?.errors
+
+    if (errors?.last_name) {
+      nameError.value = errors.last_name[0]
+    }
+
+    if (errors?.first_name) {
+      nameError.value = errors.first_name[0]
+    }
+
+    if (errors?.email) {
+      emailError.value = errors.email[0]
+    }
+
+    if (errors?.phone) {
+      phoneError.value = errors.phone[0]
+    }
+
+    if (errors?.birthdate) {
+      birthdateError.value = errors.birthdate[0]
+    }
+
+    if (errors?.password) {
+      passwordError.value = errors.password[0]
+    }
+
+    if (!errors) {
+      emailError.value =
+        err.response?.data?.message || 'Registration failed.'
     }
   } finally {
     isLoading.value = false
@@ -574,9 +613,17 @@ const handleRegister = async () => {
 
 /* ── BUTTONS ── */
 .submit-btn {
+  color: var(--parchment);
+  text-align: center;
   margin-top: 0.25rem;
   background: var(--ink) !important;
   border-radius: 8px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 1.5rem;
+  border: 1.5px solid var(--ink);
+  border-radius: 8px;
 }
 
 .alt-btn {

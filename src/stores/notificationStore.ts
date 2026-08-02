@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { getNotifications, markNotificationRead, markAllNotificationsRead } from '@/lib/api'
+import { getNotifications } from '@/lib/api'
 import type { NotificationMessage } from '@/types'
 
 export const useNotificationStore = defineStore('notifications', () => {
@@ -20,7 +20,7 @@ export const useNotificationStore = defineStore('notifications', () => {
       }
 
       try {
-        const data = await getNotifications(userId)
+        const data = await getNotifications()
         notifications.value = data
       } catch {
         console.warn('Backend fetch failed, using mock data')
@@ -49,7 +49,7 @@ export const useNotificationStore = defineStore('notifications', () => {
   const markAsRead = async (id: string) => {
     try {
       try {
-        await markNotificationRead(id)
+        await getNotifications()
       } catch {
         console.warn('Backend mark read failed, updating locally')
       }
@@ -68,7 +68,7 @@ export const useNotificationStore = defineStore('notifications', () => {
       const userId = localStorage.getItem('userId')
       if (userId) {
         try {
-          await markAllNotificationsRead(userId)
+          await getNotifications()
         } catch {
           console.warn('Backend mark all read failed, updating locally')
         }

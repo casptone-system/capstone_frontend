@@ -1,152 +1,143 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { signInWithEmail, signInWithGoogle, signInWithGithub, signOutUser, getCurrentUser, onAuthStateChange, signUp } from '@/lib/auth'
+import api from '@/lib/api'
+import { TOKEN_KEY } from '@/lib/apiClient'
 import type { User } from '@/types'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const isAuthenticated = ref(false)
   const isLoading = ref(false)
-  const error = ref<string | null>(null)
-  let authListener: { subscription: { unsubscribe: () => void } } | null = null
+  const error = ref<string |null>(null)
 
-  const userRole = computed(() => user.value?.role || null)
-  const userName = computed(() => user.value?.name || 'Guest')
+  const userRole = computed(() => user.value?.role || '')
+  const userName = computed(() => user.value?.name || '')
 
+  // ======================
+  // LOGIN
+  // ======================
   const login = async (email: string, password: string) => {
     isLoading.value = true
     error.value = null
+
     try {
-      const { user: authenticatedUser, error: authError } = await signInWithEmail(email, password)
-      if (authError) throw new Error(authError)
-      if (authenticatedUser) {
-        user.value = authenticatedUser
-        isAuthenticated.value = true
-      } else {
-        throw new Error('Login failed - no user returned')
-      }
+      const response = await api.post('/login', {
+        email,
+        password,
+      })
+
+      localStorage.setItem(TOKEN_KEY, response.data.data.token)
+
+      user.value = response.data.data.user
+      isAuthenticated.value = true
+
+      return response.data
     } catch (err: any) {
-      error.value = err.message || 'Login failed'
+      error.value =
+        err.response?.data?.message || 'Invalid email or password'
       throw err
     } finally {
       isLoading.value = false
     }
   }
 
-  const loginWithGoogle = async () => {
+  // ======================
+  // REGISTER
+  // ======================
+  const register = async (data: any) => {
     isLoading.value = true
     error.value = null
+
     try {
-      const { error: authError } = await signInWithGoogle()
-      if (authError) throw new Error(authError)
+      const response = await api.post('/register', data)
+
+      return response.data
     } catch (err: any) {
-      error.value = err.message || 'Google login failed'
+      error.value =
+        err.response?.data?.message || 'Registration failed'
       throw err
     } finally {
       isLoading.value = false
     }
+  }
+
+  // ======================
+  // GET CURRENT USER
+  // ======================
+  const restoreSession = async () => {
+    const token = localStorage.getItem(TOKEN_KEY)
+
+    if (!token) {
+      user.value = null
+      isAuthenticated.value = false
+      return
+    }
+
+    try {
+      const response = await api.get('/me')
+
+      user.value = response.data.data.user
+      isAuthenticated.value = true
+    } catch {
+      localStorage.removeItem(TOKEN_KEY)
+      user.value = null
+      isAuthenticated.value = false
+    }
+  }
+
+  // ======================
+  // LOGOUT
+  // ======================
+  const logout = async () => {
+    isLoading.value = true
+
+    try {
+      await api.post('/logout')
+    } catch (e) {
+      console.log(e)
+    }
+
+    localStorage.removeItem(TOKEN_KEY)
+
+    user.value = null
+    isAuthenticated.value = false
+
+    isLoading.value = false
+  }
+
+  // ======================
+  // DISABLED
+  // ======================
+  const loginWithGoogle = async () => {
+    throw new Error('Google login is not implemented.')
   }
 
   const loginWithGithub = async () => {
-    isLoading.value = true
-    error.value = null
-    try {
-      const { error: authError } = await signInWithGithub()
-      if (authError) throw new Error(authError)
-    } catch (err: any) {
-      error.value = err.message || 'GitHub login failed'
-      throw err
-    } finally {
-      isLoading.value = false
-    }
+    throw new Error('GitHub login is not implemented.')
   }
 
-  const logout = async () => {
-    isLoading.value = true
-    try {
-      const { error: logoutError } = await signOutUser()
-      if (logoutError) console.warn('Logout warning:', logoutError)
-    } finally {
-      user.value = null
-      isAuthenticated.value = false
-      error.value = null
-      isLoading.value = false
-    }
-  }
+  const setupAuthListener = () => {}
 
-  const restoreSession = async () => {
-    try {
-      const { user: currentUser, error: sessionError } = await getCurrentUser()
-      if (!sessionError && currentUser) {
-        user.value = currentUser
-        isAuthenticated.value = true
-        return
-      }
-    } catch (e) {
-      console.warn('Session restore failed:', e)
-    }
-    user.value = null
-    isAuthenticated.value = false
-  }
-
-  const setupAuthListener = () => {
-    authListener = onAuthStateChange(async (authUser: any) => {
-      if (authUser) {
-        const { user: currentUser } = await getCurrentUser()
-        if (currentUser) {
-          user.value = currentUser
-          isAuthenticated.value = true
-        }
-      } else {
-        user.value = null
-        isAuthenticated.value = false
-      }
-    }) as any
-  }
-
-  const cleanupAuthListener = () => {
-    if (authListener?.subscription) {
-      authListener.subscription.unsubscribe()
-    }
-  }
-
-  const register = async (name: string, email: string, password: string, role: string, institution: string) => {
-    isLoading.value = true
-    error.value = null
-    try {
-      const { user: newUser, error: signUpError } = await signUp(email, password, name, role, institution)
-      if (signUpError) throw new Error(signUpError)
-      if (newUser) {
-        const { user: updatedUser } = await getCurrentUser()
-        if (updatedUser) {
-          user.value = updatedUser
-          isAuthenticated.value = true
-        }
-      } else {
-        throw new Error('Registration successful. Please check your email to verify your account.')
-      }
-    } catch (err: any) {
-      error.value = err.message || 'Registration failed'
-      throw err
-    } finally {
-      isLoading.value = false
-    }
-  }
+  const cleanupAuthListener = () => {}
 
   return {
     user,
     isAuthenticated,
     isLoading,
     error,
+
     userRole,
     userName,
+
     login,
-    loginWithGoogle,
-    loginWithGithub,
+    register,
     logout,
     restoreSession,
+
+    loginWithGoogle,
+    loginWithGithub,
+
     setupAuthListener,
     cleanupAuthListener,
-    register,
   }
 })

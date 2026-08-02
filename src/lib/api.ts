@@ -1,265 +1,249 @@
-import type {
-  User,
-  Program,
-  AccreditationArea,
-  AppDocument,
-  SubmissionSchedule,
-  ComplianceScore,
-  AuditLog,
-  NotificationMessage,
-  DashboardMetrics,
-  College
-} from '@/types'
+import axios from 'axios'
+import { TOKEN_KEY } from '@/lib/apiClient'
 
-const programs: Program[] = [
-  { id: '1', name: 'Bachelor of Science in Computer Science', code: 'BSCS', status: 'active', chair: 'Dr. John Smith', accreditationStatus: 'compliant', complianceScore: 92 },
-  { id: '2', name: 'Bachelor of Science in Engineering', code: 'BSEng', status: 'active', chair: 'Dr. Maria Cruz', accreditationStatus: 'at-risk', complianceScore: 68 },
-  { id: '3', name: 'Bachelor of Science in Nursing', code: 'BSN', status: 'active', chair: 'Dr. Ana Santos', accreditationStatus: 'compliant', complianceScore: 88 }
-]
+const api = axios.create({
+  baseURL: 'http://127.0.0.1:8000/api',
+  headers: {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+  },
+})
 
-const accreditationAreas: AccreditationArea[] = [
-  { id: '1', name: 'Student Learning Outcomes', code: 'SLO-001', description: 'Assessment of student learning outcomes', assignedTo: [], status: 'in-progress', dueDate: '2026-03-15' },
-  { id: '2', name: 'Faculty Development', code: 'FD-002', description: 'Faculty qualifications and development', assignedTo: [], status: 'in-progress', dueDate: '2026-04-01' }
-]
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem(TOKEN_KEY)
 
-const documents: AppDocument[] = [
-  { id: '1', title: 'Program Learning Outcomes 2023-24', area: 'Student Learning', program: 'Computer Science', uploadedBy: 'Dr. John Smith', uploadedAt: '2024-05-15', version: 3, status: 'approved' },
-  { id: '2', title: 'Assessment Results Summary', area: 'Program Effectiveness', program: 'Engineering', uploadedBy: 'Dr. Sarah Johnson', uploadedAt: '2024-05-18', version: 2, status: 'pending' }
-]
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
 
-async function delay(ms = 120) {
-  await new Promise(resolve => setTimeout(resolve, ms))
+  return config
+})
+
+/* ===========================
+   AUTH
+=========================== */
+
+export const login = async (email: string, password: string) => {
+  const response = await api.post('/login', { email, password })
+  return response.data
 }
 
-export async function getProfile(userId: string) {
-  await delay()
-  return { id: userId, name: 'Local User', email: 'local@example.com', role: 'faculty', institution: 'State University' } as User
+export const register = async (data: any) => {
+  const response = await api.post('/register', data)
+  return response.data
 }
 
-export async function updateProfile(userId: string, updates: Partial<User>) {
-  await delay()
-  return { id: userId, name: 'Local User', email: 'local@example.com', role: 'faculty', institution: 'State University', ...updates } as User
+export const logout = async () => {
+  const response = await api.post('/logout')
+  return response.data
 }
 
-export async function getPrograms() {
-  await delay()
-  return programs
+export const me = async () => {
+  const response = await api.get('/me')
+  return response.data
 }
 
-export async function getProgram(id: string) {
-  await delay()
-  return programs.find(program => program.id === id) || null
+/* ===========================
+   COLLEGES
+=========================== */
+
+export const getColleges = async () => {
+  const response = await api.get('/colleges')
+  return response.data
 }
 
-export async function createProgram(program: Omit<Program, 'id'>) {
-  await delay()
-  const newProgram: Program = { id: `${Date.now()}`, ...program }
-  programs.push(newProgram)
-  return newProgram
+export const getCollege = async (id: number | string) => {
+  const response = await api.get(`/colleges/${id}`)
+  return response.data
 }
 
-export async function updateProgram(id: string, updates: Partial<Program>) {
-  await delay()
-  const index = programs.findIndex(program => program.id === id)
-  if (index === -1) throw new Error('Program not found')
-  programs[index] = { ...programs[index], ...updates }
-  return programs[index]
+export const createCollege = async (data: any) => {
+  const response = await api.post('/colleges', data)
+  return response.data
 }
 
-export async function deleteProgram(id: string) {
-  await delay()
-  const index = programs.findIndex(program => program.id === id)
-  if (index !== -1) programs.splice(index, 1)
-  return true
+export const updateCollege = async (id: number | string, data: any) => {
+  const response = await api.put(`/colleges/${id}`, data)
+  return response.data
 }
 
-export async function getAccreditationAreas() {
-  await delay()
-  return accreditationAreas
+export const deleteCollege = async (id: number | string) => {
+  const response = await api.delete(`/colleges/${id}`)
+  return response.data
 }
 
-export async function getAccreditationArea(id: string) {
-  await delay()
-  return accreditationAreas.find(area => area.id === id) || null
+/* ===========================
+   PROGRAMS
+=========================== */
+
+export const getPrograms = async () => {
+  const response = await api.get('/programs')
+  return response.data
 }
 
-export async function createAccreditationArea(area: Omit<AccreditationArea, 'id'>) {
-  await delay()
-  const newArea: AccreditationArea = { id: `${Date.now()}`, ...area }
-  accreditationAreas.push(newArea)
-  return newArea
+export const getProgram = async (id: number | string) => {
+  const response = await api.get(`/programs/${id}`)
+  return response.data
 }
 
-export async function updateAccreditationArea(id: string, updates: Partial<AccreditationArea>) {
-  await delay()
-  const index = accreditationAreas.findIndex(area => area.id === id)
-  if (index === -1) throw new Error('Area not found')
-  accreditationAreas[index] = { ...accreditationAreas[index], ...updates }
-  return accreditationAreas[index]
+export const createProgram = async (data: any) => {
+  const response = await api.post('/programs', data)
+  return response.data
 }
 
-export async function getDocuments() {
-  await delay()
-  return documents
+export const updateProgram = async (id: number | string, data: any) => {
+  const response = await api.put(`/programs/${id}`, data)
+  return response.data
 }
 
-export async function getDocument(id: string) {
-  await delay()
-  return documents.find(document => document.id === id) || null
+export const deleteProgram = async (id: number | string) => {
+  const response = await api.delete(`/programs/${id}`)
+  return response.data
 }
 
-export async function searchDocuments(query: string) {
-  await delay()
-  return documents.filter(document =>
-    document.title.toLowerCase().includes(query.toLowerCase()) ||
-    document.area.toLowerCase().includes(query.toLowerCase()) ||
-    document.program.toLowerCase().includes(query.toLowerCase())
-  )
+/* ===========================
+   ACCREDITATION AREAS
+=========================== */
+
+export const getAccreditationAreas = async () => {
+  const response = await api.get('/accreditation-areas')
+  return response.data
 }
 
-export async function filterDocuments(filters: { area?: string; program?: string; status?: string }) {
-  await delay()
-  return documents.filter(document => {
-    if (filters.area && document.area !== filters.area) return false
-    if (filters.program && document.program !== filters.program) return false
-    if (filters.status && document.status !== filters.status) return false
-    return true
+export const getAccreditationArea = async (id: number | string) => {
+  const response = await api.get(`/accreditation-areas/${id}`)
+  return response.data
+}
+
+export const createAccreditationArea = async (data: any) => {
+  const response = await api.post('/accreditation-areas', data)
+  return response.data
+}
+
+export const updateAccreditationArea = async (id: number | string, data: any) => {
+  const response = await api.put(`/accreditation-areas/${id}`, data)
+  return response.data
+}
+
+export const deleteAccreditationArea = async (id: number | string) => {
+  const response = await api.delete(`/accreditation-areas/${id}`)
+  return response.data
+}
+
+/* ===========================
+   TASKS
+=========================== */
+
+export const getTasks = async () => {
+  const response = await api.get('/tasks')
+  return response.data
+}
+
+export const getTask = async (id: number | string) => {
+  const response = await api.get(`/tasks/${id}`)
+  return response.data
+}
+
+export const createTask = async (data: any) => {
+  const response = await api.post('/tasks', data)
+  return response.data
+}
+
+export const updateTask = async (id: number | string, data: any) => {
+  const response = await api.put(`/tasks/${id}`, data)
+  return response.data
+}
+
+export const deleteTask = async (id: number | string) => {
+  const response = await api.delete(`/tasks/${id}`)
+  return response.data
+}
+
+/* ===========================
+   DOCUMENTS
+=========================== */
+
+export const getDocuments = async () => {
+  const response = await api.get('/documents')
+  return response.data
+}
+
+export const getDocument = async (id: number | string) => {
+  const response = await api.get(`/documents/${id}`)
+  return response.data
+}
+
+export const uploadDocument = async (file: File, metadata: Record<string, any> = {}) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  Object.entries(metadata).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      formData.append(key, String(value))
+    }
   })
+
+  const response = await api.post('/documents', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
+  return response.data
 }
 
-export async function uploadDocument(file: File, metadata: { title: string; area: string; program: string; uploadedBy: string }) {
-  await delay()
-  const newDocument: AppDocument = {
-    id: `${Date.now()}`,
-    title: metadata.title,
-    area: metadata.area,
-    program: metadata.program,
-    uploadedBy: metadata.uploadedBy,
-    uploadedAt: new Date().toISOString().split('T')[0],
-    fileSize: file.size,
-    version: 1,
-    status: 'pending'
-  }
-  documents.unshift(newDocument)
-  return newDocument
+export const replaceDocument = async (id: number | string, formData: FormData) => {
+  const response = await api.post(`/documents/${id}/replace`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
+  return response.data
 }
 
-export async function updateDocumentStatus(id: string, status: string) {
-  await delay()
-  const document = documents.find(item => item.id === id)
-  if (!document) throw new Error('Document not found')
-  document.status = status as AppDocument['status']
-  return document
+export const deleteDocument = async (id: number | string) => {
+  const response = await api.delete(`/documents/${id}`)
+  return response.data
 }
 
-export async function getSubmissionSchedules(): Promise<SubmissionSchedule[]> {
-  await delay()
-  return []
+/* ===========================
+   DASHBOARD
+=========================== */
+
+export const getDashboard = async () => {
+  const response = await api.get('/dashboard')
+  return response.data
 }
 
-export async function getComplianceScores(): Promise<ComplianceScore[]> {
-  await delay()
-  return []
+/* ===========================
+   NOTIFICATIONS
+=========================== */
+
+export const getNotifications = async () => {
+  const response = await api.get('/notifications')
+  return response.data
 }
 
-export async function getDashboardMetrics(): Promise<DashboardMetrics> {
-  await delay()
-  return {
-    totalPrograms: programs.length,
-    totalAreas: accreditationAreas.length,
-    complianceScore: 91,
-    pendingSubmissions: documents.filter(item => item.status === 'pending').length,
-    assignmentCompletion: 84,
-    performanceTrend: 14
-  }
+export const unreadCount = async () => {
+  const response = await api.get('/notifications/unread-count')
+  return response.data
 }
 
-export async function getAuditLogs(): Promise<AuditLog[]> {
-  await delay()
-  return []
+export const markAsRead = async (id: number | string) => {
+  const response = await api.post(`/notifications/${id}/mark-read`)
+  return response.data
 }
 
-export async function createAuditLog(log: Omit<AuditLog, 'id' | 'timestamp'>) {
-  await delay()
-  return { id: `${Date.now()}`, timestamp: new Date().toISOString(), ...log } as AuditLog
+export const markAllAsRead = async () => {
+  const response = await api.post('/notifications/mark-all-read')
+  return response.data
 }
 
-export async function getNotifications(userId: string): Promise<NotificationMessage[]> {
-  await delay()
-  void userId
-  return [{
-    id: '1',
-    userId,
-    title: 'Local backend ready',
-    message: 'The application is now using the local Laravel-ready data layer.',
-    type: 'info',
-    read: false,
-    createdAt: new Date().toISOString()
-  }]
+/* ===========================
+   REPORTS
+=========================== */
+
+export const getReports = async () => {
+  const response = await api.get('/reports')
+  return response.data
 }
 
-export async function markNotificationRead(id: string) {
-  await delay()
-  return { id, userId: 'local', title: 'Updated', message: 'Marked as read', type: 'info', read: true, createdAt: new Date().toISOString() }
-}
-
-export async function markAllNotificationsRead(userId: string) {
-  await delay()
-  void userId
-  return true
-}
-
-export async function getRecentActivity(limit = 10) {
-  await delay()
-  return [
-    { id: '1', title: 'Laravel backend prepared', status: 'completed', icon: 'checkmark-circle-outline', color: 'rgba(34, 197, 94, 0.1)', created_at: new Date().toISOString() }
-  ].slice(0, limit)
-}
-
-export async function deleteFile(fileUrl: string) {
-  await delay()
-  return fileUrl ? true : false
-}
-
-export async function getFileUrl(filePath: string) {
-  await delay()
-  return `/${filePath}`
-}
-
-const colleges: College[] = [
-  { id: '1', name: 'College of Engineering', code: 'COE', description: 'Engineering programs', dean: 'Dr. Maria Cruz', createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-  { id: '2', name: 'College of Nursing', code: 'CON', description: 'Nursing programs', dean: 'Dr. Ana Santos', createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-  { id: '3', name: 'College of Computer Studies', code: 'CCS', description: 'Computer and IT programs', dean: 'Dr. John Smith', createdAt: '2024-01-01', updatedAt: '2024-01-01' }
-]
-
-export async function getColleges() {
-  await delay()
-  return colleges
-}
-
-export async function getCollege(id: string) {
-  await delay()
-  return colleges.find(college => college.id === id) || null
-}
-
-export async function createCollege(college: Omit<College, 'id'>) {
-  await delay()
-  const newCollege: College = { id: `${Date.now()}`, ...college }
-  colleges.push(newCollege)
-  return newCollege
-}
-
-export async function updateCollege(id: string, updates: Partial<College>) {
-  await delay()
-  const index = colleges.findIndex(college => college.id === id)
-  if (index === -1) throw new Error('College not found')
-  colleges[index] = { ...colleges[index], ...updates, updatedAt: new Date().toISOString() }
-  return colleges[index]
-}
-
-export async function deleteCollege(id: string) {
-  await delay()
-  const index = colleges.findIndex(college => college.id === id)
-  if (index !== -1) colleges.splice(index, 1)
-  return true
-}
+export default api

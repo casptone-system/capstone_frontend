@@ -10,7 +10,7 @@
   "dependencies": {
     "@ionic/vue": "^7.8.6",
     "@ionic/vue-router": "^8.8.16",
-    "axios": "^1.16.1",
+    "axios": "^1.19.0",
     "chart.js": "^4.5.1",
     "core-js": "^3.8.3",
     "date-fns": "^2.30.0",

@@ -40,7 +40,7 @@
                 id="email"
                 v-model="email"
                 type="email"
-                placeholder="dean@university.edu"
+                placeholder="ISU email"
                 required
                 class="field-input"
               />
