@@ -2,7 +2,9 @@ import { createApp } from 'vue'
 import { IonicVue } from '@ionic/vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
-import router from './router'
+import router from '@/router'
+import { useAuthStore } from '@/stores/authStore'
+
 import './assets/styles.css'
 import '@ionic/vue/css/core.css'
 import '@ionic/vue/css/normalize.css'
@@ -16,11 +18,20 @@ import '@ionic/vue/css/flex-utils.css'
 import '@ionic/vue/css/display.css'
 
 const app = createApp(App)
+const pinia = createPinia()
 
 app.use(IonicVue)
-app.use(createPinia())
-app.use(router)
+app.use(pinia)
 
-router.isReady().then(() => {
+const authStore = useAuthStore()
+
+const bootstrap = async () => {
+  await authStore.restoreSession()
+  app.use(router)
+  await router.isReady()
   app.mount('#app')
+}
+
+bootstrap().catch((error) => {
+  console.error('App bootstrap failed:', error)
 })

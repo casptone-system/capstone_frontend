@@ -89,6 +89,12 @@ const badgeClass = computed(() => {
 })
 </script>
 
+<script lang="ts">
+export default {
+  name: 'StatCard',
+}
+</script>
+
 <style scoped>
 .stat-card {
   background-color: var(--color-surface);

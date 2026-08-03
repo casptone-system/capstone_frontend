@@ -32,54 +32,58 @@
         <p class="form-subtitle">Join the Accreditation Management System.</p>
 
         <form @submit.prevent="handleRegister" class="login-form">
+          <div class="security-banner" role="status">
+            <strong>Protected onboarding</strong>
+            <span>Create a secure account and complete MFA once your access is approved.</span>
+          </div>
 
           <!-- Last Name -->
           <div class="field-group">
-            <label class="field-label" for="name">Last_Name <span class="req">*</span></label>
-            <div class="input-wrap" :class="{ error: nameError }">
+            <label class="field-label" for="last-name">Last Name <span class="req">*</span></label>
+            <div class="input-wrap" :class="{ error: lastnameError }">
               <ion-icon name="person-outline" class="input-icon" aria-hidden="true"></ion-icon>
               <input
-                id="name"
-                v-model="last_name"
+                id="last-name"
+                v-model="lastname"
                 type="text"
                 placeholder="Dela Cruz"
                 required
                 class="field-input"
               />
             </div>
-            <span v-if="nameError" class="field-error">{{ nameError }}</span>
+            <span v-if="lastnameError" class="field-error">{{ lastnameError }}</span>
           </div>
           <!-- Middle Name -->
           <div class="field-group">
             <label class="field-label" for="middle-name">Middle Name <span class="req">*</span></label>
-            <div class="input-wrap" :class="{ error: nameError }">
+            <div class="input-wrap" :class="{ error: middleNameError }">
               <ion-icon name="person-outline" class="input-icon" aria-hidden="true"></ion-icon>
               <input
                 id="middle-name"
-                v-model="middleName"
+                v-model="middlename"
                 type="text"
                 placeholder="Carlos"
                 required
                 class="field-input"
               />
             </div>
-            <span v-if="nameError" class="field-error">{{ nameError }}</span>
+            <span v-if="middleNameError" class="field-error">{{ middleNameError }}</span>
           </div>
           <!-- First Name -->
          <div class="field-group">
             <label class="field-label" for="first-name">First Name <span class="req">*</span></label>
-            <div class="input-wrap" :class="{ error: nameError }">
+            <div class="input-wrap" :class="{ error: firstNameError }">
               <ion-icon name="person-outline" class="input-icon" aria-hidden="true"></ion-icon>
               <input
                 id="first-name"
-                v-model="firstName"
+                v-model="firstname"
                 type="text"
                 placeholder="Juan"
                 required
                 class="field-input"
               />
             </div>
-            <span v-if="nameError" class="field-error">{{ nameError }}</span>
+            <span v-if="firstNameError" class="field-error">{{ firstNameError }}</span>
           </div>
 
           <!-- Email -->
@@ -193,14 +197,15 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { IonIcon } from '@ionic/vue'
 import AppButton from '@/components/AppButton.vue'
+import { validateEmail, validatePasswordStrength, validateRequired } from '@/lib/validation'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
 // Form Fields
-const lastName = ref('')
-const middleName = ref('')
-const firstName = ref('')
+const lastname = ref('')
+const middlename = ref('')
+const firstname = ref('')
 const email = ref('')
 const phone = ref('')
 const birthdate = ref('')
@@ -211,7 +216,9 @@ const confirmPassword = ref('')
 const isLoading = ref(false)
 
 // Errors
-const nameError = ref('')
+const lastnameError = ref('')
+const middleNameError = ref('')
+const firstNameError = ref('')
 const emailError = ref('')
 const phoneError = ref('')
 const birthdateError = ref('')
@@ -220,7 +227,9 @@ const confirmPasswordError = ref('')
 
 const handleRegister = async () => {
   // Reset errors
-  nameError.value = ''
+  lastnameError.value = ''
+  middleNameError.value = ''
+  firstNameError.value = ''
   emailError.value = ''
   phoneError.value = ''
   birthdateError.value = ''
@@ -228,40 +237,26 @@ const handleRegister = async () => {
   confirmPasswordError.value = ''
 
   // Validation
-  if (!lastName.value.trim()) {
-    nameError.value = 'Last name is required'
-    return
-  }
+  lastnameError.value = validateRequired(lastname.value, 'Last name')
+  if (lastnameError.value) return
 
-  if (!firstName.value.trim()) {
-    nameError.value = 'First name is required'
-    return
-  }
+  middleNameError.value = validateRequired(middlename.value, 'Middle name')
+  if (middleNameError.value) return
 
-  if (!email.value.trim()) {
-    emailError.value = 'Email is required'
-    return
-  }
+  firstNameError.value = validateRequired(firstname.value, 'First name')
+  if (firstNameError.value) return
 
-  if (!phone.value.trim()) {
-    phoneError.value = 'Phone number is required'
-    return
-  }
+  emailError.value = validateEmail(email.value)
+  if (emailError.value) return
 
-  if (!birthdate.value) {
-    birthdateError.value = 'Birth date is required'
-    return
-  }
+  phoneError.value = validateRequired(phone.value, 'Phone number')
+  if (phoneError.value) return
 
-  if (!password.value) {
-    passwordError.value = 'Password is required'
-    return
-  }
+  birthdateError.value = validateRequired(birthdate.value, 'Birth date')
+  if (birthdateError.value) return
 
-  if (password.value.length < 8) {
-    passwordError.value = 'Password must be at least 8 characters'
-    return
-  }
+  passwordError.value = validatePasswordStrength(password.value)
+  if (passwordError.value) return
 
   if (password.value !== confirmPassword.value) {
     confirmPasswordError.value = 'Passwords do not match'
@@ -272,28 +267,30 @@ const handleRegister = async () => {
 
   try {
     await authStore.register({
-      last_name: lastName.value,
-      middle_name: middleName.value,
-      first_name: firstName.value,
-      email: email.value,
-      phone: phone.value,
+      last_name: lastname.value.trim(),
+      middle_name: middlename.value.trim(),
+      first_name: firstname.value.trim(),
+      email: email.value.trim().toLowerCase(),
+      phone: phone.value.trim(),
       birthdate: birthdate.value,
       password: password.value,
       password_confirmation: confirmPassword.value,
     })
 
-    alert('Registration successful!')
-
-    router.push('/login')
+    await router.replace('/login?registered=1')
   } catch (err: any) {
     const errors = err.response?.data?.errors
 
     if (errors?.last_name) {
-      nameError.value = errors.last_name[0]
+      lastnameError.value = errors.last_name[0]
+    }
+
+    if (errors?.middle_name) {
+      middleNameError.value = errors.middle_name[0]
     }
 
     if (errors?.first_name) {
-      nameError.value = errors.first_name[0]
+      firstNameError.value = errors.first_name[0]
     }
 
     if (errors?.email) {
@@ -602,6 +599,25 @@ const handleRegister = async () => {
 .field-hint {
   font-size: 0.72rem;
   color: rgba(19, 31, 53, 0.45);
+}
+
+/* ── SECURITY NOTICE ── */
+.security-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.24rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 8px;
+  background: rgba(9, 73, 28, 0.06);
+  border: 1px solid rgba(9, 73, 28, 0.16);
+  color: rgba(19, 31, 53, 0.8);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.security-banner strong {
+  color: var(--ink);
+  font-size: 0.82rem;
 }
 
 /* ── TWO COL ── */

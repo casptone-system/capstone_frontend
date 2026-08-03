@@ -24,7 +24,11 @@ defineEmits<{
   click: []
 }>()
 </script>
-
+<script lang="ts">
+export default {
+  name: 'AppCard',
+}
+</script>
 <style scoped>
 .card {
   background-color: var(--color-surface);

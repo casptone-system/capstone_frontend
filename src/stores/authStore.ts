@@ -9,6 +9,57 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = ref(false)
   const isLoading = ref(false)
   const error = ref<string |null>(null)
+  const SESSION_TIMEOUT_MS = 30 * 60 * 1000
+  let inactivityTimer: number | null = null
+  let activityListenersAttached = false
+  let activityHandler: (() => void) | null = null
+
+  const clearInactivityTimer = () => {
+    if (inactivityTimer !== null) {
+      window.clearTimeout(inactivityTimer)
+      inactivityTimer = null
+    }
+  }
+
+  const resetSessionTimer = () => {
+    if (!isAuthenticated.value || typeof window === 'undefined') return
+
+    clearInactivityTimer()
+    inactivityTimer = window.setTimeout(() => {
+      void logout().finally(() => {
+        window.location.assign('/login?expired=1')
+      })
+    }, SESSION_TIMEOUT_MS)
+  }
+
+  const attachActivityListeners = () => {
+    if (typeof window === 'undefined' || activityListenersAttached) return
+
+    activityHandler = () => {
+      if (isAuthenticated.value) {
+        resetSessionTimer()
+      }
+    }
+
+    window.addEventListener('mousemove', activityHandler, { passive: true })
+    window.addEventListener('keydown', activityHandler, { passive: true })
+    window.addEventListener('click', activityHandler, { passive: true })
+    window.addEventListener('touchstart', activityHandler, { passive: true })
+
+    activityListenersAttached = true
+  }
+
+  const detachActivityListeners = () => {
+    if (typeof window === 'undefined' || !activityListenersAttached || !activityHandler) return
+
+    window.removeEventListener('mousemove', activityHandler)
+    window.removeEventListener('keydown', activityHandler)
+    window.removeEventListener('click', activityHandler)
+    window.removeEventListener('touchstart', activityHandler)
+
+    activityHandler = null
+    activityListenersAttached = false
+  }
 
   const userRole = computed(() => user.value?.role || '')
   const userName = computed(() => user.value?.name || '')
@@ -30,6 +81,8 @@ export const useAuthStore = defineStore('auth', () => {
 
       user.value = response.data.data.user
       isAuthenticated.value = true
+      attachActivityListeners()
+      resetSessionTimer()
 
       return response.data
     } catch (err: any) {
@@ -78,6 +131,8 @@ export const useAuthStore = defineStore('auth', () => {
 
       user.value = response.data.data.user
       isAuthenticated.value = true
+      attachActivityListeners()
+      resetSessionTimer()
     } catch {
       localStorage.removeItem(TOKEN_KEY)
       user.value = null
@@ -101,6 +156,8 @@ export const useAuthStore = defineStore('auth', () => {
 
     user.value = null
     isAuthenticated.value = false
+    clearInactivityTimer()
+    detachActivityListeners()
 
     isLoading.value = false
   }

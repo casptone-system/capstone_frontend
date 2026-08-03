@@ -34,7 +34,7 @@
         <form @submit.prevent="handleLogin" class="login-form">
           <div class="field-group">
             <label class="field-label" for="email">Email Address <span class="req">*</span></label>
-            <div class="input-wrap" :class="{ error: loginError }">
+            <div class="input-wrap" :class="{ error: emailError }">
               <ion-icon name="mail-outline" class="input-icon" aria-hidden="true"></ion-icon>
               <input
                 id="email"
@@ -45,11 +45,12 @@
                 class="field-input"
               />
             </div>
+            <span v-if="emailError" class="field-error">{{ emailError }}</span>
           </div>
 
           <div class="field-group">
             <label class="field-label" for="password">Password <span class="req">*</span></label>
-            <div class="input-wrap">
+            <div class="input-wrap" :class="{ error: passwordError }">
               <ion-icon name="lock-closed-outline" class="input-icon" aria-hidden="true"></ion-icon>
               <input
                 id="password"
@@ -60,10 +61,24 @@
                 class="field-input"
               />
             </div>
+            <span v-if="passwordError" class="field-error">{{ passwordError }}</span>
           </div>
 
           <div v-if="loginError" class="login-error" role="alert">
             {{ loginError }}
+          </div>
+
+          <div v-if="showRegistrationNotice" class="login-success" role="status">
+            Registration completed. Please sign in to continue.
+          </div>
+
+          <div v-if="showExpiredNotice" class="login-success warning" role="status">
+            Your session expired for security reasons. Please sign in again to continue.
+          </div>
+
+          <div class="security-banner" role="status">
+            <strong>Protected sign-in</strong>
+            <span>Use your institutional credentials and complete MFA when prompted.</span>
           </div>
 
           <div class="form-options">
@@ -71,7 +86,9 @@
               <input v-model="rememberMe" type="checkbox" />
               <span>Remember me</span>
             </label>
-            <a href="/forgot-password" class="forgot-password">Forgot password?</a>
+            <router-link to="/forgot-password" class="forgot-password">
+              Forgot password?
+            </router-link>
           </div>
 
           <app-button
@@ -84,7 +101,7 @@
             Sign In
           </app-button>
 
-          <div @click="$router.push('/register')" class="alt-btn">
+          <div @click="goToRegister" class="alt-btn">
             Create new account
           </div>
         </form>
@@ -134,6 +151,8 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import AppButton from '@/components/AppButton.vue'
 import { IonIcon } from '@ionic/vue'
+import { getRoleRedirectPath } from '@/lib/roleRedirects'
+import { validateEmail, validateRequired } from '@/lib/validation'
 
 const router = useRouter()
 const route = useRoute()
@@ -145,32 +164,39 @@ const rememberMe = ref(false)
 const isLoading = ref(false)
 const isSocialLoading = ref(false)
 const loginError = ref('')
+const emailError = ref('')
+const passwordError = ref('')
+const showRegistrationNotice = ref(route.query.registered === '1')
+const showExpiredNotice = ref(route.query.expired === '1')
 
 const getRedirectPath = () => {
   const redirect = route.query.redirect
   if (redirect && typeof redirect === 'string') return redirect
 
-  const role = authStore.userRole?.toLowerCase()
-  const roleRedirects: Record<string, string> = {
-    dean: '/dashboard',
-    admin: '/dashboard',
-    'super-admin': '/dashboard',
-    'program-chair': '/dashboard',
-    faculty: '/dashboard',
-    qa: '/dashboard',
-    'area-in-charge': '/dashboard',
-    vpaa: '/dashboard',
-    'vpaa-di': '/dashboard',
-  }
-  return roleRedirects[role || ''] || '/dashboard'
+  return getRoleRedirectPath(authStore.userRole)
 }
 
 const handleLogin = async () => {
   loginError.value = ''
+  emailError.value = ''
+  passwordError.value = ''
+
+  const emailValidation = validateEmail(email.value)
+  if (emailValidation) {
+    emailError.value = emailValidation
+    return
+  }
+
+  const passwordValidation = validateRequired(password.value, 'Password')
+  if (passwordValidation) {
+    passwordError.value = passwordValidation
+    return
+  }
+
   isLoading.value = true
   try {
-    await authStore.login(email.value, password.value)
-    router.push(getRedirectPath())
+    await authStore.login(email.value.trim().toLowerCase(), password.value)
+    await router.replace(getRedirectPath())
   } catch (error: any) {
     loginError.value = error.message || 'Login failed'
   } finally {
@@ -200,6 +226,10 @@ const handleGithubLogin = async () => {
   } finally {
     isSocialLoading.value = false
   }
+}
+
+const goToRegister = () => {
+  router.replace('/register')
 }
 </script>
 
@@ -458,7 +488,8 @@ const handleGithubLogin = async () => {
 .field-input::placeholder { color: rgba(19, 31, 53, 0.3); }
 
 /* ── ERROR ALERT ── */
-.login-error {
+.login-error,
+.login-success {
   display: flex;
   align-items: flex-start;
   gap: 0.6rem;
@@ -484,6 +515,36 @@ const handleGithubLogin = async () => {
   font-size: 0.7rem;
   font-weight: 700;
   margin-top: 0.05rem;
+}
+
+/* ── SECURITY NOTICE ── */
+.security-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.8rem 0.95rem;
+  border-radius: 8px;
+  background: rgba(9, 73, 28, 0.06);
+  border: 1px solid rgba(9, 73, 28, 0.16);
+  color: rgba(19, 31, 53, 0.8);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.security-banner strong {
+  color: var(--ink);
+  font-size: 0.84rem;
+}
+
+.login-success.warning {
+  background: #fff8ec;
+  border-color: rgba(185, 141, 70, 0.35);
+  color: #8a5b12;
+}
+
+.field-error {
+  font-size: 0.72rem;
+  color: var(--crimson);
 }
 
 /* ── FORM OPTIONS ── */

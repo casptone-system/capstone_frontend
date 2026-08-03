@@ -105,31 +105,7 @@
         </div>
 
         <!-- Quick Links -->
-        <ion-card class="shadow-md">
-          <ion-card-header>
-            <ion-card-title>Quick Actions</ion-card-title>
-          </ion-card-header>
-          <ion-card-content>
-            <div class="grid grid-cols-2 gap-2">
-              <ion-button expand="block" fill="outline" :router-link="'/documents'">
-                <template #start><ion-icon :icon="documentTextOutline"></ion-icon></template>
-                Documents
-              </ion-button>
-              <ion-button expand="block" fill="outline" :router-link="'/upload'">
-                <template #start><ion-icon :icon="cloudUploadOutline"></ion-icon></template>
-                Upload
-              </ion-button>
-              <ion-button expand="block" fill="outline" :router-link="'/reports'">
-                <template #start><ion-icon :icon="barChartOutline"></ion-icon></template>
-                Reports
-              </ion-button>
-              <ion-button expand="block" fill="outline" :router-link="'/users'">
-                <template #start><ion-icon :icon="peopleOutline"></ion-icon></template>
-                Users
-              </ion-button>
-            </div>
-          </ion-card-content>
-        </ion-card>
+        <FacultyQuickActions />
       </div>
     </ion-content>
   </ion-page>
@@ -139,31 +115,25 @@
 import {
   IonPage,
   IonContent,
-  IonCard,
-  IonCardContent,
-  IonCardHeader,
-  IonCardTitle,
-  IonButton,
-  IonIcon,
   IonSkeletonText,
 } from '@ionic/vue'
 import {
   documentTextOutline,
   checkmarkDoneOutline,
   folderOpenOutline,
-  cloudUploadOutline,
-  barChartOutline,
-  peopleOutline,
   hourglassOutline,
 } from 'ionicons/icons'
 import AppCard from '@/components/AppCard.vue'
 import StatCard from '@/components/StatCard.vue'
+import FacultyQuickActions from '@/modules/faculty/components/FacultyQuickActions.vue'
 import { ref, computed, onMounted } from 'vue'
 import { useDashboardStore } from '@/stores/dashboardStore'
 import { useAuthStore } from '@/stores/authStore'
+import { useRoleNavigation } from '@/shared/composables/useRoleNavigation'
 
 const dashboardStore = useDashboardStore()
 const authStore = useAuthStore()
+const { currentRoleLabel } = useRoleNavigation()
 const isLoadingStats = ref(false)
 const isLoading = ref(false)
 const error = ref<string | null>(null)
@@ -175,8 +145,12 @@ const pageTitle = computed(() => {
     dean: 'Dean Dashboard',
     'program-chair': 'Program Chair Dashboard',
     faculty: 'Faculty Dashboard',
+    qa: 'QA Dashboard',
+    'super-admin': 'Super Admin Dashboard',
+    vpaa: 'VPAA/DI Dashboard',
+    'area-in-charge': 'Area In-Charge Dashboard',
   }
-  return titles[userRole.value as string] || 'Dashboard'
+  return titles[userRole.value as string] || `${currentRoleLabel.value} Dashboard`
 })
 
 const pageDescription = computed(() => {
@@ -184,6 +158,10 @@ const pageDescription = computed(() => {
     dean: 'Monitor institutional compliance, approve submissions, and manage accreditation teams.',
     'program-chair': 'Track program compliance progress and review faculty submissions.',
     faculty: 'Upload documents and track submission status.',
+    qa: 'Review submissions, verify compliance, and track accreditation readiness.',
+    'super-admin': 'Manage users, roles, and system-level settings.',
+    vpaa: 'Oversee institutional readiness and review executive compliance reports.',
+    'area-in-charge': 'Coordinate evidence review and workflow progress for your assigned areas.',
   }
   return descriptions[userRole.value as string] || 'Welcome to your dashboard'
 })
@@ -275,7 +253,7 @@ onMounted(async () => {
   margin: 0;
   font-size: var(--text-3xl);
   font-weight: var(--font-weight-bold);
-  color: var(--color-text);
+  color: black;
 }
 
 .page-description {

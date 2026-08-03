@@ -1,20 +1,25 @@
 import { createRouter, createWebHistory } from '@ionic/vue-router'
 import { useAuthStore } from '@/stores/authStore'
+import { getRoleRedirectPath } from '@/lib/roleRedirects'
 
-import LoginPage from '@/views/login/LoginPage.vue'
-import RegisterPage from '@/views/login/RegisterPage.vue'
-import ForgotPassword from '@/views/ForgotPassword.vue'
-import Dashboard from '@/views/Dashboard.vue'
-import Documents from '@/views/Documents.vue'
-import Upload from '@/views/Upload.vue'
-import Reports from '@/views/Reports.vue'
-import Users from '@/views/Users.vue'
-import Audit from '@/views/Audit.vue'
-import QA from '@/views/QA.vue'
-import Settings from '@/views/Settings.vue'
-import AccreditationList from '@/views/AccreditationList.vue'
-import AccreditationDetail from '@/views/AccreditationDetail.vue'
-import AccreditationForm from '@/views/AccreditationForm.vue'
+// Lazy-loaded components
+const LoginPage = () => import('@/views/login/LoginPage.vue')
+const RegisterPage = () => import('@/views/login/RegisterPage.vue')
+const ForgotPassword = () => import('@/views/ForgotPassword.vue')
+
+const Dashboard = () => import('@/views/Dashboard.vue')
+const Documents = () => import('@/views/Documents.vue')
+const Upload = () => import('@/views/Upload.vue')
+const Reports = () => import('@/views/Reports.vue')
+const Users = () => import('@/views/Users.vue')
+const Audit = () => import('@/views/Audit.vue')
+const QA = () => import('@/views/QA.vue')
+const Settings = () => import('@/views/Settings.vue')
+const JoinTeam = () => import('@/views/JoinTeam.vue')
+
+const AccreditationList = () => import('@/views/AccreditationList.vue')
+const AccreditationDetail = () => import('@/views/AccreditationDetail.vue')
+const AccreditationForm = () => import('@/views/AccreditationForm.vue')
 
 const routes = [
   {
@@ -77,8 +82,18 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/join-team',
+    component: JoinTeam,
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/accreditation',
     component: AccreditationList,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/accreditation/new',
+    component: AccreditationForm,
     meta: { requiresAuth: true },
   },
   {
@@ -88,11 +103,6 @@ const routes = [
   },
   {
     path: '/accreditation/:id/edit',
-    component: AccreditationForm,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/accreditation/new',
     component: AccreditationForm,
     meta: { requiresAuth: true },
   },
@@ -107,20 +117,27 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
 
+  // Try restoring the session if not authenticated yet
+  if (!authStore.isAuthenticated) {
+    await authStore.restoreSession()
+  }
+
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    next('/login')
-  } else if (
+    return next('/login')
+  }
+
+  if (
     !to.meta.requiresAuth &&
     authStore.isAuthenticated &&
-    (to.path === '/login' || to.path === '/forgot-password')
+    ['/login', '/register', '/forgot-password'].includes(to.path)
   ) {
-    next('/dashboard')
-  } else {
-    next()
+    return next(getRoleRedirectPath(authStore.userRole))
   }
+
+  next()
 })
 
 export default router
