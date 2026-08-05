@@ -2,8 +2,51 @@ import { createApp } from 'vue'
 import { IonicVue } from '@ionic/vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
+
 import router from '@/router'
 import { useAuthStore } from '@/stores/authStore'
+import { addIcons } from 'ionicons'
+import {
+  mailOutline,
+  lockClosedOutline,
+  syncOutline,
+  personOutline,
+  eyeOutline,
+  eyeOffOutline,
+  logoGoogle,
+  logoGithub,
+  callOutline,
+  calendarOutline,
+  chevronDownOutline,
+  notificationsOutline,
+  documentTextOutline,
+  barChartOutline,
+  peopleOutline,
+  layersOutline,
+  listOutline,
+  logOutOutline
+} from 'ionicons/icons'
+
+addIcons({
+  'mail-outline': mailOutline,
+  'lock-closed-outline': lockClosedOutline,
+  'sync-outline': syncOutline,
+  'person-outline': personOutline,
+  'eye-outline': eyeOutline,
+  'eye-off-outline': eyeOffOutline,
+  'logo-google': logoGoogle,
+  'logo-github': logoGithub,
+  'call-outline': callOutline,
+  'calendar-outline': calendarOutline,
+  'chevron-down-outline': chevronDownOutline,
+  'notifications-outline': notificationsOutline,
+  'document-text-outline': documentTextOutline,
+  'bar-chart-outline': barChartOutline,
+  'people-outline': peopleOutline,
+  'layers-outline': layersOutline,
+  'list-outline': listOutline,
+  'log-out-outline': logOutOutline
+})
 
 import './assets/styles.css'
 import '@ionic/vue/css/core.css'

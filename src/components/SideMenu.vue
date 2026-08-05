@@ -15,7 +15,7 @@
         </ion-menu-toggle>
       </ion-list>
 
-      <ion-list>
+      <ion-list v-if="showAdmin">
         <ion-list-header>
           <ion-label>Admin</ion-label>
         </ion-list-header>
@@ -132,6 +132,15 @@ const adminPages = [
     mdIcon: settingsSharp,
   },
 ]
+import { useAuthStore } from '@/stores/authStore'
+import { computed } from 'vue'
+
+const authStore = useAuthStore()
+
+const showAdmin = computed(() => {
+  const role = (authStore.userRole || '').toString()
+  return !!authStore.hasGroup || ['super-admin', 'dean', 'program-chair'].includes(role)
+})
 </script>
 
 <style scoped>

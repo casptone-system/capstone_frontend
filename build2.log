@@ -1,0 +1,96 @@
+
+> capstone_project@0.1.0 build
+> vue-cli-service build
+
+All browser targets in the browserslist configuration have supported ES module.
+Therefore we don't build two separate bundles for differential loading.
+
+
+-  Building for production...
+ WARNING  Compiled with 2 warnings7:04:07 PM
+
+ warning  
+
+asset size limit: The following asset(s) exceed the recommended size limit (244 KiB).
+This can impact web performance.
+Assets: 
+  img/Archiving_logo.1ac21cf6.png (10.8 MiB)
+  js/chunk-vendors.1def6e67.js (895 KiB)
+  icon.ico (5.79 MiB)
+
+ warning  
+
+entrypoint size limit: The following entrypoint(s) combined asset size exceeds the recommended limit (244 KiB). This can impact web performance.
+Entrypoints:
+  index (936 KiB)
+      js/chunk-vendors.1def6e67.js
+      css/index.69ad03ae.css
+      js/index.3f1621a7.js
+
+
+  File                                      Size             Gzipped
+
+  dist\js\chunk-vendors.1def6e67.js         894.82 KiB       205.99 KiB
+  dist\js\21.2256418d.js                    16.32 KiB        4.16 KiB
+  dist\js\index.3f1621a7.js                 13.56 KiB        5.18 KiB
+  dist\js\370.2d4fc95a.js                   13.35 KiB        4.08 KiB
+  dist\js\843.cccd27da.js                   11.61 KiB        3.44 KiB
+  dist\js\dashboard-default.217c41e7.js     10.82 KiB        3.87 KiB
+  dist\js\661.591de974.js                   10.54 KiB        3.02 KiB
+  dist\js\247.63caf58a.js                   10.34 KiB        3.08 KiB
+  dist\js\41.87d5c9e7.js                    8.00 KiB         1.97 KiB
+  dist\js\663.a726102e.js                   7.71 KiB         2.95 KiB
+  dist\js\625.ba211bed.js                   6.73 KiB         2.31 KiB
+  dist\js\453.1eb19812.js                   6.56 KiB         2.37 KiB
+  dist\js\879.c4ad9a11.js                   5.89 KiB         2.01 KiB
+  dist\js\25.f5e0f508.js                    5.31 KiB         1.83 KiB
+  dist\js\568.92cbdd7a.js                   5.08 KiB         1.82 KiB
+  dist\js\28.136ff20a.js                    4.92 KiB         2.12 KiB
+  dist\js\313.f1a5f2eb.js                   4.76 KiB         1.66 KiB
+  dist\js\371.e49fd618.js                   3.89 KiB         1.69 KiB
+  dist\js\234.e9716dd7.js                   2.27 KiB         1.24 KiB
+  dist\js\917.a6849bf0.js                   2.13 KiB         1.16 KiB
+  dist\js\408.90568b24.js                   2.02 KiB         0.98 KiB
+  dist\js\33.cbd4b8dd.js                    1.21 KiB         0.65 KiB
+  dist\js\754.278e3270.js                   1.17 KiB         0.64 KiB
+  dist\js\420.cec57c61.js                   1.17 KiB         0.61 KiB
+  dist\js\441.ea94f36c.js                   0.89 KiB         0.58 KiB
+  dist\js\dashboard-superadmin.cf35ff33.    0.79 KiB         0.49 KiB
+  js
+  dist\js\dashboard-programchair.c86b6ee    0.79 KiB         0.49 KiB
+  6.js
+  dist\js\dashboard-faculty.6c5a7c58.js     0.78 KiB         0.49 KiB
+  dist\js\dashboard-dean.df0d456c.js        0.77 KiB         0.49 KiB
+  dist\js\dashboard-vpaa.9ab8f220.js        0.76 KiB         0.48 KiB
+  dist\js\dashboard-qa.dd1a091b.js          0.75 KiB         0.48 KiB
+  dist\js\241.37e1e664.js                   0.65 KiB         0.45 KiB
+  dist\js\dashboard-shell.6038e82c.js       0.61 KiB         0.41 KiB
+  dist\css\index.69ad03ae.css               27.66 KiB        5.79 KiB
+  dist\css\663.7a38a9d8.css                 11.65 KiB        2.91 KiB
+  dist\css\247.f9b47fc0.css                 9.81 KiB         2.58 KiB
+  dist\css\dashboard-default.0aef5337.cs    6.89 KiB         1.73 KiB
+  s
+  dist\css\625.77da08f1.css                 3.20 KiB         0.83 KiB
+  dist\css\370.8e98b08c.css                 2.08 KiB         0.71 KiB
+  dist\css\371.54dfbe5c.css                 1.73 KiB         0.63 KiB
+  dist\css\234.34e524a2.css                 1.43 KiB         0.60 KiB
+  dist\css\917.4afce1d2.css                 1.39 KiB         0.59 KiB
+  dist\css\21.218be164.css                  0.23 KiB         0.16 KiB
+  dist\css\dashboard-programchair.b6f648    0.05 KiB         0.07 KiB
+  b9.css
+  dist\css\25.c6dac4f7.css                  0.05 KiB         0.07 KiB
+  dist\css\dashboard-superadmin.604c1d1b    0.05 KiB         0.07 KiB
+  .css
+  dist\css\dashboard-shell.577d438e.css     0.05 KiB         0.07 KiB
+  dist\css\dashboard-faculty.803edbd5.cs    0.05 KiB         0.07 KiB
+  s
+  dist\css\dashboard-dean.cf25230a.css      0.04 KiB         0.06 KiB
+  dist\css\dashboard-vpaa.92ee0e04.css      0.04 KiB         0.06 KiB
+  dist\css\dashboard-qa.04696c2d.css        0.04 KiB         0.06 KiB
+
+  Images and other types of assets omitted.
+  Build at: 2026-08-04T11:04:07.239Z - Hash: eaa67f544751099f - Time: 18920ms
+
+ DONE  Build complete. The dist directory is ready to be deployed.
+ INFO  Check out deployment instructions at https://cli.vuejs.org/guide/deployment.html
+       

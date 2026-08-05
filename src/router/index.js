@@ -7,7 +7,14 @@ const LoginPage = () => import('@/views/login/LoginPage.vue')
 const RegisterPage = () => import('@/views/login/RegisterPage.vue')
 const ForgotPassword = () => import('@/views/ForgotPassword.vue')
 
-const Dashboard = () => import('@/views/Dashboard.vue')
+const DashboardShell = () => import(/* webpackChunkName: "dashboard-shell" */ '@/views/DashboardShell.vue')
+const Dashboard = () => import(/* webpackChunkName: "dashboard-default" */ '@/views/Dashboard.vue')
+const DashboardSuperAdmin = () => import(/* webpackChunkName: "dashboard-superadmin", webpackPrefetch: true */ '@/views/dashboards/SuperAdminDashboard.vue')
+const DashboardDean = () => import(/* webpackChunkName: "dashboard-dean", webpackPrefetch: true */ '@/views/dashboards/DeanDashboard.vue')
+const DashboardProgramChair = () => import(/* webpackChunkName: "dashboard-programchair", webpackPrefetch: true */ '@/views/dashboards/ProgramChairDashboard.vue')
+const DashboardFaculty = () => import(/* webpackChunkName: "dashboard-faculty", webpackPrefetch: true */ '@/views/dashboards/FacultyDashboard.vue')
+const DashboardQA = () => import(/* webpackChunkName: "dashboard-qa", webpackPrefetch: true */ '@/views/dashboards/QADashboard.vue')
+const DashboardVPAA = () => import(/* webpackChunkName: "dashboard-vpaa", webpackPrefetch: true */ '@/views/dashboards/VPaaDashboard.vue')
 const Documents = () => import('@/views/Documents.vue')
 const Upload = () => import('@/views/Upload.vue')
 const Reports = () => import('@/views/Reports.vue')
@@ -20,6 +27,7 @@ const JoinTeam = () => import('@/views/JoinTeam.vue')
 const AccreditationList = () => import('@/views/AccreditationList.vue')
 const AccreditationDetail = () => import('@/views/AccreditationDetail.vue')
 const AccreditationForm = () => import('@/views/AccreditationForm.vue')
+const NewUserLanding = () => import('@/views/NewUserLanding.vue')
 
 const routes = [
   {
@@ -43,8 +51,17 @@ const routes = [
   },
   {
     path: '/dashboard',
-    component: Dashboard,
+    component: DashboardShell,
     meta: { requiresAuth: true },
+    children: [
+      { path: '', name: 'dashboard-default', component: Dashboard },
+      { path: 'super-admin', name: 'dashboard-super-admin', component: DashboardSuperAdmin },
+      { path: 'dean', name: 'dashboard-dean', component: DashboardDean },
+      { path: 'program-chair', name: 'dashboard-program-chair', component: DashboardProgramChair },
+      { path: 'faculty', name: 'dashboard-faculty', component: DashboardFaculty },
+      { path: 'qa', name: 'dashboard-qa', component: DashboardQA },
+      { path: 'vpaa', name: 'dashboard-vpaa', component: DashboardVPAA },
+    ],
   },
   {
     path: '/documents',
@@ -84,6 +101,11 @@ const routes = [
   {
     path: '/join-team',
     component: JoinTeam,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/new-user',
+    component: NewUserLanding,
     meta: { requiresAuth: true },
   },
   {

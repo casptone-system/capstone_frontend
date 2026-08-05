@@ -7,7 +7,7 @@
         <div class="forgot-card">
 
           <img
-            src="@/assets/Archiving_logo.png"
+            src="@/assets/logo-small.svg"
             alt="ADAMS Logo"
             class="logo"
           />

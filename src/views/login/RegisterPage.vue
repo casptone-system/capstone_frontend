@@ -27,15 +27,11 @@
     <!-- RIGHT: Form panel -->
     <div class="form-panel">
       <div class="form-wrap">
-        <img :src="require('@/assets/Archiving_logo.png')" alt="ADAMS Logo" class="login-logo" />
+        <img src="@/assets/Archiving_logo.png" alt="ADAMS Logo" class="login-logo" />
         <h2 class="form-title">Create your account</h2>
         <p class="form-subtitle">Join the Accreditation Management System.</p>
 
         <form @submit.prevent="handleRegister" class="login-form">
-          <div class="security-banner" role="status">
-            <strong>Protected onboarding</strong>
-            <span>Create a secure account and complete MFA once your access is approved.</span>
-          </div>
 
           <!-- Last Name -->
           <div class="field-group">
@@ -55,7 +51,7 @@
           </div>
           <!-- Middle Name -->
           <div class="field-group">
-            <label class="field-label" for="middle-name">Middle Name <span class="req">*</span></label>
+            <label class="field-label" for="middle-name">Middle Name <span class="req">(optional)</span></label>
             <div class="input-wrap" :class="{ error: middleNameError }">
               <ion-icon name="person-outline" class="input-icon" aria-hidden="true"></ion-icon>
               <input
@@ -480,7 +476,7 @@ const handleRegister = async () => {
 /* ── LOGO ── */
 .login-logo {
   display: block;
-  width: 90px;
+  width: 130px;
   height: auto;
   margin: 0 auto 1.25rem;
   filter: drop-shadow(1px 10px 28px rgba(19, 31, 53, 0.35));
@@ -534,7 +530,10 @@ const handleRegister = async () => {
   letter-spacing: 0.03em;
 }
 
-.req { color: var(--crimson); margin-left: 2px; }
+.req { 
+  color: rgba(47, 47, 47, 0.538); 
+  margin-left: 2px; 
+}
 
 .input-wrap {
   display: flex;
@@ -622,24 +621,16 @@ const handleRegister = async () => {
 
 /* ── TWO COL ── */
 .two-col {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
 /* ── BUTTONS ── */
 .submit-btn {
-  color: var(--parchment);
-  text-align: center;
-  margin-top: 0.25rem;
+ margin-top: 0.25rem;
   background: var(--ink) !important;
   border-radius: 8px !important;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.55rem 1.5rem;
-  border: 1.5px solid var(--ink);
-  border-radius: 8px;
 }
 
 .alt-btn {

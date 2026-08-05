@@ -28,12 +28,17 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { computed } from 'vue'
+<script lang="ts">
+import { defineComponent } from 'vue'
 
-defineOptions({
-  name: 'StatCard'
+export default defineComponent({
+  name: 'StatCard',
 })
+</script>
+
+<script setup lang="ts">
+import { IonIcon } from '@ionic/vue'
+import { computed } from 'vue'
 
 interface Trend {
   direction: 'up' | 'down'
@@ -89,11 +94,6 @@ const badgeClass = computed(() => {
 })
 </script>
 
-<script lang="ts">
-export default {
-  name: 'StatCard',
-}
-</script>
 
 <style scoped>
 .stat-card {

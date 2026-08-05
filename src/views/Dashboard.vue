@@ -1,240 +1,162 @@
 <template>
-  <ion-page class="dashboard-page">
-    <!-- Page Header -->
-    <div class="page-header">
-      <div>
-        <h1>{{ pageTitle }}</h1>
-        <p class="page-description">{{ pageDescription }}</p>
-      </div>
-      <div class="header-actions">
-        <app-button variant="outline" icon="filter-outline" size="md">
-          Filters
-        </app-button>
-        <app-button variant="primary" icon="download-outline" size="md">
-          Export
-        </app-button>
-      </div>
-    </div>
+  <ion-page>
+    <ion-content fullscreen>
 
-    <!-- Statistics Grid -->
-    <div class="stats-section">
-      <h2 class="section-title">Overview</h2>
-      <div class="stats-grid">
-        <StatCard
-          v-for="stat in dashboardStats"
-          :key="stat.id"
-          :title="stat.title"
-          :value="stat.value"
-          :icon="stat.icon"
-          :subtitle="stat.subtitle"
-          :trend="stat.trend"
-          :badge="stat.badge"
-          :isLoading="isLoadingStats"
-        />
-      </div>
-    </div>
-
-    <!-- Compliance Chart Section -->
-    <div class="chart-section">
-      <app-card variant="elevated">
-        <template #header>
-          <div class="card-header-content">
-            <div>
-              <h3>Compliance Distribution</h3>
-              <p class="text-muted">By area and program status</p>
-            </div>
-            <div class="header-actions-inline">
-              <button class="btn-icon" aria-label="Refresh" @click="initializeChart">
-                <ion-icon name="refresh-outline"></ion-icon>
-              </button>
-              <button class="btn-icon" aria-label="More options">
-                <ion-icon name="ellipsis-vertical-outline"></ion-icon>
-              </button>
-            </div>
-          </div>
-        </template>
-        <div class="chart-container">
-          <p class="text-gray-500">Chart content coming soon.</p>
+      <!-- HEADER -->
+      <div class="page-header">
+        <div>
+          <h1>{{ pageTitle }}</h1>
+          <p>{{ pageDescription }}</p>
         </div>
-      </app-card>
-    </div>
+      </div>
 
-    <ion-content :fullscreen="true" class="p-4">
-      <div class="space-y-6">
-        <!-- Stats Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- LOADING -->
+      <div v-if="dashboardStore.isLoading" class="loading">
+        <ion-skeleton-text animated style="height:30px"></ion-skeleton-text>
+        <ion-skeleton-text animated style="height:120px"></ion-skeleton-text>
+      </div>
+
+      <!-- ERROR -->
+      <div v-else-if="dashboardStore.error" class="error-box">
+        {{ dashboardStore.error }}
+      </div>
+
+      <!-- DASHBOARD -->
+      <div v-else>
+
+        <!-- Show join-team inline for users without group or if explicitly asked -->
+        <div v-if="showJoinInline">
+          <JoinTeam />
+        </div>
+
+        <div v-else class="stats-grid">
+
           <StatCard
-            title="Total Documents"
-            :value="stats.totalDocuments"
+            title="Programs"
+            :value="dashboardStore.stats.totalPrograms"
             :icon="documentTextOutline"
-            color="#3b82f6"
-            :change="12"
           />
+
           <StatCard
-            title="Approved"
-            :value="stats.approvedDocuments"
-            :icon="checkmarkDoneOutline"
-            color="#10b981"
-            :change="8"
-          />
-          <StatCard
-            title="Pending Review"
-            :value="stats.pendingDocuments"
-            :icon="hourglassOutline"
-            color="#f59e0b"
-            :change="-5"
-          />
-          <StatCard
-            title="Active Programs"
-            :value="stats.activePrograms"
+            title="Areas"
+            :value="dashboardStore.stats.totalAreas"
             :icon="folderOpenOutline"
-            color="#8b5cf6"
-            :change="0"
           />
+
+          <StatCardc
+            title="Compliance"
+            :value="dashboardStore.stats.complianceScore + '%'"
+            :icon="checkmarkDoneOutline"
+          />
+
+          <StatCard
+            title="Pending"
+            :value="dashboardStore.stats.pendingSubmissions"
+            :icon="hourglassOutline"
+          />
+
         </div>
 
-        <!-- Skeleton Loading -->
-        <div v-if="isLoading" class="space-y-4">
-          <ion-skeleton-text animated></ion-skeleton-text>
-          <ion-skeleton-text animated></ion-skeleton-text>
-        </div>
-
-        <!-- Error Message -->
-        <div v-if="error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-          {{ error }}
-        </div>
-
-        <!-- Quick Links -->
         <FacultyQuickActions />
+
       </div>
+        <ion-button
+    color="danger"
+    fill="solid"
+    @click="handleLogout"
+  >
+     <ion-icon :icon="logOutOutline"></ion-icon>
+    Logout
+  </ion-button>
+
     </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
 import {
-  IonPage,
-  IonContent,
-  IonSkeletonText,
+IonPage,
+IonContent,
+IonSkeletonText,
+IonButton,
+IonIcon
 } from '@ionic/vue'
+
 import {
-  documentTextOutline,
-  checkmarkDoneOutline,
-  folderOpenOutline,
-  hourglassOutline,
+documentTextOutline,
+folderOpenOutline,
+checkmarkDoneOutline,
+hourglassOutline,
+logOutOutline
 } from 'ionicons/icons'
-import AppCard from '@/components/AppCard.vue'
-import StatCard from '@/components/StatCard.vue'
-import FacultyQuickActions from '@/modules/faculty/components/FacultyQuickActions.vue'
-import { ref, computed, onMounted } from 'vue'
+
+import { computed,onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+//import { useRoute, useRouter } from 'vue-router'
+import JoinTeam from '@/views/JoinTeam.vue'
+
 import { useDashboardStore } from '@/stores/dashboardStore'
 import { useAuthStore } from '@/stores/authStore'
-import { useRoleNavigation } from '@/shared/composables/useRoleNavigation'
+
+import FacultyQuickActions from '@/modules/faculty/components/FacultyQuickActions.vue'
+import StatCard from '@/components/StatCard.vue'
 
 const dashboardStore = useDashboardStore()
 const authStore = useAuthStore()
-const { currentRoleLabel } = useRoleNavigation()
-const isLoadingStats = ref(false)
-const isLoading = ref(false)
-const error = ref<string | null>(null)
-
-const userRole = computed(() => authStore.userRole)
-
+// const route = useRoute()
+const router = useRouter()
 const pageTitle = computed(() => {
-  const titles: Record<string, string> = {
-    dean: 'Dean Dashboard',
-    'program-chair': 'Program Chair Dashboard',
-    faculty: 'Faculty Dashboard',
-    qa: 'QA Dashboard',
-    'super-admin': 'Super Admin Dashboard',
-    vpaa: 'VPAA/DI Dashboard',
-    'area-in-charge': 'Area In-Charge Dashboard',
-  }
-  return titles[userRole.value as string] || `${currentRoleLabel.value} Dashboard`
+  const role = String(authStore.userRole || '')
+
+  switch (role) {
+
+case 'super-admin':
+return 'Super Administrator Dashboard'
+
+case 'dean':
+return 'Dean Dashboard'
+
+case 'program-chair':
+return 'Program Chair Dashboard'
+
+case 'faculty':
+return 'Faculty Dashboard'
+
+case 'qa':
+return 'QA Dashboard'
+
+case 'vpaa':
+return 'VPAA Dashboard'
+
+default:
+return 'Dashboard'
+
+}
+
 })
 
 const pageDescription = computed(() => {
-  const descriptions: Record<string, string> = {
-    dean: 'Monitor institutional compliance, approve submissions, and manage accreditation teams.',
-    'program-chair': 'Track program compliance progress and review faculty submissions.',
-    faculty: 'Upload documents and track submission status.',
-    qa: 'Review submissions, verify compliance, and track accreditation readiness.',
-    'super-admin': 'Manage users, roles, and system-level settings.',
-    vpaa: 'Oversee institutional readiness and review executive compliance reports.',
-    'area-in-charge': 'Coordinate evidence review and workflow progress for your assigned areas.',
-  }
-  return descriptions[userRole.value as string] || 'Welcome to your dashboard'
+return 'Welcome back.'
 })
 
-const dashboardStats = computed(() => [
-  {
-    id: 1,
-    title: 'Total Programs',
-    value: dashboardStore.stats.totalPrograms,
-    subtitle: 'Active programs',
-    icon: documentTextOutline,
-    badge: { label: '+2 this year', variant: 'success' } as const,
-  },
-  {
-    id: 2,
-    title: 'Total Areas',
-    value: dashboardStore.stats.totalAreas,
-    subtitle: 'Assessment areas',
-    icon: checkmarkDoneOutline,
-    trend: { value: 12, direction: 'up' } as const,
-  },
-  {
-    id: 3,
-    title: 'Compliance Score',
-    value: `${dashboardStore.stats.complianceScore}%`,
-    subtitle: 'Institutional average',
-    icon: folderOpenOutline,
-    trend: { value: 8, direction: 'up' } as const,
-  },
-  {
-    id: 4,
-    title: 'Pending Submissions',
-    value: dashboardStore.stats.pendingSubmissions,
-    subtitle: 'Awaiting review',
-    icon: hourglassOutline,
-    badge: { label: 'Action needed', variant: 'warning' } as const,
-  },
-  {
-    id: 5,
-    title: 'Assignment Completion',
-    value: `${dashboardStore.stats.assignmentCompletion}%`,
-    subtitle: 'Overall progress',
-    icon: documentTextOutline,
-    trend: { value: 5, direction: 'up' } as const,
-  },
-  {
-    id: 6,
-    title: 'Security Status',
-    value: 'Protected',
-    subtitle: 'Zero-trust active',
-    icon: checkmarkDoneOutline,
-    badge: { label: 'Secure', variant: 'success' } as const,
-  },
-])
+onMounted(async()=>{
 
-const stats = computed(() => ({
-  totalDocuments: dashboardStore.stats.totalPrograms,
-  approvedDocuments: dashboardStore.stats.totalAreas,
-  pendingDocuments: dashboardStore.stats.pendingSubmissions,
-  activePrograms: dashboardStore.stats.collaborationActivity,
-}))
+await dashboardStore.fetchDashboardStats()
 
-const initializeChart = () => {
-  // Placeholder for chart refresh logic.
+})
+
+// const showJoinInline = computed(() => {
+//   // explicit query param forces join UI, or user lacks group
+//   if (route.query.noGroup === '1') return true
+//   return !authStore.hasGroup
+// })
+
+const handleLogout = async () => {
+  await authStore.logout()
+  router.replace('/login')
 }
-
-onMounted(async () => {
-  await dashboardStore.fetchDashboardStats()
-})
 </script>
 
-<style scoped>
-</style>
 
 <style scoped>
 .dashboard-page {

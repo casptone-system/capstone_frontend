@@ -27,7 +27,7 @@
     <!-- RIGHT: Form panel -->
     <div class="form-panel">
       <div class="form-wrap">
-        <img :src="require('@/assets/Archiving_logo.png')" alt="ADAMS Logo" class="login-logo" />
+        <img src="@/assets/Archiving_logo.png" alt="ADAMS Logo" class="login-logo" />
         <h2 class="form-title">Sign in to your account</h2>
         <p class="form-subtitle">Use your institutional credentials to continue.</p>
 
@@ -74,11 +74,6 @@
 
           <div v-if="showExpiredNotice" class="login-success warning" role="status">
             Your session expired for security reasons. Please sign in again to continue.
-          </div>
-
-          <div class="security-banner" role="status">
-            <strong>Protected sign-in</strong>
-            <span>Use your institutional credentials and complete MFA when prompted.</span>
           </div>
 
           <div class="form-options">
@@ -393,7 +388,7 @@ const goToRegister = () => {
 /* ── LOGO ── */
 .login-logo {
   display: block;
-  width: 90px;
+  width: 130px;
   height: auto;
   margin: 0 auto 1.25rem;
   filter: drop-shadow(1px 10px 28px rgba(19, 31, 53, 0.35));

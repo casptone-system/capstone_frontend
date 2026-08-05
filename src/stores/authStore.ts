@@ -63,6 +63,20 @@ export const useAuthStore = defineStore('auth', () => {
 
   const userRole = computed(() => user.value?.role || '')
   const userName = computed(() => user.value?.name || '')
+  const hasGroup = computed(() => {
+    if (!user.value) return false
+    const currentUser = user.value as any
+
+    if (!currentUser) return false
+
+    if (currentUser.programId) return true
+    if (currentUser.program) return true
+    if (currentUser.teamId) return true
+    if (Array.isArray(currentUser.groups) && currentUser.groups.length > 0)
+      return true
+
+    return false
+  })
 
   // ======================
   // LOGIN
@@ -133,10 +147,31 @@ export const useAuthStore = defineStore('auth', () => {
       isAuthenticated.value = true
       attachActivityListeners()
       resetSessionTimer()
+      return response.data
     } catch {
       localStorage.removeItem(TOKEN_KEY)
       user.value = null
       isAuthenticated.value = false
+    }
+  }
+
+  // Join a team using invitation code
+  const joinTeam = async (code: string) => {
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const response = await api.post('/teams/join', { code })
+
+      // After joining, refresh current user data
+      await restoreSession()
+
+      return response.data
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Failed to join team.'
+      throw err
+    } finally {
+      isLoading.value = false
     }
   }
 
@@ -185,11 +220,13 @@ export const useAuthStore = defineStore('auth', () => {
 
     userRole,
     userName,
+    hasGroup,
 
     login,
     register,
     logout,
     restoreSession,
+    joinTeam,
 
     loginWithGoogle,
     loginWithGithub,

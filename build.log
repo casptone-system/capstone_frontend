@@ -1,0 +1,74 @@
+
+> capstone_project@0.1.0 build
+> vue-cli-service build
+
+All browser targets in the browserslist configuration have supported ES module.
+Therefore we don't build two separate bundles for differential loading.
+
+
+-  Building for production...
+ WARNING  Compiled with 2 warnings5:14:19 PM
+
+ warning  
+
+asset size limit: The following asset(s) exceed the recommended size limit (244 KiB).
+This can impact web performance.
+Assets: 
+  js/index.a4941b0d.js (904 KiB)
+  img/Archiving_logo.1ac21cf6.png (10.8 MiB)
+  icon.ico (5.79 MiB)
+
+ warning  
+
+entrypoint size limit: The following entrypoint(s) combined asset size exceeds the recommended limit (244 KiB). This can impact web performance.
+Entrypoints:
+  index (931 KiB)
+      css/index.69ad03ae.css
+      js/index.a4941b0d.js
+
+
+  File                           Size                  Gzipped
+
+  dist\js\index.a4941b0d.js      903.59 KiB            209.10 KiB
+  dist\js\21.135b33f8.js         16.32 KiB             4.16 KiB
+  dist\js\370.4d86a35b.js        13.35 KiB             4.08 KiB
+  dist\js\843.effcb3bf.js        11.61 KiB             3.44 KiB
+  dist\js\42.724a777d.js         10.80 KiB             3.86 KiB
+  dist\js\661.591de974.js        10.54 KiB             3.02 KiB
+  dist\js\148.8c0b669c.js        10.33 KiB             3.07 KiB
+  dist\js\41.1e6d416d.js         8.00 KiB              1.97 KiB
+  dist\js\663.200e1d37.js        7.71 KiB              2.94 KiB
+  dist\js\625.d784b7b4.js        6.73 KiB              2.32 KiB
+  dist\js\453.cd1e458c.js        6.56 KiB              2.37 KiB
+  dist\js\879.fd099b7b.js        5.89 KiB              2.01 KiB
+  dist\js\25.33db6919.js         5.31 KiB              1.83 KiB
+  dist\js\568.f7cc3e8e.js        5.08 KiB              1.82 KiB
+  dist\js\28.136ff20a.js         4.92 KiB              2.12 KiB
+  dist\js\313.6f4f14af.js        4.76 KiB              1.66 KiB
+  dist\js\371.63e115be.js        3.89 KiB              1.69 KiB
+  dist\js\234.bcb7144d.js        2.27 KiB              1.24 KiB
+  dist\js\917.5665343e.js        2.13 KiB              1.16 KiB
+  dist\js\408.90568b24.js        2.02 KiB              0.98 KiB
+  dist\js\33.cbd4b8dd.js         1.21 KiB              0.65 KiB
+  dist\js\754.278e3270.js        1.17 KiB              0.64 KiB
+  dist\js\420.cec57c61.js        1.17 KiB              0.61 KiB
+  dist\js\441.ea94f36c.js        0.89 KiB              0.58 KiB
+  dist\js\241.37e1e664.js        0.65 KiB              0.45 KiB
+  dist\css\index.69ad03ae.css    27.66 KiB             5.79 KiB
+  dist\css\663.7a38a9d8.css      11.65 KiB             2.91 KiB
+  dist\css\148.ed52f1c9.css      9.80 KiB              2.58 KiB
+  dist\css\42.0aef5337.css       6.89 KiB              1.73 KiB
+  dist\css\625.77da08f1.css      3.20 KiB              0.83 KiB
+  dist\css\370.8e98b08c.css      2.08 KiB              0.71 KiB
+  dist\css\371.54dfbe5c.css      1.73 KiB              0.63 KiB
+  dist\css\234.34e524a2.css      1.43 KiB              0.60 KiB
+  dist\css\917.4afce1d2.css      1.39 KiB              0.59 KiB
+  dist\css\21.218be164.css       0.23 KiB              0.16 KiB
+  dist\css\25.c6dac4f7.css       0.05 KiB              0.07 KiB
+
+  Images and other types of assets omitted.
+  Build at: 2026-08-04T09:14:19.834Z - Hash: b936ff3d17addc0d - Time: 18994ms
+
+ DONE  Build complete. The dist directory is ready to be deployed.
+ INFO  Check out deployment instructions at https://cli.vuejs.org/guide/deployment.html
+       

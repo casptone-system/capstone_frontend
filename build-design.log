@@ -1,0 +1,663 @@
+
+> capstone_project@0.1.0 build
+> vue-cli-service build
+
+All browser targets in the browserslist configuration have supported ES module.
+Therefore we don't build two separate bundles for differential loading.
+
+
+-  Building for production...
+c:\project\capstone_project\node_modules\postcss\lib\input.js:135
+      result = new CssSyntaxError(
+               ^
+
+CssSyntaxError: c:\project\capstone_project\src\assets\styles.css:140:1: Unexpected }
+    at Input.error (c:\project\capstone_project\node_modules\postcss\lib\input.js:135:16)
+    at Parser.unexpectedClose (c:\project\capstone_project\node_modules\postcss\lib\parser.js:594:22)
+    at Parser.end (c:\project\capstone_project\node_modules\postcss\lib\parser.js:337:12)
+    at Parser.parse (c:\project\capstone_project\node_modules\postcss\lib\parser.js:463:16)
+    at parse (c:\project\capstone_project\node_modules\postcss\lib\parse.js:11:12)
+    at get root (c:\project\capstone_project\node_modules\postcss\lib\no-work-result.js:43:14)
+    at Result.get [as root] (c:\project\capstone_project\node_modules\postcss\lib\no-work-result.js:76:21)
+    at Object.loader (c:\project\capstone_project\node_modules\postcss-loader\dist\index.js:193:18) {
+  reason: 'Unexpected }',
+  file: 'c:\\project\\capstone_project\\src\\assets\\styles.css',
+  source: "@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap');\r\n" +
+    "@import 'tailwind.css';\r\n" +
+    '\r\n' +
+    ':root {\r\n' +
+    '  /* DESIGN TOKENS (Institutional ADAMS) */\r\n' +
+    '  --ink: #09491c;\r\n' +
+    '  --ink-soft: #1e2f4e;\r\n' +
+    '  --parchment: #f7f3ea;\r\n' +
+    '  --parchment-dim: #efe9db;\r\n' +
+    '  --brass: #b98d46;\r\n' +
+    '  --brass-light: #d9b877;\r\n' +
+    '  --crimson: #7a2530;\r\n' +
+    '  --hairline: rgba(19, 31, 53, 0.12);\r\n' +
+    '  --hairline-on-ink: rgba(247, 243, 234, 0.18);\r\n' +
+    '\r\n' +
+    '  /* Typography tokens */\r\n' +
+    "  --font-display: 'Fraunces', 'Iowan Old Style', Georgia, serif;\r\n" +
+    "  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;\r\n" +
+    "  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;\r\n" +
+    '\r\n' +
+    '  /* Type scale */\r\n' +
+    '  --text-h1: clamp(2rem, 3.4vw, 2.9rem);\r\n' +
+    '  --text-h2: 1.7rem;\r\n' +
+    '  --text-h3: 1.15rem;\r\n' +
+    '  --text-body: 0.98rem;\r\n' +
+    '  --text-label: 0.75rem;\r\n' +
+    '  --text-caption: 0.68rem;\r\n' +
+    '\r\n' +
+    '  /* Spacing and radii (kept from base variables) */\r\n' +
+    '  --spacing-xs: 0.5rem;\r\n' +
+    '  --spacing-sm: 0.75rem;\r\n' +
+    '  --spacing-md: 1rem;\r\n' +
+    '  --spacing-lg: 1.5rem;\r\n' +
+    '  --spacing-xl: 2rem;\r\n' +
+    '  --radius-sm: 0.5rem; /* 8px */\r\n' +
+    '  --radius-md: 0.75rem; /* 12px */\r\n' +
+    '\r\n' +
+    '  /* Colors mapped to existing palette for compatibility */\r\n' +
+    '  --color-primary: var(--ink);\r\n' +
+    '  --color-primary-2: var(--ink-soft);\r\n' +
+    '  --color-background: var(--parchment);\r\n' +
+    '  --color-surface: #ffffff;\r\n' +
+    '  --color-surface-alt: var(--parchment-dim);\r\n' +
+    '  --color-border: var(--hairline);\r\n' +
+    '  --color-text: var(--ink-soft);\r\n' +
+    '  --color-text-secondary: #475569;\r\n' +
+    '\r\n' +
+    '  /* Status colors */\r\n' +
+    '  --color-success: rgba(9,73,28,1);\r\n' +
+    '  --color-warning: #8a5b12; /* matches requested warning color */\r\n' +
+    '  --color-danger: var(--crimson);\r\n' +
+    '\r\n' +
+    '  /* Motion */\r\n' +
+    '  --transition-base: 200ms cubic-bezier(0.4,0,0.2,1);\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    '  /* ========================================================================\r\n' +
+    '     Spacing System - Increased for Breathing Room\r\n' +
+    '     Base Unit: 1rem (16px)\r\n' +
+    '     ======================================================================== */\r\n' +
+    '  --spacing-3xs: 0.125rem;   /* 2px  */\r\n' +
+    '  --spacing-2xs: 0.25rem;    /* 4px  */\r\n' +
+    '  --spacing-xs: 0.5rem;      /* 8px  */\r\n' +
+    '  --spacing-sm: 0.75rem;     /* 12px */\r\n' +
+    '  --spacing-md: 1rem;        /* 16px */\r\n' +
+    '  --spacing-lg: 1.5rem;      /* 24px */\r\n' +
+    '  --spacing-xl: 2rem;        /* 32px */\r\n' +
+    '  --spacing-2xl: 3rem;       /* 48px */\r\n' +
+    '  --spacing-3xl: 4rem;       /* 64px */\r\n' +
+    '\r\n' +
+    '  /* ========================================================================\r\n' +
+    '     Typography - Inter Font with Clear Visual Hierarchy\r\n' +
+    '     ======================================================================== */\r\n' +
+    "  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;\r\n" +
+    "  --font-family-mono: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;\r\n" +
+    '\r\n' +
+    '  /* Font Sizes - Refined scale */\r\n' +
+    '  --text-xs: 0.75rem;        /* 12px */\r\n' +
+    '  --text-sm: 0.875rem;       /* 14px */\r\n' +
+    '  --text-base: 1rem;         /* 16px */\r\n' +
+    '  --text-lg: 1.125rem;       /* 18px */\r\n' +
+    '  --text-xl: 1.25rem;        /* 20px */\r\n' +
+    '  --text-2xl: 1.5rem;        /* 24px */\r\n' +
+    '  --text-3xl: 1.875rem;      /* 30px */\r\n' +
+    '  --text-4xl: 2.25rem;       /* 36px */\r\n' +
+    '\r\n' +
+    '  /* Font Weights */\r\n' +
+    '  --font-weight-light: 300;\r\n' +
+    '  --font-weight-regular: 400;\r\n' +
+    '  --font-weight-medium: 500;\r\n' +
+    '  --font-weight-semibold: 600;\r\n' +
+    '  --font-weight-bold: 700;\r\n' +
+    '  --font-weight-extrabold: 800;\r\n' +
+    '\r\n' +
+    '  /* Line Heights */\r\n' +
+    '  --line-height-tight: 1.25;\r\n' +
+    '  --line-height-normal: 1.5;\r\n' +
+    '  --line-height-relaxed: 1.625;\r\n' +
+    '\r\n' +
+    '  /* ========================================================================\r\n' +
+    '     Border Radius - 8px to 12px Range\r\n' +
+    '     ======================================================================== */\r\n' +
+    '  --radius-sm: 0.25rem;      /* 4px  */\r\n' +
+    '  --radius-md: 0.375rem;     /* 6px  */\r\n' +
+    '  --radius-lg: 0.5rem;       /* 8px  */\r\n' +
+    '  --radius-xl: 0.75rem;      /* 12px */\r\n' +
+    '  --radius-2xl: 1rem;        /* 16px */\r\n' +
+    '  --radius-3xl: 1.5rem;      /* 24px */\r\n' +
+    '  --radius-full: 9999px;     /* Fully rounded */\r\n' +
+    '\r\n' +
+    '  /* ========================================================================\r\n' +
+    '     Shadows - Subtle Drop Shadows\r\n' +
+    '     ======================================================================== */\r\n' +
+    '  --shadow-none: none;\r\n' +
+    '  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.02);\r\n' +
+    '  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -1px rgba(0, 0, 0, 0.04);\r\n' +
+    '  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.05);\r\n' +
+    '  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.04);\r\n' +
+    '  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.12);\r\n' +
+    '\r\n' +
+    '  /* ========================================================================\r\n' +
+    '     Transitions - Smooth Effects\r\n' +
+    '     ======================================================================== */\r\n' +
+    '  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);\r\n' +
+    '  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);\r\n' +
+    '  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);\r\n' +
+    '\r\n' +
+    '  /* ========================================================================\r\n' +
+    '     Z-Index Scale\r\n' +
+    '     ======================================================================== */\r\n' +
+    '  --z-hide: -1;\r\n' +
+    '  --z-base: 0;\r\n' +
+    '  --z-dropdown: 1000;\r\n' +
+    '  --z-sticky: 1020;\r\n' +
+    '  --z-fixed: 1030;\r\n' +
+    '  --z-modal-backdrop: 1040;\r\n' +
+    '  --z-modal: 1050;\r\n' +
+    '  --z-popover: 1060;\r\n' +
+    '  --z-tooltip: 1070;\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    '/* ==========================================================================\r\n' +
+    '   Global Reset & Base Styles\r\n' +
+    '   ========================================================================== */\r\n' +
+    '\r\n' +
+    '*,\r\n' +
+    '*::before,\r\n' +
+    '*::after {\r\n' +
+    '  margin: 0;\r\n' +
+    '  padding: 0;\r\n' +
+    '  box-sizing: border-box;\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    'html {\r\n' +
+    '  scroll-behavior: smooth;\r\n' +
+    '  -webkit-font-smoothing: antialiased;\r\n' +
+    '  -moz-osx-font-smoothing: grayscale;\r\n' +
+    '  font-size: 16px;\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    'body {\r\n' +
+    '  font-family: var(--font-body);\r\n' +
+    '  background-color: var(--color-background);\r\n' +
+    '  color: var(--color-text);\r\n' +
+    '  font-size: var(--text-body);\r\n' +
+    '  font-weight: 400;\r\n' +
+    '  line-height: 1.65;\r\n' +
+    '  min-height: 100vh;\r\n' +
+    '  -webkit-font-smoothing: antialiased;\r\n' +
+    '  -moz-osx-font-smoothing: grayscale;\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    '#app {\r\n' +
+    '  width: 100%;\r\n' +
+    '  min-height: 100vh;\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    '/* ==========================================================================\r\n' +
+    '   Focus Ring - Accessible Focus Indicators\r\n' +
+    '   ========================================================================== */\r\n' +
+    '\r\n' +
+    '.focus-visible {\r\n' +
+    '  outline: 2px solid var(--brass);\r\n' +
+    '  outline-offset: 3px;\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    '/* Replace browser default focus outlines globally for keyboard users */\r\n' +
+    ':focus:not(:focus-visible) { outline: none; }\r\n' +
+    '\r\n' +
+    '/* ==========================================================================\r\n' +
+    '   Global Utility Classes\r\n' +
+    '   ========================================================================== */\r\n' +
+    '\r\n' +
+    '.container {\r\n' +
+    '  width: 100%;\r\n' +
+    '  max-width: 1280px;\r\n' +
+    '  margin: 0 auto;\r\n' +
+    '  padding: 0 var(--spacing-lg);\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    '.grid {\r\n' +
+    '  display: grid;\r\n' +
+    '  gap: var(--spacing-lg);\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    '.grid-cols-2 {\r\n' +
+    '  grid-template-columns: repeat(2, 1fr);\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    '.grid-cols-3 {\r\n' +
+    '  grid-template-columns: repeat(3, 1fr);\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    '.grid-cols-4 {\r\n' +
+    '  grid-template-columns: repeat(4, 1fr);\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    '.flex {\r\n' +
+    '  display: flex;\r\n' +
+    '  align-items: center;\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    '.flex-col {\r\n' +
+    '  display: flex;\r\n' +
+    '  flex-direction: column;\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    '.flex-between {\r\n' +
+    '  display: flex;\r\n' +
+    '  align-items: center;\r\n' +
+    '  justify-content: space-between;\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    '.flex-center {\r\n' +
+    '  display: flex;\r\n' +
+    '  align-items: center;\r\n' +
+    '  justify-content: center;\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    '.items-center {\r\n' +
+    '  align-items: center;\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    '.justify-between {\r\n' +
+    '  justify-content: space-between;\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    '.justify-center {\r\n' +
+    '  justify-content: center;\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    '.gap-xs { gap: var(--spacing-xs); }\r\n' +
+    '.gap-sm { gap: var(--spacing-sm); }\r\n' +
+    '.gap-md { gap: var(--spacing-md); }\r\n' +
+    '.gap-lg { gap: var(--spacing-lg); }\r\n' +
+    '.gap-xl { gap: var(--spacing-xl); }\r\n' +
+    '\r\n' +
+    '.p-xs { padding: var(--spacing-xs); }\r\n' +
+    '.p-sm { padding: var(--spacing-sm); }\r\n' +
+    '.p-md { padding: var(--spacing-md); }\r\n' +
+    '.p-lg { padding: var(--spacing-lg); }\r\n' +
+    '.p-xl { padding: var(--spacing-xl); }\r\n' +
+    '\r\n' +
+    '.px-md { padding-left: var(--spacing-md); padding-right: var(--spacing-md); }\r\n' +
+    '.py-md { padding-top: var(--spacing-md); padding-bottom: var(--spacing-md); }\r\n' +
+    '\r\n' +
+    '.m-xs { margin: var(--spacing-xs); }\r\n' +
+    '.m-sm { margin: var(--spacing-sm); }\r\n' +
+    '.m-md { margin: var(--spacing-md); }\r\n' +
+    '.m-lg { margin: var(--spacing-lg); }\r\n' +
+    '.m-xl { margin: var(--spacing-xl); }\r\n' +
+    '\r\n' +
+    '.mt-xs { margin-top: var(--spacing-xs); }\r\n' +
+    '.mt-sm { margin-top: var(--spacing-sm); }\r\n' +
+    '.mt-md { margin-top: var(--spacing-md); }\r\n' +
+    '.mt-lg { margin-top: var(--spacing-lg); }\r\n' +
+    '\r\n' +
+    '.mb-xs { margin-bottom: var(--spacing-xs); }\r\n' +
+    '.mb-sm { margin-bottom: var(--spacing-sm); }\r\n' +
+    '.mb-md { margin-bottom: var(--spacing-md); }\r\n' +
+    '.mb-lg { margin-bottom: var(--spacing-lg); }\r\n' +
+    '\r\n' +
+    '.text-primary { color: var(--color-primary); }\r\n' +
+    '.text-secondary { color: var(--color-text-secondary); }\r\n' +
+    '.text-muted { color: var(--color-text-muted); }\r\n' +
+    '.text-success { color: var(--color-success); }\r\n' +
+    '.text-warning { color: var(--color-warning); }\r\n' +
+    '.text-danger { color: var(--color-danger); }\r\n' +
+    '\r\n' +
+    '.text-xs { font-size: var(--text-xs); }\r\n' +
+    '.text-sm { font-size: var(--text-sm); }\r\n' +
+    '.text-base { font-size: var(--text-base); }\r\n' +
+    '.text-lg { font-size: var(--text-lg); }\r\n' +
+    '.text-xl { font-size: var(--text-xl); }\r\n' +
+    '\r\n' +
+    '.font-medium { font-weight: var(--font-weight-medium); }\r\n' +
+    '.font-semibold { font-weight: var(--font-weight-semibold); }\r\n' +
+    '.font-bold { font-weight: var(--font-weight-bold); }\r\n' +
+    '\r\n' +
+    '.bg-primary { background-color: var(--color-primary); }\r\n' +
+    '.bg-primary-light { background-color: var(--color-primary-light); }\r\n' +
+    '.bg-surface { background-color: var(--color-surface); }\r\n' +
+    '.bg-surface-alt { background-color: var(--color-surface-alt); }\r\n' +
+    '.bg-accent { background-color: var(--color-accent); }\r\n' +
+    '\r\n' +
+    '.rounded-sm { border-radius: var(--radius-sm); }\r\n' +
+    '.rounded-md { border-radius: var(--radius-md); }\r\n' +
+    '.rounded-lg { border-radius: var(--radius-lg); }\r\n' +
+    '.rounded-xl { border-radius: var(--radius-xl); }\r\n' +
+    '.rounded-2xl { border-radius: var(--radius-2xl); }\r\n' +
+    '.rounded-full { border-radius: var(--radius-f'... 4191 more characters,
+  line: 140,
+  column: 1,
+  endLine: 140,
+  endColumn: 2,
+  input: {
+    column: 1,
+    endColumn: 2,
+    endLine: 140,
+    endOffset: 5413,
+    line: 140,
+    offset: 5412,
+    source: "@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap');\r\n" +
+      "@import 'tailwind.css';\r\n" +
+      '\r\n' +
+      ':root {\r\n' +
+      '  /* DESIGN TOKENS (Institutional ADAMS) */\r\n' +
+      '  --ink: #09491c;\r\n' +
+      '  --ink-soft: #1e2f4e;\r\n' +
+      '  --parchment: #f7f3ea;\r\n' +
+      '  --parchment-dim: #efe9db;\r\n' +
+      '  --brass: #b98d46;\r\n' +
+      '  --brass-light: #d9b877;\r\n' +
+      '  --crimson: #7a2530;\r\n' +
+      '  --hairline: rgba(19, 31, 53, 0.12);\r\n' +
+      '  --hairline-on-ink: rgba(247, 243, 234, 0.18);\r\n' +
+      '\r\n' +
+      '  /* Typography tokens */\r\n' +
+      "  --font-display: 'Fraunces', 'Iowan Old Style', Georgia, serif;\r\n" +
+      "  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;\r\n" +
+      "  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;\r\n" +
+      '\r\n' +
+      '  /* Type scale */\r\n' +
+      '  --text-h1: clamp(2rem, 3.4vw, 2.9rem);\r\n' +
+      '  --text-h2: 1.7rem;\r\n' +
+      '  --text-h3: 1.15rem;\r\n' +
+      '  --text-body: 0.98rem;\r\n' +
+      '  --text-label: 0.75rem;\r\n' +
+      '  --text-caption: 0.68rem;\r\n' +
+      '\r\n' +
+      '  /* Spacing and radii (kept from base variables) */\r\n' +
+      '  --spacing-xs: 0.5rem;\r\n' +
+      '  --spacing-sm: 0.75rem;\r\n' +
+      '  --spacing-md: 1rem;\r\n' +
+      '  --spacing-lg: 1.5rem;\r\n' +
+      '  --spacing-xl: 2rem;\r\n' +
+      '  --radius-sm: 0.5rem; /* 8px */\r\n' +
+      '  --radius-md: 0.75rem; /* 12px */\r\n' +
+      '\r\n' +
+      '  /* Colors mapped to existing palette for compatibility */\r\n' +
+      '  --color-primary: var(--ink);\r\n' +
+      '  --color-primary-2: var(--ink-soft);\r\n' +
+      '  --color-background: var(--parchment);\r\n' +
+      '  --color-surface: #ffffff;\r\n' +
+      '  --color-surface-alt: var(--parchment-dim);\r\n' +
+      '  --color-border: var(--hairline);\r\n' +
+      '  --color-text: var(--ink-soft);\r\n' +
+      '  --color-text-secondary: #475569;\r\n' +
+      '\r\n' +
+      '  /* Status colors */\r\n' +
+      '  --color-success: rgba(9,73,28,1);\r\n' +
+      '  --color-warning: #8a5b12; /* matches requested warning color */\r\n' +
+      '  --color-danger: var(--crimson);\r\n' +
+      '\r\n' +
+      '  /* Motion */\r\n' +
+      '  --transition-base: 200ms cubic-bezier(0.4,0,0.2,1);\r\n' +
+      '}\r\n' +
+      '\r\n' +
+      '  /* ========================================================================\r\n' +
+      '     Spacing System - Increased for Breathing Room\r\n' +
+      '     Base Unit: 1rem (16px)\r\n' +
+      '     ======================================================================== */\r\n' +
+      '  --spacing-3xs: 0.125rem;   /* 2px  */\r\n' +
+      '  --spacing-2xs: 0.25rem;    /* 4px  */\r\n' +
+      '  --spacing-xs: 0.5rem;      /* 8px  */\r\n' +
+      '  --spacing-sm: 0.75rem;     /* 12px */\r\n' +
+      '  --spacing-md: 1rem;        /* 16px */\r\n' +
+      '  --spacing-lg: 1.5rem;      /* 24px */\r\n' +
+      '  --spacing-xl: 2rem;        /* 32px */\r\n' +
+      '  --spacing-2xl: 3rem;       /* 48px */\r\n' +
+      '  --spacing-3xl: 4rem;       /* 64px */\r\n' +
+      '\r\n' +
+      '  /* ========================================================================\r\n' +
+      '     Typography - Inter Font with Clear Visual Hierarchy\r\n' +
+      '     ======================================================================== */\r\n' +
+      "  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;\r\n" +
+      "  --font-family-mono: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;\r\n" +
+      '\r\n' +
+      '  /* Font Sizes - Refined scale */\r\n' +
+      '  --text-xs: 0.75rem;        /* 12px */\r\n' +
+      '  --text-sm: 0.875rem;       /* 14px */\r\n' +
+      '  --text-base: 1rem;         /* 16px */\r\n' +
+      '  --text-lg: 1.125rem;       /* 18px */\r\n' +
+      '  --text-xl: 1.25rem;        /* 20px */\r\n' +
+      '  --text-2xl: 1.5rem;        /* 24px */\r\n' +
+      '  --text-3xl: 1.875rem;      /* 30px */\r\n' +
+      '  --text-4xl: 2.25rem;       /* 36px */\r\n' +
+      '\r\n' +
+      '  /* Font Weights */\r\n' +
+      '  --font-weight-light: 300;\r\n' +
+      '  --font-weight-regular: 400;\r\n' +
+      '  --font-weight-medium: 500;\r\n' +
+      '  --font-weight-semibold: 600;\r\n' +
+      '  --font-weight-bold: 700;\r\n' +
+      '  --font-weight-extrabold: 800;\r\n' +
+      '\r\n' +
+      '  /* Line Heights */\r\n' +
+      '  --line-height-tight: 1.25;\r\n' +
+      '  --line-height-normal: 1.5;\r\n' +
+      '  --line-height-relaxed: 1.625;\r\n' +
+      '\r\n' +
+      '  /* ========================================================================\r\n' +
+      '     Border Radius - 8px to 12px Range\r\n' +
+      '     ======================================================================== */\r\n' +
+      '  --radius-sm: 0.25rem;      /* 4px  */\r\n' +
+      '  --radius-md: 0.375rem;     /* 6px  */\r\n' +
+      '  --radius-lg: 0.5rem;       /* 8px  */\r\n' +
+      '  --radius-xl: 0.75rem;      /* 12px */\r\n' +
+      '  --radius-2xl: 1rem;        /* 16px */\r\n' +
+      '  --radius-3xl: 1.5rem;      /* 24px */\r\n' +
+      '  --radius-full: 9999px;     /* Fully rounded */\r\n' +
+      '\r\n' +
+      '  /* ========================================================================\r\n' +
+      '     Shadows - Subtle Drop Shadows\r\n' +
+      '     ======================================================================== */\r\n' +
+      '  --shadow-none: none;\r\n' +
+      '  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.02);\r\n' +
+      '  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -1px rgba(0, 0, 0, 0.04);\r\n' +
+      '  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.05);\r\n' +
+      '  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.04);\r\n' +
+      '  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.12);\r\n' +
+      '\r\n' +
+      '  /* ========================================================================\r\n' +
+      '     Transitions - Smooth Effects\r\n' +
+      '     ======================================================================== */\r\n' +
+      '  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);\r\n' +
+      '  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);\r\n' +
+      '  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);\r\n' +
+      '\r\n' +
+      '  /* ========================================================================\r\n' +
+      '     Z-Index Scale\r\n' +
+      '     ======================================================================== */\r\n' +
+      '  --z-hide: -1;\r\n' +
+      '  --z-base: 0;\r\n' +
+      '  --z-dropdown: 1000;\r\n' +
+      '  --z-sticky: 1020;\r\n' +
+      '  --z-fixed: 1030;\r\n' +
+      '  --z-modal-backdrop: 1040;\r\n' +
+      '  --z-modal: 1050;\r\n' +
+      '  --z-popover: 1060;\r\n' +
+      '  --z-tooltip: 1070;\r\n' +
+      '}\r\n' +
+      '\r\n' +
+      '/* ==========================================================================\r\n' +
+      '   Global Reset & Base Styles\r\n' +
+      '   ========================================================================== */\r\n' +
+      '\r\n' +
+      '*,\r\n' +
+      '*::before,\r\n' +
+      '*::after {\r\n' +
+      '  margin: 0;\r\n' +
+      '  padding: 0;\r\n' +
+      '  box-sizing: border-box;\r\n' +
+      '}\r\n' +
+      '\r\n' +
+      'html {\r\n' +
+      '  scroll-behavior: smooth;\r\n' +
+      '  -webkit-font-smoothing: antialiased;\r\n' +
+      '  -moz-osx-font-smoothing: grayscale;\r\n' +
+      '  font-size: 16px;\r\n' +
+      '}\r\n' +
+      '\r\n' +
+      'body {\r\n' +
+      '  font-family: var(--font-body);\r\n' +
+      '  background-color: var(--color-background);\r\n' +
+      '  color: var(--color-text);\r\n' +
+      '  font-size: var(--text-body);\r\n' +
+      '  font-weight: 400;\r\n' +
+      '  line-height: 1.65;\r\n' +
+      '  min-height: 100vh;\r\n' +
+      '  -webkit-font-smoothing: antialiased;\r\n' +
+      '  -moz-osx-font-smoothing: grayscale;\r\n' +
+      '}\r\n' +
+      '\r\n' +
+      '#app {\r\n' +
+      '  width: 100%;\r\n' +
+      '  min-height: 100vh;\r\n' +
+      '}\r\n' +
+      '\r\n' +
+      '/* ==========================================================================\r\n' +
+      '   Focus Ring - Accessible Focus Indicators\r\n' +
+      '   ========================================================================== */\r\n' +
+      '\r\n' +
+      '.focus-visible {\r\n' +
+      '  outline: 2px solid var(--brass);\r\n' +
+      '  outline-offset: 3px;\r\n' +
+      '}\r\n' +
+      '\r\n' +
+      '/* Replace browser default focus outlines globally for keyboard users */\r\n' +
+      ':focus:not(:focus-visible) { outline: none; }\r\n' +
+      '\r\n' +
+      '/* ==========================================================================\r\n' +
+      '   Global Utility Classes\r\n' +
+      '   ========================================================================== */\r\n' +
+      '\r\n' +
+      '.container {\r\n' +
+      '  width: 100%;\r\n' +
+      '  max-width: 1280px;\r\n' +
+      '  margin: 0 auto;\r\n' +
+      '  padding: 0 var(--spacing-lg);\r\n' +
+      '}\r\n' +
+      '\r\n' +
+      '.grid {\r\n' +
+      '  display: grid;\r\n' +
+      '  gap: var(--spacing-lg);\r\n' +
+      '}\r\n' +
+      '\r\n' +
+      '.grid-cols-2 {\r\n' +
+      '  grid-template-columns: repeat(2, 1fr);\r\n' +
+      '}\r\n' +
+      '\r\n' +
+      '.grid-cols-3 {\r\n' +
+      '  grid-template-columns: repeat(3, 1fr);\r\n' +
+      '}\r\n' +
+      '\r\n' +
+      '.grid-cols-4 {\r\n' +
+      '  grid-template-columns: repeat(4, 1fr);\r\n' +
+      '}\r\n' +
+      '\r\n' +
+      '.flex {\r\n' +
+      '  display: flex;\r\n' +
+      '  align-items: center;\r\n' +
+      '}\r\n' +
+      '\r\n' +
+      '.flex-col {\r\n' +
+      '  display: flex;\r\n' +
+      '  flex-direction: column;\r\n' +
+      '}\r\n' +
+      '\r\n' +
+      '.flex-between {\r\n' +
+      '  display: flex;\r\n' +
+      '  align-items: center;\r\n' +
+      '  justify-content: space-between;\r\n' +
+      '}\r\n' +
+      '\r\n' +
+      '.flex-center {\r\n' +
+      '  display: flex;\r\n' +
+      '  align-items: center;\r\n' +
+      '  justify-content: center;\r\n' +
+      '}\r\n' +
+      '\r\n' +
+      '.items-center {\r\n' +
+      '  align-items: center;\r\n' +
+      '}\r\n' +
+      '\r\n' +
+      '.justify-between {\r\n' +
+      '  justify-content: space-between;\r\n' +
+      '}\r\n' +
+      '\r\n' +
+      '.justify-center {\r\n' +
+      '  justify-content: center;\r\n' +
+      '}\r\n' +
+      '\r\n' +
+      '.gap-xs { gap: var(--spacing-xs); }\r\n' +
+      '.gap-sm { gap: var(--spacing-sm); }\r\n' +
+      '.gap-md { gap: var(--spacing-md); }\r\n' +
+      '.gap-lg { gap: var(--spacing-lg); }\r\n' +
+      '.gap-xl { gap: var(--spacing-xl); }\r\n' +
+      '\r\n' +
+      '.p-xs { padding: var(--spacing-xs); }\r\n' +
+      '.p-sm { padding: var(--spacing-sm); }\r\n' +
+      '.p-md { padding: var(--spacing-md); }\r\n' +
+      '.p-lg { padding: var(--spacing-lg); }\r\n' +
+      '.p-xl { padding: var(--spacing-xl); }\r\n' +
+      '\r\n' +
+      '.px-md { padding-left: var(--spacing-md); padding-right: var(--spacing-md); }\r\n' +
+      '.py-md { padding-top: var(--spacing-md); padding-bottom: var(--spacing-md); }\r\n' +
+      '\r\n' +
+      '.m-xs { margin: var(--spacing-xs); }\r\n' +
+      '.m-sm { margin: var(--spacing-sm); }\r\n' +
+      '.m-md { margin: var(--spacing-md); }\r\n' +
+      '.m-lg { margin: var(--spacing-lg); }\r\n' +
+      '.m-xl { margin: var(--spacing-xl); }\r\n' +
+      '\r\n' +
+      '.mt-xs { margin-top: var(--spacing-xs); }\r\n' +
+      '.mt-sm { margin-top: var(--spacing-sm); }\r\n' +
+      '.mt-md { margin-top: var(--spacing-md); }\r\n' +
+      '.mt-lg { margin-top: var(--spacing-lg); }\r\n' +
+      '\r\n' +
+      '.mb-xs { margin-bottom: var(--spacing-xs); }\r\n' +
+      '.mb-sm { margin-bottom: var(--spacing-sm); }\r\n' +
+      '.mb-md { margin-bottom: var(--spacing-md); }\r\n' +
+      '.mb-lg { margin-bottom: var(--spacing-lg); }\r\n' +
+      '\r\n' +
+      '.text-primary { color: var(--color-primary); }\r\n' +
+      '.text-secondary { color: var(--color-text-secondary); }\r\n' +
+      '.text-muted { color: var(--color-text-muted); }\r\n' +
+      '.text-success { color: var(--color-success); }\r\n' +
+      '.text-warning { color: var(--color-warning); }\r\n' +
+      '.text-danger { color: var(--color-danger); }\r\n' +
+      '\r\n' +
+      '.text-xs { font-size: var(--text-xs); }\r\n' +
+      '.text-sm { font-size: var(--text-sm); }\r\n' +
+      '.text-base { font-size: var(--text-base); }\r\n' +
+      '.text-lg { font-size: var(--text-lg); }\r\n' +
+      '.text-xl { font-size: var(--text-xl); }\r\n' +
+      '\r\n' +
+      '.font-medium { font-weight: var(--font-weight-medium); }\r\n' +
+      '.font-semibold { font-weight: var(--font-weight-semibold); }\r\n' +
+      '.font-bold { font-weight: var(--font-weight-bold); }\r\n' +
+      '\r\n' +
+      '.bg-primary { background-color: var(--color-primary); }\r\n' +
+      '.bg-primary-light { background-color: var(--color-primary-light); }\r\n' +
+      '.bg-surface { background-color: var(--color-surface); }\r\n' +
+      '.bg-surface-alt { background-color: var(--color-surface-alt); }\r\n' +
+      '.bg-accent { background-color: var(--color-accent); }\r\n' +
+      '\r\n' +
+      '.rounded-sm { border-radius: var(--radius-sm); }\r\n' +
+      '.rounded-md { border-radius: var(--radius-md); }\r\n' +
+      '.rounded-lg { border-radius: var(--radius-lg); }\r\n' +
+      '.rounded-xl { border-radius: var(--radius-xl); }\r\n' +
+      '.rounded-2xl { border-radius: var(--radius-2xl); }\r\n' +
+      '.rounded-full { border-radius: var(--radius-f'... 4191 more characters,
+    url: 'file:///c:/project/capstone_project/src/assets/styles.css',
+    file: 'c:\\project\\capstone_project\\src\\assets\\styles.css'
+  }
+}
+
+Node.js v22.19.0

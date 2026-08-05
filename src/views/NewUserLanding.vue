@@ -1,11 +1,14 @@
 <template>
-  <div class="join-team-page">
-    <div class="join-team-card">
-      <img src="@/assets/Archiving_logo.png" alt="ADAMS Logo" class="login-logo" />
-      <h1>Welcome to ADAMS</h1>
-      <p class="subtitle">
-        You’re almost ready. Enter your invitation code to join your program team and unlock your workspace.
-      </p>
+  <div class="new-user-page">
+    <div class="new-user-card">
+      <div class="icon-pill">✦</div>
+      <div class="header-copy">
+        <h1>Welcome to ADAMS</h1>
+        <p>
+          Your account is ready. Enter the 6-digit invitation code given by your Program
+          Chair or Dean to join your accreditation team.
+        </p>
+      </div>
 
       <form class="join-form" @submit.prevent="handleJoin">
         <label class="field-label" for="invite-code">Invitation code</label>
@@ -19,22 +22,18 @@
           class="invite-input"
         />
 
-        <button class="join-button" type="submit">Join Team</button>
+        <button class="join-button" type="submit" :disabled="isLoading">
+          {{ isLoading ? 'Joining...' : 'Join Team' }}
+        </button>
       </form>
 
       <p v-if="message" class="message" :class="messageType">{{ message }}</p>
-      <p class="help-text">Don’t have a code? Contact your Program Chair or Dean for an invitation.</p>
+      <p class="help-text">
+        Don’t have a code? Contact your Program Chair or Dean and ask them to generate your team invitation.
+      </p>
     </div>
   </div>
 </template>
-
-<script lang="ts">
-import { defineComponent } from 'vue'
-
-export default defineComponent({
-  name: 'JoinTeam',
-})
-</script>
 
 <script setup lang="ts">
 import { ref } from 'vue'
@@ -47,6 +46,7 @@ const authStore = useAuthStore()
 const inviteCode = ref('')
 const message = ref('')
 const messageType = ref<'success' | 'error'>('success')
+const isLoading = ref(false)
 
 const handleJoin = async () => {
   const code = inviteCode.value.trim()
@@ -57,28 +57,27 @@ const handleJoin = async () => {
     return
   }
 
+  isLoading.value = true
+  message.value = 'Joining team...'
+  messageType.value = 'success'
+
   try {
-    message.value = 'Joining team...'
-    messageType.value = 'success'
     await authStore.joinTeam(code)
-
     message.value = 'Invitation accepted. Redirecting to your workspace...'
-    messageType.value = 'success'
-
-    // If the user now has a group, go to role destination
     const redirect = getRoleRedirectPath(authStore.userRole)
-    // If redirect contains query noGroup, remove it
     const cleanRedirect = redirect.replace('?noGroup=1', '')
-    router.replace(cleanRedirect)
+    await router.replace(cleanRedirect)
   } catch (err: any) {
-    message.value = err.response?.data?.message || err.message || 'Failed to join team.'
+    message.value = err?.response?.data?.message || err?.message || 'Failed to join team.'
     messageType.value = 'error'
+  } finally {
+    isLoading.value = false
   }
 }
 </script>
 
 <style scoped>
-.join-team-page {
+.new-user-page {
   min-height: 100%;
   display: grid;
   place-items: center;
@@ -86,27 +85,17 @@ const handleJoin = async () => {
   background: linear-gradient(135deg, #f5f7fb 0%, #eef4ff 100%);
 }
 
-.login-logo {
-  display: block;
-  width: 130px;
-  height: auto;
-  margin: 0 auto 1.25rem;
-  filter: drop-shadow(1px 10px 28px rgba(19, 31, 53, 0.35));
-  animation: stamp-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  animation-delay: 0.3s;
-}
-
-.join-team-card {
-  width: min(100%, 520px);
+.new-user-card {
+  width: min(100%, 560px);
   background: white;
   border-radius: 24px;
   box-shadow: 0 18px 45px rgba(15, 23, 42, 0.12);
-  padding: 2rem;
+  padding: 2.25rem;
 }
 
 .icon-pill {
-  width: 46px;
-  height: 46px;
+  width: 48px;
+  height: 48px;
   border-radius: 999px;
   display: grid;
   place-items: center;
@@ -116,22 +105,23 @@ const handleJoin = async () => {
   margin-bottom: 1rem;
 }
 
-h1 {
+.header-copy h1 {
   margin: 0 0 0.5rem;
   color: #0f172a;
-  font-size: 1.7rem;
+  font-size: 2rem;
 }
 
-.subtitle {
-  margin: 0 0 1.25rem;
+.header-copy p {
+  margin: 0;
   color: #475569;
-  line-height: 1.6;
+  line-height: 1.7;
 }
 
 .join-form {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.9rem;
+  margin-top: 1.75rem;
 }
 
 .field-label {
@@ -141,8 +131,8 @@ h1 {
 
 .invite-input {
   border: 1px solid #dbe4f0;
-  border-radius: 12px;
-  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  padding: 1rem 1.05rem;
   font-size: 1rem;
   outline: none;
 }
@@ -154,16 +144,17 @@ h1 {
 
 .join-button {
   border: none;
-  border-radius: 12px;
-  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
   font-weight: 700;
   color: white;
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   cursor: pointer;
 }
 
-.join-button:hover {
-  filter: brightness(1.03);
+.join-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .message {
@@ -180,7 +171,7 @@ h1 {
 }
 
 .help-text {
-  margin-top: 0.75rem;
+  margin-top: 0.85rem;
   color: #64748b;
   font-size: 0.95rem;
 }
