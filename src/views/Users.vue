@@ -50,7 +50,7 @@
                     <td class="px-4 py-3 font-medium">{{ user.name }}</td>
                     <td class="px-4 py-3">{{ user.email }}</td>
                     <td class="px-4 py-3">
-                      <ion-badge color="primary">{{ user.role }}</ion-badge>
+                      <ion-badge color="primary">{{ user.role || (user.roles && user.roles[0]) || 'Unknown' }}</ion-badge>
                     </td>
                     <td class="px-4 py-3 text-center">
                       <ion-badge color="success">Active</ion-badge>

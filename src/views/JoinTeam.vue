@@ -29,52 +29,54 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
-
-export default defineComponent({
-  name: 'JoinTeam',
-})
-</script>
-
-<script setup lang="ts">
-import { ref } from 'vue'
+import { defineComponent, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { getRoleRedirectPath } from '@/lib/roleRedirects'
 
-const router = useRouter()
-const authStore = useAuthStore()
-const inviteCode = ref('')
-const message = ref('')
-const messageType = ref<'success' | 'error'>('success')
+export default defineComponent({
+  name: 'JoinTeam',
+  setup() {
+    const router = useRouter()
+    const authStore = useAuthStore()
+    const inviteCode = ref('')
+    const message = ref('')
+    const messageType = ref<'success' | 'error'>('success')
 
-const handleJoin = async () => {
-  const code = inviteCode.value.trim()
+    const handleJoin = async () => {
+      const code = inviteCode.value.trim()
 
-  if (!/^[A-Za-z0-9]{6}$/.test(code)) {
-    message.value = 'Please enter a valid 6-character invitation code.'
-    messageType.value = 'error'
-    return
-  }
+      if (!/^[A-Za-z0-9]{6}$/.test(code)) {
+        message.value = 'Please enter a valid 6-character invitation code.'
+        messageType.value = 'error'
+        return
+      }
 
-  try {
-    message.value = 'Joining team...'
-    messageType.value = 'success'
-    await authStore.joinTeam(code)
+      try {
+        message.value = 'Joining team...'
+        messageType.value = 'success'
+        await authStore.joinTeam(code)
 
-    message.value = 'Invitation accepted. Redirecting to your workspace...'
-    messageType.value = 'success'
+        message.value = 'Invitation accepted. Redirecting to your workspace...'
+        messageType.value = 'success'
 
-    // If the user now has a group, go to role destination
-    const redirect = getRoleRedirectPath(authStore.userRole)
-    // If redirect contains query noGroup, remove it
-    const cleanRedirect = redirect.replace('?noGroup=1', '')
-    router.replace(cleanRedirect)
-  } catch (err: any) {
-    message.value = err.response?.data?.message || err.message || 'Failed to join team.'
-    messageType.value = 'error'
-  }
-}
+        const redirect = getRoleRedirectPath(authStore.userRole)
+        const cleanRedirect = redirect.replace('?noGroup=1', '')
+        await router.replace(cleanRedirect)
+      } catch (err: any) {
+        message.value = err.response?.data?.message || err.message || 'Failed to join team.'
+        messageType.value = 'error'
+      }
+    }
+
+    return {
+      inviteCode,
+      message,
+      messageType,
+      handleJoin,
+    }
+  },
+})
 </script>
 
 <style scoped>

@@ -1,29 +1,30 @@
 <template>
-  <div class="login-container">
-    <!-- LEFT: Institutional panel -->
-    <div class="brand-panel">
-      <div class="ledger-lines" aria-hidden="true"></div>
-      <div class="brand-content">
-        <span class="eyebrow">Est. Registry &middot; Institutional Access</span>
-        <h1 class="brand-title">
-          Accreditation<br />
-          <em>Management</em> System
-        </h1>
-        <p class="brand-copy">
-          The system of record for institutional review, self-study
-          submissions, and site-visit documentation.
-        </p>
+      <ion-page class="login-container">
+          <!-- LEFT: Institutional panel -->
+              <div class="brand-panel">
+                <div class="ledger-lines" aria-hidden="true"></div>
+                <div class="brand-content">
+                  <span class="eyebrow">Est. Registry &middot; Institutional Access</span>
+                  <h1 class="brand-title">
+                    Accreditation<br />
+                    <em>Management</em> System
+                  </h1>
+                  <p class="brand-copy">
+                    The system of record for institutional review, self-study
+                    submissions, and site-visit documentation.
+                  </p>
 
-        <ul class="brand-facts" aria-hidden="true">
-          <li><span class="fact-num">01</span>Standards &amp; Compliance</li>
-          <li><span class="fact-num">02</span>Self-Study Workspace</li>
-          <li><span class="fact-num">03</span>Site Visit Records</li>
-        </ul>
-      </div>
+                  <ul class="brand-facts" aria-hidden="true">
+                    <li><span class="fact-num">01</span>Standards &amp; Compliance</li>
+                    <li><span class="fact-num">02</span>Self-Study Workspace</li>
+                    <li><span class="fact-num">03</span>Site Visit Records</li>
+                  </ul>
+                </div>
 
-      <p class="brand-footer">ADAMS &copy; {{ new Date().getFullYear() }} &middot; Confidential institutional record</p>
-    </div>
 
+              <p class="brand-footer">ADAMS &copy; {{ new Date().getFullYear() }} &middot; Confidential institutional record</p>
+            </div>
+          
     <!-- RIGHT: Form panel -->
     <div class="form-panel">
       <div class="form-wrap">
@@ -93,11 +94,11 @@
             :loading="isLoading"
             class="submit-btn"
           >
-            Sign In
+            Log In
           </app-button>
 
-          <div @click="goToRegister" class="alt-btn">
-            Create new account
+          <div class="alt-btn" @click="$router.push('/register')">
+            Create an account
           </div>
         </form>
 
@@ -137,7 +138,7 @@
         </div>
       </div>
     </div>
-  </div>
+      </ion-page>
 </template>
 
 <script setup lang="ts">
@@ -145,7 +146,7 @@ import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import AppButton from '@/components/AppButton.vue'
-import { IonIcon } from '@ionic/vue'
+import { IonPage, IonIcon } from '@ionic/vue'
 import { getRoleRedirectPath } from '@/lib/roleRedirects'
 import { validateEmail, validateRequired } from '@/lib/validation'
 
@@ -223,9 +224,9 @@ const handleGithubLogin = async () => {
   }
 }
 
-const goToRegister = () => {
-  router.replace('/register')
-}
+// const goToRegister = () => {
+//   router.replace('/register')
+// }
 </script>
 
 <style scoped>
@@ -245,14 +246,14 @@ const goToRegister = () => {
   --font-display: 'Fraunces', 'Iowan Old Style', 'Georgia', serif;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
-  max-height: 100vh;
-  overflow-x: hidden; 
-  overflow-y: auto;   
+   max-height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* ── LAYOUT ── */
 .login-container {
-  display: grid;
+ display: grid;
   grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
   min-height: 100vh;
   background: var(--parchment);
@@ -579,12 +580,16 @@ const goToRegister = () => {
 
 /* ── BUTTONS ── */
 .submit-btn {
+  font-weight: 600;
+  font-size: 1.3rem;
   margin-top: 0.25rem;
+  color: white;
   background: var(--ink) !important;
   border-radius: 8px !important;
 }
 
 .alt-btn {
+  text-decoration: none;
   display: flex;
   align-items: center;
   justify-content: center;

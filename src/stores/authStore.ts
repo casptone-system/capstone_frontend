@@ -61,7 +61,14 @@ export const useAuthStore = defineStore('auth', () => {
     activityListenersAttached = false
   }
 
-  const userRole = computed(() => user.value?.role || '')
+  const normalizeRole = (role: string = '') =>
+    String(role || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[_\s]+/g, '-')
+      .replace(/-+/g, '-')
+
+  const userRole = computed(() => normalizeRole(user.value?.role || ''))
   const userName = computed(() => user.value?.name || '')
   const hasGroup = computed(() => {
     if (!user.value) return false
@@ -117,6 +124,21 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       const response = await api.post('/register', data)
+
+      // If backend returns token and user, persist session so user stays logged in
+      const token = response.data?.data?.token
+      const userData = response.data?.data?.user
+
+      if (token) {
+        localStorage.setItem(TOKEN_KEY, token)
+      }
+
+      if (userData) {
+        user.value = userData
+        isAuthenticated.value = true
+        attachActivityListeners()
+        resetSessionTimer()
+      }
 
       return response.data
     } catch (err: any) {

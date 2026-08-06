@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from '@ionic/vue-router'
 import { useAuthStore } from '@/stores/authStore'
-import { getRoleRedirectPath } from '@/lib/roleRedirects'
+import { getRoleRedirectPath, normalizeRole } from '@/lib/roleRedirects'
 
 // Lazy-loaded components
 const LoginPage = () => import('@/views/login/LoginPage.vue')
@@ -36,16 +36,19 @@ const routes = [
   },
   {
     path: '/login',
+    name: 'login',
     component: LoginPage,
     meta: { requiresAuth: false },
   },
   {
     path: '/register',
+    name: 'register',
     component: RegisterPage,
     meta: { requiresAuth: false },
   },
   {
     path: '/forgot-password',
+    name: 'forgot-password',
     component: ForgotPassword,
     meta: { requiresAuth: false },
   },
@@ -157,6 +160,14 @@ router.beforeEach(async (to, from, next) => {
     ['/login', '/register', '/forgot-password'].includes(to.path)
   ) {
     return next(getRoleRedirectPath(authStore.userRole))
+  }
+
+  if (to.meta.allowedRoles && authStore.isAuthenticated) {
+    const allowedRoles = Array.isArray(to.meta.allowedRoles) ? to.meta.allowedRoles : [to.meta.allowedRoles]
+    const normalizedAllowedRoles = allowedRoles.map((role) => normalizeRole(String(role)))
+    if (!normalizedAllowedRoles.includes(authStore.userRole)) {
+      return next(getRoleRedirectPath(authStore.userRole))
+    }
   }
 
   next()

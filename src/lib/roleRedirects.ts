@@ -25,6 +25,7 @@ export const getRoleRedirectPath = (role: string = '') => {
     vpaa: '/dashboard/vpaa',
     'vpaa-di': '/dashboard/vpaa',
     'super-admin': '/dashboard/super-admin',
+    'super-administrator': '/dashboard/super-admin',
     superadmin: '/dashboard/super-admin',
     admin: '/users',
     staff: '/documents',

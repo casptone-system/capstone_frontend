@@ -43,7 +43,7 @@
             :icon="folderOpenOutline"
           />
 
-          <StatCardc
+          <StatCard
             title="Compliance"
             :value="dashboardStore.stats.complianceScore + '%'"
             :icon="checkmarkDoneOutline"
@@ -90,9 +90,8 @@ hourglassOutline,
 logOutOutline
 } from 'ionicons/icons'
 
-import { computed,onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-//import { useRoute, useRouter } from 'vue-router'
+import { computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import JoinTeam from '@/views/JoinTeam.vue'
 
 import { useDashboardStore } from '@/stores/dashboardStore'
@@ -103,7 +102,7 @@ import StatCard from '@/components/StatCard.vue'
 
 const dashboardStore = useDashboardStore()
 const authStore = useAuthStore()
-// const route = useRoute()
+const route = useRoute()
 const router = useRouter()
 const pageTitle = computed(() => {
   const role = String(authStore.userRole || '')
@@ -139,17 +138,14 @@ const pageDescription = computed(() => {
 return 'Welcome back.'
 })
 
-onMounted(async()=>{
-
-await dashboardStore.fetchDashboardStats()
-
+onMounted(async () => {
+  await dashboardStore.fetchDashboardStats()
 })
 
-// const showJoinInline = computed(() => {
-//   // explicit query param forces join UI, or user lacks group
-//   if (route.query.noGroup === '1') return true
-//   return !authStore.hasGroup
-// })
+const showJoinInline = computed(() => {
+  if (route.query.noGroup === '1') return true
+  return !authStore.hasGroup
+})
 
 const handleLogout = async () => {
   await authStore.logout()
@@ -169,13 +165,14 @@ const handleLogout = async () => {
   justify-content: space-between;
   align-items: flex-start;
   gap: var(--spacing-lg);
+  color: rgb(243, 243, 243);
 }
 
 .page-header h1 {
   margin: 0;
   font-size: var(--text-3xl);
   font-weight: var(--font-weight-bold);
-  color: black;
+  color: rgb(243, 243, 243);
 }
 
 .page-description {

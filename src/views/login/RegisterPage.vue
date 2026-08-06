@@ -1,5 +1,5 @@
 <template>
-  <div class="login-container">
+  <ion-page class="login-container">
     <!-- LEFT: Institutional panel -->
     <div class="brand-panel">
       <div class="ledger-lines" aria-hidden="true"></div>
@@ -59,7 +59,6 @@
                 v-model="middlename"
                 type="text"
                 placeholder="Carlos"
-                required
                 class="field-input"
               />
             </div>
@@ -184,16 +183,17 @@
         </form>
       </div>
     </div>
-  </div>
+  </ion-page>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
-import { IonIcon } from '@ionic/vue'
+import { IonPage, IonIcon } from '@ionic/vue'
 import AppButton from '@/components/AppButton.vue'
 import { validateEmail, validatePasswordStrength, validateRequired } from '@/lib/validation'
+import { getRoleRedirectPath } from '@/lib/roleRedirects'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -213,7 +213,6 @@ const isLoading = ref(false)
 
 // Errors
 const lastnameError = ref('')
-const middleNameError = ref('')
 const firstNameError = ref('')
 const emailError = ref('')
 const phoneError = ref('')
@@ -224,7 +223,6 @@ const confirmPasswordError = ref('')
 const handleRegister = async () => {
   // Reset errors
   lastnameError.value = ''
-  middleNameError.value = ''
   firstNameError.value = ''
   emailError.value = ''
   phoneError.value = ''
@@ -235,9 +233,6 @@ const handleRegister = async () => {
   // Validation
   lastnameError.value = validateRequired(lastname.value, 'Last name')
   if (lastnameError.value) return
-
-  middleNameError.value = validateRequired(middlename.value, 'Middle name')
-  if (middleNameError.value) return
 
   firstNameError.value = validateRequired(firstname.value, 'First name')
   if (firstNameError.value) return
@@ -273,16 +268,13 @@ const handleRegister = async () => {
       password_confirmation: confirmPassword.value,
     })
 
-    await router.replace('/login?registered=1')
+    // After successful registration the store now persists the session; redirect to role dashboard
+    await router.replace(getRoleRedirectPath(authStore.userRole))
   } catch (err: any) {
     const errors = err.response?.data?.errors
 
     if (errors?.last_name) {
       lastnameError.value = errors.last_name[0]
-    }
-
-    if (errors?.middle_name) {
-      middleNameError.value = errors.middle_name[0]
     }
 
     if (errors?.first_name) {
@@ -628,7 +620,10 @@ const handleRegister = async () => {
 
 /* ── BUTTONS ── */
 .submit-btn {
- margin-top: 0.25rem;
+  font-weight: 600;
+  font-size: 1.3rem;
+  margin-top: 0.25rem;
+  color: white;
   background: var(--ink) !important;
   border-radius: 8px !important;
 }
