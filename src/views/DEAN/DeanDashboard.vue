@@ -82,6 +82,11 @@
             </div>
           </header>
 
+          <div v-if="callMessage" class="dean-call-banner">
+            <div>{{ callMessage }}</div>
+            <button class="dean-btn dean-btn-ghost" v-if="activeCall" @click="endCall">End Call</button>
+          </div>
+
           <!-- Stat Strip -->
           <section class="dean-stat-strip">
             <div class="dean-stat" v-for="stat in stats" :key="stat.label">
@@ -215,6 +220,9 @@
                     <div class="dean-faculty-right">
                       <p class="dean-faculty-docs">{{ f.docs }} docs</p>
                       <span :class="['dean-fac-status', f.statusClass]">{{ f.status }}</span>
+                      <button class="dean-call-button" @click="callUser({ name: f.name, role: f.program })">
+                        <ion-icon :icon="callOutline" />
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -258,13 +266,15 @@ import {
   gridOutline, schoolOutline, peopleOutline, documentTextOutline,
   checkmarkDoneOutline, analyticsOutline, barChartOutline,
   notificationsOutline, documentOutline, gitMergeOutline,
-  checkmarkCircleOutline, alarmOutline
+  checkmarkCircleOutline, alarmOutline, callOutline
 } from 'ionicons/icons'
 
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
+import { useUserCalls } from '@/shared/composables/useUserCalls'
 const authStore = useAuthStore()
 const router = useRouter()
+const { activeCall, callMessage, callUser, endCall } = useUserCalls()
 
 const handleLogout = async () => {
   await authStore.logout()

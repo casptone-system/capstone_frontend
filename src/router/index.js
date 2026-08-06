@@ -5,29 +5,24 @@ import { getRoleRedirectPath, normalizeRole } from '@/lib/roleRedirects'
 // Lazy-loaded components
 const LoginPage = () => import('@/views/login/LoginPage.vue')
 const RegisterPage = () => import('@/views/login/RegisterPage.vue')
-const ForgotPassword = () => import('@/views/ForgotPassword.vue')
+const ForgotPassword = () => import('@/views/login/ForgotPassword.vue')
 
-const DashboardShell = () => import(/* webpackChunkName: "dashboard-shell" */ '@/views/DashboardShell.vue')
-const Dashboard = () => import(/* webpackChunkName: "dashboard-default" */ '@/views/Dashboard.vue')
+const Dashboard = () => import(/* webpackChunkName: "dashboard-default" */ '@/views/settings/Dashboard.vue')
+const DashboardShell = () => import(/* webpackChunkName: "dashboard-shell" */ '@/views/settings/DashboardShell.vue')
 const DashboardSuperAdmin = () => import(/* webpackChunkName: "dashboard-superadmin", webpackPrefetch: true */ '@/views/SUPERADMIN/SuperAdminDashboard.vue')
 const DashboardDean = () => import(/* webpackChunkName: "dashboard-dean", webpackPrefetch: true */ '@/views/DEAN/DeanDashboard.vue')
 const DashboardProgramChair = () => import(/* webpackChunkName: "dashboard-programchair", webpackPrefetch: true */ '@/views/PROGRAMCHAIR/ProgramChairDashboard.vue')
 const DashboardFaculty = () => import(/* webpackChunkName: "dashboard-faculty", webpackPrefetch: true */ '@/views/FACULTY/FacultyDashboard.vue')
 const DashboardQA = () => import(/* webpackChunkName: "dashboard-qa", webpackPrefetch: true */ '@/views/QA/QADashboard.vue')
 const DashboardVPAA = () => import(/* webpackChunkName: "dashboard-vpaa", webpackPrefetch: true */ '@/views/VPAA/VPaaDashboard.vue')
-const Documents = () => import('@/views/Documents.vue')
-const Upload = () => import('@/views/Upload.vue')
-const Reports = () => import('@/views/Reports.vue')
-const Users = () => import('@/views/Users.vue')
-const Audit = () => import('@/views/Audit.vue')
-const QA = () => import('@/views/QA.vue')
-const Settings = () => import('@/views/Settings.vue')
-const JoinTeam = () => import('@/views/JoinTeam.vue')
+const Upload = () => import('@/views/settings/Upload.vue')
+const Reports = () => import('@/views/settings/Reports.vue')
+const Users = () => import('@/views/login/Users.vue')
+const Audit = () => import('@/views/settings/Audit.vue')
+const Settings = () => import('@/views/settings/Settings.vue')
+const JoinTeam = () => import('@/views/FACULTY/JoinTeam.vue')
 
-const AccreditationList = () => import('@/views/AccreditationList.vue')
-const AccreditationDetail = () => import('@/views/AccreditationDetail.vue')
-const AccreditationForm = () => import('@/views/AccreditationForm.vue')
-const NewUserLanding = () => import('@/views/NewUserLanding.vue')
+const NewUserLanding = () => import('@/views/login/NewUserLanding.vue')
 
 const CRMOverview = () => import('@/views/CRM/CRMOverview.vue')
 const ClientsPage = () => import('@/views/CRM/ClientsPage.vue')
@@ -47,6 +42,12 @@ const routes = [
     name: 'login',
     component: LoginPage,
     meta: { requiresAuth: false },
+  },
+  {
+    path: '/upload',
+    name: 'upload',
+    component: Upload,
+    meta: { requiresAuth: true },
   },
   {
     path: '/register',
@@ -74,16 +75,7 @@ const routes = [
       { path: 'vpaa', name: 'dashboard-vpaa', component: DashboardVPAA },
     ],
   },
-  {
-    path: '/documents',
-    component: Documents,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/upload',
-    component: Upload,
-    meta: { requiresAuth: true },
-  },
+  
   {
     path: '/reports',
     component: Reports,
@@ -97,11 +89,6 @@ const routes = [
   {
     path: '/audit',
     component: Audit,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/qa-review',
-    component: QA,
     meta: { requiresAuth: true },
   },
   {
@@ -152,26 +139,6 @@ const routes = [
   {
     path: '/crm/reports',
     component: ReportsPage,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/accreditation',
-    component: AccreditationList,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/accreditation/new',
-    component: AccreditationForm,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/accreditation/:id',
-    component: AccreditationDetail,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/accreditation/:id/edit',
-    component: AccreditationForm,
     meta: { requiresAuth: true },
   },
   {

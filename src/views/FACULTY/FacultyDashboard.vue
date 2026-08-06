@@ -12,41 +12,32 @@
 
           <nav class="fac-nav">
             <p class="fac-nav-label">My Workspace</p>
-            <a class="fac-nav-item active" href="#">
+            <a class="fac-nav-item" :class="{ active: selectedSection === 'dashboard' }" href="#" @click.prevent="selectSection('dashboard')">
               <ion-icon :icon="gridOutline" /> Dashboard
             </a>
-            <a class="fac-nav-item" href="#">
-              <ion-icon :icon="cloudUploadOutline" /> Upload Evidence
+            <a class="fac-nav-item" :class="{ active: selectedSection === 'documents' }" href="#" @click.prevent="selectSection('documents')">
+              <ion-icon :icon="cloudUploadOutline" /> My Documents
             </a>
-            <a class="fac-nav-item" href="#">
-              <ion-icon :icon="folderOpenOutline" /> My Documents
-            </a>
-            <a class="fac-nav-item" href="#">
-              <ion-icon :icon="timeOutline" /> Version History
+            <a class="fac-nav-item" :class="{ active: selectedSection === 'revisions' }" href="#" @click.prevent="selectSection('revisions')">
+              <ion-icon :icon="refreshOutline" /> Revision Requests
+              <span class="fac-nav-badge">{{ revisions.length }}</span>
             </a>
 
             <p class="fac-nav-label">Team</p>
-            <a class="fac-nav-item" href="#">
+            <a class="fac-nav-item" :class="{ active: selectedSection === 'join' }" href="#" @click.prevent="selectSection('join')">
               <ion-icon :icon="keyOutline" /> Join Team
             </a>
-            <a class="fac-nav-item" href="#">
+            <a class="fac-nav-item" :class="{ active: selectedSection === 'team' }" href="#" @click.prevent="selectSection('team')">
               <ion-icon :icon="peopleOutline" /> My Team
             </a>
 
-            <p class="fac-nav-label">Submissions</p>
-            <a class="fac-nav-item" href="#">
-              <ion-icon :icon="refreshOutline" /> Revision Requests
-              <span class="fac-nav-badge">2</span>
-            </a>
-            <a class="fac-nav-item" href="#">
-              <ion-icon :icon="downloadOutline" /> Downloads
-            </a>
-            <a class="fac-nav-item" href="#">
+            <p class="fac-nav-label">Communications</p>
+            <a class="fac-nav-item" :class="{ active: selectedSection === 'notifications' }" href="#" @click.prevent="selectSection('notifications')">
               <ion-icon :icon="notificationsOutline" /> Notifications
-              <span class="fac-nav-badge">3</span>
+              <span class="fac-nav-badge">{{ unreadCount }}</span>
             </a>
           </nav>
-          
+
           <ion-button color="danger" fill="solid" @click="handleLogout">
           <ion-icon :icon="logOutOutline" />
           Logout
@@ -69,26 +60,31 @@
           <!-- Topbar -->
           <header class="fac-topbar">
             <div>
-              <p class="fac-breadcrumb">BS Information Technology · Team Alpha</p>
-              <h1 class="fac-page-title">Faculty Dashboard</h1>
+              <p class="fac-breadcrumb">{{ dashboardProgram }} · {{ dashboardTeamName }}</p>
+              <h1 class="fac-page-title">{{ selectedSectionLabel }}</h1>
             </div>
             <div class="fac-topbar-actions">
-              <button class="fac-icon-btn" title="Notifications">
+              <button class="fac-icon-btn" title="Notifications" @click="handleMarkAllNotificationsRead">
                 <ion-icon :icon="notificationsOutline" />
-                <span class="fac-badge">3</span>
+                <span class="fac-badge">{{ unreadCount }}</span>
               </button>
-              <button class="fac-btn fac-btn-primary">
+              <button class="fac-btn fac-btn-primary" @click="openUploadDialog">
                 <ion-icon :icon="cloudUploadOutline" /> Upload Evidence
               </button>
-              <button class="fac-btn fac-btn-ghost">
+              <button class="fac-btn fac-btn-ghost" @click="scrollToRevisions">
                 <ion-icon :icon="refreshOutline" /> Revisions
-                <span class="fac-btn-badge">2</span>
+                <span class="fac-btn-badge">{{ revisions.length }}</span>
               </button>
             </div>
           </header>
 
+          <div v-if="callMessage" class="fac-call-banner">
+            <div>{{ callMessage }}</div>
+            <button class="fac-btn fac-btn-ghost" v-if="activeCall" @click="endCall">End Call</button>
+          </div>
+
           <!-- Stat Strip -->
-          <section class="fac-stat-strip">
+          <section class="fac-stat-strip" v-if="isDashboardView">
             <div class="fac-stat" v-for="stat in stats" :key="stat.label">
               <div class="fac-stat-icon" :style="{ background: stat.bg, color: stat.color }">
                 <ion-icon :icon="stat.icon" />
@@ -105,9 +101,7 @@
 
             <!-- Left Column -->
             <div class="fac-col-left">
-
-              <!-- My Documents -->
-              <div class="fac-card">
+              <div v-if="isDashboardView || isDocumentsView" class="fac-card">
                 <div class="fac-card-header">
                   <div class="fac-card-title-group">
                     <div class="fac-card-icon sky"><ion-icon :icon="folderOpenOutline" /></div>
@@ -116,25 +110,25 @@
                       <p class="fac-card-sub">Track status of uploaded accreditation evidence</p>
                     </div>
                   </div>
-                  <button class="fac-link-btn">All Documents →</button>
+                  <button class="fac-link-btn" @click.prevent="selectSection('documents')">All Documents →</button>
                 </div>
                 <div class="fac-doc-table">
                   <div class="fac-table-header">
                     <span>Document</span><span>Area</span><span>Version</span><span>Status</span><span>Action</span>
                   </div>
-                  <div class="fac-table-row" v-for="doc in myDocs" :key="doc.title">
+                  <div class="fac-table-row" v-for="doc in myDocs" :key="doc.id">
                     <span class="fac-doc-title-cell">
                       <ion-icon :icon="documentOutline" class="fac-doc-icon" />
                       {{ doc.title }}
                     </span>
                     <span class="fac-area-tag">{{ doc.area }}</span>
                     <span class="fac-version">v{{ doc.version }}</span>
-                    <span :class="['fac-doc-status', doc.statusClass]">{{ doc.status }}</span>
+                    <span :class="['fac-doc-status', statusClass(doc.status)]">{{ doc.status }}</span>
                     <div class="fac-doc-actions">
-                      <button class="fac-action-icon-btn" title="Download">
+                      <button class="fac-action-icon-btn" title="Download" @click="handleDownload(doc)">
                         <ion-icon :icon="downloadOutline" />
                       </button>
-                      <button class="fac-action-icon-btn" title="Edit Metadata">
+                      <button class="fac-action-icon-btn" title="Edit Metadata" @click="editMetadata(doc)">
                         <ion-icon :icon="createOutline" />
                       </button>
                     </div>
@@ -142,8 +136,7 @@
                 </div>
               </div>
 
-              <!-- Revision Requests -->
-              <div class="fac-card">
+              <div v-if="isDashboardView || isRevisionsView" class="fac-card" id="revision-section">
                 <div class="fac-card-header">
                   <div class="fac-card-title-group">
                     <div class="fac-card-icon rose"><ion-icon :icon="refreshOutline" /></div>
@@ -155,7 +148,7 @@
                   <span class="fac-urgent-badge">{{ revisions.length }} Pending</span>
                 </div>
                 <div class="fac-revision-list">
-                  <div class="fac-revision-item" v-for="rev in revisions" :key="rev.doc">
+                  <div class="fac-revision-item" v-for="rev in revisions" :key="rev.id">
                     <div class="fac-revision-left">
                       <div class="fac-rev-dot"></div>
                       <div>
@@ -164,30 +157,30 @@
                         <p class="fac-rev-note">{{ rev.note }}</p>
                       </div>
                     </div>
-                    <button class="fac-resubmit-btn">
+                    <button class="fac-call-button" @click="callUser({ name: rev.by, role: 'Reviewer' })">
+                      <ion-icon :icon="callOutline" />
+                    </button>
+                    <button class="fac-resubmit-btn" @click="handleRevisionResubmit(rev)">
                       <ion-icon :icon="cloudUploadOutline" /> Resubmit
                     </button>
                   </div>
                 </div>
               </div>
-
             </div>
 
             <!-- Right Column -->
             <div class="fac-col-right">
-
-              <!-- Join Team Card -->
-              <div class="fac-card fac-join-card">
+              <div v-if="isDashboardView || isJoinView || isTeamView" class="fac-card fac-join-card">
                 <div class="fac-card-header">
                   <div class="fac-card-title-group">
                     <div class="fac-card-icon violet"><ion-icon :icon="keyOutline" /></div>
                     <div>
-                      <h2 class="fac-card-title">Join a Team</h2>
-                      <p class="fac-card-sub">Enter your 6-digit invitation code</p>
+                      <h2 class="fac-card-title">{{ selectedSection === 'team' ? 'My Team' : 'Join a Team' }}</h2>
+                      <p class="fac-card-sub">{{ selectedSection === 'team' ? 'Your current faculty team assignment' : 'Enter your 6-digit invitation code' }}</p>
                     </div>
                   </div>
                 </div>
-                <div class="fac-join-body">
+                <div v-if="selectedSection !== 'team'" class="fac-join-body">
                   <div class="fac-code-inputs">
                     <input
                       v-for="(_, i) in 6" :key="i"
@@ -197,27 +190,35 @@
                       v-model="codeDigits[i]"
                       @input="handleDigit($event, i)"
                       @keydown.backspace="handleBack($event, i)"
-                      :ref="el => { if (el) codeRefs[i] = el as HTMLInputElement }"
+                      :ref="(el) => setCodeRef(el, i)"
                     />
                   </div>
-                  <button class="fac-join-btn" :disabled="codeDigits.join('').length < 6">
+                  <button class="fac-join-btn" :disabled="codeDigits.join('').length < 6" @click="handleJoinTeam">
                     <ion-icon :icon="logInOutline" /> Join Team
                   </button>
                   <p class="fac-join-hint">Don't have a code? Contact your Program Chair.</p>
+                  <p v-if="joinError" class="fac-join-error">{{ joinError }}</p>
+                  <p v-else-if="actionMessage" class="fac-join-success">{{ actionMessage }}</p>
                 </div>
                 <div class="fac-current-team">
                   <p class="fac-team-label">Current Assignment</p>
                   <div class="fac-team-info-row">
-                    <div class="fac-team-detail"><span>College</span><strong>Engineering</strong></div>
-                    <div class="fac-team-detail"><span>Program</span><strong>BS IT</strong></div>
-                    <div class="fac-team-detail"><span>Team</span><strong>Team Alpha</strong></div>
-                    <div class="fac-team-detail"><span>Chair</span><strong>J. Cruz</strong></div>
+                    <div class="fac-team-detail"><span>Program</span><strong>{{ dashboardProgram }}</strong></div>
+                    <div class="fac-team-detail"><span>Team</span><strong>{{ dashboardTeamName }}</strong></div>
+                    <div class="fac-team-detail"><span>Chair</span><strong>{{ dashboardTeamLead }}</strong></div>
+                    <div class="fac-team-detail"><span>Status</span><strong>{{ team?.name ? 'Assigned' : 'No Team' }}</strong></div>
                   </div>
                 </div>
               </div>
+              <input
+                ref="uploadInput"
+                type="file"
+                class="hidden-upload-input"
+                @change="onFileSelected"
+                style="display:none"
+              />
 
-              <!-- Submission Status Pipeline -->
-              <div class="fac-card">
+              <div v-if="isDashboardView" class="fac-card">
                 <div class="fac-card-header">
                   <div class="fac-card-title-group">
                     <div class="fac-card-icon amber"><ion-icon :icon="gitMergeOutline" /></div>
@@ -243,8 +244,7 @@
                 </div>
               </div>
 
-              <!-- Deadlines & Notifications -->
-              <div class="fac-card">
+              <div v-if="isDashboardView || isNotificationsView" class="fac-card">
                 <div class="fac-card-header">
                   <div class="fac-card-title-group">
                     <div class="fac-card-icon orange"><ion-icon :icon="alarmOutline" /></div>
@@ -275,31 +275,63 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { IonPage, IonContent, IonIcon } from '@ionic/vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/authStore'
+import { useFacultyDashboard } from '@/modules/faculty/useFacultyDashboard'
+import { useUserCalls } from '@/shared/composables/useUserCalls'
+import type { AppDocument } from '@/types'
 
 import {
-  gridOutline, cloudUploadOutline, folderOpenOutline, timeOutline,
+  gridOutline, cloudUploadOutline, folderOpenOutline,
   keyOutline, peopleOutline, refreshOutline, downloadOutline,
   notificationsOutline, documentOutline, createOutline, logInOutline,
   gitMergeOutline, checkmarkCircleOutline, arrowUndoOutline,
-  alarmOutline, barChartOutline, checkmarkDoneOutline, hourglassOutline,
-// documentTextOutline
+  alarmOutline, barChartOutline, checkmarkDoneOutline, hourglassOutline, logOutOutline, callOutline,
 } from 'ionicons/icons'
 
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/authStore'
-const authStore = useAuthStore()
 const router = useRouter()
+const authStore = useAuthStore()
+const facultyDashboard = useFacultyDashboard()
+const {
+  team,
+//   program,
+  selectedSection,
+  dashboardSummary,
+  dashboardProgram,
+  dashboardTeamName,
+  dashboardTeamLead,
+  notifications,
+  pipeline,
+  selectedDocuments,
+  pendingRevisions,
+  unreadCount,
+  loadTeam,
+  loadDocuments,
+  loadNotifications,
+  loadDashboard,
+  uploadDocument,
+  updateDocumentMetadata,
+  resubmitDocument,
+  downloadDocument,
+  markAllNotificationsRead,
+  selectSection,
+} = facultyDashboard
+const { activeCall, callMessage, callUser, endCall } = useUserCalls()
 
-const handleLogout = async () => {
-  await authStore.logout()
-  router.replace('/login')
-}
-
-// ── Invitation code input logic ──
+const uploadInput = ref<HTMLInputElement | null>(null)
 const codeDigits = ref<string[]>(['', '', '', '', '', ''])
 const codeRefs = ref<HTMLInputElement[]>([])
+const joinError = ref('')
+const actionMessage = ref('')
+// const notificationMessage = ref('')
+
+function setCodeRef(el: unknown, i: number) {
+  if (el instanceof HTMLInputElement) {
+    codeRefs.value[i] = el
+  }
+}
 
 function handleDigit(e: Event, i: number) {
   const val = (e.target as HTMLInputElement).value.replace(/\D/g, '')
@@ -314,55 +346,198 @@ function handleBack(e: KeyboardEvent, i: number) {
   }
 }
 
-// ── Data ──
-const stats = [
-  { label: 'Uploaded Docs',     value: '14',  icon: cloudUploadOutline,  color: '#0891b2', bg: '#e0f2fe' },
-  { label: 'Approved',          value: '9',   icon: checkmarkDoneOutline,color: '#16a34a', bg: '#dcfce7' },
-  { label: 'Pending Review',    value: '3',   icon: hourglassOutline,    color: '#d97706', bg: '#fef3c7' },
-  { label: 'Revision Requests', value: '2',   icon: refreshOutline,      color: '#dc2626', bg: '#fee2e2' },
-  { label: 'My Compliance',     value: '78%', icon: barChartOutline,     color: '#7c3aed', bg: '#ede9fe' },
-  { label: 'Deadline in',       value: '3d',  icon: alarmOutline,        color: '#db2777', bg: '#fce7f3' },
-]
+const statusClass = (status: AppDocument['status']) => {
+  switch (status) {
+    case 'approved': return 'ds-approved'
+    case 'pending': return 'ds-pending'
+    case 'revision': return 'ds-revision'
+    default: return 'ds-review'
+  }
+}
 
-const myDocs = [
-  { title: 'Mission Statement Evidence',    area: 'Criterion 1', version: '2', status: 'Approved',         statusClass: 'ds-approved'  },
-  { title: 'Faculty Loading 2024',          area: 'Criterion 2', version: '1', status: 'Under Review',     statusClass: 'ds-review'    },
-  { title: 'Research Output Summary',       area: 'Criterion 4', version: '3', status: 'Needs Revision',   statusClass: 'ds-revision'  },
-  { title: 'Lab Safety Compliance Cert.',   area: 'Criterion 5', version: '1', status: 'Pending Upload',   statusClass: 'ds-pending'   },
-  { title: 'Course Syllabus AY 2024–2025',  area: 'Criterion 3', version: '1', status: 'Approved',         statusClass: 'ds-approved'  },
-  { title: 'Extension Activity Report',     area: 'Criterion 6', version: '2', status: 'Under Review',     statusClass: 'ds-review'    },
-]
+const selectedSectionLabel = computed(() => {
+  switch (selectedSection.value) {
+    case 'dashboard': return 'Faculty Dashboard'
+    case 'documents': return 'My Documents'
+    case 'revisions': return 'Revision Requests'
+    case 'join': return 'Join Team'
+    case 'team': return 'My Team'
+    case 'notifications': return 'Notifications'
+    default: return 'Faculty Dashboard'
+  }
+})
 
-const revisions = [
-  {
-    doc: 'Research Output Summary',
-    by: 'Area In-Charge (M. Santos)',
-    time: '2 hrs ago',
-    note: 'Please attach supporting data tables and update the reference list.'
-  },
-  {
-    doc: 'Faculty Loading 2024',
-    by: 'Program Chair (J. Cruz)',
-    time: 'Yesterday',
-    note: 'Semester 1 loading sheet is missing. Resubmit with complete entries.'
-  },
-]
+const isDashboardView = computed(() => selectedSection.value === 'dashboard')
+const isDocumentsView = computed(() => selectedSection.value === 'documents')
+const isRevisionsView = computed(() => selectedSection.value === 'revisions')
+const isJoinView = computed(() => selectedSection.value === 'join')
+const isTeamView = computed(() => selectedSection.value === 'team')
+const isNotificationsView = computed(() => selectedSection.value === 'notifications')
 
-const pipeline = [
-  { label: 'Upload Evidence',         sub: 'You submitted the document',             done: true,  active: false, returned: false },
-  { label: 'Area In-Charge Review',   sub: 'Document under area review',             done: false, active: true,  returned: false },
-  { label: 'Program Chair Review',    sub: 'Waiting for area approval first',        done: false, active: false, returned: false },
-  { label: 'Dean Review',             sub: 'Pending program chair endorsement',      done: false, active: false, returned: false },
-  { label: 'QA Officer Review',       sub: 'Compliance verification stage',          done: false, active: false, returned: false },
-  { label: 'VPAA Final Review',       sub: 'Accreditation Ready',                    done: false, active: false, returned: false },
-]
+const stats = computed(() => {
+  const uploaded = selectedDocuments.value.length
+  const approved = selectedDocuments.value.filter((doc) => doc.status === 'approved').length
+  const pending = selectedDocuments.value.filter((doc) => doc.status === 'pending').length
+  const revisionsCount = selectedDocuments.value.filter((doc) => doc.status === 'revision').length
+  const complianceScore = dashboardSummary.value?.compliancePercent ?? 0
+  const deadlineLabel = unreadCount.value > 0 ? `${Math.max(1, unreadCount.value)}d` : 'No due'
 
-const alerts = [
-  { msg: '2 revision requests need your attention',           time: 'Action Required · Now',   icon: refreshOutline,      color: '#dc2626', urgency: 'urgent'  },
-  { msg: 'QA submission deadline in 3 days',                  time: 'Due: Nov 15, 2024',        icon: alarmOutline,        color: '#d97706', urgency: 'warning' },
-  { msg: 'Lab Safety Cert. has not been uploaded yet',        time: 'Missing document',         icon: cloudUploadOutline,  color: '#d97706', urgency: 'warning' },
-  { msg: 'Research Output approved by Area In-Charge',        time: 'Approved · Today 8:02 AM', icon: checkmarkDoneOutline,color: '#16a34a', urgency: 'info'    },
-]
+  return [
+    { label: 'Uploaded Docs',     value: String(uploaded), icon: cloudUploadOutline,  color: '#0891b2', bg: '#e0f2fe' },
+    { label: 'Approved',          value: String(approved), icon: checkmarkDoneOutline,color: '#16a34a', bg: '#dcfce7' },
+    { label: 'Pending Review',    value: String(pending),  icon: hourglassOutline,    color: '#d97706', bg: '#fef3c7' },
+    { label: 'Revision Requests', value: String(revisionsCount), icon: refreshOutline, color: '#dc2626', bg: '#fee2e2' },
+    { label: 'My Compliance',     value: `${complianceScore}%`, icon: barChartOutline, color: '#7c3aed', bg: '#ede9fe' },
+    { label: 'Deadline in',       value: deadlineLabel, icon: alarmOutline, color: '#db2777', bg: '#fce7f3' },
+  ]
+})
+
+const myDocs = computed(() => selectedDocuments.value)
+
+const revisions = computed(() => pendingRevisions.value.map((doc) => ({
+  id: doc.id,
+  doc: doc.title,
+  by: doc.uploadedBy || 'Area In-Charge',
+  time: doc.uploadedAt || 'Recently',
+  note: `Revision requested for "${doc.title}". Please resubmit with updates.`,
+})))
+
+const alerts = computed(() => notifications.value.slice(0, 4).map((notification) => {
+  const icon = notification.type === 'success'
+    ? checkmarkDoneOutline
+    : notification.type === 'warning'
+      ? alarmOutline
+      : refreshOutline
+  const color = notification.type === 'success'
+    ? '#16a34a'
+    : notification.type === 'warning'
+      ? '#d97706'
+      : '#dc2626'
+  const urgency = notification.type === 'warning' ? 'warning' : notification.type === 'info' ? 'info' : 'urgent'
+
+  return {
+    msg: notification.message,
+    time: new Date(notification.createdAt).toLocaleDateString(),
+    icon,
+    color,
+    urgency,
+  }
+}))
+
+const handleLogout = async () => {
+  await authStore.logout()
+  router.replace('/login')
+}
+
+const handleJoinTeam = async () => {
+  joinError.value = ''
+  const code = codeDigits.value.join('')
+  if (code.length !== 6) {
+    joinError.value = 'Please enter a valid 6-digit code.'
+    return
+  }
+
+  try {
+    await authStore.joinTeam(code)
+    actionMessage.value = 'Successfully joined the team.'
+    resetCodeInputs()
+    await loadTeam()
+    await loadDocuments()
+    await loadDashboard()
+    selectSection('dashboard')
+  } catch {
+    joinError.value = authStore.error || 'Unable to join team.'
+  }
+}
+
+const resetCodeInputs = () => {
+  codeDigits.value = ['', '', '', '', '', '']
+  codeRefs.value = []
+}
+
+const openUploadDialog = () => {
+  uploadInput.value?.click()
+}
+
+const onFileSelected = async (event: Event) => {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+
+  if (!file) return
+  const title = window.prompt('Enter document title', file.name) || file.name
+  const description = window.prompt('Enter document description', 'Evidence uploaded from faculty dashboard') || ''
+
+  const success = await uploadDocument(file, { title, description })
+  actionMessage.value = success ? 'Evidence uploaded successfully.' : 'Upload failed. Please try again.'
+
+  if (uploadInput.value) {
+    uploadInput.value.value = ''
+  }
+  await loadDocuments()
+  await loadDashboard()
+}
+
+const handleDownload = async (doc: AppDocument & { downloadUrl?: string }) => {
+  const url = doc.downloadUrl
+  if (url) {
+    window.open(url, '_blank')
+    return
+  }
+
+  await downloadDocument(doc.id)
+}
+
+// const notificationItems = computed(() => {
+//   return notifications.value.map((notification) => ({
+//     id: notification.id,
+//     title: notification.title,
+//     message: notification.message,
+//     time: new Date(notification.createdAt).toLocaleString(),
+//     type: notification.type,
+//   }))
+// })
+
+const editMetadata = async (doc: AppDocument) => {
+  const title = window.prompt('Edit document title', doc.title)
+  if (!title || title === doc.title) {
+    return
+  }
+
+  const success = await updateDocumentMetadata(doc.id, { title })
+  if (success) {
+    actionMessage.value = `Metadata updated for "${title}".`
+    await loadDocuments()
+  }
+}
+
+const handleRevisionResubmit = async (revision: { id: string; doc: string }) => {
+  const success = await resubmitDocument(revision.id)
+  if (success) {
+    actionMessage.value = `Resubmitted "${revision.doc}".`
+    await loadDocuments()
+  }
+}
+
+const handleMarkAllNotificationsRead = async () => {
+  await markAllNotificationsRead()
+}
+
+const scrollToRevisions = () => {
+  selectSection('revisions')
+}
+
+const loadData = async () => {
+  await Promise.all([
+    loadTeam(),
+    loadDocuments(),
+    loadNotifications(),
+    loadDashboard(),
+  ])
+}
+
+onMounted(() => {
+  void loadData()
+})
 </script>
 
 <style scoped>

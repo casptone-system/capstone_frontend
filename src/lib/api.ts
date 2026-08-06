@@ -86,6 +86,11 @@ export const getProgram = async (id: number | string) => {
   return response.data
 }
 
+export const getTeam = async (id: number | string) => {
+  const response = await api.get(`/teams/${id}`)
+  return response.data
+}
+
 export const createProgram = async (data: any) => {
   const response = await api.post('/programs', data)
   return response.data
@@ -163,13 +168,36 @@ export const deleteTask = async (id: number | string) => {
    DOCUMENTS
 =========================== */
 
-export const getDocuments = async () => {
-  const response = await api.get('/documents')
+export const getDocuments = async (params: Record<string, any> = {}) => {
+  const response = await api.get('/documents', { params })
   return response.data
 }
 
 export const getDocument = async (id: number | string) => {
   const response = await api.get(`/documents/${id}`)
+  return response.data
+}
+
+export const getDocumentVersions = async (id: number | string) => {
+  const response = await api.get(`/documents/${id}/versions`)
+  return response.data
+}
+
+export const downloadDocument = async (id: number | string, version?: number) => {
+  const response = await api.get(`/documents/${id}/download`, {
+    params: { version },
+    responseType: 'blob',
+  })
+  return response.data
+}
+
+export const getTeams = async (params: Record<string, any> = {}) => {
+  const response = await api.get('/teams', { params })
+  return response.data
+}
+
+export const createTeam = async (data: any) => {
+  const response = await api.post('/teams', data)
   return response.data
 }
 
@@ -208,8 +236,8 @@ export const deleteDocument = async (id: number | string) => {
    DASHBOARD
 =========================== */
 
-export const getDashboard = async () => {
-  const response = await api.get('/dashboard')
+export const getDashboard = async (params: Record<string, any> = {}) => {
+  const response = await api.get('/dashboard', { params })
   return response.data
 }
 

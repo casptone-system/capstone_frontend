@@ -12,39 +12,25 @@
 
           <nav class="pc-nav">
             <p class="pc-nav-label">Overview</p>
-            <a class="pc-nav-item active" href="#">
+            <a class="pc-nav-item" :class="{ active: selectedSection === 'dashboard' }" href="#" @click.prevent="selectSection('dashboard')">
               <ion-icon :icon="gridOutline" /> Dashboard
             </a>
-            <a class="pc-nav-item" href="#">
+            <a class="pc-nav-item" :class="{ active: selectedSection === 'teams' }" href="#" @click.prevent="selectSection('teams')">
               <ion-icon :icon="peopleOutline" /> Manage Teams
             </a>
-            <a class="pc-nav-item" href="#">
+            <a class="pc-nav-item" :class="{ active: selectedSection === 'codes' }" href="#" @click.prevent="selectSection('codes')">
               <ion-icon :icon="keyOutline" /> Invitation Codes
-              <span class="pc-nav-badge">2</span>
+              <span class="pc-nav-badge">{{ recentCodes.length }}</span>
             </a>
 
             <p class="pc-nav-label">Accreditation</p>
-            <a class="pc-nav-item" href="#">
+            <a class="pc-nav-item" :class="{ active: selectedSection === 'assignments' }" href="#" @click.prevent="selectSection('assignments')">
               <ion-icon :icon="folderOpenOutline" /> Assign Areas
             </a>
-            <a class="pc-nav-item" href="#">
+            <a class="pc-nav-item" :class="{ active: selectedSection === 'review' }" href="#" @click.prevent="selectSection('review')">
               <ion-icon :icon="documentTextOutline" /> Document Review
             </a>
-            <a class="pc-nav-item" href="#">
-              <ion-icon :icon="lockClosedOutline" /> Permissions
-            </a>
-            <a class="pc-nav-item" href="#">
-              <ion-icon :icon="analyticsOutline" /> Compliance
-            </a>
-
-            <p class="pc-nav-label">Reports</p>
-            <a class="pc-nav-item" href="#">
-              <ion-icon :icon="barChartOutline" /> Program Reports
-            </a>
-            <a class="pc-nav-item" href="#">
-              <ion-icon :icon="chatbubblesOutline" /> Coordinate QA & Dean
-            </a>
-            <a class="pc-nav-item" href="#">
+            <a class="pc-nav-item" :class="{ active: selectedSection === 'notifications' }" href="#" @click.prevent="selectSection('notifications')">
               <ion-icon :icon="notificationsOutline" /> Notifications
               <span class="pc-nav-badge">6</span>
             </a>
@@ -72,22 +58,27 @@
           <header class="pc-topbar">
             <div>
               <p class="pc-breadcrumb">BS Mechanical Engineering</p>
-              <h1 class="pc-page-title">Program Chair Dashboard</h1>
+              <h1 class="pc-page-title">{{ sectionLabel }}</h1>
             </div>
             <div class="pc-topbar-actions">
-              <button class="pc-icon-btn" title="Notifications">
+              <button class="pc-icon-btn" title="Notifications" @click.prevent="selectSection('notifications')">
                 <ion-icon :icon="notificationsOutline" />
-                <span class="pc-badge">6</span>
+                <span class="pc-badge">{{ activeNotificationCount }}</span>
               </button>
-              <button class="pc-btn pc-btn-primary" @click="showCodeModal = true">
+              <button class="pc-btn pc-btn-primary" @click.prevent="selectSection('codes')">
                 <ion-icon :icon="keyOutline" /> Generate Code
               </button>
-              <button class="pc-btn pc-btn-ghost">
+              <button class="pc-btn pc-btn-ghost" @click.prevent="selectSection('review')">
                 <ion-icon :icon="documentTextOutline" /> Review Docs
                 <span class="pc-btn-badge">7</span>
               </button>
             </div>
           </header>
+
+          <div v-if="callMessage" class="pc-call-banner">
+            <div>{{ callMessage }}</div>
+            <button class="pc-btn pc-btn-ghost" v-if="activeCall" @click="endCall">End Call</button>
+          </div>
 
           <!-- Stat Strip -->
           <section class="pc-stat-strip">
@@ -108,8 +99,7 @@
             <!-- Left Column -->
             <div class="pc-col-left">
 
-              <!-- Team Management -->
-              <div class="pc-card">
+              <div v-if="selectedSection === 'dashboard' || selectedSection === 'teams'" class="pc-card">
                 <div class="pc-card-header">
                   <div class="pc-card-title-group">
                     <div class="pc-card-icon emerald"><ion-icon :icon="peopleOutline" /></div>
@@ -118,36 +108,37 @@
                       <p class="pc-card-sub">Create teams, assign areas, and manage members</p>
                     </div>
                   </div>
-                  <button class="pc-link-btn">All Teams →</button>
+                  <button class="pc-link-btn" @click.prevent="selectSection('teams')">All Teams →</button>
                 </div>
                 <div class="pc-team-action-grid">
-                  <button class="pc-team-chip" v-for="action in teamActions" :key="action">
+                  <button class="pc-team-chip" v-for="action in teamActions" :key="action" @click.prevent="handleTeamAction(action)">
                     {{ action }}
                   </button>
                 </div>
                 <div class="pc-team-list">
-                  <div class="pc-team-row" v-for="team in teams" :key="team.name">
+                  <div class="pc-team-row" v-for="team in teams" :key="team.id || team.name">
                     <div class="pc-team-info">
                       <p class="pc-team-name">{{ team.name }}</p>
-                      <p class="pc-team-area">Area: {{ team.area }}</p>
+                      <p class="pc-team-area">Area: {{ team.area || 'Unassigned' }}</p>
                     </div>
                     <div class="pc-team-members">
                       <div class="pc-member-stack">
-                        <div class="pc-member-dot" v-for="m in team.members.slice(0,3)" :key="m"
-                          :title="m">{{ m[0] }}</div>
-                        <div class="pc-member-more" v-if="team.members.length > 3">
-                          +{{ team.members.length - 3 }}
+                        <div class="pc-member-dot" v-for="(m, idx) in (team.members || []).slice(0,3)" :key="m + idx" :title="m">{{ m?.[0] || '?' }}</div>
+                        <div class="pc-member-more" v-if="(team.members || []).length > 3">
+                          +{{ (team.members || []).length - 3 }}
                         </div>
                       </div>
-                      <span class="pc-member-count">{{ team.members.length }} members</span>
+                      <span class="pc-member-count">{{ (team.members || []).length }} members</span>
                     </div>
-                    <span :class="['pc-team-status', team.statusClass]">{{ team.status }}</span>
+                    <span :class="['pc-team-status', team.statusClass || 'ts-active']">{{ team.status || 'Active' }}</span>
+                    <button class="pc-call-button" @click.prevent="callUser({ name: (team.members || [])[0] || 'Team Member', role: 'Team Member' })">
+                      <ion-icon :icon="callOutline" />
+                    </button>
                   </div>
                 </div>
               </div>
 
-              <!-- Document Review -->
-              <div class="pc-card">
+              <div v-if="selectedSection === 'dashboard' || selectedSection === 'review'" class="pc-card">
                 <div class="pc-card-header">
                   <div class="pc-card-title-group">
                     <div class="pc-card-icon blue"><ion-icon :icon="documentTextOutline" /></div>
@@ -170,6 +161,9 @@
                     <span class="pc-role-tag">{{ doc.incharge }}</span>
                     <span class="pc-muted">{{ doc.submitted }}</span>
                     <div class="pc-action-btns">
+                      <button class="pc-call-button" @click="callUser({ name: doc.incharge, role: 'Area In-Charge' })">
+                        <ion-icon :icon="callOutline" />
+                      </button>
                       <button class="pc-approve-btn">Approve</button>
                       <button class="pc-return-btn">Return</button>
                     </div>
@@ -182,8 +176,7 @@
             <!-- Right Column -->
             <div class="pc-col-right">
 
-              <!-- Invitation Code Generator -->
-              <div class="pc-card pc-invite-card">
+                <div v-if="selectedSection === 'dashboard' || selectedSection === 'codes'" class="pc-card pc-invite-card">
                 <div class="pc-card-header">
                   <div class="pc-card-title-group">
                     <div class="pc-card-icon violet"><ion-icon :icon="keyOutline" /></div>
@@ -193,22 +186,32 @@
                     </div>
                   </div>
                 </div>
+                <div class="pc-code-form">
+                  <label class="pc-field-label">Team name</label>
+                  <input class="pc-input" v-model="createTeamName" placeholder="Enter team name" />
+                  <button class="pc-btn pc-btn-primary" @click.prevent="generateTeamCode">
+                    <ion-icon :icon="keyOutline" /> Generate Team Code
+                  </button>
+                  <p v-if="createTeamError" class="pc-error-text">{{ createTeamError }}</p>
+                  <p v-if="createTeamSuccess" class="pc-success-text">{{ createTeamSuccess }}</p>
+                </div>
                 <div class="pc-code-display">
                   <p class="pc-code-label">Active Code</p>
                   <div class="pc-code-digits">
-                    <span v-for="d in activeCode.split('')" :key="d + Math.random()" class="pc-digit">{{ d }}</span>
+                    <span v-for="(d, idx) in activeCode.split('')" :key="d + idx" class="pc-digit">{{ d }}</span>
                   </div>
                   <div class="pc-code-actions">
-                    <button class="pc-code-btn copy">
+                    <button class="pc-code-btn copy" @click.prevent="copyCode">
                       <ion-icon :icon="copyOutline" /> Copy Code
                     </button>
-                    <button class="pc-code-btn send">
+                    <button class="pc-code-btn send" @click.prevent="sendInvite">
                       <ion-icon :icon="mailOutline" /> Send Invite
                     </button>
-                    <button class="pc-code-btn regen" @click="regenCode">
+                    <button class="pc-code-btn regen" @click.prevent="regenCode">
                       <ion-icon :icon="refreshOutline" /> New Code
                     </button>
                   </div>
+                  <p v-if="codeMessage" class="pc-code-hint">{{ codeMessage }}</p>
                 </div>
                 <div class="pc-recent-codes">
                   <p class="pc-recent-label">Recent Codes</p>
@@ -223,7 +226,7 @@
               </div>
 
               <!-- Area Assignments -->
-              <div class="pc-card">
+              <div v-if="selectedSection === 'dashboard' || selectedSection === 'assignments'" class="pc-card">
                 <div class="pc-card-header">
                   <div class="pc-card-title-group">
                     <div class="pc-card-icon amber"><ion-icon :icon="folderOpenOutline" /></div>
@@ -232,7 +235,7 @@
                       <p class="pc-card-sub">Accreditation areas & their In-Charges</p>
                     </div>
                   </div>
-                  <button class="pc-link-btn">Assign →</button>
+                  <button class="pc-link-btn" @click.prevent="selectSection('assignments')">Assign →</button>
                 </div>
                 <div class="pc-area-list">
                   <div class="pc-area-row" v-for="area in areas" :key="area.name">
@@ -252,7 +255,7 @@
               </div>
 
               <!-- Compliance & Pipeline -->
-              <div class="pc-card">
+              <div v-if="selectedSection === 'dashboard' || selectedSection === 'review'" class="pc-card">
                 <div class="pc-card-header">
                   <div class="pc-card-title-group">
                     <div class="pc-card-icon rose"><ion-icon :icon="gitMergeOutline" /></div>
@@ -277,6 +280,27 @@
                 </div>
               </div>
 
+              <div v-if="selectedSection === 'notifications'" class="pc-card pc-notifications-card">
+                <div class="pc-card-header">
+                  <div class="pc-card-title-group">
+                    <div class="pc-card-icon teal"><ion-icon :icon="notificationsOutline" /></div>
+                    <div>
+                      <h2 class="pc-card-title">Notifications</h2>
+                      <p class="pc-card-sub">Updates for team assignments, submissions, and codes</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="pc-notification-list">
+                  <div class="pc-notification-item" v-for="item in notificationItems" :key="item.id">
+                    <div class="pc-notification-body">
+                      <p class="pc-notification-title">{{ item.title }}</p>
+                      <p class="pc-notification-msg">{{ item.message }}</p>
+                    </div>
+                    <span class="pc-notification-time">{{ item.time }}</span>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
         </main>
@@ -286,86 +310,185 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { IonPage, IonContent, IonIcon } from '@ionic/vue'
 import {
   gridOutline, peopleOutline, keyOutline, folderOpenOutline,
-  documentTextOutline, lockClosedOutline, analyticsOutline,
-  barChartOutline, chatbubblesOutline, notificationsOutline,
+  documentTextOutline,  analyticsOutline,
+  barChartOutline,  notificationsOutline,
   documentOutline, copyOutline, mailOutline, refreshOutline,
-  gitMergeOutline, checkmarkCircleOutline, hourglassOutline,
-//   checkmarkDoneOutline, personAddOutline, timeOutline
+  gitMergeOutline, checkmarkCircleOutline, hourglassOutline, logOutOutline, callOutline
 } from 'ionicons/icons'
 
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
+import { useUserCalls } from '@/shared/composables/useUserCalls'
+import { createTeam, getTeams } from '@/lib/api'
+
 const authStore = useAuthStore()
 const router = useRouter()
+const { activeCall, callMessage, callUser, endCall } = useUserCalls()
+
+const selectedSection = ref<'dashboard' | 'teams' | 'codes' | 'assignments' | 'review' | 'notifications'>('dashboard')
+const teams = ref<any[]>([])
+const activeCode = ref('482913')
+const recentCodes = ref<any[]>([
+  { code: '482913', used: '3 joined', expired: false },
+  { code: '291748', used: '5 joined', expired: true },
+  { code: '837402', used: '1 joined', expired: true },
+])
+const createTeamName = ref('')
+const createTeamError = ref('')
+const createTeamSuccess = ref('')
+const codeMessage = ref('')
+const notifications = ref([
+  { id: '1', title: 'New Submission', message: 'Area In-Charge submitted a new evidence file.', type: 'info', createdAt: '2026-08-01T09:30:00Z' },
+  { id: '2', title: 'Team Update', message: 'Criterion Team A added a member to their group.', type: 'success', createdAt: '2026-08-01T07:10:00Z' },
+  { id: '3', title: 'Missing Evidence', message: 'Research Output document requires your review.', type: 'warning', createdAt: '2026-07-31T16:45:00Z' },
+])
+const documents = ref([
+  { title: 'Mission & Vision Statement', incharge: 'M. Santos',    submitted: '1 hr ago' },
+  { title: 'Faculty Qualification Files', incharge: 'J. Cruz',      submitted: '3 hrs ago' },
+  { title: 'Research Output 2024',       incharge: 'R. Dela Cruz', submitted: 'Yesterday' },
+  { title: 'Lab Equipment Inventory',    incharge: 'J. Mendoza',   submitted: 'Yesterday' },
+  { title: 'Curriculum Map 2024–2025',   incharge: 'C. Torres',    submitted: '2 days ago' },
+])
+const areas = ref([
+  { num: '01', name: 'Mission & Vision',    incharge: 'M. Santos',    pct: 92, color: '#16a34a', status: 'Complete',     statusClass: 'as-complete' },
+  { num: '02', name: 'Faculty Profile',     incharge: 'J. Cruz',      pct: 78, color: '#2563eb', status: 'On Track',     statusClass: 'as-ontrack' },
+  { num: '03', name: 'Curriculum',          incharge: 'C. Torres',    pct: 61, color: '#d97706', status: 'In Progress',  statusClass: 'as-inprogress' },
+  { num: '04', name: 'Research & Dev.',     incharge: 'R. Dela Cruz', pct: 44, color: '#dc2626', status: 'At Risk',      statusClass: 'as-atrisk' },
+  { num: '05', name: 'Physical Facilities', incharge: 'J. Mendoza',   pct: 30, color: '#dc2626', status: 'At Risk',      statusClass: 'as-atrisk' },
+  { num: '06', name: 'Library Resources',   incharge: 'L. Flores',    pct: 85, color: '#0f766e', status: 'On Track',     statusClass: 'as-ontrack' },
+])
+const pipeline = ref([
+  { label: 'Faculty Upload',        sub: 'Evidence submitted by faculty',       done: true,  active: false },
+  { label: 'Area In-Charge Review', sub: 'Documents reviewed & forwarded',      done: true,  active: false },
+  { label: 'Program Chair Review',  sub: 'Your stage — approve or return docs', done: false, active: true },
+  { label: 'Dean Review',           sub: 'Pending your endorsement',            done: false, active: false },
+  { label: 'QA Officer Review',     sub: 'Compliance verification',             done: false, active: false },
+  { label: 'VPAA Final Review',     sub: 'Accreditation Ready',                 done: false, active: false },
+])
+
+const sectionLabel = computed(() => {
+  switch (selectedSection.value) {
+    case 'dashboard': return 'Program Chair Dashboard'
+    case 'teams': return 'Manage Teams'
+    case 'codes': return 'Invitation Codes'
+    case 'assignments': return 'Assign Areas'
+    case 'review': return 'Document Review'
+    case 'notifications': return 'Notifications'
+    default: return 'Program Chair Dashboard'
+  }
+})
+
+const completionRate = computed(() => {
+  if (!areas.value.length) return 0
+  const total = areas.value.reduce((sum, area) => sum + Number(area.pct || 0), 0)
+  return Math.round(total / areas.value.length)
+})
+
+const stats = computed(() => [
+  { label: 'Team Members',       value: String(teams.value.length * 3), icon: peopleOutline,      color: '#059669', bg: '#d1fae5' },
+  { label: 'Accreditation Areas', value: String(areas.value.length),    icon: folderOpenOutline,   color: '#2563eb', bg: '#dbeafe' },
+  { label: 'Pending Review',     value: '7',                        icon: hourglassOutline,    color: '#7c3aed', bg: '#ede9fe' },
+  { label: 'Compliance Rate',    value: `${completionRate.value}%`, icon: analyticsOutline,    color: '#d97706', bg: '#fef3c7' },
+  { label: 'Active Codes',       value: String(recentCodes.value.filter((code) => !code.expired).length), icon: keyOutline, color: '#0891b2', bg: '#e0f2fe' },
+  { label: 'Reports Ready',      value: '5',                        icon: barChartOutline,     color: '#db2777', bg: '#fce7f3' },
+])
+
+const activeNotificationCount = computed(() => notifications.value.length)
+
+const teamActions = [
+  'Create Team', 'Edit Team', 'Assign Area', 'Add Members', 'Remove Members',
+  'Generate Code', 'Send Invitation',
+]
 
 const handleLogout = async () => {
   await authStore.logout()
   router.replace('/login')
 }
 
-const activeCode = ref('482913')
-
-function regenCode() {
-  activeCode.value = String(Math.floor(100000 + Math.random() * 900000))
+const selectSection = (section: typeof selectedSection.value) => {
+  selectedSection.value = section
 }
 
-const stats = [
-  { label: 'Team Members',      value: '24',   icon: peopleOutline,        color: '#059669', bg: '#d1fae5' },
-  { label: 'Accreditation Areas',value: '8',   icon: folderOpenOutline,    color: '#2563eb', bg: '#dbeafe' },
-  { label: 'Pending Review',    value: '7',    icon: hourglassOutline,     color: '#7c3aed', bg: '#ede9fe' },
-  { label: 'Compliance Rate',   value: '67%',  icon: analyticsOutline,     color: '#d97706', bg: '#fef3c7' },
-  { label: 'Active Codes',      value: '2',    icon: keyOutline,           color: '#0891b2', bg: '#e0f2fe' },
-  { label: 'Reports Ready',     value: '5',    icon: barChartOutline,      color: '#db2777', bg: '#fce7f3' },
-]
+const fetchTeams = async () => {
+  try {
+    const response = await getTeams({ program_id: authStore.user?.programId })
+    teams.value = response.data || response || []
+  } catch (err: any) {
+    console.warn('Failed to load Program Chair teams', err)
+  }
+}
 
-const teamActions = [
-  'Create Team', 'Edit Team', 'Delete Team',
-  'Assign Area', 'Add Members', 'Remove Members',
-  'Generate Code', 'Send Invitation',
-]
+const handleTeamAction = (action: string) => {
+  switch (action) {
+    case 'Create Team':
+    case 'Generate Code':
+    case 'Send Invitation':
+      return selectSection('codes')
+    case 'Assign Area':
+      return selectSection('assignments')
+    case 'Edit Team':
+    case 'Add Members':
+    case 'Remove Members':
+      return selectSection('teams')
+    default:
+      return selectSection('dashboard')
+  }
+}
 
-const teams = [
-  { name: 'Criterion Team A', area: 'Criterion 1 – Mission', members: ['M. Santos','J. Cruz','A. Lim','R. Bautista'], status: 'Active',    statusClass: 'ts-active'   },
-  { name: 'Criterion Team B', area: 'Criterion 2 – Faculty', members: ['C. Torres','L. Flores'],                      status: 'Active',    statusClass: 'ts-active'   },
-  { name: 'Research Team',    area: 'Criterion 4 – Research',members: ['R. Dela Cruz','M. Garcia','S. Reyes'],        status: 'Behind',    statusClass: 'ts-behind'   },
-  { name: 'Facilities Team',  area: 'Criterion 5 – Facilities',members: ['J. Mendoza'],                               status: 'Incomplete',statusClass: 'ts-incomplete'},
-]
+const generateTeamCode = async () => {
+  createTeamError.value = ''
+  createTeamSuccess.value = ''
+  const name = createTeamName.value.trim() || `Team ${new Date().getTime()}`
 
-const documents = [
-  { title: 'Mission & Vision Statement', incharge: 'M. Santos',    submitted: '1 hr ago'  },
-  { title: 'Faculty Qualification Files',incharge: 'J. Cruz',      submitted: '3 hrs ago' },
-  { title: 'Research Output 2024',       incharge: 'R. Dela Cruz', submitted: 'Yesterday' },
-  { title: 'Lab Equipment Inventory',    incharge: 'J. Mendoza',   submitted: 'Yesterday' },
-  { title: 'Curriculum Map 2024–2025',   incharge: 'C. Torres',    submitted: '2 days ago'},
-]
+  if (!authStore.user?.programId) {
+    createTeamError.value = 'Program ID unavailable.'
+    return
+  }
 
-const recentCodes = [
-  { code: '482913', used: '3 joined', expired: false },
-  { code: '291748', used: '5 joined', expired: true  },
-  { code: '837402', used: '1 joined', expired: true  },
-]
+  try {
+    const response = await createTeam({ name, program_id: authStore.user.programId })
+    activeCode.value = response.data?.code || response.code || activeCode.value
+    recentCodes.value.unshift({ code: activeCode.value, used: '0 joined', expired: false })
+    createTeamSuccess.value = `Team created and code generated: ${activeCode.value}`
+    createTeamName.value = ''
+    codeMessage.value = 'Team created successfully.'
+    await fetchTeams()
+  } catch (err: any) {
+    createTeamError.value = err.response?.data?.message || 'Unable to generate team code.'
+  }
+}
 
-const areas = [
-  { num: '01', name: 'Mission & Vision',   incharge: 'M. Santos',    pct: 92, color: '#16a34a', status: 'Complete',    statusClass: 'as-complete'   },
-  { num: '02', name: 'Faculty Profile',    incharge: 'J. Cruz',      pct: 78, color: '#2563eb', status: 'On Track',    statusClass: 'as-ontrack'    },
-  { num: '03', name: 'Curriculum',         incharge: 'C. Torres',    pct: 61, color: '#d97706', status: 'In Progress', statusClass: 'as-inprogress' },
-  { num: '04', name: 'Research & Dev.',    incharge: 'R. Dela Cruz', pct: 44, color: '#dc2626', status: 'At Risk',     statusClass: 'as-atrisk'     },
-  { num: '05', name: 'Physical Facilities',incharge: 'J. Mendoza',   pct: 30, color: '#dc2626', status: 'At Risk',     statusClass: 'as-atrisk'     },
-  { num: '06', name: 'Library Resources',  incharge: 'L. Flores',    pct: 85, color: '#0f766e', status: 'On Track',    statusClass: 'as-ontrack'    },
-]
+const copyCode = async () => {
+  try {
+    await navigator.clipboard.writeText(activeCode.value)
+    codeMessage.value = 'Code copied to clipboard.'
+  } catch {
+    codeMessage.value = 'Copy failed. Please copy manually.'
+  }
+}
 
-const pipeline = [
-  { label: 'Faculty Upload',        sub: 'Evidence submitted by faculty',        done: true,  active: false },
-  { label: 'Area In-Charge Review', sub: 'Documents reviewed & forwarded',       done: true,  active: false },
-  { label: 'Program Chair Review',  sub: 'Your stage — approve or return docs',  done: false, active: true  },
-  { label: 'Dean Review',           sub: 'Pending your endorsement',             done: false, active: false },
-  { label: 'QA Officer Review',     sub: 'Compliance verification',              done: false, active: false },
-  { label: 'VPAA Final Review',     sub: 'Accreditation Ready',                  done: false, active: false },
-]
+const sendInvite = () => {
+  const body = encodeURIComponent(`You have been invited to join the accreditation team. Use this code: ${activeCode.value}`)
+  window.open(`mailto:?subject=Program Chair Invitation&body=${body}`, '_blank')
+}
+
+const regenCode = async () => {
+  activeCode.value = String(Math.floor(100000 + Math.random() * 900000))
+  codeMessage.value = 'Generated a temporary code — save or send it.'
+}
+
+const notificationItems = computed(() => notifications.value.map((notification) => ({
+  ...notification,
+  time: new Date(notification.createdAt).toLocaleString(),
+})))
+
+onMounted(async () => {
+  await fetchTeams()
+})
 </script>
 
 <style scoped>
@@ -486,7 +609,35 @@ const pipeline = [
   background: #ef4444; color: #fff;
   font-size: 0.65rem; padding: 0.1rem 0.4rem; border-radius: 999px;
 }
+.pc-call-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  border-radius: 0.9rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #064e3b;
+  margin-bottom: 1rem;
+}
 
+.pc-call-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 0.65rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #0f172a;
+  cursor: pointer;
+  margin-left: 0.75rem;
+}
+
+.pc-call-button ion-icon {
+  font-size: 1rem;
+}
 /* ── Stat Strip ── */
 .pc-stat-strip {
   display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.75rem;

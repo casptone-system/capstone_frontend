@@ -46,7 +46,6 @@
             </a>
           </nav>
           <ion-button color="danger" fill="solid" @click="handleLogout">
-          <ion-icon :icon="logOutOutline" />
           Logout
         </ion-button>
 
@@ -86,6 +85,11 @@
             </div>
           </header>
 
+          <div v-if="callMessage" class="sa-call-banner">
+            <div>{{ callMessage }}</div>
+            <button v-if="activeCall" class="sa-btn sa-btn-ghost" @click="endCall">End Call</button>
+          </div>
+
           <!-- Stat Strip -->
           <section class="sa-stat-strip">
             <div class="sa-stat" v-for="stat in stats" :key="stat.label">
@@ -124,7 +128,7 @@
                 </div>
                 <div class="sa-user-table">
                   <div class="sa-table-header">
-                    <span>User</span><span>Role</span><span>Status</span><span>Last Active</span>
+                    <span>User</span><span>Role</span><span>Status</span><span>Last Active</span><span>Action</span>
                   </div>
                   <div class="sa-table-row" v-for="user in recentUsers" :key="user.name">
                     <span class="sa-user-cell">
@@ -133,6 +137,9 @@
                     <span class="sa-role-tag">{{ user.role }}</span>
                     <span :class="['sa-status', user.status === 'Active' ? 'active' : 'inactive']">{{ user.status }}</span>
                     <span class="sa-muted">{{ user.last }}</span>
+                    <button class="sa-call-button" @click="callUser(user)">
+                      <ion-icon :icon="callOutline" />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -244,13 +251,16 @@ import {
   gridOutline, peopleOutline, shieldCheckmarkOutline, serverOutline,
   mailOutline, lockClosedOutline, cloudOutline, barChartOutline,
   documentTextOutline, notificationsOutline, addOutline, settingsOutline,
-  alertCircleOutline, peopleCircleOutline, checkmarkCircleOutline
+  alertCircleOutline, peopleCircleOutline, checkmarkCircleOutline, callOutline
 } from 'ionicons/icons'
 
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
+import { useUserCalls } from '@/shared/composables/useUserCalls'
+
 const authStore = useAuthStore()
 const router = useRouter()
+const { activeCall, callMessage, callUser, endCall } = useUserCalls()
 
 const handleLogout = async () => {
   await authStore.logout()
@@ -403,7 +413,7 @@ const alerts = [
 
 .sa-admin-chip { display: flex; align-items: center; gap: 0.6rem; padding: 0 0.25rem; }
 
-.sa-avatar {
+/* .sa-avatar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -415,7 +425,7 @@ const alerts = [
   font-size: 0.7rem;
   font-weight: 700;
   flex-shrink: 0;
-}
+} */
 
 .sa-admin-name { margin: 0; font-size: 0.8rem; color: #f1f5f9; font-weight: 600; }
 .sa-admin-role { margin: 0; font-size: 0.7rem; color: #64748b; }
@@ -595,7 +605,7 @@ const alerts = [
 
 .sa-table-header {
   display: grid;
-  grid-template-columns: 2fr 1.5fr 1fr 1.2fr;
+  grid-template-columns: 2fr 1.5fr 1fr 1.1fr 0.9fr;
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -606,7 +616,7 @@ const alerts = [
 
 .sa-table-row {
   display: grid;
-  grid-template-columns: 2fr 1.5fr 1fr 1.2fr;
+  grid-template-columns: 2fr 1.5fr 1fr 1.1fr 0.9fr;
   align-items: center;
   padding: 0.6rem 0;
   border-bottom: 1px solid #f8fafc;
@@ -616,6 +626,22 @@ const alerts = [
 
 .sa-user-cell { display: flex; align-items: center; gap: 0.5rem; font-weight: 600; }
 
+.sa-call-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 0.65rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+.sa-call-button ion-icon {
+  font-size: 1rem;
+}
 .sa-mini-avatar {
   width: 24px;
   height: 24px;
@@ -658,6 +684,7 @@ const alerts = [
 .sa-audit-body { flex: 1; }
 .sa-audit-action { margin: 0; font-size: 0.82rem; font-weight: 600; color: #0f172a; }
 .sa-audit-meta   { margin: 0; font-size: 0.72rem; color: #94a3b8; }
+
 .sa-audit-tag {
   font-size: 0.68rem;
   padding: 0.15rem 0.5rem;
@@ -735,4 +762,32 @@ const alerts = [
 
 .sa-alert-item p { margin: 0; }
 .sa-alert-item ion-icon { font-size: 1rem; flex-shrink: 0; }
-</style>
+.sa-call-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  border-radius: 0.85rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #064e3b;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.sa-call-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 0.65rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+.sa-call-button ion-icon {
+  font-size: 1rem;
+}</style>

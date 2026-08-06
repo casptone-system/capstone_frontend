@@ -5,10 +5,12 @@ export interface User {
   id: string
   name: string
   email: string
+  teamId?: string
   role: UserRole
   institution: string
   avatar?: string
   createdAt?: string
+  programId?: string
 }
 
 // Programs
@@ -21,6 +23,14 @@ export interface Program {
   chair?: string
   accreditationStatus?: string
   complianceScore?: number
+}
+
+export interface Team {
+  id: string
+  name: string
+  code: string
+  programId: string
+  program?: Program
 }
 
 // Reports
@@ -47,6 +57,7 @@ export interface AppDocument {
   fileSize?: number
   version: number
   status: 'pending' | 'approved' | 'rejected' | 'revision'
+  downloadUrl?: string
 }
 
 // Submissions
@@ -173,6 +184,17 @@ export interface NotificationMessage {
   type: 'info' | 'warning' | 'error' | 'success'
   read: boolean
   createdAt: string
+}
+
+export interface DashboardSummary {
+  totalPrograms: number
+  totalAreas: number
+  totalEvidence: number
+  totalCycles: number
+  compliancePercent: number
+  readinessPercent: number
+  pendingReviews: number
+  overdueTasks: number
 }
 
 // ✅ Added missing DashboardMetrics type

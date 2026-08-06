@@ -83,6 +83,11 @@
             </div>
           </header>
 
+          <div v-if="callMessage" class="vpaa-call-banner">
+            <div>{{ callMessage }}</div>
+            <button class="vpaa-btn vpaa-btn-ghost" v-if="activeCall" @click="endCall">End Call</button>
+          </div>
+
           <!-- Stat Strip -->
           <section class="vpaa-stat-strip">
             <div class="vpaa-stat" v-for="stat in stats" :key="stat.label">
@@ -157,6 +162,9 @@
                     <span class="vpaa-muted">{{ doc.qaOfficer }}</span>
                     <span class="vpaa-muted">{{ doc.submitted }}</span>
                     <div class="vpaa-action-btns">
+                      <button class="vpaa-call-button" @click="callUser({ name: doc.qaOfficer, role: 'QA Officer' })">
+                        <ion-icon :icon="callOutline" />
+                      </button>
                       <button class="vpaa-approve-btn">Endorse</button>
                       <button class="vpaa-return-btn">Return</button>
                     </div>
@@ -268,16 +276,18 @@ import {
   gridOutline, shieldCheckmarkOutline, documentTextOutline, alertCircleOutline,
   timeOutline, checkmarkDoneOutline, chatbubblesOutline, barChartOutline,
   notificationsOutline, documentOutline, gitMergeOutline, checkmarkCircleOutline,
-  closeCircleOutline, warningOutline, businessOutline, ribbonOutline, logOutOutline,
+  closeCircleOutline, warningOutline, businessOutline, ribbonOutline, logOutOutline, callOutline,
 } from 'ionicons/icons'
 
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
+import { useUserCalls } from '@/shared/composables/useUserCalls'
 
 // defineEmits<{ (e: 'open-report', title: string): void }>()
 
 const authStore = useAuthStore()
 const router = useRouter()
+const { activeCall, callMessage, callUser, endCall } = useUserCalls()
 
 const handleLogout = async () => {
   await authStore.logout()
@@ -510,6 +520,36 @@ const stats = computed(() => [
 .vpaa-card-sub   { margin: 0.1rem 0 0; font-size: 0.78rem; color: #64748b; }
 
 .vpaa-link-btn { background: none; border: none; cursor: pointer; font-size: 0.78rem; color: #0d9488; font-weight: 600; white-space: nowrap; }
+
+.vpaa-call-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  border-radius: 0.9rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #064e3b;
+  margin-bottom: 1rem;
+}
+
+.vpaa-call-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 0.65rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #0f172a;
+  cursor: pointer;
+  margin-right: 0.5rem;
+}
+
+.vpaa-call-button ion-icon {
+  font-size: 1rem;
+}
 
 .vpaa-urgent-pill {
   background: #fee2e2; color: #dc2626;

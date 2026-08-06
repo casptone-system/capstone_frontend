@@ -58,7 +58,7 @@ import { IonPage, IonContent, IonSkeletonText, IonButton, IonIcon } from '@ionic
 import { documentTextOutline, folderOpenOutline, checkmarkDoneOutline, hourglassOutline, logOutOutline } from 'ionicons/icons'
 import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import JoinTeam from '@/views/JoinTeam.vue'
+import JoinTeam from '@/views/FACULTY/JoinTeam.vue'
 import { useDashboardStore } from '@/stores/dashboardStore'
 import { useAuthStore } from '@/stores/authStore'
 import { getRoleRedirectPath } from '@/lib/roleRedirects'

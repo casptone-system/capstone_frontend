@@ -87,6 +87,11 @@
             </div>
           </header>
 
+          <div v-if="callMessage" class="qa-call-banner">
+            <div>{{ callMessage }}</div>
+            <button class="qa-btn qa-btn-ghost" v-if="activeCall" @click="endCall">End Call</button>
+          </div>
+
           <!-- Stat Strip -->
           <section class="qa-stat-strip">
             <div class="qa-stat" v-for="stat in stats" :key="stat.label">
@@ -252,6 +257,9 @@
                     <div class="qa-coord-right">
                       <span class="qa-coord-flag">{{ c.flag }}</span>
                       <p class="qa-coord-time">{{ c.time }}</p>
+                      <button class="qa-call-button" @click="callUser({ name: c.name, role: c.role })">
+                        <ion-icon :icon="callOutline" />
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -272,14 +280,16 @@ import {
   gridOutline, shieldCheckmarkOutline, documentTextOutline, alertCircleOutline,
   timeOutline, checkmarkDoneOutline, chatbubblesOutline, barChartOutline,
   notificationsOutline, documentOutline, gitMergeOutline, checkmarkCircleOutline,
-  closeCircleOutline, warningOutline, 
+  closeCircleOutline, warningOutline, logOutOutline, callOutline
 //   hourglassOutline
 } from 'ionicons/icons'
 
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
+import { useUserCalls } from '@/shared/composables/useUserCalls'
 const authStore = useAuthStore()
 const router = useRouter()
+const { activeCall, callMessage, callUser, endCall } = useUserCalls()
 
 const handleLogout = async () => {
   await authStore.logout()
@@ -358,6 +368,7 @@ const coordination = [
   padding: 1.25rem 0.75rem;
   overflow-y: auto;
 }
+
 
 .qa-brand {
   display: flex; align-items: center; gap: 0.6rem;
@@ -505,6 +516,36 @@ const coordination = [
 .qa-card-sub   { margin: 0.1rem 0 0; font-size: 0.78rem; color: #64748b; }
 
 .qa-link-btn { background: none; border: none; cursor: pointer; font-size: 0.78rem; color: #0d9488; font-weight: 600; white-space: nowrap; }
+
+.qa-call-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  border-radius: 0.9rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #064e3b;
+  margin-bottom: 1rem;
+}
+
+.qa-call-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 0.65rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #0f172a;
+  cursor: pointer;
+  margin-left: 0.75rem;
+}
+
+.qa-call-button ion-icon {
+  font-size: 1rem;
+}
 
 .qa-urgent-pill {
   background: #fee2e2; color: #dc2626;
