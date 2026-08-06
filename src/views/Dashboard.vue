@@ -1,102 +1,67 @@
 <template>
   <ion-page>
     <ion-content fullscreen>
-
-      <!-- HEADER -->
       <div class="page-header">
         <div>
           <h1>{{ pageTitle }}</h1>
           <p>{{ pageDescription }}</p>
         </div>
+        <ion-button color="danger" fill="solid" @click="handleLogout">
+          <ion-icon :icon="logOutOutline" />
+          Logout
+        </ion-button>
       </div>
 
-      <!-- LOADING -->
       <div v-if="dashboardStore.isLoading" class="loading">
         <ion-skeleton-text animated style="height:30px"></ion-skeleton-text>
         <ion-skeleton-text animated style="height:120px"></ion-skeleton-text>
       </div>
 
-      <!-- ERROR -->
       <div v-else-if="dashboardStore.error" class="error-box">
         {{ dashboardStore.error }}
       </div>
 
-      <!-- DASHBOARD -->
       <div v-else>
-
-        <!-- Show join-team inline for users without group or if explicitly asked -->
         <div v-if="showJoinInline">
           <JoinTeam />
         </div>
 
-        <div v-else class="stats-grid">
+        <div v-else>
+          <div class="role-banner">
+            <div>
+              <p class="eyebrow">Current role</p>
+              <h2>{{ roleSummary.title }}</h2>
+              <p>{{ roleSummary.description }}</p>
+            </div>
+            <div class="role-actions">
+              <ion-button fill="outline" @click="goToRoleHome">Open role workspace</ion-button>
+              <ion-button v-if="isSuperAdmin" fill="clear" @click="goTo('/users')">Manage users</ion-button>
+            </div>
+          </div>
 
-          <StatCard
-            title="Programs"
-            :value="dashboardStore.stats.totalPrograms"
-            :icon="documentTextOutline"
-          />
+          <div class="stats-grid">
+            <StatCard title="Programs" :value="dashboardStore.stats.totalPrograms" :icon="documentTextOutline" />
+            <StatCard title="Areas" :value="dashboardStore.stats.totalAreas" :icon="folderOpenOutline" />
+            <StatCard title="Compliance" :value="dashboardStore.stats.complianceScore + '%'" :icon="checkmarkDoneOutline" />
+            <StatCard title="Pending" :value="dashboardStore.stats.pendingSubmissions" :icon="hourglassOutline" />
+          </div>
 
-          <StatCard
-            title="Areas"
-            :value="dashboardStore.stats.totalAreas"
-            :icon="folderOpenOutline"
-          />
-
-          <StatCard
-            title="Compliance"
-            :value="dashboardStore.stats.complianceScore + '%'"
-            :icon="checkmarkDoneOutline"
-          />
-
-          <StatCard
-            title="Pending"
-            :value="dashboardStore.stats.pendingSubmissions"
-            :icon="hourglassOutline"
-          />
-
+          <FacultyQuickActions />
         </div>
-
-        <FacultyQuickActions />
-
       </div>
-        <ion-button
-    color="danger"
-    fill="solid"
-    @click="handleLogout"
-  >
-     <ion-icon :icon="logOutOutline"></ion-icon>
-    Logout
-  </ion-button>
-
     </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import {
-IonPage,
-IonContent,
-IonSkeletonText,
-IonButton,
-IonIcon
-} from '@ionic/vue'
-
-import {
-documentTextOutline,
-folderOpenOutline,
-checkmarkDoneOutline,
-hourglassOutline,
-logOutOutline
-} from 'ionicons/icons'
-
+import { IonPage, IonContent, IonSkeletonText, IonButton, IonIcon } from '@ionic/vue'
+import { documentTextOutline, folderOpenOutline, checkmarkDoneOutline, hourglassOutline, logOutOutline } from 'ionicons/icons'
 import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import JoinTeam from '@/views/JoinTeam.vue'
-
 import { useDashboardStore } from '@/stores/dashboardStore'
 import { useAuthStore } from '@/stores/authStore'
-
+import { getRoleRedirectPath } from '@/lib/roleRedirects'
 import FacultyQuickActions from '@/modules/faculty/components/FacultyQuickActions.vue'
 import StatCard from '@/components/StatCard.vue'
 
@@ -104,39 +69,42 @@ const dashboardStore = useDashboardStore()
 const authStore = useAuthStore()
 const route = useRoute()
 const router = useRouter()
+
+const roleSummary = computed(() => {
+  const role = String(authStore.userRole || '')
+  switch (role) {
+    case 'super-admin':
+      return { title: 'Super Administrator workspace', description: 'You can manage users, teams, compliance, and institutional oversight from one place.' }
+    case 'dean':
+      return { title: 'Dean leadership view', description: 'Review program health, priorities, and approvals without leaving the dashboard.' }
+    case 'program-chair':
+      return { title: 'Program Chair workspace', description: 'Coordinate curriculum evidence, tasks, and team follow-through.' }
+    case 'faculty':
+      return { title: 'Faculty operations view', description: 'Track required tasks, documents, and submission progress.' }
+    case 'qa':
+      return { title: 'QA review workspace', description: 'Inspect quality checks and monitor review readiness.' }
+    case 'vpaa':
+      return { title: 'VPAA oversight view', description: 'Focus on executive-level reporting and strategic monitoring.' }
+    default:
+      return { title: 'Role-based dashboard', description: 'Your workspace will adapt as soon as your role is detected.' }
+  }
+})
+
 const pageTitle = computed(() => {
   const role = String(authStore.userRole || '')
-
   switch (role) {
-
-case 'super-admin':
-return 'Super Administrator Dashboard'
-
-case 'dean':
-return 'Dean Dashboard'
-
-case 'program-chair':
-return 'Program Chair Dashboard'
-
-case 'faculty':
-return 'Faculty Dashboard'
-
-case 'qa':
-return 'QA Dashboard'
-
-case 'vpaa':
-return 'VPAA Dashboard'
-
-default:
-return 'Dashboard'
-
-}
-
+    case 'super-admin': return 'Super Administrator Dashboard'
+    case 'dean': return 'Dean Dashboard'
+    case 'program-chair': return 'Program Chair Dashboard'
+    case 'faculty': return 'Faculty Dashboard'
+    case 'qa': return 'QA Dashboard'
+    case 'vpaa': return 'VPAA Dashboard'
+    default: return 'Dashboard'
+  }
 })
 
-const pageDescription = computed(() => {
-return 'Welcome back.'
-})
+const pageDescription = computed(() => 'Welcome back. Your dashboard is tailored to your access level.')
+const isSuperAdmin = computed(() => authStore.userRole === 'super-admin' || authStore.userRole === 'superadministrator' || authStore.userRole === 'admin')
 
 onMounted(async () => {
   await dashboardStore.fetchDashboardStats()
@@ -147,6 +115,13 @@ const showJoinInline = computed(() => {
   return !authStore.hasGroup
 })
 
+const goToRoleHome = () => {
+  const targetRoute = getRoleRedirectPath(authStore.userRole)
+  if (targetRoute) router.push(targetRoute)
+}
+
+const goTo = (path: string) => router.push(path)
+
 const handleLogout = async () => {
   await authStore.logout()
   router.replace('/login')
@@ -155,17 +130,13 @@ const handleLogout = async () => {
 
 
 <style scoped>
-.dashboard-page {
-  display: grid;
-  gap: var(--spacing-2xl);
-}
-
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: var(--spacing-lg);
   color: rgb(243, 243, 243);
+  margin-bottom: 1rem;
 }
 
 .page-header h1 {
@@ -175,113 +146,24 @@ const handleLogout = async () => {
   color: rgb(243, 243, 243);
 }
 
-.page-description {
-  margin: var(--spacing-sm) 0 0;
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-}
-
-.header-actions {
-  display: flex;
-  gap: var(--spacing-md);
-}
-
-.stats-section,
-.chart-section,
-.activity-section {
-  display: grid;
-  gap: var(--spacing-lg);
-}
-
-.section-title {
-  margin: 0;
-  font-size: var(--text-2xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text);
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: var(--spacing-lg);
-}
-
-.card-header-content {
+.role-banner {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-}
-
-.card-header-content h3 {
-  margin: 0 0 var(--spacing-xs);
-  font-size: var(--text-lg);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text);
-}
-
-.header-actions-inline {
-  display: flex;
-  gap: var(--spacing-md);
-}
-
-.btn-icon {
-  background: none;
-  border: none;
-  font-size: var(--text-lg);
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  padding: var(--spacing-sm);
-  border-radius: var(--radius-lg);
-  transition: all var(--transition-base);
-}
-
-.btn-icon:hover {
-  background-color: var(--color-gray-100);
-  color: var(--color-primary);
-}
-
-.btn-icon:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-}
-
-.chart-container {
-  position: relative;
-  height: 320px;
-  display: flex;
+  gap: 1rem;
   align-items: center;
-  justify-content: center;
+  padding: 1rem 1.1rem;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #e2e8f0;
+  margin-bottom: 1rem;
 }
 
-.activity-list {
-  display: grid;
-  gap: var(--spacing-lg);
-}
+.eyebrow { margin: 0 0 0.25rem; color: #64748b; font-size: 0.73rem; letter-spacing: 0.24em; text-transform: uppercase; }
+.role-banner h2 { margin: 0; color: #0f172a; font-size: 1.1rem; }
+.role-banner p { margin: 0.3rem 0 0; color: #475569; }
+.role-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--spacing-lg); }
 
-.activity-item {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-lg);
-  padding: var(--spacing-lg);
-  border-radius: var(--radius-xl);
-  background-color: var(--color-surface-alt);
-  transition: all var(--transition-base);
-}
-
-.activity-item:hover {
-  background-color: var(--color-gray-50);
-}
-
-.activity-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-lg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--text-xl);
-  color: var(--color-primary);
-}
 
 .activity-details {
   flex: 1;

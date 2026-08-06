@@ -9,12 +9,12 @@ const ForgotPassword = () => import('@/views/ForgotPassword.vue')
 
 const DashboardShell = () => import(/* webpackChunkName: "dashboard-shell" */ '@/views/DashboardShell.vue')
 const Dashboard = () => import(/* webpackChunkName: "dashboard-default" */ '@/views/Dashboard.vue')
-const DashboardSuperAdmin = () => import(/* webpackChunkName: "dashboard-superadmin", webpackPrefetch: true */ '@/views/dashboards/SuperAdminDashboard.vue')
-const DashboardDean = () => import(/* webpackChunkName: "dashboard-dean", webpackPrefetch: true */ '@/views/dashboards/DeanDashboard.vue')
-const DashboardProgramChair = () => import(/* webpackChunkName: "dashboard-programchair", webpackPrefetch: true */ '@/views/dashboards/ProgramChairDashboard.vue')
-const DashboardFaculty = () => import(/* webpackChunkName: "dashboard-faculty", webpackPrefetch: true */ '@/views/dashboards/FacultyDashboard.vue')
-const DashboardQA = () => import(/* webpackChunkName: "dashboard-qa", webpackPrefetch: true */ '@/views/dashboards/QADashboard.vue')
-const DashboardVPAA = () => import(/* webpackChunkName: "dashboard-vpaa", webpackPrefetch: true */ '@/views/dashboards/VPaaDashboard.vue')
+const DashboardSuperAdmin = () => import(/* webpackChunkName: "dashboard-superadmin", webpackPrefetch: true */ '@/views/SUPERADMIN/SuperAdminDashboard.vue')
+const DashboardDean = () => import(/* webpackChunkName: "dashboard-dean", webpackPrefetch: true */ '@/views/DEAN/DeanDashboard.vue')
+const DashboardProgramChair = () => import(/* webpackChunkName: "dashboard-programchair", webpackPrefetch: true */ '@/views/PROGRAMCHAIR/ProgramChairDashboard.vue')
+const DashboardFaculty = () => import(/* webpackChunkName: "dashboard-faculty", webpackPrefetch: true */ '@/views/FACULTY/FacultyDashboard.vue')
+const DashboardQA = () => import(/* webpackChunkName: "dashboard-qa", webpackPrefetch: true */ '@/views/QA/QADashboard.vue')
+const DashboardVPAA = () => import(/* webpackChunkName: "dashboard-vpaa", webpackPrefetch: true */ '@/views/VPAA/VPaaDashboard.vue')
 const Documents = () => import('@/views/Documents.vue')
 const Upload = () => import('@/views/Upload.vue')
 const Reports = () => import('@/views/Reports.vue')
@@ -28,6 +28,14 @@ const AccreditationList = () => import('@/views/AccreditationList.vue')
 const AccreditationDetail = () => import('@/views/AccreditationDetail.vue')
 const AccreditationForm = () => import('@/views/AccreditationForm.vue')
 const NewUserLanding = () => import('@/views/NewUserLanding.vue')
+
+const CRMOverview = () => import('@/views/CRM/CRMOverview.vue')
+const ClientsPage = () => import('@/views/CRM/ClientsPage.vue')
+const ProjectsPage = () => import('@/views/CRM/ProjectsPage.vue')
+const TasksPage = () => import('@/views/CRM/TasksPage.vue')
+const DocumentsPage = () => import('@/views/CRM/DocumentsPage.vue')
+const ReviewsPage = () => import('@/views/CRM/ReviewsPage.vue')
+const ReportsPage = () => import('@/views/CRM/ReportsPage.vue')
 
 const routes = [
   {
@@ -84,7 +92,7 @@ const routes = [
   {
     path: '/users',
     component: Users,
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, allowedRoles: ['super-admin', 'admin'] },
   },
   {
     path: '/audit',
@@ -109,6 +117,41 @@ const routes = [
   {
     path: '/new-user',
     component: NewUserLanding,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/crm',
+    component: CRMOverview,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/crm/clients',
+    component: ClientsPage,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/crm/projects',
+    component: ProjectsPage,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/crm/tasks',
+    component: TasksPage,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/crm/documents',
+    component: DocumentsPage,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/crm/reviews',
+    component: ReviewsPage,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/crm/reports',
+    component: ReportsPage,
     meta: { requiresAuth: true },
   },
   {
@@ -159,6 +202,10 @@ router.beforeEach(async (to, from, next) => {
     authStore.isAuthenticated &&
     ['/login', '/register', '/forgot-password'].includes(to.path)
   ) {
+    return next(getRoleRedirectPath(authStore.userRole))
+  }
+
+  if (to.path === '/dashboard' || to.path === '/dashboard/') {
     return next(getRoleRedirectPath(authStore.userRole))
   }
 

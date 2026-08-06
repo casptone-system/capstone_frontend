@@ -246,4 +246,52 @@ export const getReports = async () => {
   return response.data
 }
 
+/* ===========================
+   REVIEWS
+=========================== */
+
+export const getReviews = async () => {
+  const response = await api.get('/reviews')
+  return response.data
+}
+
+export const createReview = async (data: any) => {
+  const response = await api.post('/reviews', data)
+  return response.data
+}
+
+export const updateReview = async (id: number | string, data: any) => {
+  const response = await api.put(`/reviews/${id}`, data)
+  return response.data
+}
+
+export const updateDocument = async (id: number | string, data: any) => {
+  const response = await api.put(`/documents/${id}`, data)
+  return response.data
+}
+
+/* ===========================
+   USERS
+=========================== */
+
+export const getUsers = async () => {
+  const response = await api.get('/users')
+  return response.data
+}
+
+export const createUser = async (data: any) => {
+  const response = await api.post('/users', data)
+  return response.data
+}
+
+export const updateUser = async (id: number | string, data: any) => {
+  const response = await api.put(`/users/${id}`, data)
+  return response.data
+}
+
+export const deleteUser = async (id: number | string) => {
+  const response = await api.delete(`/users/${id}`)
+  return response.data
+}
+
 export default api
