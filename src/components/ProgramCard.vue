@@ -51,7 +51,7 @@ import {
   IonBadge,
 } from '@ionic/vue'
 import { documentTextOutline, peopleOutline } from 'ionicons/icons'
-import type { Program } from '@/types'
+import type { Program } from '@/lib'
 
 defineProps<{
   program: Program

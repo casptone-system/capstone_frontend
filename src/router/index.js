@@ -6,10 +6,16 @@ import { getRoleRedirectPath, normalizeRole } from '@/lib/roleRedirects'
 const LoginPage = () => import('@/views/login/LoginPage.vue')
 const RegisterPage = () => import('@/views/login/RegisterPage.vue')
 const ForgotPassword = () => import('@/views/login/ForgotPassword.vue')
+const ResetPassword = () => import('@/views/login/ResetPassword.vue')
+const EmailVerified = () => import('@/views/login/EmailVerified.vue')
 
 const Dashboard = () => import(/* webpackChunkName: "dashboard-default" */ '@/views/settings/Dashboard.vue')
 const DashboardShell = () => import(/* webpackChunkName: "dashboard-shell" */ '@/views/settings/DashboardShell.vue')
 const DashboardSuperAdmin = () => import(/* webpackChunkName: "dashboard-superadmin", webpackPrefetch: true */ '@/views/SUPERADMIN/SuperAdminDashboard.vue')
+const UserManagementPage = () => import('@/views/SUPERADMIN/UserManagementPage.vue')
+const RolePermissionPage = () => import('@/views/SUPERADMIN/RolePermissionPage.vue')
+const AuditActivityPage = () => import('@/views/SUPERADMIN/AuditActivityPage.vue')
+const SystemSettingsPage = () => import('@/views/SUPERADMIN/SystemSettingsPage.vue')
 const DashboardDean = () => import(/* webpackChunkName: "dashboard-dean", webpackPrefetch: true */ '@/views/DEAN/DeanDashboard.vue')
 const DashboardProgramChair = () => import(/* webpackChunkName: "dashboard-programchair", webpackPrefetch: true */ '@/views/PROGRAMCHAIR/ProgramChairDashboard.vue')
 const DashboardFaculty = () => import(/* webpackChunkName: "dashboard-faculty", webpackPrefetch: true */ '@/views/FACULTY/FacultyDashboard.vue')
@@ -62,7 +68,19 @@ const routes = [
     meta: { requiresAuth: false },
   },
   {
-    path: '/dashboard',
+    path: '/reset-password',
+    name: 'reset-password',
+    component: ResetPassword,
+    meta: { requiresAuth: false },
+  },
+  {
+    path: '/email-verified',
+    name: 'email-verified',
+    component: EmailVerified,
+    meta: { requiresAuth: false },
+  },
+  {
+    path: '/user/dashboard',
     component: DashboardShell,
     meta: { requiresAuth: true },
     children: [
@@ -75,7 +93,7 @@ const routes = [
       { path: 'vpaa', name: 'dashboard-vpaa', component: DashboardVPAA },
     ],
   },
-  
+
   {
     path: '/reports',
     component: Reports,
@@ -84,6 +102,26 @@ const routes = [
   {
     path: '/users',
     component: Users,
+    meta: { requiresAuth: true, allowedRoles: ['super-admin', 'admin'] },
+  },
+  {
+    path: '/superadmin/users',
+    component: UserManagementPage,
+    meta: { requiresAuth: true, allowedRoles: ['super-admin', 'admin'] },
+  },
+  {
+    path: '/superadmin/roles',
+    component: RolePermissionPage,
+    meta: { requiresAuth: true, allowedRoles: ['super-admin', 'admin'] },
+  },
+  {
+    path: '/superadmin/activity',
+    component: AuditActivityPage,
+    meta: { requiresAuth: true, allowedRoles: ['super-admin', 'admin'] },
+  },
+  {
+    path: '/superadmin/settings',
+    component: SystemSettingsPage,
     meta: { requiresAuth: true, allowedRoles: ['super-admin', 'admin'] },
   },
   {
@@ -167,12 +205,12 @@ router.beforeEach(async (to, from, next) => {
   if (
     !to.meta.requiresAuth &&
     authStore.isAuthenticated &&
-    ['/login', '/register', '/forgot-password'].includes(to.path)
+    ['/login', '/register', '/forgot-password', '/reset-password', '/email-verified'].includes(to.path)
   ) {
     return next(getRoleRedirectPath(authStore.userRole))
   }
 
-  if (to.path === '/dashboard' || to.path === '/dashboard/') {
+  if (to.path === '/user/dashboard' || to.path === '/user/dashboard/') {
     return next(getRoleRedirectPath(authStore.userRole))
   }
 

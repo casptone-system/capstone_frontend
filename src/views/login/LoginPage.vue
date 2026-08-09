@@ -1,30 +1,30 @@
 <template>
-      <ion-page class="login-container">
-          <!-- LEFT: Institutional panel -->
-              <div class="brand-panel">
-                <div class="ledger-lines" aria-hidden="true"></div>
-                <div class="brand-content">
-                  <span class="eyebrow">Est. Registry &middot; Institutional Access</span>
-                  <h1 class="brand-title">
-                    Accreditation<br />
-                    <em>Management</em> System
-                  </h1>
-                  <p class="brand-copy">
-                    The system of record for institutional review, self-study
-                    submissions, and site-visit documentation.
-                  </p>
+  <ion-page class="login-container">
+    <!-- LEFT: Institutional panel -->
+    <div class="brand-panel">
+      <div class="ledger-lines" aria-hidden="true"></div>
+      <div class="brand-content">
+        <span class="eyebrow">Est. Registry &middot; Institutional Access</span>
+        <h1 class="brand-title">
+          Accreditation<br />
+          <em>Management</em> System
+        </h1>
+        <p class="brand-copy">
+          The system of record for institutional review, self-study
+          submissions, and site-visit documentation.
+        </p>
 
-                  <ul class="brand-facts" aria-hidden="true">
-                    <li><span class="fact-num">01</span>Standards &amp; Compliance</li>
-                    <li><span class="fact-num">02</span>Self-Study Workspace</li>
-                    <li><span class="fact-num">03</span>Site Visit Records</li>
-                  </ul>
-                </div>
+        <ul class="brand-facts" aria-hidden="true">
+          <li><span class="fact-num">01</span>Standards &amp; Compliance</li>
+          <li><span class="fact-num">02</span>Self-Study Workspace</li>
+          <li><span class="fact-num">03</span>Site Visit Records</li>
+        </ul>
+      </div>
 
 
-              <p class="brand-footer">ADAMS &copy; {{ new Date().getFullYear() }} &middot; Confidential institutional record</p>
-            </div>
-          
+      <p class="brand-footer">ADAMS &copy; {{ new Date().getFullYear() }} &middot; Confidential institutional record</p>
+    </div>
+
     <!-- RIGHT: Form panel -->
     <div class="form-panel">
       <div class="form-wrap">
@@ -32,113 +32,69 @@
         <h2 class="form-title">Sign in to your account</h2>
         <p class="form-subtitle">Use your institutional credentials to continue.</p>
 
-        <form @submit.prevent="handleLogin" class="login-form">
-          <div class="field-group">
-            <label class="field-label" for="email">Email Address <span class="req">*</span></label>
-            <div class="input-wrap" :class="{ error: emailError }">
-              <ion-icon name="mail-outline" class="input-icon" aria-hidden="true"></ion-icon>
-              <input
-                id="email"
-                v-model="email"
-                type="email"
-                placeholder="ISU email"
-                required
-                class="field-input"
-              />
-            </div>
-            <span v-if="emailError" class="field-error">{{ emailError }}</span>
-          </div>
-
-          <div class="field-group">
-            <label class="field-label" for="password">Password <span class="req">*</span></label>
-            <div class="input-wrap" :class="{ error: passwordError }">
-              <ion-icon name="lock-closed-outline" class="input-icon" aria-hidden="true"></ion-icon>
-              <input
-                id="password"
-                v-model="password"
-                type="password"
-                placeholder="••••••••"
-                required
-                class="field-input"
-              />
-            </div>
-            <span v-if="passwordError" class="field-error">{{ passwordError }}</span>
-          </div>
-
-          <div v-if="loginError" class="login-error" role="alert">
-            {{ loginError }}
-          </div>
-
-          <div v-if="showRegistrationNotice" class="login-success" role="status">
-            Registration completed. Please sign in to continue.
-          </div>
-
-          <div v-if="showExpiredNotice" class="login-success warning" role="status">
-            Your session expired for security reasons. Please sign in again to continue.
-          </div>
-
-          <div class="form-options">
-            <label class="checkbox">
-              <input v-model="rememberMe" type="checkbox" />
-              <span>Remember me</span>
+        <form v-if="!showCodeEntry" @submit.prevent="handleLogin" class="login-form">
+          <div class="field-group"> <label class="field-label" for="email"> Email Address <span class="req">*</span>
             </label>
-            <router-link to="/forgot-password" class="forgot-password">
-              Forgot password?
-            </router-link>
+            <div class="input-wrap" :class="{ error: emailError }"> <ion-icon name="mail-outline" class="input-icon"
+                aria-hidden="true" /> <input id="email" v-model.trim="email" type="email" placeholder="ISU email"
+                required autocomplete="email" class="field-input" /> </div> <span v-if="emailError" class="field-error">
+              {{ emailError }} </span>
           </div>
-
-          <app-button
-            variant="primary"
-            block
-            size="lg"
-            :loading="isLoading"
-            class="submit-btn"
-          >
-            Log In
-          </app-button>
-
-          <div class="alt-btn" @click="$router.push('/register')">
+          <div class="field-group"> <label class="field-label" for="password"> Password <span class="req">*</span>
+            </label>
+            <div class="input-wrap" :class="{ error: passwordError }"> <ion-icon name="lock-closed-outline"
+                class="input-icon" aria-hidden="true" /> <input id="password" v-model="password" type="password"
+                placeholder="••••••••" required autocomplete="current-password" class="field-input" /> </div> <span
+              v-if="passwordError" class="field-error"> {{ passwordError }} </span>
+          </div>
+          <div v-if="loginError" class="login-error" role="alert"> {{ loginError }} </div>
+          <div v-if="showRegistrationNotice" class="login-success" role="status"> Registration completed. We sent a
+            verification email to your address. Check your inbox and spam folder to verify your account before signing
+            in. </div>
+          <div v-if="showResetNotice" class="login-success" role="status"> Your password has been reset. Please sign in
+            with your new password. </div>
+          <div v-if="showExpiredNotice" class="login-success warning" role="status"> Your session expired for security
+            reasons. Please sign in again to continue. </div>
+          <div class="form-options"> <label class="checkbox"> <input v-model="rememberMe" type="checkbox" />
+              <span>Remember me</span> </label> 
+              <router-link to="/forgot-password" class="forgot-password"> Forgot
+              password? </router-link> </div> 
+              <app-button type="submit" variant="primary" block size="lg"
+            :loading="isLoading" :disabled="isLoading" class="submit-btn"> Log In </app-button> 
+            <div class="alt-btn" @click="$router.push('/register')">
             Create an account
           </div>
         </form>
 
-        <div class="social-divider">
-          <span class="divider-line"></span>
-          <span class="divider-text">or continue with</span>
-          <span class="divider-line"></span>
-        </div>
+        <form v-else @submit.prevent="handleVerifyCode" class="login-form">
+          <div class="field-group"> <label class="field-label" for="code"> Verification Code </label>
+            <div class="input-wrap" :class="{ error: codeError }"> <ion-icon name="key-outline" class="input-icon"
+                aria-hidden="true" /> <input id="code" ref="codeInputRef" v-model.trim="code" type="text" maxlength="6"
+                minlength="6" placeholder="6-digit code" class="field-input" inputmode="numeric"
+                autocomplete="one-time-code" aria-label="Verification code" :disabled="isLoading" /> </div> <span
+              v-if="codeError" class="field-error" role="alert"> {{ codeError }} </span>
+            <p class="field-hint"> A verification code was sent to <strong>{{ challengeEmail }}</strong>. </p>
+            <p class="field-hint"> Time remaining: <strong>{{ countdown }}s</strong> </p>
+            <div aria-live="polite" class="sr-only" role="status"> {{ announce }} </div>
+          </div> <app-button type="submit" variant="primary" block size="lg" :loading="isLoading"
+            :disabled="isLoading || code.length !== 6" class="submit-btn"> Verify Code </app-button> <button
+            type="button" class="alt-btn" :disabled="isLoading" @click="cancel2FA"> Back to sign in </button>
+          <div style=" margin-top: 8px; display: flex; flex-direction: column; gap: 8px; align-items: center; "> <button
+              type="button" class="alt-btn" :disabled="resendDisabled || countdown > 0 || isLoading"
+              @click="handleResend"> {{ resendDisabled ? 'Resending...' : 'Resend code' }} </button> <span
+              v-if="countdown > 0" class="field-hint"> You can resend in {{ countdown }}s </span> </div>
+        </form>
 
-        <div class="social-login-buttons">
-          <button
-            @click="handleGoogleLogin"
-            class="social-btn google-btn"
-            :disabled="isSocialLoading"
-          >
-            <img
-              src="https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png"
-              alt="Google"
-              width="18"
-              height="18"
-            />
-            <span>Google</span>
-          </button>
-          <button
-            @click="handleGithubLogin"
-            class="social-btn github-btn"
-            :disabled="isSocialLoading"
-          >
-            <img
-              src="https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/github/default.svg"
-              alt="GitHub"
-              width="18"
-              height="18"
-            />
-            <span>GitHub</span>
-          </button>
-        </div>
+        <div class="social-divider"> <span class="divider-line"></span> <span class="divider-text">or continue
+            with</span> <span class="divider-line"></span> </div>
+        <div class="social-login-buttons"> <button type="button" @click="handleGoogleLogin"
+            class="social-btn google-btn" :disabled="isSocialLoading || isLoading"> <ion-icon name="logo-google"
+              class="social-icon" aria-hidden="true" /> <span>Google</span> </button> <button type="button"
+            @click="handleGithubLogin" class="social-btn github-btn" :disabled="isSocialLoading || isLoading"> <ion-icon
+              name="logo-github" class="social-icon" aria-hidden="true" /> <span>GitHub</span> </button> </div>
       </div>
     </div>
-      </ion-page>
+  </ion-page>
 </template>
 
 <script setup lang="ts">
@@ -163,7 +119,19 @@ const loginError = ref('')
 const emailError = ref('')
 const passwordError = ref('')
 const showRegistrationNotice = ref(route.query.registered === '1')
+const showResetNotice = ref(route.query.reset === '1')
 const showExpiredNotice = ref(route.query.expired === '1')
+
+// 2FA challenge state
+const showCodeEntry = ref(false)
+const code = ref('')
+const codeError = ref('')
+const challengeEmail = ref('')
+const challengeExpires = ref(0)
+const countdown = ref(0)
+const resendDisabled = ref(false)
+const announce = ref('')
+const codeInputRef = ref<HTMLInputElement | null>(null)
 
 const getRedirectPath = () => {
   const redirect = route.query.redirect
@@ -191,14 +159,117 @@ const handleLogin = async () => {
 
   isLoading.value = true
   try {
-    await authStore.login(email.value.trim().toLowerCase(), password.value)
+    const resp = await authStore.login(email.value.trim().toLowerCase(), password.value, rememberMe.value)
+
+    // If backend returned a challenge (2FA), show code entry UI
+    const challenge = resp?.data
+    if (challenge?.challenge_token) {
+      challengeEmail.value = challenge.email || email.value.trim().toLowerCase()
+      challengeExpires.value = Number(challenge.expires_in) || 300
+      countdown.value = challengeExpires.value
+      showCodeEntry.value = true
+      // clear any previous code/errors
+      code.value = ''
+      codeError.value = ''
+      // start countdown timer
+      startCountdown()
+      announce.value = 'Verification code sent to your email.'
+      // autofocus handled by watcher
+      return
+    }
+
+    // Fallback: if token issued directly, proceed as before
     await router.replace(getRedirectPath())
   } catch (error: any) {
-    loginError.value = error.message || 'Login failed'
+    loginError.value =
+      error?.message ||
+      error?.response?.data?.message ||
+      error?.response?.data?.errors?.email?.[0] ||
+      error?.response?.data?.errors?.password?.[0] ||
+      'Login failed'
   } finally {
     isLoading.value = false
   }
 }
+
+const handleVerifyCode = async () => {
+  codeError.value = ''
+
+  const cleanCode = code.value.trim()
+
+ if (!/^\d{6}$/.test(cleanCode)) { 
+      codeError.value = 'Please enter the 6-digit verification code.' 
+      return 
+    }
+
+      try {
+        isLoading.value = true
+
+        await authStore.verifyTwoFactor(cleanCode)
+
+      showCodeEntry.value = false 
+      code.value = '' 
+      // Use the existing router/auth state after successful verification. 
+      if (authStore.user) { 
+        router.push('/dashboard') 
+      }
+    } catch (error: any) { 
+        codeError.value = error?.response?.data?.message || 
+        error?.message || 
+        'Invalid or expired verification code.' 
+      } finally { 
+        isLoading.value = false 
+      } 
+    }
+
+const startCountdown = () => {
+  clearInterval((startCountdown as any)._timer);
+  (startCountdown as any)._timer = setInterval(() => {
+    if (countdown.value > 0) {
+      countdown.value -= 1
+    } else {
+      clearInterval((startCountdown as any)._timer)
+    }
+  }, 1000)
+}
+
+const handleResend = async () => {
+  if (
+    resendDisabled.value || 
+    countdown.value > 0 ||
+    isLoading.value
+) {
+    return
+  }
+
+  try {
+    resendDisabled.value = true
+    codeError.value = ''
+
+    await authStore.resendTwoFactor()
+
+    code.value = ''
+    countdown.value = 60
+
+    startCountdown()
+  } catch (error: any) {
+    codeError.value =
+      error?.response?.data?.message ||
+      error?.message ||
+      'Unable to resend the verification code.'
+  } finally {
+    resendDisabled.value = false
+  }
+}
+
+
+import { watch, nextTick } from 'vue'
+watch(showCodeEntry, async (val) => {
+  if (val) {
+    await nextTick()
+    codeInputRef.value?.focus()
+  }
+})
 
 const handleGoogleLogin = async () => {
   loginError.value = ''
@@ -246,14 +317,14 @@ const handleGithubLogin = async () => {
   --font-display: 'Fraunces', 'Iowan Old Style', 'Georgia', serif;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
-   max-height: 100vh;
+  max-height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
 }
 
 /* ── LAYOUT ── */
 .login-container {
- display: grid;
+  display: grid;
   grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
   min-height: 100vh;
   background: var(--parchment);
@@ -277,13 +348,11 @@ const handleGithubLogin = async () => {
   inset: 0;
   pointer-events: none;
   opacity: 0.5;
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent 47px,
-    var(--hairline-on-ink) 47px,
-    var(--hairline-on-ink) 48px
-  );
+  background-image: repeating-linear-gradient(to bottom,
+      transparent 0,
+      transparent 47px,
+      var(--hairline-on-ink) 47px,
+      var(--hairline-on-ink) 48px);
   mask-image: linear-gradient(to bottom, transparent, black 15%, black 75%, transparent);
 }
 
@@ -398,12 +467,21 @@ const handleGithubLogin = async () => {
 }
 
 @keyframes stamp-in {
-  from { opacity: 0; transform: scale(1.3) rotate(-6deg); }
-  to   { opacity: 1; transform: scale(1)   rotate(0deg); }
+  from {
+    opacity: 0;
+    transform: scale(1.3) rotate(-6deg);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .login-logo { animation: none; }
+  .login-logo {
+    animation: none;
+  }
 }
 
 /* ── FORM HEADINGS ── */
@@ -443,7 +521,10 @@ const handleGithubLogin = async () => {
   letter-spacing: 0.03em;
 }
 
-.req { color: var(--crimson); margin-left: 2px; }
+.req {
+  color: var(--crimson);
+  margin-left: 2px;
+}
 
 .input-wrap {
   display: flex;
@@ -481,7 +562,9 @@ const handleGithubLogin = async () => {
   font-family: var(--font-body);
 }
 
-.field-input::placeholder { color: rgba(19, 31, 53, 0.3); }
+.field-input::placeholder {
+  color: rgba(19, 31, 53, 0.3);
+}
 
 /* ── ERROR ALERT ── */
 .login-error,
@@ -575,8 +658,15 @@ const handleGithubLogin = async () => {
   font-size: 0.85rem;
   transition: opacity 0.2s;
 }
-.forgot-password:hover { opacity: 0.7; }
-.forgot-password:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+.forgot-password:hover {
+  opacity: 0.7;
+}
+
+.forgot-password:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
 
 /* ── BUTTONS ── */
 .submit-btn {
@@ -604,13 +694,18 @@ const handleGithubLogin = async () => {
   user-select: none;
   transition: background 0.2s, color 0.2s, transform 0.2s, box-shadow 0.2s;
 }
+
 .alt-btn:hover {
   background: var(--ink);
   color: var(--parchment);
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(9, 73, 28, 0.22);
 }
-.alt-btn:active { transform: translateY(0); box-shadow: none; }
+
+.alt-btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
 
 /* ── SOCIAL ── */
 .social-divider {
@@ -657,14 +752,31 @@ const handleGithubLogin = async () => {
   font-family: var(--font-body);
   transition: all 0.2s ease;
 }
+
 .social-btn:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: 0 6px 14px rgba(19, 31, 53, 0.08);
 }
-.social-btn:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
-.social-btn:disabled { opacity: 0.55; cursor: not-allowed; }
-.google-btn:hover:not(:disabled) { border-color: #4285f4; color: #4285f4; }
-.github-btn:hover:not(:disabled) { border-color: #333; color: #333; }
+
+.social-btn:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
+.social-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.google-btn:hover:not(:disabled) {
+  border-color: #4285f4;
+  color: #4285f4;
+}
+
+.github-btn:hover:not(:disabled) {
+  border-color: #333;
+  color: #333;
+}
 
 /* ── RESPONSIVE ── */
 @media (max-width: 900px) {
@@ -696,7 +808,8 @@ const handleGithubLogin = async () => {
 
   .form-panel {
     padding: 2.5rem 1.75rem 3rem;
-    align-items: flex-start;   /* logo hugs top of form panel, not mid-float */
+    align-items: flex-start;
+    /* logo hugs top of form panel, not mid-float */
   }
 
   .login-logo {
@@ -706,10 +819,24 @@ const handleGithubLogin = async () => {
 }
 
 @media (max-width: 480px) {
-  .brand-panel { padding: 1.75rem 1.25rem 2rem; }
-  .brand-title { font-size: 1.7rem; }
-  .form-title  { font-size: 1.35rem; }
-  .form-panel  { padding: 2rem 1.25rem 2.5rem; }
-  .social-login-buttons { grid-template-columns: 1fr; }
+  .brand-panel {
+    padding: 1.75rem 1.25rem 2rem;
+  }
+
+  .brand-title {
+    font-size: 1.7rem;
+  }
+
+  .form-title {
+    font-size: 1.35rem;
+  }
+
+  .form-panel {
+    padding: 2rem 1.25rem 2.5rem;
+  }
+
+  .social-login-buttons {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

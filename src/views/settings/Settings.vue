@@ -148,7 +148,7 @@ import {
   IonMenuButton,
 } from '@ionic/vue'
 import { ref } from 'vue'
-import api from '@/services/api'
+import api from '@/lib/api'
 
 const isSaving = ref(false)
 const successMessage = ref('')

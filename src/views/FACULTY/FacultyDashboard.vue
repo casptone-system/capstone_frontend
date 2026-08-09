@@ -278,10 +278,11 @@
 import { computed, onMounted, ref } from 'vue'
 import { IonPage, IonContent, IonIcon } from '@ionic/vue'
 import { useRouter } from 'vue-router'
+import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@/stores/authStore'
-import { useFacultyDashboard } from '@/modules/faculty/useFacultyDashboard'
-import { useUserCalls } from '@/shared/composables/useUserCalls'
-import type { AppDocument } from '@/types'
+import { useUserCalls } from '@/lib/useUserCalls'
+import { useFacultyDashboardStore } from '@/stores/facultyDashboardStore'
+import type { AppDocument, NotificationMessage } from '@/lib'
 
 import {
   gridOutline, cloudUploadOutline, folderOpenOutline,
@@ -293,7 +294,7 @@ import {
 
 const router = useRouter()
 const authStore = useAuthStore()
-const facultyDashboard = useFacultyDashboard()
+const facultyDashboard = useFacultyDashboardStore()
 const {
   team,
 //   program,
@@ -307,6 +308,8 @@ const {
   selectedDocuments,
   pendingRevisions,
   unreadCount,
+} = storeToRefs(facultyDashboard)
+const {
   loadTeam,
   loadDocuments,
   loadNotifications,
@@ -376,9 +379,9 @@ const isNotificationsView = computed(() => selectedSection.value === 'notificati
 
 const stats = computed(() => {
   const uploaded = selectedDocuments.value.length
-  const approved = selectedDocuments.value.filter((doc) => doc.status === 'approved').length
-  const pending = selectedDocuments.value.filter((doc) => doc.status === 'pending').length
-  const revisionsCount = selectedDocuments.value.filter((doc) => doc.status === 'revision').length
+  const approved = selectedDocuments.value.filter((doc: AppDocument) => doc.status === 'approved').length
+  const pending = selectedDocuments.value.filter((doc: AppDocument) => doc.status === 'pending').length
+  const revisionsCount = selectedDocuments.value.filter((doc: AppDocument) => doc.status === 'revision').length
   const complianceScore = dashboardSummary.value?.compliancePercent ?? 0
   const deadlineLabel = unreadCount.value > 0 ? `${Math.max(1, unreadCount.value)}d` : 'No due'
 
@@ -394,7 +397,7 @@ const stats = computed(() => {
 
 const myDocs = computed(() => selectedDocuments.value)
 
-const revisions = computed(() => pendingRevisions.value.map((doc) => ({
+const revisions = computed(() => pendingRevisions.value.map((doc: AppDocument) => ({
   id: doc.id,
   doc: doc.title,
   by: doc.uploadedBy || 'Area In-Charge',
@@ -402,7 +405,7 @@ const revisions = computed(() => pendingRevisions.value.map((doc) => ({
   note: `Revision requested for "${doc.title}". Please resubmit with updates.`,
 })))
 
-const alerts = computed(() => notifications.value.slice(0, 4).map((notification) => {
+const alerts = computed(() => notifications.value.slice(0, 4).map((notification: NotificationMessage) => {
   const icon = notification.type === 'success'
     ? checkmarkDoneOutline
     : notification.type === 'warning'

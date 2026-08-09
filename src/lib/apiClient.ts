@@ -12,9 +12,11 @@ const TOKEN_KEY = 'auth_token'
 
 // Attach the stored Bearer token to every outgoing request
 apiClient.interceptors.request.use((config) => {
-  const token = typeof window !== 'undefined' ? window.localStorage.getItem(TOKEN_KEY) : null
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+  if (typeof window !== 'undefined') {
+    const token = window.localStorage.getItem(TOKEN_KEY) || window.sessionStorage.getItem(TOKEN_KEY)
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
   }
   return config
 })

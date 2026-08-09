@@ -128,7 +128,7 @@ import {
   tabletLandscapeOutline,
 } from 'ionicons/icons'
 import { ref } from 'vue'
-import type { AccreditationFile } from '@/types'
+import type { AccreditationFile } from '@/lib'
 
 interface Props {
   uploadedFiles?: AccreditationFile[]

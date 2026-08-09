@@ -115,27 +115,70 @@
                     {{ action }}
                   </button>
                 </div>
-                <div class="pc-team-list">
-                  <div class="pc-team-row" v-for="team in teams" :key="team.id || team.name">
-                    <div class="pc-team-info">
-                      <p class="pc-team-name">{{ team.name }}</p>
-                      <p class="pc-team-area">Area: {{ team.area || 'Unassigned' }}</p>
-                    </div>
-                    <div class="pc-team-members">
-                      <div class="pc-member-stack">
-                        <div class="pc-member-dot" v-for="(m, idx) in (team.members || []).slice(0,3)" :key="m + idx" :title="m">{{ m?.[0] || '?' }}</div>
-                        <div class="pc-member-more" v-if="(team.members || []).length > 3">
-                          +{{ (team.members || []).length - 3 }}
+
+               <div class="pc-team-list">
+                    <div
+                        class="pc-team-row"
+                        v-for="(team, index) in teams"
+                        :key="team?.id || team?.name || `team-${index}`"
+                    >
+                        <div class="pc-team-info">
+                        <p class="pc-team-name">
+                            {{ team?.name || 'Unnamed Team' }}
+                        </p>
+
+                        <p class="pc-team-area">
+                            Area: {{ team?.area || 'Unassigned' }}
+                        </p>
                         </div>
-                      </div>
-                      <span class="pc-member-count">{{ (team.members || []).length }} members</span>
+
+                        <div class="pc-team-members">
+                        <div class="pc-member-stack">
+
+                            <div
+                            class="pc-member-dot"
+                            v-for="(m, idx) in (team?.members || []).slice(0, 3)"
+                            :key="`${m}-${idx}`"
+                            :title="m"
+                            >
+                            {{ m?.[0] || '?' }}
+                            </div>
+
+                            <div
+                            class="pc-member-more"
+                            v-if="(team?.members || []).length > 3"
+                            >
+                            +{{ (team?.members || []).length - 3 }}
+                            </div>
+
+                        </div>
+
+                        <span class="pc-member-count">
+                            {{ (team?.members || []).length }} members
+                        </span>
+                        </div>
+
+                        <span
+                        :class="[
+                            'pc-team-status',
+                            team?.statusClass || 'ts-active'
+                        ]"
+                        >
+                        {{ team?.status || 'Active' }}
+                        </span>
+
+                        <button
+                        class="pc-call-button"
+                        @click.prevent=
+                        "callUser({
+                            name: (team?.members || [])[0] || 'Team Member',
+                            role: 'Team Member'
+                            })"
+                        >
+                        <ion-icon :icon="callOutline" />
+                        </button>
                     </div>
-                    <span :class="['pc-team-status', team.statusClass || 'ts-active']">{{ team.status || 'Active' }}</span>
-                    <button class="pc-call-button" @click.prevent="callUser({ name: (team.members || [])[0] || 'Team Member', role: 'Team Member' })">
-                      <ion-icon :icon="callOutline" />
-                    </button>
-                  </div>
-                </div>
+                    </div>
               </div>
 
               <div v-if="selectedSection === 'dashboard' || selectedSection === 'review'" class="pc-card">
@@ -322,7 +365,7 @@ import {
 
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
-import { useUserCalls } from '@/shared/composables/useUserCalls'
+import { useUserCalls } from '@/lib/useUserCalls'
 import { createTeam, getTeams } from '@/lib/api'
 
 const authStore = useAuthStore()
@@ -389,7 +432,7 @@ const completionRate = computed(() => {
 })
 
 const stats = computed(() => [
-  { label: 'Team Members',       value: String(teams.value.length * 3), icon: peopleOutline,      color: '#059669', bg: '#d1fae5' },
+  { label: 'Team Members',       value: String(teams.value.reduce((sum, team) => sum + Number(team?.member_count || team?.members?.length || 0), 0)), icon: peopleOutline,      color: '#059669', bg: '#d1fae5' },
   { label: 'Accreditation Areas', value: String(areas.value.length),    icon: folderOpenOutline,   color: '#2563eb', bg: '#dbeafe' },
   { label: 'Pending Review',     value: '7',                        icon: hourglassOutline,    color: '#7c3aed', bg: '#ede9fe' },
   { label: 'Compliance Rate',    value: `${completionRate.value}%`, icon: analyticsOutline,    color: '#d97706', bg: '#fef3c7' },
@@ -415,10 +458,27 @@ const selectSection = (section: typeof selectedSection.value) => {
 
 const fetchTeams = async () => {
   try {
-    const response = await getTeams({ program_id: authStore.user?.programId })
-    teams.value = response.data || response || []
+    const response = await getTeams({
+      program_id: authStore.user?.programId
+    })
+
+    const payload = Array.isArray(response?.data)
+      ? response.data
+      : Array.isArray(response)
+        ? response
+        : []
+
+    teams.value = payload.filter((team: any) => team !== null && team !== undefined).map((team: any) => ({
+      ...team,
+      members: Array.isArray(team?.members) ? team.members : [],
+      area: team?.area || 'Unassigned',
+      status: team?.status || 'Active',
+      statusClass: team?.statusClass || 'ts-active',
+      member_count: Number(team?.member_count || team?.members?.length || 0),
+    }))
   } catch (err: any) {
-    console.warn('Failed to load Program Chair teams', err)
+    console.warn('Failed to load Program Chair teams:', err)
+    teams.value = []
   }
 }
 

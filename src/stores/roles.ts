@@ -35,8 +35,8 @@ export const roleLabels: Record<string, string> = {
 }
 
 export const roleHomePaths: Record<string, string> = {
-  dean: '/dashboard',
-  'program-chair': '/dashboard',
+  dean: '/user/dashboard',
+  'program-chair': '/user/dashboard',
   faculty: '/documents',
   'new-user': '/new-user',
   'new-user-no-groups': '/new-user',

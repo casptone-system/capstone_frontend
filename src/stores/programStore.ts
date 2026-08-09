@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { getPrograms, getProgram, createProgram, updateProgram, deleteProgram } from '@/lib/api'
-import type { Program } from '@/types'
+import type { Program } from '@/lib'
 
 export const useProgramStore = defineStore('programs', () => {
   const programs = ref<Program[]>([])

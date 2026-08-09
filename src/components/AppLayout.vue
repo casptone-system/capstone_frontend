@@ -9,7 +9,7 @@
         </div>
 
         <nav class="header-nav" v-if="isAuthenticated">
-          <router-link to="/dashboard" :class="{ active: isActiveRoute('dashboard') }">
+          <router-link to="/user/dashboard" :class="{ active: isActiveRoute('/user/dashboard') }">
             Dashboard
           </router-link>
           <router-link to="/documents" :class="{ active: isActiveRoute('documents') }">
@@ -111,7 +111,7 @@ const userName = computed(() => authStore.userName)
 const isDean = computed(() => authStore.userRole === 'dean')
 
 const navItems = [
-  { path: '/dashboard', label: 'Dashboard', icon: 'grid-outline' },
+  { path: '/user/dashboard', label: 'Dashboard', icon: 'grid-outline' },
   { path: '/documents', label: 'Documents', icon: 'document-text-outline' },
   { path: '/reports', label: 'Reports', icon: 'bar-chart-outline' },
   { path: '/notifications', label: 'Notifications', icon: 'notifications-outline' }

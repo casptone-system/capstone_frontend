@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { getDocuments, uploadDocument as apiUploadDocument } from '@/lib/api'
-import type { AppDocument } from '@/types'
+import type { AppDocument } from '@/lib'
 
 export interface DocumentFilter {
   area?: string

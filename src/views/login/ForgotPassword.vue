@@ -7,7 +7,7 @@
         <div class="forgot-card">
 
           <img
-            src="@/assets/logo-small.svg"
+            src="@/assets/Archiving_logo.png"
             alt="ADAMS Logo"
             class="logo"
           />
@@ -80,7 +80,7 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
-import api from "@/services/api";
+import api from "@/lib/api";
 
 import {
   IonPage,

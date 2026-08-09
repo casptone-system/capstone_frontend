@@ -3,7 +3,7 @@
     <ion-content fullscreen>
       <DashboardLayout title="User Administration" description="Manage system users, roles, and access state from one place." role="super-admin">
         <template #actions>
-          <ion-button fill="outline" class="action-btn" @click="goTo('/dashboard/super-admin')">Back to dashboard</ion-button>
+          <ion-button fill="outline" class="action-btn" @click="goTo('/user/dashboard/super-admin')">Back to dashboard</ion-button>
           <ion-button class="action-btn" @click="openCreateModal">Add user</ion-button>
         </template>
 

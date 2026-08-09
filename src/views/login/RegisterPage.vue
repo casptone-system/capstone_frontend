@@ -96,8 +96,49 @@
               />
             </div>
             <span v-if="emailError" class="field-error">{{ emailError }}</span>
+            <div class="smtp-check-row">
+              <button
+                type="button"
+                class="smtp-check-button"
+                @click="handleSmtpCheck"
+                :disabled="isCheckingSmtp || !email || emailError"
+              >
+                {{ isCheckingSmtp ? 'Checking SMTP...' : 'Test email settings' }}
+              </button>
+              <span v-if="smtpCheckMessage" :class="{ 'smtp-success': smtpCheckSuccess, 'smtp-fail': !smtpCheckSuccess }" class="smtp-check-note">
+                {{ smtpCheckMessage }}
+              </span>
+            </div>
           </div>
-          
+
+          <!-- Profile Photo -->
+          <div class="field-group">
+            <label class="field-label" for="profile-photo">Profile Photo <span class="req">(optional)</span></label>
+            <div
+              class="profile-photo-picker"
+              :class="{ error: profilePhotoError }"
+              @click="photoInput?.click()"
+            >
+              <div v-if="profilePhotoPreview" class="photo-preview">
+                <img :src="profilePhotoPreview" alt="Profile preview" />
+              </div>
+              <div v-else class="photo-placeholder">
+                <ion-icon name="image-outline" class="photo-icon" aria-hidden="true"></ion-icon>
+                <span>Upload a square profile photo</span>
+              </div>
+            </div>
+            <input
+              ref="photoInput"
+              id="profile-photo"
+              type="file"
+              accept="image/*"
+              class="photo-input"
+              @change="handleProfilePhotoChange"
+            />
+            <span v-if="profilePhotoError" class="field-error">{{ profilePhotoError }}</span>
+            <span v-else class="field-hint">Square JPG/PNG under 5MB works best.</span>
+          </div>
+
           <!-- Phone Number -->
           <div class="field-group">
             <label class="field-label" for="phone">Phone Number <span class="req">*</span></label>
@@ -177,6 +218,10 @@
             Create Account
           </app-button>
 
+          <p class="form-note">
+            After creating your account, a verification email will be sent to the address you provided. Please open your Gmail inbox and click the link to confirm your account.
+          </p>
+
           <div @click="$router.push('/login')" class="alt-btn">
             Back to sign in
           </div>
@@ -190,6 +235,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
+import api from '@/lib/api'
 import { IonPage, IonIcon } from '@ionic/vue'
 import AppButton from '@/components/AppButton.vue'
 import { validateEmail, validatePasswordStrength, validateRequired } from '@/lib/validation'
@@ -207,22 +253,31 @@ const phone = ref('')
 const birthdate = ref('')
 const password = ref('')
 const confirmPassword = ref('')
+const profilePhoto = ref<File | null>(null)
+const profilePhotoPreview = ref('')
+const photoInput = ref<HTMLInputElement>()
+const isCheckingSmtp = ref(false)
+const smtpCheckMessage = ref('')
+const smtpCheckSuccess = ref(false)
 
 // Loading
 const isLoading = ref(false)
 
 // Errors
 const lastnameError = ref('')
+const middleNameError = ref('')
 const firstNameError = ref('')
 const emailError = ref('')
 const phoneError = ref('')
 const birthdateError = ref('')
 const passwordError = ref('')
 const confirmPasswordError = ref('')
+const profilePhotoError = ref('')
 
 const handleRegister = async () => {
   // Reset errors
   lastnameError.value = ''
+  middleNameError.value = ''
   firstNameError.value = ''
   emailError.value = ''
   phoneError.value = ''
@@ -254,10 +309,22 @@ const handleRegister = async () => {
     return
   }
 
+  if (profilePhoto.value) {
+    if (!profilePhoto.value.type.startsWith('image/')) {
+      profilePhotoError.value = 'Please select a valid image file.'
+      return
+    }
+
+    if (profilePhoto.value.size > 5 * 1024 * 1024) {
+      profilePhotoError.value = 'Profile photo must be 5MB or smaller.'
+      return
+    }
+  }
+
   isLoading.value = true
 
   try {
-    await authStore.register({
+    const payload: Record<string, any> = {
       last_name: lastname.value.trim(),
       middle_name: middlename.value.trim(),
       first_name: firstname.value.trim(),
@@ -266,12 +333,32 @@ const handleRegister = async () => {
       birthdate: birthdate.value,
       password: password.value,
       password_confirmation: confirmPassword.value,
+    }
+
+    const requestData = new FormData()
+    Object.entries(payload).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        requestData.append(key, String(value))
+      }
     })
 
-    // After successful registration the store now persists the session; redirect to role dashboard
-    await router.replace(getRoleRedirectPath(authStore.userRole))
+    if (profilePhoto.value) {
+      requestData.append('profile_photo', profilePhoto.value)
+    }
+
+    const response = await authStore.register(requestData)
+
+    if (response?.data?.token && response?.data?.user) {
+      // If a token is provided, preserve the session and redirect normally.
+      await router.replace(getRoleRedirectPath(authStore.userRole))
+      return
+    }
+
+    await router.replace({ path: '/login', query: { registered: '1' } })
   } catch (err: any) {
     const errors = err.response?.data?.errors
+    smtpCheckSuccess.value = false
+    smtpCheckMessage.value = ''
 
     if (errors?.last_name) {
       lastnameError.value = errors.last_name[0]
@@ -283,6 +370,10 @@ const handleRegister = async () => {
 
     if (errors?.email) {
       emailError.value = errors.email[0]
+    }
+
+    if (errors?.middle_name) {
+      middleNameError.value = errors.middle_name[0]
     }
 
     if (errors?.phone) {
@@ -299,11 +390,69 @@ const handleRegister = async () => {
 
     if (!errors) {
       emailError.value =
-        err.response?.data?.message || 'Registration failed.'
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        'Registration failed.'
     }
   } finally {
+    profilePhotoError.value = ''
     isLoading.value = false
   }
+}
+
+const handleSmtpCheck = async () => {
+  smtpCheckMessage.value = ''
+  smtpCheckSuccess.value = false
+
+  const emailValidation = validateEmail(email.value)
+  if (emailValidation) {
+    emailError.value = emailValidation
+    return
+  }
+
+  isCheckingSmtp.value = true
+  try {
+    const response = await api.post('/auth/email/check', {
+      email: email.value.trim().toLowerCase(),
+    })
+
+    smtpCheckSuccess.value = response.data?.success === true
+    smtpCheckMessage.value = response.data?.message || 'SMTP check completed.'
+  } catch (error: any) {
+    smtpCheckSuccess.value = false
+    smtpCheckMessage.value =
+      error?.response?.data?.message ||
+      error?.message ||
+      'SMTP check failed. Please verify your mail configuration.'
+  } finally {
+    isCheckingSmtp.value = false
+  }
+}
+
+const handleProfilePhotoChange = (event: Event) => {
+  profilePhotoError.value = ''
+
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0] ?? null
+
+  if (!file) {
+    profilePhoto.value = null
+    profilePhotoPreview.value = ''
+    return
+  }
+
+  if (!file.type.startsWith('image/')) {
+    profilePhotoError.value = 'Please select a valid image file.'
+    return
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    profilePhotoError.value = 'Profile photo must be 5MB or smaller.'
+    return
+  }
+
+  profilePhoto.value = file
+  profilePhotoPreview.value = URL.createObjectURL(file)
 }
 </script>
 
@@ -590,6 +739,65 @@ const handleRegister = async () => {
 .field-hint {
   font-size: 0.72rem;
   color: rgba(19, 31, 53, 0.45);
+}
+
+.profile-photo-picker {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 120px;
+  height: 120px;
+  border: 2px dashed rgba(19, 31, 53, 0.15);
+  border-radius: 18px;
+  background: rgba(247, 243, 234, 0.8);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.profile-photo-picker:hover {
+  border-color: rgba(9, 73, 28, 0.55);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.profile-photo-picker.error {
+  border-color: var(--crimson);
+}
+
+.photo-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.5rem;
+  color: rgba(19, 31, 53, 0.55);
+  font-size: 0.8rem;
+  line-height: 1.3;
+}
+
+.photo-icon {
+  font-size: 1.8rem;
+  color: rgba(19, 31, 53, 0.5);
+}
+
+.photo-preview {
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: #fff;
+}
+
+.photo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-input {
+  display: none;
 }
 
 /* ── SECURITY NOTICE ── */

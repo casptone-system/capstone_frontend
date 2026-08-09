@@ -1,6 +1,6 @@
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
-import { roleHomePaths, roleLabels } from '@/shared/types/roles'
+import { roleHomePaths, roleLabels } from '@/stores/roles'
 
 export const useRoleNavigation = () => {
   const authStore = useAuthStore()
@@ -8,7 +8,7 @@ export const useRoleNavigation = () => {
   const currentRole = computed(() => authStore.userRole || '')
   const normalizedRole = computed(() => String(currentRole.value).trim().toLowerCase().replace(/[_\s]+/g, '-').replace(/-+/g, '-'))
   const currentRoleLabel = computed(() => roleLabels[normalizedRole.value] || 'User')
-  const homePath = computed(() => roleHomePaths[normalizedRole.value] || '/dashboard')
+  const homePath = computed(() => roleHomePaths[normalizedRole.value] || '/user/dashboard')
 
   return {
     currentRole,

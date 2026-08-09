@@ -2,22 +2,54 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import api from '@/lib/api'
 import { TOKEN_KEY } from '@/lib/apiClient'
-import type { User } from '@/types'
+import type { User } from '@/lib'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const isAuthenticated = ref(false)
   const isLoading = ref(false)
   const error = ref<string |null>(null)
-  const SESSION_TIMEOUT_MS = 30 * 60 * 1000
+  const loginChallenge = ref<{ challengeToken: string; email: string; expiresIn: number; remember: boolean } | null>(null)
+  const SESSION_TIMEOUT_MS = 10 * 60 * 1000
   let inactivityTimer: number | null = null
   let activityListenersAttached = false
   let activityHandler: (() => void) | null = null
+  const CHALLENGE_KEY = 'auth_challenge'
 
   const clearInactivityTimer = () => {
     if (inactivityTimer !== null) {
       window.clearTimeout(inactivityTimer)
       inactivityTimer = null
+    }
+  }
+
+  const persistLoginChallenge = () => {
+    if (typeof window === 'undefined') return
+    if (!loginChallenge.value) {
+      window.sessionStorage.removeItem(CHALLENGE_KEY)
+      return
+    }
+
+    window.sessionStorage.setItem(CHALLENGE_KEY, JSON.stringify(loginChallenge.value))
+  }
+
+  const loadLoginChallenge = () => {
+    if (typeof window === 'undefined') return null
+    const raw = window.sessionStorage.getItem(CHALLENGE_KEY)
+    if (!raw) return null
+
+    try {
+      return JSON.parse(raw) as { challengeToken: string; email: string; expiresIn: number; remember: boolean }
+    } catch {
+      window.sessionStorage.removeItem(CHALLENGE_KEY)
+      return null
+    }
+  }
+
+  const clearLoginChallenge = () => {
+    loginChallenge.value = null
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.removeItem(CHALLENGE_KEY)
     }
   }
 
@@ -88,7 +120,27 @@ export const useAuthStore = defineStore('auth', () => {
   // ======================
   // LOGIN
   // ======================
-  const login = async (email: string, password: string) => {
+  const setToken = (token: string, remember: boolean) => {
+    if (typeof window === 'undefined') return
+
+    window.localStorage.removeItem(TOKEN_KEY)
+    window.sessionStorage.removeItem(TOKEN_KEY)
+
+    if (remember) {
+      window.localStorage.setItem(TOKEN_KEY, token)
+    } else {
+      window.sessionStorage.setItem(TOKEN_KEY, token)
+    }
+  }
+
+  const removeToken = () => {
+    if (typeof window === 'undefined') return
+
+    window.localStorage.removeItem(TOKEN_KEY)
+    window.sessionStorage.removeItem(TOKEN_KEY)
+  }
+
+  const login = async (email: string, password: string, remember = false) => {
     isLoading.value = true
     error.value = null
 
@@ -98,17 +150,89 @@ export const useAuthStore = defineStore('auth', () => {
         password,
       })
 
-      localStorage.setItem(TOKEN_KEY, response.data.data.token)
-
-      user.value = response.data.data.user
-      isAuthenticated.value = true
-      attachActivityListeners()
-      resetSessionTimer()
+      loginChallenge.value = {
+        challengeToken: response.data.data.challenge_token,
+        email: response.data.data.email,
+        expiresIn: response.data.data.expires_in,
+        remember,
+      }
+      persistLoginChallenge()
 
       return response.data
     } catch (err: any) {
-      error.value =
-        err.response?.data?.message || 'Invalid email or password'
+      const responseMessage = err.response?.data?.message
+      const emailError = err.response?.data?.errors?.email?.[0]
+      const passwordError = err.response?.data?.errors?.password?.[0]
+      const serverMessage = emailError || passwordError || responseMessage || 'Login failed.'
+
+      error.value = serverMessage
+      throw new Error(serverMessage)
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  const verifyTwoFactor = async (code: string) => {
+    if (!loginChallenge.value) {
+      throw new Error('No active login challenge. Please sign in again.')
+    }
+
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const response = await api.post('/auth/verify-2fa', {
+        challenge_token: loginChallenge.value.challengeToken,
+        code,
+      })
+
+      const token = response.data?.data?.token
+      const userData = response.data?.data?.user
+
+      if (token) {
+        setToken(token, loginChallenge.value.remember)
+      }
+
+      if (token && userData) {
+        user.value = userData
+        isAuthenticated.value = true
+        attachActivityListeners()
+        resetSessionTimer()
+      }
+
+      clearLoginChallenge()
+
+      return response.data
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Verification failed.'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  const resendTwoFactor = async () => {
+    if (!loginChallenge.value) {
+      throw new Error('No active login challenge.')
+    }
+
+    isLoading.value = true
+    error.value = null
+    try {
+      const response = await api.post('/auth/resend-2fa', {
+        challenge_token: loginChallenge.value.challengeToken,
+      })
+
+      // Update stored expires if backend provided a new one
+      const expires = response.data?.expires_in
+      if (expires && loginChallenge.value) {
+        loginChallenge.value.expiresIn = Number(expires)
+        persistLoginChallenge()
+      }
+
+      return response.data
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Resend failed.'
       throw err
     } finally {
       isLoading.value = false
@@ -123,17 +247,18 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
 
     try {
-      const response = await api.post('/register', data)
+      const config = data instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined
+      const response = await api.post('/register', data, config)
 
       // If backend returns token and user, persist session so user stays logged in
       const token = response.data?.data?.token
       const userData = response.data?.data?.user
 
       if (token) {
-        localStorage.setItem(TOKEN_KEY, token)
+        setToken(token, false)
       }
 
-      if (userData) {
+      if (token && userData) {
         user.value = userData
         isAuthenticated.value = true
         attachActivityListeners()
@@ -154,7 +279,13 @@ export const useAuthStore = defineStore('auth', () => {
   // GET CURRENT USER
   // ======================
   const restoreSession = async () => {
-    const token = localStorage.getItem(TOKEN_KEY)
+    if (!loginChallenge.value) {
+      loginChallenge.value = loadLoginChallenge()
+    }
+
+    const token =
+      window.localStorage.getItem(TOKEN_KEY) ||
+      window.sessionStorage.getItem(TOKEN_KEY)
 
     if (!token) {
       user.value = null
@@ -209,7 +340,9 @@ export const useAuthStore = defineStore('auth', () => {
       console.log(e)
     }
 
-    localStorage.removeItem(TOKEN_KEY)
+    removeToken()
+
+    clearLoginChallenge()
 
     user.value = null
     isAuthenticated.value = false
@@ -245,9 +378,14 @@ export const useAuthStore = defineStore('auth', () => {
     hasGroup,
 
     login,
+    verifyTwoFactor,
+    resendTwoFactor,
+
     register,
+
     logout,
     restoreSession,
+    
     joinTeam,
 
     loginWithGoogle,

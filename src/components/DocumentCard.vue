@@ -51,7 +51,7 @@ import {
   IonBadge,
 } from '@ionic/vue'
 import { downloadOutline, eyeOutline } from 'ionicons/icons'
-import type { AppDocument } from '@/types'
+import type { AppDocument } from '@/lib'
 
 export default defineComponent({
   name: 'DocumentCard',

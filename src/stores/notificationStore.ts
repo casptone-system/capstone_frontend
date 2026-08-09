@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { getNotifications } from '@/lib/api'
-import type { NotificationMessage } from '@/types'
+import type { NotificationMessage } from '@/lib'
 
 export const useNotificationStore = defineStore('notifications', () => {
   const notifications = ref<NotificationMessage[]>([])

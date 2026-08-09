@@ -19,31 +19,41 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { IonIcon } from '@ionic/vue'
-import { watch } from 'vue'
+<script lang="ts">
+import { defineComponent, watch } from 'vue'
 
-const props = defineProps<{
-  modelValue: boolean
-  title: string
-  size?: 'sm' | 'md' | 'lg'
-}>()
+export default defineComponent({
+  name: 'AppModal',
+  props: {
+    modelValue: {
+      type: Boolean,
+      default: false,
+    },
+    title: {
+      type: String,
+      default: '',
+    },
+    size: {
+      type: String as () => 'sm' | 'md' | 'lg',
+      default: 'md',
+    },
+  },
+  emits: ['update:modelValue'],
+  setup(props, { emit }) {
+    const closeModal = () => {
+      emit('update:modelValue', false)
+    }
 
-const emit = defineEmits<{
-  'update:modelValue': [value: boolean]
-}>()
+    watch(() => props.modelValue, (isOpen) => {
+      if (isOpen) {
+        document.body.style.overflow = 'hidden'
+      } else {
+        document.body.style.overflow = ''
+      }
+    })
 
-const closeModal = () => {
-  emit('update:modelValue', false)
-}
-
-// Prevent body scroll when modal is open
-watch(() => props.modelValue, (isOpen) => {
-  if (isOpen) {
-    document.body.style.overflow = 'hidden'
-  } else {
-    document.body.style.overflow = ''
-  }
+    return { closeModal }
+  },
 })
 </script>
 

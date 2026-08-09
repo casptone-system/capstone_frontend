@@ -104,8 +104,8 @@ import {
   closeCircleOutline,
 } from 'ionicons/icons'
 import { ref, computed, onMounted } from 'vue'
-import api from '@/services/api'
-import type { AuditLog } from '@/types'
+import api from '@/lib/api'
+import type { AuditLog } from '@/lib'
 
 const auditLogs = ref<AuditLog[]>([])
 const selectedStatus = ref('')

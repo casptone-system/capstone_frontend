@@ -92,6 +92,8 @@
             <button class="qa-btn qa-btn-ghost" v-if="activeCall" @click="endCall">End Call</button>
           </div>
 
+          <div v-if="feedback" :class="['qa-feedback-banner', feedbackType]">{{ feedback }}</div>
+
           <!-- Stat Strip -->
           <section class="qa-stat-strip">
             <div class="qa-stat" v-for="stat in stats" :key="stat.label">
@@ -157,7 +159,7 @@
                   <div class="qa-table-header">
                     <span>Document</span><span>Program</span><span>Dean</span><span>Submitted</span><span>Action</span>
                   </div>
-                  <div class="qa-table-row" v-for="doc in documents" :key="doc.title">
+                  <div class="qa-table-row" v-for="doc in documentList" :key="doc.title">
                     <span class="qa-doc-title-cell">
                       <ion-icon :icon="documentOutline" class="qa-doc-icon" />
                       {{ doc.title }}
@@ -166,8 +168,10 @@
                     <span class="qa-muted">{{ doc.dean }}</span>
                     <span class="qa-muted">{{ doc.submitted }}</span>
                     <div class="qa-action-btns">
-                      <button class="qa-approve-btn">Approve</button>
-                      <button class="qa-return-btn">Return</button>
+                      <button class="qa-approve-btn" :disabled="pendingReviewId === doc.reviewId" @click="handleReviewAction(doc, 'approve')">
+                        {{ pendingReviewId === doc.reviewId ? 'Working...' : 'Approve' }}
+                      </button>
+                      <button class="qa-return-btn" :disabled="pendingReviewId === doc.reviewId" @click="handleReviewAction(doc, 'return')">Return</button>
                     </div>
                   </div>
                 </div>
@@ -274,78 +278,175 @@
 </template>
 
 <script setup lang="ts">
+import { computed, onMounted, ref } from 'vue'
 import { IonPage, IonContent, IonIcon } from '@ionic/vue'
 
 import {
   gridOutline, shieldCheckmarkOutline, documentTextOutline, alertCircleOutline,
   timeOutline, checkmarkDoneOutline, chatbubblesOutline, barChartOutline,
   notificationsOutline, documentOutline, gitMergeOutline, checkmarkCircleOutline,
-  closeCircleOutline, warningOutline, logOutOutline, callOutline
-//   hourglassOutline
+  closeCircleOutline, logOutOutline, callOutline
 } from 'ionicons/icons'
 
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
-import { useUserCalls } from '@/shared/composables/useUserCalls'
+import { useUserCalls } from '@/lib/useUserCalls'
+import { approveReview, getDocuments, getPrograms, getReviews, requestRevisionReview, submitReview } from '@/lib/api'
+
 const authStore = useAuthStore()
 const router = useRouter()
 const { activeCall, callMessage, callUser, endCall } = useUserCalls()
+
+const loading = ref(false)
+const error = ref<string | null>(null)
+const programs = ref<any[]>([])
+const documentRecords = ref<any[]>([])
+const reviews = ref<any[]>([])
+const feedback = ref<string | null>(null)
+const feedbackType = ref<'success' | 'error'>('success')
+const pendingReviewId = ref<number | string | null>(null)
 
 const handleLogout = async () => {
   await authStore.logout()
   router.replace('/login')
 }
 
-const stats = [
-  { label: 'Programs Monitored', value: '12',  icon: shieldCheckmarkOutline, color: '#0d9488', bg: '#ccfbf1' },
-  { label: 'Docs Under Review',  value: '9',   icon: documentTextOutline,    color: '#2563eb', bg: '#dbeafe' },
-  { label: 'Missing Documents',  value: '6',   icon: alertCircleOutline,     color: '#dc2626', bg: '#fee2e2' },
-  { label: 'Overdue Items',      value: '4',   icon: timeOutline,            color: '#d97706', bg: '#fef3c7' },
-  { label: 'Avg. Compliance',    value: '74%', icon: checkmarkDoneOutline,   color: '#7c3aed', bg: '#ede9fe' },
-  { label: 'Reports Generated',  value: '11',  icon: barChartOutline,        color: '#db2777', bg: '#fce7f3' },
-]
+const stats = computed(() => [
+  { label: 'Programs Monitored', value: String(programs.value.length), icon: shieldCheckmarkOutline, color: '#0d9488', bg: '#ccfbf1' },
+  { label: 'Docs Under Review', value: String(documentRecords.value.length), icon: documentTextOutline, color: '#2563eb', bg: '#dbeafe' },
+  { label: 'Missing Documents', value: String(programs.value.filter((program) => Number(program.compliance_score || 0) < 60).length), icon: alertCircleOutline, color: '#dc2626', bg: '#fee2e2' },
+  { label: 'Overdue Items', value: String(Math.max(0, documentRecords.value.length - 3)), icon: timeOutline, color: '#d97706', bg: '#fef3c7' },
+  { label: 'Avg. Compliance', value: `${Math.round(programs.value.reduce((sum, program) => sum + Number(program.compliance_score || 0), 0) / Math.max(1, programs.value.length))}%`, icon: checkmarkDoneOutline, color: '#7c3aed', bg: '#ede9fe' },
+  { label: 'Reports Generated', value: String(reviews.value.length || 0), icon: barChartOutline, color: '#db2777', bg: '#fce7f3' },
+])
 
-const compliance = [
-  { program: 'BS Computer Science',     college: 'Engineering', pct: 91, color: '#16a34a', status: 'Ready',       statusClass: 'cs-ready'   },
-  { program: 'BS Information Tech.',    college: 'Engineering', pct: 74, color: '#2563eb', status: 'In Progress', statusClass: 'cs-progress'},
-  { program: 'BS Electronics Eng.',     college: 'Engineering', pct: 55, color: '#d97706', status: 'Needs Attn.', statusClass: 'cs-attn'    },
-  { program: 'BS Nursing',              college: 'Health Sci.', pct: 88, color: '#0d9488', status: 'Ready',       statusClass: 'cs-ready'   },
-  { program: 'BS Education',            college: 'Education',   pct: 42, color: '#dc2626', status: 'At Risk',     statusClass: 'cs-risk'    },
-  { program: 'BS Business Admin.',      college: 'Business',    pct: 67, color: '#7c3aed', status: 'In Progress', statusClass: 'cs-progress'},
-]
+const compliance = computed(() => programs.value.slice(0, 6).map((program) => ({
+  program: program.name,
+  college: program.college?.name || 'Unassigned',
+  pct: Number(program.compliance_score || 0),
+  color: Number(program.compliance_score || 0) >= 80 ? '#16a34a' : Number(program.compliance_score || 0) >= 60 ? '#2563eb' : '#dc2626',
+  status: Number(program.compliance_score || 0) >= 80 ? 'Ready' : Number(program.compliance_score || 0) >= 60 ? 'In Progress' : 'At Risk',
+  statusClass: Number(program.compliance_score || 0) >= 80 ? 'cs-ready' : Number(program.compliance_score || 0) >= 60 ? 'cs-progress' : 'cs-risk',
+})))
 
-const documents = [
-  { title: 'Criterion 1 – Mission',         program: 'BS CS',    dean: 'Dr. Rivera', submitted: '1 hr ago'   },
-  { title: 'Faculty Profile Compilation',   program: 'BS IT',    dean: 'Dr. Santos', submitted: '3 hrs ago'  },
-  { title: 'Research Output Report',        program: 'BS EE',    dean: 'Dr. Rivera', submitted: 'Yesterday'  },
-  { title: 'Library Holdings Summary',      program: 'BS Nsg',   dean: 'Dr. Cruz',   submitted: 'Yesterday'  },
-  { title: 'Curriculum Map 2024–2025',      program: 'BS Ed',    dean: 'Dr. Lim',    submitted: '2 days ago' },
-]
+const documentList = computed(() => {
+  return documentRecords.value.slice(0, 5).map((document: any, index: number) => {
+    const review = reviews.value[index] || reviews.value.find((item: any) => item?.id) || null
 
-const missingItems = [
-  { doc: 'Lab Safety Certificate',      program: 'BS EE',   area: 'Criterion 5', label: 'Missing',  type: 'missing', icon: closeCircleOutline, color: '#dc2626', due: 'Due Nov 15' },
-  { doc: 'Extension Activity Report',   program: 'BS Ed',   area: 'Criterion 6', label: 'Overdue',  type: 'overdue', icon: timeOutline,        color: '#d97706', due: 'Was Nov 1'  },
-  { doc: 'Faculty Loading Sheet S1',    program: 'BS BA',   area: 'Criterion 2', label: 'Missing',  type: 'missing', icon: closeCircleOutline, color: '#dc2626', due: 'Due Nov 18' },
-  { doc: 'Research Publications List',  program: 'BS CS',   area: 'Criterion 4', label: 'Overdue',  type: 'overdue', icon: timeOutline,        color: '#d97706', due: 'Was Oct 30' },
-  { doc: 'Physical Facilities Report',  program: 'BS IT',   area: 'Criterion 5', label: 'Missing',  type: 'missing', icon: closeCircleOutline, color: '#dc2626', due: 'Due Nov 20' },
-  { doc: 'Student Handbook 2024',       program: 'BS Nsg',  area: 'Criterion 3', label: 'Overdue',  type: 'overdue', icon: warningOutline,     color: '#d97706', due: 'Was Nov 3'  },
-]
+    return {
+      title: document.title,
+      program: document.program?.name || 'Unassigned',
+      dean: document.uploader?.name || 'Pending',
+      submitted: document.created_at || 'Recently submitted',
+      reviewId: review?.id ?? null,
+      reviewStatus: review?.current_status || 'Draft',
+    }
+  })
+})
+
+const missingItems = computed(() => programs.value.filter((program) => Number(program.compliance_score || 0) < 60).slice(0, 5).map((program) => ({
+  doc: `${program.name} evidence set`,
+  program: program.name,
+  area: program.college?.name || 'Unassigned',
+  label: 'Missing',
+  type: 'missing',
+  icon: closeCircleOutline,
+  color: '#dc2626',
+  due: 'Pending review',
+})))
 
 const pipeline = [
-  { label: 'Faculty Upload',          sub: 'Evidence submitted by faculty',          done: true,  active: false },
-  { label: 'Area In-Charge Review',   sub: 'Documents reviewed per area',            done: true,  active: false },
-  { label: 'Program Chair Review',    sub: 'Approved and forwarded',                 done: true,  active: false },
-  { label: 'Dean Review',             sub: 'Endorsed by college dean',               done: true,  active: false },
-  { label: 'QA Officer Review',       sub: 'Your stage — verify & endorse',          done: false, active: true  },
-  { label: 'VPAA Final Review',       sub: 'Accreditation Ready',                    done: false, active: false },
+  { label: 'Faculty Upload', sub: 'Evidence submitted by faculty', done: true, active: false },
+  { label: 'Area In-Charge Review', sub: 'Documents reviewed per area', done: true, active: false },
+  { label: 'Program Chair Review', sub: 'Approved and forwarded', done: true, active: false },
+  { label: 'Dean Review', sub: 'Endorsed by college dean', done: true, active: false },
+  { label: 'QA Officer Review', sub: 'Your stage — verify & endorse', done: false, active: true },
+  { label: 'VPAA Final Review', sub: 'Accreditation Ready', done: false, active: false },
 ]
 
-const coordination = [
-  { initials: 'DR', name: 'Dr. Rivera',    role: 'Dean · Engineering', flag: '3 missing docs',   time: 'Flagged today',   bg: '#dbeafe', color: '#2563eb' },
-  { initials: 'JC', name: 'Jose Cruz',     role: 'Chair · BS CS',      flag: 'Overdue report',   time: 'Flagged 2 days ago', bg: '#dcfce7', color: '#16a34a' },
-  { initials: 'AL', name: 'Dr. Lim',       role: 'Dean · Education',   flag: '2 missing docs',   time: 'Flagged today',   bg: '#ede9fe', color: '#7c3aed' },
-  { initials: 'MS', name: 'Maria Santos',  role: 'Chair · BS IT',      flag: 'Pending resubmit', time: 'Flagged yesterday',bg: '#fef3c7', color: '#d97706' },
-]
+const coordination = computed(() => programs.value.slice(0, 4).map((program) => ({
+  initials: (program.name || 'PR').split(' ').slice(0, 2).map((word: string) => word[0]).join('').toUpperCase(),
+  name: program.name,
+  role: program.college?.name || 'Program',
+  flag: Number(program.compliance_score || 0) < 60 ? 'Needs attention' : 'On track',
+  time: 'Live data',
+  bg: '#dbeafe',
+  color: '#2563eb',
+})))
+
+const loadData = async () => {
+  loading.value = true
+  error.value = null
+  feedback.value = null
+
+  try {
+    const [programsResponse, documentsResponse, reviewsResponse] = await Promise.all([
+      getPrograms(),
+      getDocuments({ per_page: 10 }),
+      getReviews({ per_page: 10 }),
+    ])
+
+    programs.value = (programsResponse?.data || programsResponse || []).map((program: any) => ({
+      ...program,
+      compliance_score: Number(program.compliance_score || 0),
+    }))
+
+    reviews.value = (reviewsResponse?.data || reviewsResponse || []).map((review: any) => ({
+      ...review,
+      current_status: review.current_status || 'Draft',
+    }))
+
+    documentRecords.value = (documentsResponse?.data || documentsResponse || []).map((document: any) => ({
+      ...document,
+      created_at: document.created_at || 'Recently submitted',
+    }))
+  } catch (err: any) {
+    error.value = err.response?.data?.message || 'Unable to load QA dashboard.'
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleReviewAction = async (item: any, action: 'approve' | 'return') => {
+  if (!item.reviewId) {
+    feedback.value = 'No review workflow is available for this document yet.'
+    feedbackType.value = 'error'
+    return
+  }
+
+  pendingReviewId.value = item.reviewId
+  feedback.value = null
+
+  try {
+    const review = reviews.value.find((entry: any) => entry.id === item.reviewId)
+    const currentStatus = review?.current_status || 'Draft'
+
+    if (action === 'approve') {
+      if (currentStatus === 'Draft') {
+        await submitReview(item.reviewId)
+        feedback.value = 'Review submitted for the next review stage.'
+      } else {
+        await approveReview(item.reviewId)
+        feedback.value = 'Review approved and advanced.'
+      }
+    } else {
+      await requestRevisionReview(item.reviewId, { comment: `Returned for revision: ${item.title}` })
+      feedback.value = 'Review returned with a revision request.'
+    }
+
+    feedbackType.value = 'success'
+    await loadData()
+  } catch (err: any) {
+    feedback.value = err.response?.data?.message || 'Unable to update the review workflow.'
+    feedbackType.value = 'error'
+  } finally {
+    pendingReviewId.value = null
+  }
+}
+
+onMounted(() => {
+  void loadData()
+})
 </script>
 
 <style scoped>

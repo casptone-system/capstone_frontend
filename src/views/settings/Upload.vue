@@ -71,7 +71,7 @@
                   <ion-textarea
                     v-model="formData.description"
                     placeholder="Enter document description"
-                    rows="4"
+                    :rows="4"
                   ></ion-textarea>
                 </div>
               </div>
@@ -133,7 +133,7 @@ import {
 } from '@ionic/vue'
 import { cloudUploadOutline, closeOutline } from 'ionicons/icons'
 import { ref } from 'vue'
-import api from '@/services/api'
+import api from '@/lib/api'
 
 const fileInput = ref<HTMLInputElement>()
 const selectedFile = ref<File | null>(null)

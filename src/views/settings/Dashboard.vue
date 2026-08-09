@@ -62,7 +62,7 @@ import JoinTeam from '@/views/FACULTY/JoinTeam.vue'
 import { useDashboardStore } from '@/stores/dashboardStore'
 import { useAuthStore } from '@/stores/authStore'
 import { getRoleRedirectPath } from '@/lib/roleRedirects'
-import FacultyQuickActions from '@/modules/faculty/components/FacultyQuickActions.vue'
+import FacultyQuickActions from '@/views/FACULTY/FacultyQuickActions.vue'
 import StatCard from '@/components/StatCard.vue'
 
 const dashboardStore = useDashboardStore()

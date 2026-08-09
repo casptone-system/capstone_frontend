@@ -88,6 +88,8 @@
             <button class="vpaa-btn vpaa-btn-ghost" v-if="activeCall" @click="endCall">End Call</button>
           </div>
 
+          <div v-if="feedback" :class="['vpaa-feedback-banner', feedbackType]">{{ feedback }}</div>
+
           <!-- Stat Strip -->
           <section class="vpaa-stat-strip">
             <div class="vpaa-stat" v-for="stat in stats" :key="stat.label">
@@ -165,8 +167,10 @@
                       <button class="vpaa-call-button" @click="callUser({ name: doc.qaOfficer, role: 'QA Officer' })">
                         <ion-icon :icon="callOutline" />
                       </button>
-                      <button class="vpaa-approve-btn">Endorse</button>
-                      <button class="vpaa-return-btn">Return</button>
+                      <button class="vpaa-approve-btn" :disabled="pendingReviewId === doc.reviewId" @click="handleReviewAction(doc, 'approve')">
+                        {{ pendingReviewId === doc.reviewId ? 'Working...' : 'Endorse' }}
+                      </button>
+                      <button class="vpaa-return-btn" :disabled="pendingReviewId === doc.reviewId" @click="handleReviewAction(doc, 'return')">Return</button>
                     </div>
                   </div>
                 </div>
@@ -269,88 +273,191 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { IonPage, IonContent, IonIcon, IonButton } from '@ionic/vue'
 
 import {
   gridOutline, shieldCheckmarkOutline, documentTextOutline, alertCircleOutline,
-  timeOutline, checkmarkDoneOutline, chatbubblesOutline, barChartOutline,
+  checkmarkDoneOutline, chatbubblesOutline, barChartOutline,
   notificationsOutline, documentOutline, gitMergeOutline, checkmarkCircleOutline,
-  closeCircleOutline, warningOutline, businessOutline, ribbonOutline, logOutOutline, callOutline,
+  closeCircleOutline, businessOutline, ribbonOutline, logOutOutline, callOutline,
 } from 'ionicons/icons'
 
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
-import { useUserCalls } from '@/shared/composables/useUserCalls'
-
-// defineEmits<{ (e: 'open-report', title: string): void }>()
+import { useUserCalls } from '@/lib/useUserCalls'
+import { approveReview, getColleges, getDocuments, getPrograms, getReviews, requestRevisionReview, submitReview } from '@/lib/api'
 
 const authStore = useAuthStore()
 const router = useRouter()
 const { activeCall, callMessage, callUser, endCall } = useUserCalls()
+
+const loading = ref(false)
+const error = ref<string | null>(null)
+const colleges = ref<any[]>([])
+const programs = ref<any[]>([])
+const documents = ref<any[]>([])
+const reviews = ref<any[]>([])
+const feedback = ref<string | null>(null)
+const feedbackType = ref<'success' | 'error'>('success')
+const pendingReviewId = ref<number | string | null>(null)
 
 const handleLogout = async () => {
   await authStore.logout()
   router.replace('/login')
 }
 
-/**
- * Fixtures below mirror the shape used on the QA dashboard. Swap for the
- * institutional-level store/API (colleges, alerts, reports) once available —
- * field names are kept flat so it's a drop-in replacement.
- */
-const colleges = [
-  { name: 'College of Engineering',            dean: 'Dr. Rivera',    programsTotal: 6, programsReady: 3, compliance: 61, color: '#2563eb', status: 'In Progress', statusClass: 'cs-progress' },
-  { name: 'College of Education',              dean: 'Dr. Lim',       programsTotal: 5, programsReady: 4, compliance: 88, color: '#16a34a', status: 'Ready',       statusClass: 'cs-ready'    },
-  { name: 'College of Business Administration',dean: 'Dr. Santos',    programsTotal: 4, programsReady: 4, compliance: 95, color: '#16a34a', status: 'Ready',       statusClass: 'cs-ready'    },
-  { name: 'College of Arts and Sciences',      dean: 'Dr. Dela Cruz', programsTotal: 5, programsReady: 1, compliance: 42, color: '#dc2626', status: 'At Risk',     statusClass: 'cs-risk'     },
-  { name: 'College of Nursing',                dean: 'Dr. Cruz',      programsTotal: 3, programsReady: 3, compliance: 90, color: '#0d9488', status: 'Ready',       statusClass: 'cs-ready'    },
-  { name: 'College of Criminology',            dean: 'Dr. Fernandez', programsTotal: 3, programsReady: 1, compliance: 55, color: '#d97706', status: 'Needs Attn.', statusClass: 'cs-attn'     },
-]
-
-const finalReviewQueue = [
-  { title: 'Institutional Compliance Report',   college: 'Engineering',       qaOfficer: 'Ana Lim', submitted: '2 hrs ago'   },
-  { title: 'Accreditation Readiness Summary',   college: 'Education',         qaOfficer: 'Ana Lim', submitted: 'Yesterday'   },
-  { title: 'Faculty Credentials Compilation',   college: 'Business Admin.',   qaOfficer: 'Ana Lim', submitted: 'Yesterday'   },
-  { title: 'Program Compliance Matrix',         college: 'Arts & Sciences',   qaOfficer: 'Ana Lim', submitted: '2 days ago'  },
-  { title: 'Facilities & Resources Report',     college: 'Nursing',          qaOfficer: 'Ana Lim', submitted: '3 days ago'  },
-]
-
-const criticalIssues = [
-  { message: '3 programs with overdue evidence',        college: 'College of Arts and Sciences', label: 'Critical', type: 'missing', icon: closeCircleOutline, color: '#dc2626', date: 'Aug 4' },
-  { message: 'Compliance dropped 6% since last review', college: 'College of Engineering',        label: 'Warning',  type: 'overdue', icon: timeOutline,        color: '#d97706', date: 'Aug 3' },
-  { message: 'Missing Dean endorsement on 2 documents', college: 'College of Criminology',         label: 'Critical', type: 'missing', icon: closeCircleOutline, color: '#dc2626', date: 'Aug 2' },
-  { message: 'Overdue Program Chair review',            college: 'College of Arts and Sciences',  label: 'Warning',  type: 'overdue', icon: warningOutline,     color: '#d97706', date: 'Aug 1' },
-]
-
 const pipeline = [
-  { label: 'Faculty Upload',        sub: 'Evidence submitted by faculty', done: true,  active: false },
-  { label: 'Area In-Charge Review', sub: 'Documents reviewed per area',   done: true,  active: false },
-  { label: 'Program Chair Review',  sub: 'Approved and forwarded',        done: true,  active: false },
-  { label: 'Dean Review',           sub: 'Endorsed by college dean',      done: true,  active: false },
-  { label: 'QA Officer Review',     sub: 'Verified and endorsed',         done: true,  active: false },
-  { label: 'VPAA Final Review',     sub: 'Your stage — sets Accreditation Ready', done: false, active: true },
+  { label: 'Faculty Upload', sub: 'Evidence submitted by faculty', done: true, active: false },
+  { label: 'Area In-Charge Review', sub: 'Documents reviewed per area', done: true, active: false },
+  { label: 'Program Chair Review', sub: 'Approved and forwarded', done: true, active: false },
+  { label: 'Dean Review', sub: 'Endorsed by college dean', done: true, active: false },
+  { label: 'QA Officer Review', sub: 'Verified and endorsed', done: true, active: false },
+  { label: 'VPAA Final Review', sub: 'Your stage — sets Accreditation Ready', done: false, active: true },
 ]
 
-const institutionalReports = [
-  { title: 'Institutional Compliance Report',  updated: 'Aug 5', bg: '#ccfbf1', color: '#0d9488' },
-  { title: 'Accreditation Readiness Summary',  updated: 'Aug 4', bg: '#dbeafe', color: '#2563eb' },
-  { title: 'Cross-College Audit Trail',        updated: 'Aug 2', bg: '#ede9fe', color: '#7c3aed' },
-  { title: 'Faculty Participation Report',     updated: 'Aug 1', bg: '#fef3c7', color: '#d97706' },
-]
+const loadData = async () => {
+  loading.value = true
+  error.value = null
+  try {
+    const [collegesResponse, programsResponse, documentsResponse, reviewsResponse] = await Promise.all([
+      getColleges(),
+      getPrograms(),
+      getDocuments({ per_page: 10 }),
+      getReviews({ per_page: 10 }),
+    ])
 
-const avgCompliance = computed(() =>
-  Math.round(colleges.reduce((sum, c) => sum + c.compliance, 0) / colleges.length),
-)
+    const collegeList = (collegesResponse?.data || collegesResponse || []).map((college: any) => ({
+      id: college.id,
+      name: college.name,
+      dean: college.dean || 'Pending assignment',
+      programsTotal: 0,
+      programsReady: 0,
+      compliance: 0,
+      color: '#2563eb',
+      status: 'In Progress',
+      statusClass: 'cs-progress',
+    }))
+
+    const programList = (programsResponse?.data || programsResponse || []).map((program: any) => ({
+      ...program,
+      collegeName: program.college?.name || 'Unassigned',
+      compliance: Number(program.compliance_score || 0),
+      status: program.accreditation_status || 'Planning',
+    }))
+
+    collegeList.forEach((college: any) => {
+      const matchingPrograms = programList.filter((program: any) => program.college_id === college.id || program.college?.id === college.id)
+      college.programsTotal = matchingPrograms.length
+      college.programsReady = matchingPrograms.filter((program: any) => Number(program.compliance) >= 80).length
+      college.compliance = matchingPrograms.length
+        ? Math.round(matchingPrograms.reduce((sum: number, program: any) => sum + Number(program.compliance || 0), 0) / matchingPrograms.length)
+        : 0
+      college.color = college.compliance >= 80 ? '#16a34a' : college.compliance >= 60 ? '#2563eb' : '#dc2626'
+      college.status = college.compliance >= 80 ? 'Ready' : college.compliance >= 60 ? 'In Progress' : 'At Risk'
+      college.statusClass = college.compliance >= 80 ? 'cs-ready' : college.compliance >= 60 ? 'cs-progress' : 'cs-risk'
+    })
+
+    colleges.value = collegeList
+    programs.value = programList
+
+    reviews.value = (reviewsResponse?.data || reviewsResponse || []).map((review: any) => ({
+      id: review.id,
+      status: review.current_status || 'Draft',
+      cycleId: review.cycle_id,
+    }))
+
+    documents.value = (documentsResponse?.data || documentsResponse || []).map((document: any, index: number) => {
+      const review = reviews.value[index] || reviews.value.find((item: any) => item?.id) || null
+
+      return {
+        title: document.title,
+        college: document.program?.college?.name || 'Unassigned',
+        qaOfficer: 'QA Office',
+        submitted: document.created_at || 'Recently submitted',
+        reviewId: review?.id ?? null,
+        reviewStatus: review?.status || 'Draft',
+      }
+    })
+  } catch (err: any) {
+    error.value = err.response?.data?.message || 'Unable to load VPAA dashboard.'
+  } finally {
+    loading.value = false
+  }
+}
+
+const avgCompliance = computed(() => {
+  if (!colleges.value.length) return 0
+  return Math.round(colleges.value.reduce((sum, college) => sum + Number(college.compliance || 0), 0) / colleges.value.length)
+})
 
 const stats = computed(() => [
-  { label: 'Colleges Monitored', value: String(colleges.length),                                            icon: businessOutline,        color: '#0d9488', bg: '#ccfbf1' },
-  { label: 'Programs Tracked',   value: String(colleges.reduce((s, c) => s + c.programsTotal, 0)),           icon: gridOutline,             color: '#2563eb', bg: '#dbeafe' },
-  { label: 'Avg. Compliance',    value: avgCompliance.value + '%',                                           icon: checkmarkDoneOutline,   color: '#7c3aed', bg: '#ede9fe' },
-  { label: 'Documents Complete', value: '82%',                                                                icon: documentTextOutline,    color: '#2563eb', bg: '#dbeafe' },
-  { label: 'Critical Alerts',    value: String(criticalIssues.length),                                       icon: alertCircleOutline,     color: '#dc2626', bg: '#fee2e2' },
-  { label: 'Reports Generated',  value: '14',                                                                 icon: barChartOutline,        color: '#db2777', bg: '#fce7f3' },
+  { label: 'Colleges Monitored', value: String(colleges.value.length), icon: businessOutline, color: '#0d9488', bg: '#ccfbf1' },
+  { label: 'Programs Tracked', value: String(programs.value.length), icon: gridOutline, color: '#2563eb', bg: '#dbeafe' },
+  { label: 'Avg. Compliance', value: `${avgCompliance.value}%`, icon: checkmarkDoneOutline, color: '#7c3aed', bg: '#ede9fe' },
+  { label: 'Documents Complete', value: `${Math.min(100, Math.round((documents.value.length / Math.max(1, programs.value.length)) * 100))}%`, icon: documentTextOutline, color: '#2563eb', bg: '#dbeafe' },
+  { label: 'Critical Alerts', value: String(Math.max(0, programs.value.filter((program) => Number(program.compliance || 0) < 60).length)), icon: alertCircleOutline, color: '#dc2626', bg: '#fee2e2' },
+  { label: 'Review Status', value: String(reviews.value.length), icon: barChartOutline, color: '#db2777', bg: '#fce7f3' },
 ])
+
+const finalReviewQueue = computed(() => documents.value.slice(0, 5))
+const criticalIssues = computed(() => programs.value.filter((program) => Number(program.compliance || 0) < 60).slice(0, 4).map((program) => ({
+  message: `${program.name} has low compliance.`,
+  college: program.collegeName,
+  label: 'Critical',
+  type: 'missing',
+  icon: closeCircleOutline,
+  color: '#dc2626',
+  date: 'Pending review',
+})))
+
+const institutionalReports = computed(() => [
+  { title: 'Institutional Compliance Report', updated: 'Live', bg: '#ccfbf1', color: '#0d9488' },
+  { title: 'Accreditation Readiness Summary', updated: 'Live', bg: '#dbeafe', color: '#2563eb' },
+  { title: 'Cross-College Audit Trail', updated: 'Live', bg: '#ede9fe', color: '#7c3aed' },
+  { title: 'Faculty Participation Report', updated: 'Live', bg: '#fef3c7', color: '#d97706' },
+])
+
+const handleReviewAction = async (item: any, action: 'approve' | 'return') => {
+  if (!item.reviewId) {
+    feedback.value = 'No review workflow is available for this document yet.'
+    feedbackType.value = 'error'
+    return
+  }
+
+  pendingReviewId.value = item.reviewId
+  feedback.value = null
+
+  try {
+    const review = reviews.value.find((entry: any) => entry.id === item.reviewId)
+    const currentStatus = review?.status || 'Draft'
+
+    if (action === 'approve') {
+      if (currentStatus === 'Draft') {
+        await submitReview(item.reviewId)
+        feedback.value = 'Review submitted for VPAA consideration.'
+      } else {
+        await approveReview(item.reviewId)
+        feedback.value = 'Review endorsed and marked ready.'
+      }
+    } else {
+      await requestRevisionReview(item.reviewId, { comment: `Returned for revision: ${item.title}` })
+      feedback.value = 'Review returned to the prior review stage.'
+    }
+
+    feedbackType.value = 'success'
+    await loadData()
+  } catch (err: any) {
+    feedback.value = err.response?.data?.message || 'Unable to update the review workflow.'
+    feedbackType.value = 'error'
+  } finally {
+    pendingReviewId.value = null
+  }
+}
+
+onMounted(() => {
+  void loadData()
+})
 </script>
 
 <style scoped>

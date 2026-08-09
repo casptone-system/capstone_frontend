@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { getColleges, getCollege, createCollege, updateCollege, deleteCollege } from '@/lib/api'
-import type { College } from '@/types'
+import type { College } from '@/lib'
 
 export const useCollegeStore = defineStore('colleges', () => {
   const colleges = ref<College[]>([])

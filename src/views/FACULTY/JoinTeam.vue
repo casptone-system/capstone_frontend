@@ -32,6 +32,7 @@
 import { defineComponent, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
+import { useFacultyDashboardStore } from '@/stores/facultyDashboardStore'
 import { getRoleRedirectPath } from '@/lib/roleRedirects'
 
 export default defineComponent({
@@ -39,6 +40,7 @@ export default defineComponent({
   setup() {
     const router = useRouter()
     const authStore = useAuthStore()
+    const facultyDashboard = useFacultyDashboardStore()
     const inviteCode = ref('')
     const message = ref('')
     const messageType = ref<'success' | 'error'>('success')
@@ -56,6 +58,10 @@ export default defineComponent({
         message.value = 'Joining team...'
         messageType.value = 'success'
         await authStore.joinTeam(code)
+        await facultyDashboard.loadTeam()
+        await facultyDashboard.loadDocuments()
+        await facultyDashboard.loadDashboard()
+        await facultyDashboard.loadNotifications()
 
         message.value = 'Invitation accepted. Redirecting to your workspace...'
         messageType.value = 'success'

@@ -64,7 +64,7 @@
           <!-- Topbar -->
           <header class="dean-topbar">
             <div>
-              <p class="dean-breadcrumb">College of Engineering</p>
+              <p class="dean-breadcrumb">{{ collegeName }}</p>
               <h1 class="dean-page-title">Dean Dashboard</h1>
             </div>
             <div class="dean-topbar-actions">
@@ -87,8 +87,11 @@
             <button class="dean-btn dean-btn-ghost" v-if="activeCall" @click="endCall">End Call</button>
           </div>
 
+          <div v-if="loading" class="dean-empty-state">Loading dean dashboard…</div>
+          <div v-else-if="error" class="dean-empty-state error">{{ error }}</div>
+
           <!-- Stat Strip -->
-          <section class="dean-stat-strip">
+          <section class="dean-stat-strip" v-else>
             <div class="dean-stat" v-for="stat in stats" :key="stat.label">
               <div class="dean-stat-icon" :style="{ background: stat.bg, color: stat.color }">
                 <ion-icon :icon="stat.icon" />
@@ -127,12 +130,12 @@
                     <div class="dean-prog-bar-wrap">
                       <div class="dean-prog-bar-track">
                         <div class="dean-prog-bar-fill"
-                          :style="{ width: prog.pct + '%', background: prog.color }">
+                          :style="{ width: (prog.pct ?? prog.complianceScore ?? 0) + '%', background: prog.color ?? '#2563eb' }">
                         </div>
                       </div>
-                      <span class="dean-prog-pct" :style="{ color: prog.color }">{{ prog.pct }}%</span>
+                      <span class="dean-prog-pct" :style="{ color: prog.color ?? '#2563eb' }">{{ prog.pct ?? prog.complianceScore ?? 0 }}%</span>
                     </div>
-                    <span :class="['dean-prog-status', prog.statusClass]">{{ prog.status }}</span>
+                    <span :class="['dean-prog-status', prog.statusClass]">{{ prog.status ?? 'Pending' }}</span>
                   </div>
                 </div>
               </div>
@@ -159,7 +162,7 @@
                       {{ doc.title }}
                     </span>
                     <span class="dean-role-tag">{{ doc.program }}</span>
-                    <span class="dean-muted">{{ doc.submitted }}</span>
+                    <span class="dean-muted">{{ doc.submitted ?? doc.submittedAt ?? 'Recently submitted' }}</span>
                     <div class="dean-action-btns">
                       <button class="dean-approve-btn">Approve</button>
                       <button class="dean-return-btn">Return</button>
@@ -266,70 +269,130 @@ import {
   gridOutline, schoolOutline, peopleOutline, documentTextOutline,
   checkmarkDoneOutline, analyticsOutline, barChartOutline,
   notificationsOutline, documentOutline, gitMergeOutline,
-  checkmarkCircleOutline, alarmOutline, callOutline
+  checkmarkCircleOutline, alarmOutline, callOutline, logOutOutline
 } from 'ionicons/icons'
 
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
-import { useUserCalls } from '@/shared/composables/useUserCalls'
+import { useUserCalls } from '@/lib/useUserCalls'
+import { getDeanDashboard } from '@/lib/api'
+
 const authStore = useAuthStore()
 const router = useRouter()
 const { activeCall, callMessage, callUser, endCall } = useUserCalls()
+
+const loading = ref(false)
+const error = ref<string | null>(null)
+const collegeName = ref('Dean Dashboard')
+const stats = ref<Array<{ label: string; value: string; icon: any; color: string; bg: string }>>([])
+const programs = ref<any[]>([])
+const documents = ref<any[]>([])
+const pipeline = [
+  { label: 'Faculty Upload', sub: 'Evidence submitted', done: true, active: false },
+  { label: 'Area In-Charge Review', sub: 'Documents reviewed & approved', done: true, active: false },
+  { label: 'Program Chair Review', sub: 'Forwarded for Dean review', done: true, active: false },
+  { label: 'Dean Review', sub: 'Awaiting your approval', done: false, active: true },
+  { label: 'QA Officer Review', sub: 'Pending Dean endorsement', done: false, active: false },
+  { label: 'VPAA Final Review', sub: 'Accreditation Ready', done: false, active: false },
+]
+const faculty = ref<any[]>([])
+const alerts = ref<any[]>([])
 
 const handleLogout = async () => {
   await authStore.logout()
   router.replace('/login')
 }
 
-const stats = [
-  { label: 'Programs',           value: '6',    icon: schoolOutline,        color: '#2563eb', bg: '#dbeafe' },
-  { label: 'Compliance Rate',    value: '78%',  icon: analyticsOutline,     color: '#0f766e', bg: '#ccfbf1' },
-  { label: 'Pending Approvals',  value: '5',    icon: checkmarkDoneOutline, color: '#7c3aed', bg: '#ede9fe' },
-  { label: 'Faculty Active',     value: '42',   icon: peopleOutline,        color: '#d97706', bg: '#fef3c7' },
-  { label: 'Overdue Items',      value: '3',    icon: alarmOutline,         color: '#dc2626', bg: '#fee2e2' },
-  { label: 'Reports Available',  value: '8',    icon: barChartOutline,      color: '#db2777', bg: '#fce7f3' },
-]
+const statIcons: Record<string, any> = {
+  programs: schoolOutline,
+  compliance: analyticsOutline,
+  pending: checkmarkDoneOutline,
+  risk: alarmOutline,
+  faculty: peopleOutline,
+  chairs: barChartOutline,
+}
 
-const programs = [
-  { name: 'BS Computer Science',    chair: 'M. Santos',   pct: 91, color: '#16a34a', status: 'On Track',     statusClass: 'on-track' },
-  { name: 'BS Information Tech.',   chair: 'R. Dela Cruz', pct: 74, color: '#2563eb', status: 'In Progress',  statusClass: 'in-progress' },
-  { name: 'BS Electronics Eng.',    chair: 'L. Flores',   pct: 58, color: '#d97706', status: 'Needs Attention', statusClass: 'needs-attention' },
-  { name: 'BS Civil Engineering',   chair: 'A. Mendoza',  pct: 83, color: '#0f766e', status: 'On Track',     statusClass: 'on-track' },
-  { name: 'BS Electrical Eng.',     chair: 'J. Garcia',   pct: 45, color: '#dc2626', status: 'At Risk',      statusClass: 'at-risk' },
-  { name: 'BS Mechanical Eng.',     chair: 'C. Torres',   pct: 67, color: '#7c3aed', status: 'In Progress',  statusClass: 'in-progress' },
-]
+const loadDashboard = async () => {
+  loading.value = true
+  error.value = null
+  try {
+    const response = await getDeanDashboard()
+    const payload = response?.data || {}
+    collegeName.value = payload.college?.name || 'Dean Dashboard'
 
-const documents = [
-  { title: 'Criterion 1 – Mission',       program: 'BS CS',       submitted: '2 hrs ago' },
-  { title: 'Faculty Qualifications',      program: 'BS IT',       submitted: '5 hrs ago' },
-  { title: 'Curriculum Overview 2024',    program: 'BS EE',       submitted: 'Yesterday' },
-  { title: 'Laboratory Facilities Report',program: 'BS CE',       submitted: 'Yesterday' },
-  { title: 'Research Output Summary',     program: 'BS ME',       submitted: '2 days ago' },
-]
+    stats.value = (payload.stats || []).map((item: any) => ({
+      label: item.label,
+      value: item.value,
+      icon: statIcons[item.type] || barChartOutline,
+      color: item.type === 'compliance' ? '#0f766e' : item.type === 'pending' ? '#7c3aed' : '#2563eb',
+      bg: item.type === 'compliance' ? '#ccfbf1' : item.type === 'pending' ? '#ede9fe' : '#dbeafe',
+    }))
 
-const pipeline = [
-  { label: 'Faculty Upload',       sub: 'Evidence submitted',            done: true,  active: false },
-  { label: 'Area In-Charge Review',sub: 'Documents reviewed & approved', done: true,  active: false },
-  { label: 'Program Chair Review', sub: 'Forwarded for Dean review',     done: true,  active: false },
-  { label: 'Dean Review',          sub: 'Awaiting your approval',        done: false, active: true  },
-  { label: 'QA Officer Review',    sub: 'Pending Dean endorsement',      done: false, active: false },
-  { label: 'VPAA Final Review',    sub: 'Accreditation Ready',           done: false, active: false },
-]
+    programs.value = (payload.programs || []).map((program: any) => {
+      const pct = Number(program.complianceScore || 0)
+      const status = pct >= 80 ? 'On Track' : pct >= 60 ? 'In Progress' : pct >= 40 ? 'Needs Attention' : 'At Risk'
+      const statusClass = pct >= 80 ? 'on-track' : pct >= 60 ? 'in-progress' : pct >= 40 ? 'needs-attention' : 'at-risk'
+      const color = pct >= 80 ? '#16a34a' : pct >= 60 ? '#2563eb' : pct >= 40 ? '#d97706' : '#dc2626'
 
-const faculty = [
-  { initials: 'MS', name: 'Maria Santos',    program: 'BS CS',  docs: 12, status: 'Active',    statusClass: 'fac-active' },
-  { initials: 'JR', name: 'Jose Reyes',      program: 'BS IT',  docs: 9,  status: 'Active',    statusClass: 'fac-active' },
-  { initials: 'AL', name: 'Ana Lim',         program: 'BS EE',  docs: 3,  status: 'Behind',    statusClass: 'fac-behind' },
-  { initials: 'RB', name: 'Ramon Bautista',  program: 'BS CE',  docs: 7,  status: 'Active',    statusClass: 'fac-active' },
-  { initials: 'CT', name: 'Carla Torres',    program: 'BS ME',  docs: 1,  status: 'Inactive',  statusClass: 'fac-inactive' },
-]
+      return {
+        id: program.id,
+        name: program.name,
+        chair: program.chair || 'Pending assignment',
+        complianceScore: pct,
+        accreditationStatus: program.accreditationStatus || 'pending',
+        documentCount: program.documentCount || 0,
+        pct,
+        status,
+        statusClass,
+        color,
+      }
+    })
 
-const alerts = [
-  { msg: 'BS Electrical Eng. compliance below 50%',    time: 'Critical · Now',      icon: alarmOutline,         color: '#dc2626', urgency: 'urgent' },
-  { msg: '5 documents awaiting Dean endorsement',      time: 'Action Required',     icon: checkmarkDoneOutline, color: '#d97706', urgency: 'warning' },
-  { msg: 'QA submission deadline in 3 days',           time: 'Due: Nov 15, 2024',   icon: alarmOutline,         color: '#2563eb', urgency: 'info' },
-  { msg: 'Program Chair report from BS ME is ready',   time: 'Submitted · Today',   icon: documentTextOutline,  color: '#0f766e', urgency: 'info' },
-]
+    documents.value = (payload.pendingDocuments || []).map((document: any) => ({
+      id: document.id,
+      title: document.title,
+      program: document.program || 'Unassigned',
+      submittedBy: document.submittedBy || 'Unknown',
+      submittedAt: document.submittedAt || 'Recently submitted',
+      submitted: document.submittedAt || 'Recently submitted',
+    }))
+
+    faculty.value = programs.value.slice(0, 5).map((program) => ({
+      initials: program.name.split(' ').slice(0, 2).map((word: string) => word[0]).join('').toUpperCase(),
+      name: `${program.chair || 'Program Chair'}`,
+      program: program.name,
+      docs: program.documentCount,
+      status: program.complianceScore >= 80 ? 'Active' : program.complianceScore >= 60 ? 'Behind' : 'Inactive',
+      statusClass: program.complianceScore >= 80 ? 'fac-active' : program.complianceScore >= 60 ? 'fac-behind' : 'fac-inactive',
+    }))
+
+    alerts.value = [
+      ...(programs.value.filter((program) => program.complianceScore < 70).slice(0, 2).map((program) => ({
+        msg: `${program.name} is below the compliance threshold.`,
+        time: 'Action required',
+        icon: alarmOutline,
+        color: '#dc2626',
+        urgency: 'urgent',
+      }))),
+      ...(documents.value.length ? [{
+        msg: `${documents.value.length} document${documents.value.length > 1 ? 's' : ''} awaiting Dean review.`,
+        time: 'Pending review',
+        icon: documentTextOutline,
+        color: '#2563eb',
+        urgency: 'warning',
+      }] : []),
+    ]
+  } catch (err: any) {
+    error.value = err.response?.data?.message || 'Unable to load Dean dashboard.'
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  void loadDashboard()
+})
 </script>
 
 <style scoped>
@@ -340,6 +403,21 @@ const alerts = [
   background: #f1f5f9;
   font-family: 'Inter', system-ui, sans-serif;
   overflow: hidden;
+}
+
+/* ── Empty states ── */
+.dean-empty-state {
+  margin: 1rem 0;
+  padding: 1rem 1.25rem;
+  border-radius: 0.9rem;
+  background: #fff;
+  color: #334155;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+.dean-empty-state.error {
+  color: #b91c1c;
+  background: #fef2f2;
 }
 
 /* ── Sidebar ── */

@@ -103,8 +103,8 @@ import {
   downloadOutline,
 } from 'ionicons/icons'
 import { ref, onMounted } from 'vue'
-import api from '@/services/api'
-import type { Report } from '@/types'
+import api from '@/lib/api'
+import type { Report } from '@/lib'
 
 const reports = ref<Report[]>([])
 const isLoading = ref(false)

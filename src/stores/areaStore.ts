@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { getAccreditationAreas, getAccreditationArea, createAccreditationArea, updateAccreditationArea } from '@/lib/api'
-import type { AccreditationArea } from '@/types'
+import type { AccreditationArea } from '@/lib'
 
 export const useAreaStore = defineStore('areas', () => {
   const areas = ref<AccreditationArea[]>([])

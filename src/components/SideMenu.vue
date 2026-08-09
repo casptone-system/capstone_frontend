@@ -70,7 +70,7 @@ import {
 const appPages = [
   {
     title: 'Dashboard',
-    url: '/dashboard',
+    url: '/user/dashboard',
     iosIcon: homeOutline,
     mdIcon: homeSharp,
   },

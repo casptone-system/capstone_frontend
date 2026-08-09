@@ -2,6 +2,48 @@
   <ion-page>
     <ion-content :fullscreen="true">
       <div class="sa-shell">
+        <div v-if="showModal" class="sa-modal-backdrop" @click.self="closeModal">
+          <div class="sa-modal-card">
+            <div class="sa-modal-header">
+              <h3>{{ editingUser ? 'Edit User' : 'Create User' }}</h3>
+              <button class="sa-link-btn" @click="closeModal">Close</button>
+            </div>
+            <form class="sa-form" @submit.prevent="submitUserForm">
+              <div class="sa-form-grid">
+                <label>
+                  <span>First Name</span>
+                  <input v-model="form.first_name" required />
+                </label>
+                <label>
+                  <span>Last Name</span>
+                  <input v-model="form.last_name" required />
+                </label>
+                <label>
+                  <span>Email</span>
+                  <input v-model="form.email" type="email" required />
+                </label>
+                <label>
+                  <span>Role</span>
+                  <input v-model="form.role" placeholder="Super Administrator" required />
+                </label>
+                <label>
+                  <span>Password</span>
+                  <input v-model="form.password" :type="editingUser ? 'password' : 'password'" :required="!editingUser" />
+                </label>
+                <label>
+                  <span>Confirm Password</span>
+                  <input v-model="form.password_confirmation" type="password" :required="!editingUser" />
+                </label>
+              </div>
+              <div class="sa-modal-actions">
+                <button class="sa-btn sa-btn-ghost" type="button" @click="closeModal">Cancel</button>
+                <button class="sa-btn sa-btn-primary" type="submit">
+                  {{ editingUser ? 'Save Changes' : 'Create User' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
 
         <!-- Sidebar -->
         <aside class="sa-sidebar">
@@ -119,10 +161,10 @@
                       <p class="sa-card-sub">Create, edit, and govern all user accounts</p>
                     </div>
                   </div>
-                  <button class="sa-link-btn">View All →</button>
+                  <button class="sa-link-btn" @click="openCreateModal">Create User →</button>
                 </div>
                 <div class="sa-action-grid">
-                  <button class="sa-action-chip create" v-for="action in userActions" :key="action">
+                  <button class="sa-action-chip create" v-for="action in userActions" :key="action" @click="handleQuickAction(action)">
                     {{ action }}
                   </button>
                 </div>
@@ -130,16 +172,21 @@
                   <div class="sa-table-header">
                     <span>User</span><span>Role</span><span>Status</span><span>Last Active</span><span>Action</span>
                   </div>
-                  <div class="sa-table-row" v-for="user in recentUsers" :key="user.name">
+                  <div class="sa-table-row" v-for="user in recentUsers" :key="user.id ?? user.name">
                     <span class="sa-user-cell">
                       <div class="sa-mini-avatar">{{ user.initials }}</div> {{ user.name }}
                     </span>
                     <span class="sa-role-tag">{{ user.role }}</span>
                     <span :class="['sa-status', user.status === 'Active' ? 'active' : 'inactive']">{{ user.status }}</span>
                     <span class="sa-muted">{{ user.last }}</span>
-                    <button class="sa-call-button" @click="callUser(user)">
-                      <ion-icon :icon="callOutline" />
-                    </button>
+                    <div class="sa-action-row">
+                      <button class="sa-call-button" @click="openEditModal(user)">
+                        Edit
+                      </button>
+                      <button class="sa-call-button" @click="callUser(user)">
+                        <ion-icon :icon="callOutline" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -217,6 +264,27 @@
                 </div>
               </div>
 
+              <!-- Super Admin Workflow -->
+              <div class="sa-card">
+                <div class="sa-card-header">
+                  <div class="sa-card-title-group">
+                    <div class="sa-card-icon rose"><ion-icon :icon="shieldCheckmarkOutline" /></div>
+                    <div>
+                      <h2 class="sa-card-title">Super Admin Workflow</h2>
+                      <p class="sa-card-sub">Manage users, permissions, audit logs, and system operations</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="sa-workflow-stack">
+                  <div class="sa-workflow-step" v-for="step in workflowSteps" :key="step.title">
+                    <div class="sa-workflow-title">{{ step.title }}</div>
+                    <ul class="sa-workflow-list">
+                      <li v-for="item in step.items" :key="item">{{ item }}</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
               <!-- Pending Alerts -->
               <div class="sa-card sa-alerts-card">
                 <div class="sa-card-header">
@@ -245,7 +313,7 @@
 </template>
 
 <script setup lang="ts">
-import { IonPage, IonContent, IonIcon } from '@ionic/vue'
+import { IonPage, IonContent, IonIcon, IonButton } from '@ionic/vue'
 
 import {
   gridOutline, peopleOutline, shieldCheckmarkOutline, serverOutline,
@@ -254,12 +322,15 @@ import {
   alertCircleOutline, peopleCircleOutline, checkmarkCircleOutline, callOutline
 } from 'ionicons/icons'
 
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
-import { useUserCalls } from '@/shared/composables/useUserCalls'
+import { useUserCalls } from '@/lib/useUserCalls'
+import { useSuperAdminStore } from '@/stores/superAdminStore'
 
 const authStore = useAuthStore()
 const router = useRouter()
+const superAdminStore = useSuperAdminStore()
 const { activeCall, callMessage, callUser, endCall } = useUserCalls()
 
 const handleLogout = async () => {
@@ -267,60 +338,183 @@ const handleLogout = async () => {
   router.replace('/login')
 }
 
-const stats = [
-  { label: 'Total Users', value: '120', icon: peopleOutline,          color: '#0f766e', bg: '#ccfbf1' },
-  { label: 'Active Teams', value: '18',  icon: peopleCircleOutline,   color: '#2563eb', bg: '#dbeafe' },
-  { label: 'Pending Invites', value: '3', icon: mailOutline,          color: '#7c3aed', bg: '#ede9fe' },
-  { label: 'System Health',  value: 'Stable', icon: checkmarkCircleOutline, color: '#16a34a', bg: '#dcfce7' },
-  { label: 'Storage Used',   value: '64%', icon: cloudOutline,        color: '#d97706', bg: '#fef3c7' },
-  { label: 'Reports Today',  value: '7',  icon: barChartOutline,      color: '#db2777', bg: '#fce7f3' },
-]
+const stats = computed(() => [
+  { label: 'Total Users', value: String(superAdminStore.stats.totalUsers), icon: peopleOutline, color: '#0f766e', bg: '#ccfbf1' },
+  { label: 'Active Users', value: String(superAdminStore.stats.activeUsers), icon: peopleCircleOutline, color: '#2563eb', bg: '#dbeafe' },
+  { label: 'Pending Accounts', value: String(superAdminStore.stats.pendingAccounts), icon: mailOutline, color: '#7c3aed', bg: '#ede9fe' },
+  { label: 'System Health', value: superAdminStore.securityStatus, icon: checkmarkCircleOutline, color: '#16a34a', bg: '#dcfce7' },
+  { label: 'Storage Used', value: `${superAdminStore.stats.storageUsed}%`, icon: cloudOutline, color: '#d97706', bg: '#fef3c7' },
+  { label: 'Pending Reviews', value: String(superAdminStore.stats.pendingReviews), icon: barChartOutline, color: '#db2777', bg: '#fce7f3' },
+])
 
 const userActions = [
   'Create User', 'Edit User', 'Delete User', 'Restore User',
   'Reset Password', 'Lock / Unlock', 'Activate / Deactivate', 'Assign Role', 'Manage Permissions',
 ]
 
-const recentUsers = [
-  { initials: 'MR', name: 'Maria Reyes',   role: 'Dean',          status: 'Active',   last: '2 min ago' },
-  { initials: 'JC', name: 'Jose Cruz',     role: 'Program Chair', status: 'Active',   last: '15 min ago' },
-  { initials: 'AL', name: 'Ana Lim',       role: 'QA Officer',    status: 'Inactive', last: '2 hrs ago' },
-  { initials: 'RB', name: 'Ramon Bautista',role: 'Faculty',       status: 'Active',   last: '1 hr ago' },
-  { initials: 'ST', name: 'Sofia Torres',  role: 'VPAA',          status: 'Active',   last: 'Just now' },
-]
+const recentUsers = computed<any[]>(() => superAdminStore.users.slice(0, 5).map((user: any) => ({
+  id: user.id ?? user.email ?? user.name,
+  initials: (user.name || '').split(' ').map((part: string) => part[0]).join('').slice(0, 2).toUpperCase() || 'U',
+  name: user.name,
+  role: user.role,
+  status: 'Active',
+  last: user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never',
+})))
 
-const auditLogs = [
-  { action: 'Password Reset', user: 'admin@adams.edu',    time: '10:02 AM', type: 'Security', color: '#ef4444' },
-  { action: 'Role Changed → Dean', user: 'jose.cruz',    time: '9:47 AM',  type: 'Roles',    color: '#7c3aed' },
-  { action: 'Database Backup',     user: 'System',        time: '9:00 AM',  type: 'System',   color: '#2563eb' },
-  { action: 'New User Created',    user: 'admin@adams.edu',time: '8:30 AM', type: 'Users',    color: '#16a34a' },
-  { action: 'Permission Updated',  user: 'admin@adams.edu',time: '8:15 AM', type: 'Security', color: '#ef4444' },
-  { action: 'Login: maria.reyes',  user: '192.168.1.4',   time: '8:05 AM', type: 'Auth',     color: '#0f766e' },
-]
+const auditLogs = computed(() => (superAdminStore.auditLogs || []).slice(0, 6).map((log: any) => ({
+  action: log.event || 'Activity',
+  user: log.user_email || 'System',
+  time: log.created_at ? new Date(log.created_at).toLocaleString() : 'Pending',
+  type: log.status || 'Audit',
+  color: '#2563eb',
+})))
 
 const systemModules = [
-  { label: 'Database Backup', icon: serverOutline,       status: 'ok',   statusText: 'Last: 9:00 AM' },
-  { label: 'Email Config',    icon: mailOutline,         status: 'ok',   statusText: 'Configured' },
-  { label: 'Security',        icon: lockClosedOutline,   status: 'ok',   statusText: 'Enforced' },
-  { label: 'Storage',         icon: cloudOutline,        status: 'warn', statusText: '64% Used' },
-  { label: 'Notifications',   icon: notificationsOutline,status: 'ok',   statusText: 'Active' },
-  { label: 'System Reports',  icon: documentTextOutline, status: 'ok',   statusText: 'Available' },
+  { label: 'Database Backup', icon: serverOutline, status: 'ok', statusText: 'Ready' },
+  { label: 'Email Config', icon: mailOutline, status: 'ok', statusText: 'Configured' },
+  { label: 'Security', icon: lockClosedOutline, status: 'ok', statusText: 'Enforced' },
+  { label: 'Storage', icon: cloudOutline, status: 'warn', statusText: `${superAdminStore.stats.storageUsed}% Used` },
+  { label: 'Notifications', icon: notificationsOutline, status: 'ok', statusText: 'Active' },
+  { label: 'System Reports', icon: documentTextOutline, status: 'ok', statusText: 'Available' },
 ]
 
 const compliance = [
-  { label: 'Overall Accreditation',    pct: 78, color: '#0f766e' },
-  { label: 'Document Submission',      pct: 85, color: '#2563eb' },
-  { label: 'Faculty Participation',    pct: 91, color: '#16a34a' },
-  { label: 'Pending QA Review',        pct: 43, color: '#d97706' },
-  { label: 'Overdue Requirements',     pct: 12, color: '#ef4444' },
+  { label: 'Overall Accreditation', pct: Math.max(0, Math.min(100, superAdminStore.stats.pendingReviews > 0 ? 78 : 80)), color: '#0f766e' },
+  { label: 'Document Submission', pct: 85, color: '#2563eb' },
+  { label: 'Faculty Participation', pct: 91, color: '#16a34a' },
+  { label: 'Pending QA Review', pct: 43, color: '#d97706' },
+  { label: 'Overdue Requirements', pct: 12, color: '#ef4444' },
 ]
 
 const alerts = [
-  { msg: '3 invitation codes expire in 24 hours',      icon: alertCircleOutline, color: '#d97706' },
-  { msg: 'Storage usage above 60% — consider cleanup', icon: cloudOutline,       color: '#ef4444' },
-  { msg: 'Ana Lim account inactive for 48+ hours',     icon: lockClosedOutline,  color: '#7c3aed' },
-  { msg: 'Scheduled backup due in 2 hours',            icon: serverOutline,      color: '#2563eb' },
+  { msg: 'Review user accounts and permissions for updates', icon: alertCircleOutline, color: '#d97706' },
+  { msg: 'Storage usage is being monitored', icon: cloudOutline, color: '#ef4444' },
+  { msg: 'Inactive accounts can be reactivated from the admin tools', icon: lockClosedOutline, color: '#7c3aed' },
+  { msg: 'Backup and report operations are available from the system tools', icon: serverOutline, color: '#2563eb' },
 ]
+
+const workflowSteps = [
+  {
+    title: 'Manage Users',
+    items: [
+      'Create User', 'View Users', 'Edit Users', 'Delete Users',
+      'Restore Users', 'Reset Password', 'Lock / Unlock Account',
+      'Activate / Deactivate Account', 'Assign Roles', 'Manage Permissions',
+    ],
+  },
+  {
+    title: 'View User Activity Logs',
+    items: [
+      'Login History', 'Logout History', 'Uploaded Files', 'Edited Documents',
+      'Deleted Documents', 'Generated Reports', 'IP Address', 'Browser',
+      'Device', 'Session Duration', 'Audit Trail',
+    ],
+  },
+  {
+    title: 'System Management',
+    items: [
+      'Database Backup', 'Restore Database', 'Email Configuration',
+      'Notification Settings', 'Storage Management', 'Security Settings', 'System Reports',
+    ],
+  },
+]
+
+const showModal = ref(false)
+const editingUser = ref<any | null>(null)
+const form = reactive({
+  first_name: '',
+  last_name: '',
+  email: '',
+  role: 'Faculty',
+  password: '',
+  password_confirmation: '',
+})
+
+const resetForm = () => {
+  form.first_name = ''
+  form.last_name = ''
+  form.email = ''
+  form.role = 'Faculty'
+  form.password = ''
+  form.password_confirmation = ''
+}
+
+const openCreateModal = () => {
+  editingUser.value = null
+  resetForm()
+  showModal.value = true
+}
+
+const openEditModal = (user: any) => {
+  editingUser.value = user
+  form.first_name = user.name?.split(' ')[0] || ''
+  form.last_name = user.name?.split(' ').slice(1).join(' ') || ''
+  form.email = user.email || ''
+  form.role = user.role || 'Faculty'
+  form.password = ''
+  form.password_confirmation = ''
+  showModal.value = true
+}
+
+const closeModal = () => {
+  showModal.value = false
+  editingUser.value = null
+  resetForm()
+}
+
+const submitUserForm = async () => {
+  try {
+    const payload: Record<string, any> = {
+      first_name: form.first_name,
+      last_name: form.last_name,
+      email: form.email,
+      role: form.role,
+    }
+
+    if (!editingUser.value) {
+      payload.password = form.password
+      payload.password_confirmation = form.password_confirmation
+      await superAdminStore.createUser(payload)
+    } else {
+      await superAdminStore.updateUser(editingUser.value.id, payload)
+    }
+
+    closeModal()
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+const handleQuickAction = async (action: string) => {
+  const selectedUser = superAdminStore.users[0]
+  if (!selectedUser) return
+
+  try {
+    if (action.includes('Delete')) {
+      await superAdminStore.deleteUser(selectedUser.id)
+    } else if (action.includes('Restore')) {
+      await superAdminStore.restoreUser(selectedUser.id)
+    } else if (action.includes('Lock')) {
+      await superAdminStore.lockUserAccount(selectedUser.id)
+    } else if (action.includes('Unlock')) {
+      await superAdminStore.unlockUserAccount(selectedUser.id)
+    } else if (action.includes('Activate')) {
+      await superAdminStore.activateUserAccount(selectedUser.id)
+    } else if (action.includes('Deactivate')) {
+      await superAdminStore.deactivateUserAccount(selectedUser.id)
+    } else if (action.includes('Reset')) {
+      await superAdminStore.resetPassword(selectedUser.id, 'Welcome123!')
+    } else {
+      openCreateModal()
+    }
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+onMounted(() => {
+  void superAdminStore.fetchAdminOverview()
+})
 </script>
 
 <style scoped>
@@ -331,6 +525,248 @@ const alerts = [
   background: #f1f5f9;
   font-family: 'Inter', system-ui, sans-serif;
   overflow: hidden;
+}
+
+/* ── Modal ── */
+.sa-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 1rem;
+}
+
+.sa-modal-card {
+  width: min(720px, 100%);
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25);
+  padding: 1.25rem;
+}
+
+.sa-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.sa-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.sa-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  color: #334155;
+}
+
+.sa-form input {
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0.7rem 0.8rem;
+  font: inherit;
+}
+
+.sa-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.sa-action-row {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.sa-call-button {
+  border: none;
+  background: #e2e8f0;
+  color: #0f172a;
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+/* ── Shared Super Admin Page Styles ── */
+.sa-page-shell {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sa-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.sa-toolbar {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.sa-search, .sa-select {
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0.7rem 0.8rem;
+  min-width: 220px;
+}
+
+.sa-table-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.sa-table-row {
+  display: grid;
+  grid-template-columns: 1.4fr 1.4fr 0.8fr 0.8fr 1fr 0.8fr;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.8rem 0.25rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.sa-action-group {
+  display: flex;
+  gap: 0.55rem;
+}
+
+.sa-empty {
+  padding: 1rem 0;
+  color: #64748b;
+}
+
+.sa-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.sa-chip {
+  background: #f1f5f9;
+  color: #0f172a;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+}
+
+.sa-help-text {
+  color: #64748b;
+  margin-bottom: 0.75rem;
+}
+
+.sa-permission-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.sa-permission-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sa-permission-item--active {
+  border-color: #0f766e;
+  background: #f0fdfa;
+}
+
+.sa-permission-item--inactive {
+  opacity: 0.8;
+  background: #f8fafc;
+}
+
+.sa-permission-state {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-top: 0.2rem;
+}
+
+.sa-save-message {
+  margin-top: 0.75rem;
+  color: #0f766e;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.sa-role-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.sa-role-summary-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.sa-role-summary-title {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.sa-chip--active {
+  background: #ccfbf1;
+  color: #115e59;
+}
+
+.sa-chip--inactive {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.sa-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.sa-list-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.sa-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.9rem;
+}
+
+.sa-setting-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 /* ── Sidebar ── */
@@ -744,6 +1180,35 @@ const alerts = [
   border-radius: 999px;
   transition: width 0.5s ease;
 }
+
+/* ── Workflow ── */
+.sa-workflow-stack { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.sa-workflow-step {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 0.8rem 0.9rem;
+  background: #f8fafc;
+}
+
+.sa-workflow-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.45rem;
+}
+
+.sa-workflow-list {
+  margin: 0;
+  padding-left: 1rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.2rem 0.75rem;
+  color: #475569;
+  font-size: 0.78rem;
+}
+
+.sa-workflow-list li { line-height: 1.3; }
 
 /* ── Alerts ── */
 .sa-alert-list { display: flex; flex-direction: column; gap: 0.5rem; }
