@@ -8,22 +8,21 @@
       </p>
 
       <form class="join-form" @submit.prevent="handleJoin">
-        <label class="field-label" for="invite-code">Invitation code</label>
+        <label class="field-label" for="invite-code">Invitation token</label>
         <input
           id="invite-code"
           v-model="inviteCode"
           type="text"
-          maxlength="6"
           autocomplete="one-time-code"
-          placeholder="Enter 6-digit code"
+          placeholder="Enter your invitation token"
           class="invite-input"
         />
 
-        <button class="join-button" type="submit">Join Team</button>
+        <button class="join-button" type="submit">Accept Invitation</button>
       </form>
 
       <p v-if="message" class="message" :class="messageType">{{ message }}</p>
-      <p class="help-text">Don’t have a code? Contact your Program Chair or Dean for an invitation.</p>
+      <p class="help-text">Don’t have a token? Contact your Program Chair or Dean for an invitation.</p>
     </div>
   </div>
 </template>
@@ -48,16 +47,16 @@ export default defineComponent({
     const handleJoin = async () => {
       const code = inviteCode.value.trim()
 
-      if (!/^[A-Za-z0-9]{6}$/.test(code)) {
-        message.value = 'Please enter a valid 6-character invitation code.'
+      if (!code) {
+        message.value = 'Please enter your invitation token.'
         messageType.value = 'error'
         return
       }
 
       try {
-        message.value = 'Joining team...'
+        message.value = 'Accepting invitation...'
         messageType.value = 'success'
-        await authStore.joinTeam(code)
+        await authStore.acceptInvitation(code)
         await facultyDashboard.loadTeam()
         await facultyDashboard.loadDocuments()
         await facultyDashboard.loadDashboard()

@@ -102,27 +102,27 @@ const routes = [
   {
     path: '/users',
     component: Users,
-    meta: { requiresAuth: true, allowedRoles: ['super-admin', 'admin'] },
+    meta: { requiresAuth: true, allowedRoles: ['superadmin', 'admin'] },
   },
   {
     path: '/superadmin/users',
     component: UserManagementPage,
-    meta: { requiresAuth: true, allowedRoles: ['super-admin', 'admin'] },
+    meta: { requiresAuth: true, allowedRoles: ['superadmin', 'admin'] },
   },
   {
     path: '/superadmin/roles',
     component: RolePermissionPage,
-    meta: { requiresAuth: true, allowedRoles: ['super-admin', 'admin'] },
+    meta: { requiresAuth: true, allowedRoles: ['superadmin', 'admin'] },
   },
   {
     path: '/superadmin/activity',
     component: AuditActivityPage,
-    meta: { requiresAuth: true, allowedRoles: ['super-admin', 'admin'] },
+    meta: { requiresAuth: true, allowedRoles: ['superadmin', 'admin'] },
   },
   {
     path: '/superadmin/settings',
     component: SystemSettingsPage,
-    meta: { requiresAuth: true, allowedRoles: ['super-admin', 'admin'] },
+    meta: { requiresAuth: true, allowedRoles: ['superadmin', 'admin'] },
   },
   {
     path: '/audit',

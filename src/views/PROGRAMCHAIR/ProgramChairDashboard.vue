@@ -32,7 +32,7 @@
             </a>
             <a class="pc-nav-item" :class="{ active: selectedSection === 'notifications' }" href="#" @click.prevent="selectSection('notifications')">
               <ion-icon :icon="notificationsOutline" /> Notifications
-              <span class="pc-nav-badge">6</span>
+              <span class="pc-nav-badge">{{ activeNotificationCount }}</span>
             </a>
           </nav>
            <ion-button color="danger" fill="solid" @click="handleLogout">
@@ -42,9 +42,10 @@
 
           <div class="pc-sidebar-footer">
             <div class="pc-admin-chip">
-              <div class="pc-avatar">PC</div>
+              <img v-if="currentUserPhoto" :src="currentUserPhoto" alt="Profile photo" class="pc-avatar pc-avatar-image" />
+              <div v-else class="pc-avatar">{{ currentUserInitials }}</div>
               <div>
-                <p class="pc-admin-name">Prof. C. Torres</p>
+                <p class="pc-admin-name">{{ currentUserName }}</p>
                 <p class="pc-admin-role">Program Chair · BS ME</p>
               </div>
             </div>
@@ -70,7 +71,7 @@
               </button>
               <button class="pc-btn pc-btn-ghost" @click.prevent="selectSection('review')">
                 <ion-icon :icon="documentTextOutline" /> Review Docs
-                <span class="pc-btn-badge">7</span>
+                <span class="pc-btn-badge">{{ documents.length }}</span>
               </button>
             </div>
           </header>
@@ -256,6 +257,20 @@
                   </div>
                   <p v-if="codeMessage" class="pc-code-hint">{{ codeMessage }}</p>
                 </div>
+                <div class="pc-invite-form">
+                  <label class="pc-field-label">Invite faculty by email</label>
+                  <input class="pc-input" v-model="inviteEmail" placeholder="faculty@example.com" />
+                  <select class="pc-input" v-model="inviteRole">
+                    <option value="faculty">Faculty</option>
+                    <option value="area-incharge">Area In-Charge</option>
+                    <option value="program-chair">Program Chair</option>
+                  </select>
+                  <button class="pc-btn pc-btn-primary" :disabled="inviteBusy" @click.prevent="submitInvitation">
+                    <ion-icon :icon="mailOutline" /> {{ inviteBusy ? 'Creating...' : 'Create Invitation' }}
+                  </button>
+                  <p v-if="inviteError" class="pc-error-text">{{ inviteError }}</p>
+                  <p v-if="inviteSuccess" class="pc-success-text">{{ inviteSuccess }}</p>
+                </div>
                 <div class="pc-recent-codes">
                   <p class="pc-recent-label">Recent Codes</p>
                   <div class="pc-recent-row" v-for="c in recentCodes" :key="c.code">
@@ -264,6 +279,17 @@
                     <span :class="['pc-recent-status', c.expired ? 'expired' : 'active']">
                       {{ c.expired ? 'Expired' : 'Active' }}
                     </span>
+                  </div>
+                </div>
+                <div class="pc-recent-codes" v-if="invitations.length">
+                  <p class="pc-recent-label">Recent Invitations</p>
+                  <div class="pc-recent-row" v-for="invitation in invitations" :key="invitation.id || invitation.token">
+                    <span class="pc-recent-code">{{ invitation.email || invitation.token }}</span>
+                    <span class="pc-recent-used">{{ invitation.status }}</span>
+                    <div class="pc-code-actions">
+                      <button class="pc-code-btn copy" @click.prevent="resendInvitationAction(invitation.token)">Resend</button>
+                      <button class="pc-code-btn regen" @click.prevent="revokeInvitationAction(invitation.token)">Revoke</button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -366,51 +392,51 @@ import {
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { useUserCalls } from '@/lib/useUserCalls'
-import { createTeam, getTeams } from '@/lib/api'
+import {
+  createTeam,
+  getTeams,
+  createProgramInvitation,
+  getProgramInvitations,
+  resendInvitation,
+  revokeInvitation,
+} from '@/lib/api'
 
 const authStore = useAuthStore()
 const router = useRouter()
 const { activeCall, callMessage, callUser, endCall } = useUserCalls()
+const currentUserName = computed(() => authStore.user?.name || 'Program Chair')
+const currentUserInitials = computed(() => {
+  const name = authStore.user?.name || 'Program Chair'
+  return name.split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase() || 'PC'
+})
+const currentUserPhoto = computed(() => (authStore.user as any)?.profilePhoto || (authStore.user as any)?.avatar || null)
 
 const selectedSection = ref<'dashboard' | 'teams' | 'codes' | 'assignments' | 'review' | 'notifications'>('dashboard')
 const teams = ref<any[]>([])
-const activeCode = ref('482913')
-const recentCodes = ref<any[]>([
-  { code: '482913', used: '3 joined', expired: false },
-  { code: '291748', used: '5 joined', expired: true },
-  { code: '837402', used: '1 joined', expired: true },
-])
+const activeCode = ref('')
+const recentCodes = ref<any[]>([])
 const createTeamName = ref('')
 const createTeamError = ref('')
 const createTeamSuccess = ref('')
 const codeMessage = ref('')
-const notifications = ref([
-  { id: '1', title: 'New Submission', message: 'Area In-Charge submitted a new evidence file.', type: 'info', createdAt: '2026-08-01T09:30:00Z' },
-  { id: '2', title: 'Team Update', message: 'Criterion Team A added a member to their group.', type: 'success', createdAt: '2026-08-01T07:10:00Z' },
-  { id: '3', title: 'Missing Evidence', message: 'Research Output document requires your review.', type: 'warning', createdAt: '2026-07-31T16:45:00Z' },
-])
-const documents = ref([
-  { title: 'Mission & Vision Statement', incharge: 'M. Santos',    submitted: '1 hr ago' },
-  { title: 'Faculty Qualification Files', incharge: 'J. Cruz',      submitted: '3 hrs ago' },
-  { title: 'Research Output 2024',       incharge: 'R. Dela Cruz', submitted: 'Yesterday' },
-  { title: 'Lab Equipment Inventory',    incharge: 'J. Mendoza',   submitted: 'Yesterday' },
-  { title: 'Curriculum Map 2024–2025',   incharge: 'C. Torres',    submitted: '2 days ago' },
-])
-const areas = ref([
-  { num: '01', name: 'Mission & Vision',    incharge: 'M. Santos',    pct: 92, color: '#16a34a', status: 'Complete',     statusClass: 'as-complete' },
-  { num: '02', name: 'Faculty Profile',     incharge: 'J. Cruz',      pct: 78, color: '#2563eb', status: 'On Track',     statusClass: 'as-ontrack' },
-  { num: '03', name: 'Curriculum',          incharge: 'C. Torres',    pct: 61, color: '#d97706', status: 'In Progress',  statusClass: 'as-inprogress' },
-  { num: '04', name: 'Research & Dev.',     incharge: 'R. Dela Cruz', pct: 44, color: '#dc2626', status: 'At Risk',      statusClass: 'as-atrisk' },
-  { num: '05', name: 'Physical Facilities', incharge: 'J. Mendoza',   pct: 30, color: '#dc2626', status: 'At Risk',      statusClass: 'as-atrisk' },
-  { num: '06', name: 'Library Resources',   incharge: 'L. Flores',    pct: 85, color: '#0f766e', status: 'On Track',     statusClass: 'as-ontrack' },
-])
+const inviteEmail = ref('')
+const inviteRole = ref('faculty')
+const inviteError = ref('')
+const inviteSuccess = ref('')
+const invitations = ref<any[]>([])
+const inviteBusy = ref(false)
+const notifications = ref<any[]>([])
+const documents = ref<any[]>([])
+const areas = ref<any[]>([])
 const pipeline = ref([
   { label: 'Faculty Upload',        sub: 'Evidence submitted by faculty',       done: true,  active: false },
   { label: 'Area In-Charge Review', sub: 'Documents reviewed & forwarded',      done: true,  active: false },
-  { label: 'Program Chair Review',  sub: 'Your stage — approve or return docs', done: false, active: true },
-  { label: 'Dean Review',           sub: 'Pending your endorsement',            done: false, active: false },
-  { label: 'QA Officer Review',     sub: 'Compliance verification',             done: false, active: false },
-  { label: 'VPAA Final Review',     sub: 'Accreditation Ready',                 done: false, active: false },
+  { label: 'Faculty Upload', sub: 'Evidence submitted by faculty', done: true, active: false },
+  { label: 'Area In-Charge Review', sub: 'Area review completed', done: true, active: false },
+  { label: 'Program Chair Review', sub: 'Your stage — approve or return docs', done: false, active: true },
+  { label: 'Dean Monitoring', sub: 'Dean monitors progress only', done: false, active: false },
+  { label: 'QA Monitoring', sub: 'QA tracks compliance', done: false, active: false },
+  { label: 'VPAA Monitoring', sub: 'VPAA tracks readiness', done: false, active: false },
 ])
 
 const sectionLabel = computed(() => {
@@ -432,12 +458,12 @@ const completionRate = computed(() => {
 })
 
 const stats = computed(() => [
-  { label: 'Team Members',       value: String(teams.value.reduce((sum, team) => sum + Number(team?.member_count || team?.members?.length || 0), 0)), icon: peopleOutline,      color: '#059669', bg: '#d1fae5' },
-  { label: 'Accreditation Areas', value: String(areas.value.length),    icon: folderOpenOutline,   color: '#2563eb', bg: '#dbeafe' },
-  { label: 'Pending Review',     value: '7',                        icon: hourglassOutline,    color: '#7c3aed', bg: '#ede9fe' },
-  { label: 'Compliance Rate',    value: `${completionRate.value}%`, icon: analyticsOutline,    color: '#d97706', bg: '#fef3c7' },
-  { label: 'Active Codes',       value: String(recentCodes.value.filter((code) => !code.expired).length), icon: keyOutline, color: '#0891b2', bg: '#e0f2fe' },
-  { label: 'Reports Ready',      value: '5',                        icon: barChartOutline,     color: '#db2777', bg: '#fce7f3' },
+  { label: 'Team Members',       value: String(teams.value.reduce((sum, team) => sum + Number(team?.member_count || team?.members?.length || 0), 0)), icon: peopleOutline, color: '#059669', bg: '#d1fae5' },
+  { label: 'Accreditation Areas', value: String(areas.value.length), icon: folderOpenOutline, color: '#2563eb', bg: '#dbeafe' },
+  { label: 'Pending Review', value: String(documents.value.length), icon: hourglassOutline, color: '#7c3aed', bg: '#ede9fe' },
+  { label: 'Compliance Rate', value: `${completionRate.value}%`, icon: analyticsOutline, color: '#d97706', bg: '#fef3c7' },
+  { label: 'Active Codes', value: String(recentCodes.value.filter((code) => !code.expired).length), icon: keyOutline, color: '#0891b2', bg: '#e0f2fe' },
+  { label: 'Reports Ready', value: String(invitations.value.length), icon: barChartOutline, color: '#db2777', bg: '#fce7f3' },
 ])
 
 const activeNotificationCount = computed(() => notifications.value.length)
@@ -531,6 +557,74 @@ const copyCode = async () => {
   }
 }
 
+const fetchInvitations = async () => {
+  const programId = (authStore.user as any)?.programId || (authStore.user as any)?.program_id
+  if (!programId) return
+
+  try {
+    const response = await getProgramInvitations(programId)
+    invitations.value = Array.isArray(response?.data) ? response.data : []
+  } catch (err: any) {
+    console.warn('Failed to load invitations:', err)
+    invitations.value = []
+  }
+}
+
+const submitInvitation = async () => {
+  inviteError.value = ''
+  inviteSuccess.value = ''
+  const email = inviteEmail.value.trim()
+
+  if (!email) {
+    inviteError.value = 'Please enter an email address.'
+    return
+  }
+
+  const programId = (authStore.user as any)?.programId || (authStore.user as any)?.program_id
+  if (!programId) {
+    inviteError.value = 'Program ID unavailable.'
+    return
+  }
+
+  inviteBusy.value = true
+
+  try {
+    const response = await createProgramInvitation(programId, {
+      email,
+      role: inviteRole.value,
+    })
+
+    const invitation = response?.data || response
+    invitations.value = [invitation, ...invitations.value]
+    inviteEmail.value = ''
+    inviteRole.value = 'faculty'
+    inviteSuccess.value = `Invitation created for ${email}.`
+  } catch (err: any) {
+    inviteError.value = err.response?.data?.message || 'Unable to create invitation.'
+  } finally {
+    inviteBusy.value = false
+  }
+}
+
+const resendInvitationAction = async (token: string) => {
+  try {
+    await resendInvitation(token)
+    inviteSuccess.value = 'Invitation resent.'
+  } catch (err: any) {
+    inviteError.value = err.response?.data?.message || 'Unable to resend invitation.'
+  }
+}
+
+const revokeInvitationAction = async (token: string) => {
+  try {
+    await revokeInvitation(token)
+    invitations.value = invitations.value.filter((invitation) => invitation.token !== token)
+    inviteSuccess.value = 'Invitation revoked.'
+  } catch (err: any) {
+    inviteError.value = err.response?.data?.message || 'Unable to revoke invitation.'
+  }
+}
+
 const sendInvite = () => {
   const body = encodeURIComponent(`You have been invited to join the accreditation team. Use this code: ${activeCode.value}`)
   window.open(`mailto:?subject=Program Chair Invitation&body=${body}`, '_blank')
@@ -548,6 +642,7 @@ const notificationItems = computed(() => notifications.value.map((notification) 
 
 onMounted(async () => {
   await fetchTeams()
+  await fetchInvitations()
 })
 </script>
 
@@ -623,6 +718,11 @@ onMounted(async () => {
   background: #16a34a; color: #fff;
   display: flex; align-items: center; justify-content: center;
   font-size: 0.7rem; font-weight: 700; flex-shrink: 0;
+  object-fit: cover;
+}
+
+.pc-avatar-image {
+  display: block;
 }
 
 .pc-admin-name { margin: 0; font-size: 0.8rem; color: #f0fdf4; font-weight: 600; }

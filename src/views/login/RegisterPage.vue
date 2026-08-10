@@ -101,7 +101,7 @@
                 type="button"
                 class="smtp-check-button"
                 @click="handleSmtpCheck"
-                :disabled="isCheckingSmtp || !email || emailError"
+                :disabled="isCheckingSmtp || !email || !!emailError"
               >
                 {{ isCheckingSmtp ? 'Checking SMTP...' : 'Test email settings' }}
               </button>
@@ -109,34 +109,6 @@
                 {{ smtpCheckMessage }}
               </span>
             </div>
-          </div>
-
-          <!-- Profile Photo -->
-          <div class="field-group">
-            <label class="field-label" for="profile-photo">Profile Photo <span class="req">(optional)</span></label>
-            <div
-              class="profile-photo-picker"
-              :class="{ error: profilePhotoError }"
-              @click="photoInput?.click()"
-            >
-              <div v-if="profilePhotoPreview" class="photo-preview">
-                <img :src="profilePhotoPreview" alt="Profile preview" />
-              </div>
-              <div v-else class="photo-placeholder">
-                <ion-icon name="image-outline" class="photo-icon" aria-hidden="true"></ion-icon>
-                <span>Upload a square profile photo</span>
-              </div>
-            </div>
-            <input
-              ref="photoInput"
-              id="profile-photo"
-              type="file"
-              accept="image/*"
-              class="photo-input"
-              @change="handleProfilePhotoChange"
-            />
-            <span v-if="profilePhotoError" class="field-error">{{ profilePhotoError }}</span>
-            <span v-else class="field-hint">Square JPG/PNG under 5MB works best.</span>
           </div>
 
           <!-- Phone Number -->
@@ -206,6 +178,34 @@
               </div>
               <span v-if="confirmPasswordError" class="field-error">{{ confirmPasswordError }}</span>
             </div>
+          </div>
+
+          <!-- Profile Photo -->
+          <div class="field-group">
+            <label class="field-label" for="profile-photo">Profile Photo </label>
+            <div
+              class="profile-photo-picker"
+              :class="{ error: profilePhotoError }"
+              @click="photoInput?.click()"
+            >
+              <div v-if="profilePhotoPreview" class="photo-preview">
+                <img :src="profilePhotoPreview" alt="Profile preview" />
+              </div>
+              <div v-else class="photo-placeholder">
+                <ion-icon name="image-outline" class="photo-icon" aria-hidden="true"></ion-icon>
+                <span>Upload a square profile photo</span>
+              </div>
+            </div>
+            <input
+              ref="photoInput"
+              id="profile-photo"
+              type="file"
+              accept="image/*"
+              class="photo-input"
+              @change="handleProfilePhotoChange"
+            />
+            <span v-if="profilePhotoError" class="field-error">{{ profilePhotoError }}</span>
+            <span v-else class="field-hint">Square JPG/PNG under 5MB works best.</span>
           </div>
 
           <app-button

@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import api from '@/lib/api'
 import { TOKEN_KEY } from '@/lib/apiClient'
 import type { User } from '@/lib'
+import { normalizeRole as canonicalizeRole } from '@/lib/roleRedirects'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
@@ -10,7 +11,7 @@ export const useAuthStore = defineStore('auth', () => {
   const isLoading = ref(false)
   const error = ref<string |null>(null)
   const loginChallenge = ref<{ challengeToken: string; email: string; expiresIn: number; remember: boolean } | null>(null)
-  const SESSION_TIMEOUT_MS = 10 * 60 * 1000
+  const SESSION_TIMEOUT_MS = 30 * 60 * 1000
   let inactivityTimer: number | null = null
   let activityListenersAttached = false
   let activityHandler: (() => void) | null = null
@@ -93,14 +94,19 @@ export const useAuthStore = defineStore('auth', () => {
     activityListenersAttached = false
   }
 
-  const normalizeRole = (role: string = '') =>
-    String(role || '')
-      .trim()
-      .toLowerCase()
-      .replace(/[_\s]+/g, '-')
-      .replace(/-+/g, '-')
+  // canonicalize role using central helper
+  const userRole = computed(() => {
+    const raw = (user.value as any)?.role_slug || (user.value as any)?.role || ''
+    return canonicalizeRole(String(raw))
+  })
 
-  const userRole = computed(() => normalizeRole(user.value?.role || ''))
+  const isSuperAdmin = computed(() => userRole.value === 'superadmin' || userRole.value === 'admin')
+  const isQA = computed(() => userRole.value === 'qa')
+  const isVPAA = computed(() => userRole.value === 'vpaa/di' || userRole.value === 'vpaa' || userRole.value === 'vpaa-di')
+  const isDean = computed(() => userRole.value === 'dean')
+  const isFaculty = computed(() => userRole.value === 'faculty')
+  const isAreaIncharge = computed(() => userRole.value === 'area-incharge' || userRole.value === 'area-in-charge')
+  const isProgramChair = computed(() => userRole.value === 'program-chair')
   const userName = computed(() => user.value?.name || '')
   const hasGroup = computed(() => {
     if (!user.value) return false
@@ -328,6 +334,23 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  // Accept a program invitation token
+  const acceptInvitation = async (token: string) => {
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const response = await api.post(`/invitations/${token}/accept`)
+      await restoreSession()
+      return response.data
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Failed to accept invitation.'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   // ======================
   // LOGOUT
   // ======================
@@ -376,6 +399,13 @@ export const useAuthStore = defineStore('auth', () => {
     userRole,
     userName,
     hasGroup,
+    isSuperAdmin,
+    isQA,
+    isVPAA,
+    isDean,
+    isFaculty,
+    isAreaIncharge,
+    isProgramChair,
 
     login,
     verifyTwoFactor,
@@ -385,8 +415,9 @@ export const useAuthStore = defineStore('auth', () => {
 
     logout,
     restoreSession,
-    
+
     joinTeam,
+    acceptInvitation,
 
     loginWithGoogle,
     loginWithGithub,

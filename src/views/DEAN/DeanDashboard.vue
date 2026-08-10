@@ -49,9 +49,10 @@
 
           <div class="dean-sidebar-footer">
             <div class="dean-admin-chip">
-              <div class="dean-avatar">DR</div>
+              <img v-if="currentUserPhoto" :src="currentUserPhoto" alt="Profile photo" class="dean-avatar dean-avatar-image" />
+              <div v-else class="dean-avatar">{{ currentUserInitials }}</div>
               <div>
-                <p class="dean-admin-name">Dr. Rivera</p>
+                <p class="dean-admin-name">{{ currentUserName }}</p>
                 <p class="dean-admin-role">Dean · College of Engineering</p>
               </div>
             </div>
@@ -291,10 +292,12 @@ const documents = ref<any[]>([])
 const pipeline = [
   { label: 'Faculty Upload', sub: 'Evidence submitted', done: true, active: false },
   { label: 'Area In-Charge Review', sub: 'Documents reviewed & approved', done: true, active: false },
-  { label: 'Program Chair Review', sub: 'Forwarded for Dean review', done: true, active: false },
-  { label: 'Dean Review', sub: 'Awaiting your approval', done: false, active: true },
-  { label: 'QA Officer Review', sub: 'Pending Dean endorsement', done: false, active: false },
-  { label: 'VPAA Final Review', sub: 'Accreditation Ready', done: false, active: false },
+  { label: 'Faculty Upload', sub: 'Evidence submitted by faculty', done: true, active: false },
+  { label: 'Area In-Charge Review', sub: 'Reviewed per area', done: true, active: false },
+  { label: 'Program Chair Review', sub: 'Approved and forwarded', done: true, active: false },
+  { label: 'Monitoring Only', sub: 'Dean monitors readiness from this point', done: false, active: true },
+  { label: 'QA Review', sub: 'QA monitors compliance status', done: false, active: false },
+  { label: 'VPAA Review', sub: 'VPAA monitors institutional readiness', done: false, active: false },
 ]
 const faculty = ref<any[]>([])
 const alerts = ref<any[]>([])
@@ -518,6 +521,11 @@ onMounted(() => {
   font-size: 0.7rem;
   font-weight: 700;
   flex-shrink: 0;
+  object-fit: cover;
+}
+
+.dean-avatar-image {
+  display: block;
 }
 
 .dean-admin-name  { margin: 0; font-size: 0.8rem; color: #f1f5f9; font-weight: 600; }

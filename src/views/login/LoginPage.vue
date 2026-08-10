@@ -15,7 +15,7 @@
         </p>
 
         <ul class="brand-facts" aria-hidden="true">
-          <li><span class="fact-num">01</span>Standards &amp; Compliance</li>
+          <li><span class="fact-num">01</span>Your Pathway to Accreditation Success</li>
           <li><span class="fact-num">02</span>Self-Study Workspace</li>
           <li><span class="fact-num">03</span>Site Visit Records</li>
         </ul>
@@ -79,19 +79,29 @@
           </div> <app-button type="submit" variant="primary" block size="lg" :loading="isLoading"
             :disabled="isLoading || code.length !== 6" class="submit-btn"> Verify Code </app-button> <button
             type="button" class="alt-btn" :disabled="isLoading" @click="cancel2FA"> Back to sign in </button>
-          <div style=" margin-top: 8px; display: flex; flex-direction: column; gap: 8px; align-items: center; "> <button
+          <div style=" margin-top: 8px; display: flex; flex-direction: column; gap: 8px; align-items: center; ">
+             <button
               type="button" class="alt-btn" :disabled="resendDisabled || countdown > 0 || isLoading"
-              @click="handleResend"> {{ resendDisabled ? 'Resending...' : 'Resend code' }} </button> <span
-              v-if="countdown > 0" class="field-hint"> You can resend in {{ countdown }}s </span> </div>
+              @click="handleResend"> {{ resendDisabled ? 'Resending...' : 'Resend code' }} 
+            </button> 
+              <span v-if="countdown > 0" class="field-hint"> You can resend in {{ countdown }}s </span> </div>
         </form>
 
-        <div class="social-divider"> <span class="divider-line"></span> <span class="divider-text">or continue
-            with</span> <span class="divider-line"></span> </div>
-        <div class="social-login-buttons"> <button type="button" @click="handleGoogleLogin"
-            class="social-btn google-btn" :disabled="isSocialLoading || isLoading"> <ion-icon name="logo-google"
-              class="social-icon" aria-hidden="true" /> <span>Google</span> </button> <button type="button"
-            @click="handleGithubLogin" class="social-btn github-btn" :disabled="isSocialLoading || isLoading"> <ion-icon
-              name="logo-github" class="social-icon" aria-hidden="true" /> <span>GitHub</span> </button> </div>
+        <div class="social-divider"> <span class="divider-line"></span> 
+          <span class="divider-text">or continue with </span> 
+          <span class="divider-line"></span> 
+        </div>
+        <div class="social-login-buttons"> 
+          <button type="button" @click="handleGoogleLogin"
+            class="social-btn google-btn" :disabled="isSocialLoading || isLoading"> 
+            <ion-icon name="logo-google"
+              class="social-icon" aria-hidden="true" />
+              <span>Google</span> </button> 
+              <button type="button" @click="handleGithubLogin" class="social-btn github-btn" :disabled="isSocialLoading || isLoading"> 
+                <ion-icon name="logo-github" class="social-icon" aria-hidden="true" /> 
+              <span>GitHub</span> 
+          </button> 
+        </div>
       </div>
     </div>
   </ion-page>

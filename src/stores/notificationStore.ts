@@ -15,44 +15,26 @@ export const useNotificationStore = defineStore('notifications', () => {
     try {
       const userId = localStorage.getItem('userId')
       if (!userId) {
-        setMockNotifications()
+        notifications.value = []
+        unreadCount.value = 0
         return
       }
 
-      try {
-        const data = await getNotifications()
-        notifications.value = data
-      } catch {
-        console.warn('Backend fetch failed, using mock data')
-        setMockNotifications()
-      }
-
+      const data = await getNotifications()
+      notifications.value = data
       unreadCount.value = notifications.value.filter(n => !n.read).length
     } catch (err: any) {
       error.value = err.message || 'Failed to fetch notifications'
-      setMockNotifications()
+      notifications.value = []
+      unreadCount.value = 0
     } finally {
       isLoading.value = false
     }
   }
 
-  const setMockNotifications = () => {
-    notifications.value = [
-      { id: '1', userId: '1', title: 'Submission Deadline Approaching', message: 'The submission deadline for "Student Learning Outcomes" is in 7 days.', type: 'warning', read: false, createdAt: new Date(Date.now() - 86400000).toISOString() },
-      { id: '2', userId: '1', title: 'Document Approved', message: 'Your document "Program Learning Outcomes 2025-26" has been approved.', type: 'success', read: false, createdAt: new Date(Date.now() - 259200000).toISOString() },
-      { id: '3', userId: '1', title: 'Revision Requested', message: 'The Dean has requested revisions on "Faculty Development Plan".', type: 'info', read: true, createdAt: new Date(Date.now() - 432000000).toISOString() },
-      { id: '4', userId: '1', title: 'New Accreditation Area Assigned', message: 'You have been assigned to "Laboratory Facilities" accreditation area.', type: 'info', read: false, createdAt: new Date(Date.now() - 604800000).toISOString() }
-    ]
-    unreadCount.value = notifications.value.filter(n => !n.read).length
-  }
-
   const markAsRead = async (id: string) => {
     try {
-      try {
-        await getNotifications()
-      } catch {
-        console.warn('Backend mark read failed, updating locally')
-      }
+      await getNotifications()
       const notification = notifications.value.find(n => n.id === id)
       if (notification) {
         notification.read = true
@@ -60,23 +42,18 @@ export const useNotificationStore = defineStore('notifications', () => {
       }
     } catch (err: any) {
       error.value = err.message || 'Failed to mark notification as read'
+      throw err
     }
   }
 
   const markAllAsRead = async () => {
     try {
-      const userId = localStorage.getItem('userId')
-      if (userId) {
-        try {
-          await getNotifications()
-        } catch {
-          console.warn('Backend mark all read failed, updating locally')
-        }
-      }
+      await getNotifications()
       notifications.value.forEach(n => { n.read = true })
       unreadCount.value = 0
     } catch (err: any) {
       error.value = err.message || 'Failed to mark all as read'
+      throw err
     }
   }
 

@@ -51,9 +51,10 @@
 
           <div class="vpaa-sidebar-footer">
             <div class="vpaa-admin-chip">
-              <div class="vpaa-avatar">VP</div>
+              <img v-if="currentUserPhoto" :src="currentUserPhoto" alt="Profile photo" class="vpaa-avatar vpaa-avatar-image" />
+              <div v-else class="vpaa-avatar">{{ currentUserInitials }}</div>
               <div>
-                <p class="vpaa-admin-name">Dr. F. Reyes</p>
+                <p class="vpaa-admin-name">{{ currentUserName }}</p>
                 <p class="vpaa-admin-role">VPAA / Director of Instruction</p>
               </div>
             </div>
@@ -291,6 +292,12 @@ import { approveReview, getColleges, getDocuments, getPrograms, getReviews, requ
 const authStore = useAuthStore()
 const router = useRouter()
 const { activeCall, callMessage, callUser, endCall } = useUserCalls()
+const currentUserName = computed(() => authStore.user?.name || 'VPAA User')
+const currentUserInitials = computed(() => {
+  const name = authStore.user?.name || 'VPAA User'
+  return name.split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase() || 'VP'
+})
+const currentUserPhoto = computed(() => (authStore.user as any)?.profilePhoto || (authStore.user as any)?.avatar || null)
 
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -310,10 +317,12 @@ const handleLogout = async () => {
 const pipeline = [
   { label: 'Faculty Upload', sub: 'Evidence submitted by faculty', done: true, active: false },
   { label: 'Area In-Charge Review', sub: 'Documents reviewed per area', done: true, active: false },
+  { label: 'Faculty Upload', sub: 'Evidence submitted by faculty', done: true, active: false },
+  { label: 'Area In-Charge Review', sub: 'Reviewed per area', done: true, active: false },
   { label: 'Program Chair Review', sub: 'Approved and forwarded', done: true, active: false },
-  { label: 'Dean Review', sub: 'Endorsed by college dean', done: true, active: false },
-  { label: 'QA Officer Review', sub: 'Verified and endorsed', done: true, active: false },
-  { label: 'VPAA Final Review', sub: 'Your stage — sets Accreditation Ready', done: false, active: true },
+  { label: 'Dean Monitoring', sub: 'Dean monitors progress only', done: true, active: false },
+  { label: 'QA Monitoring', sub: 'QA monitors compliance', done: true, active: false },
+  { label: 'VPAA Monitoring', sub: 'Your stage — monitor institutional readiness', done: false, active: true },
 ]
 
 const loadData = async () => {
@@ -530,6 +539,11 @@ onMounted(() => {
   background: #0d9488; color: #fff;
   display: flex; align-items: center; justify-content: center;
   font-size: 0.7rem; font-weight: 700; flex-shrink: 0;
+  object-fit: cover;
+}
+
+.vpaa-avatar-image {
+  display: block;
 }
 
 .vpaa-admin-name { margin: 0; font-size: 0.8rem; color: #f8fafc; font-weight: 600; }

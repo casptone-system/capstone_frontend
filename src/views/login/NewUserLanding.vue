@@ -11,25 +11,24 @@
       </div>
 
       <form class="join-form" @submit.prevent="handleJoin">
-        <label class="field-label" for="invite-code">Invitation code</label>
+        <label class="field-label" for="invite-code">Invitation token</label>
         <input
           id="invite-code"
           v-model="inviteCode"
           type="text"
-          maxlength="6"
           autocomplete="one-time-code"
-          placeholder="Enter 6-digit code"
+          placeholder="Enter your invitation token"
           class="invite-input"
         />
 
         <button class="join-button" type="submit" :disabled="isLoading">
-          {{ isLoading ? 'Joining...' : 'Join Team' }}
+          {{ isLoading ? 'Accepting...' : 'Accept Invitation' }}
         </button>
       </form>
 
       <p v-if="message" class="message" :class="messageType">{{ message }}</p>
       <p class="help-text">
-        Don’t have a code? Contact your Program Chair or Dean and ask them to generate your team invitation.
+        Don’t have a token? Contact your Program Chair or Dean and ask them to generate your team invitation.
       </p>
     </div>
   </div>
@@ -51,18 +50,18 @@ const isLoading = ref(false)
 const handleJoin = async () => {
   const code = inviteCode.value.trim()
 
-  if (!/^[A-Za-z0-9]{6}$/.test(code)) {
-    message.value = 'Please enter a valid 6-character invitation code.'
+  if (!code) {
+    message.value = 'Please enter your invitation token.'
     messageType.value = 'error'
     return
   }
 
   isLoading.value = true
-  message.value = 'Joining team...'
+  message.value = 'Accepting invitation...'
   messageType.value = 'success'
 
   try {
-    await authStore.joinTeam(code)
+    await authStore.acceptInvitation(code)
     message.value = 'Invitation accepted. Redirecting to your workspace...'
     const redirect = getRoleRedirectPath(authStore.userRole)
     const cleanRedirect = redirect.replace('?noGroup=1', '')

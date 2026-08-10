@@ -94,9 +94,10 @@
           <!-- when this area is click i will see the option: settings, profile, logout etc -->
           <div class="sa-sidebar-footer">
             <div class="sa-admin-chip">
-              <div class="sa-avatar">SA</div>
+              <img v-if="currentUserPhoto" :src="currentUserPhoto" alt="Profile photo" class="sa-avatar sa-avatar-image" />
+              <div v-else class="sa-avatar">{{ currentUserInitials }}</div>
               <div>
-                <p class="sa-admin-name">System Admin</p>
+                <p class="sa-admin-name">{{ currentUserName }}</p>
                 <p class="sa-admin-role">Super Administrator</p>
               </div>
             </div>
@@ -331,6 +332,12 @@ import { useSuperAdminStore } from '@/stores/superAdminStore'
 const authStore = useAuthStore()
 const router = useRouter()
 const superAdminStore = useSuperAdminStore()
+const currentUserName = computed(() => authStore.user?.name || 'System Admin')
+const currentUserInitials = computed(() => {
+  const name = authStore.user?.name || 'System Admin'
+  return name.split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase() || 'SA'
+})
+const currentUserPhoto = computed(() => (authStore.user as any)?.profilePhoto || (authStore.user as any)?.avatar || null)
 const { activeCall, callMessage, callUser, endCall } = useUserCalls()
 
 const handleLogout = async () => {

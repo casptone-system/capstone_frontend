@@ -138,8 +138,7 @@ import { computed } from 'vue'
 const authStore = useAuthStore()
 
 const showAdmin = computed(() => {
-  const role = (authStore.userRole || '').toString()
-  return !!authStore.hasGroup || ['super-admin', 'dean', 'program-chair'].includes(role)
+  return !!authStore.hasGroup || authStore.isSuperAdmin || authStore.isDean || authStore.isProgramChair
 })
 </script>
 

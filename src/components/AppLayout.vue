@@ -27,7 +27,8 @@
           </button>
 
           <button class="profile-button" @click="showProfileMenu = !showProfileMenu" aria-haspopup="true" :aria-expanded="showProfileMenu">
-            <div class="avatar">{{ userName.charAt(0).toUpperCase() }}</div>
+            <img v-if="userPhotoUrl" :src="userPhotoUrl" alt="Profile photo" class="avatar avatar-image" />
+            <div v-else class="avatar">{{ userName.charAt(0).toUpperCase() }}</div>
             <span>{{ userName }}</span>
             <ion-icon name="chevron-down" :style="{ transform: showProfileMenu ? 'rotate(180deg)' : 'rotate(0)' }"></ion-icon>
           </button>
@@ -108,7 +109,8 @@ const showProfileMenu = ref(false)
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const userName = computed(() => authStore.userName)
-const isDean = computed(() => authStore.userRole === 'dean')
+const isDean = computed(() => authStore.isDean)
+const userPhotoUrl = computed(() => (authStore.user as any)?.profilePhoto || (authStore.user as any)?.avatar || null)
 
 const navItems = [
   { path: '/user/dashboard', label: 'Dashboard', icon: 'grid-outline' },
@@ -296,6 +298,11 @@ const handleLogout = () => {
   justify-content: center;
   font-weight: var(--font-weight-bold);
   font-size: var(--text-sm);
+  object-fit: cover;
+}
+
+.avatar-image {
+  display: block;
 }
 
 .profile-menu {

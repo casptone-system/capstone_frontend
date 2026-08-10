@@ -62,69 +62,47 @@ export const useDashboardStore = defineStore('dashboard', () => {
     return statusMap[stats.value.securityStatus]
   })
 
-  const setMockActivities = () => {
-    activities.value = [
-      { id: '1', title: 'Program Learning Outcomes approved', status: 'approved', icon: 'checkmark-circle-outline', color: 'rgba(34, 197, 94, 0.1)', time: '2 hours ago' },
-      { id: '2', title: 'Assessment report submitted', status: 'submitted', icon: 'document-outline', color: 'rgba(59, 130, 246, 0.1)', time: '5 hours ago' },
-      { id: '3', title: 'Revision requested for outcomes document', status: 'revision', icon: 'alert-circle-outline', color: 'rgba(245, 158, 11, 0.1)', time: '1 day ago' },
-      { id: '4', title: 'New faculty member added', status: 'completed', icon: 'person-add-outline', color: 'rgba(34, 197, 94, 0.1)', time: '2 days ago' },
-      { id: '5', title: 'Lab inspection completed successfully', status: 'completed', icon: 'flask-outline', color: 'rgba(34, 197, 94, 0.1)', time: '3 days ago' },
-      { id: '6', title: 'Compliance report generated for Dean review', status: 'submitted', icon: 'bar-chart-outline', color: 'rgba(59, 130, 246, 0.1)', time: '4 days ago' },
-      { id: '7', title: 'Curriculum changes submitted for approval', status: 'submitted', icon: 'layers-outline', color: 'rgba(59, 130, 246, 0.1)', time: '5 days ago' },
-      { id: '8', title: 'Extension program completed with 200+ beneficiaries', status: 'completed', icon: 'heart-outline', color: 'rgba(34, 197, 94, 0.1)', time: '6 days ago' }
-    ]
-  }
-
   const fetchDashboardStats = async () => {
     isLoading.value = true
     error.value = null
     try {
-      try {
-        const dashboard = await getDashboard()
-        const apiStats = dashboard?.data || dashboard
-        stats.value = {
-          ...stats.value,
-          totalPrograms: apiStats.totalPrograms ?? apiStats.total_programs ?? 0,
-          totalAreas: apiStats.totalAreas ?? apiStats.total_areas ?? 0,
-          complianceScore: apiStats.complianceScore ?? apiStats.compliance_score ?? 0,
-          pendingSubmissions: apiStats.pendingSubmissions ?? apiStats.pending_submissions ?? 0,
-          assignmentCompletion: apiStats.assignmentCompletion ?? apiStats.assignment_completion ?? 0,
-          performanceTrend: apiStats.performanceTrend ?? apiStats.performance_trend ?? 0,
-          securityStatus: 'protected',
-          collaborationActivity: apiStats.collaborationActivity ?? apiStats.collaboration_activity ?? 34
-        }
-
-        const activitiesData = apiStats.activities || []
-        activities.value = (activitiesData || []).map((item: any) => ({
-          id: item.id,
-          title: item.title,
-          status: item.status,
-          icon: item.icon || 'document-outline',
-          color: item.color || 'rgba(59,130,246,0.1)',
-          time: formatTimeAgo(item.created_at),
-          created_at: item.created_at
-        }))
-      } catch (apiError) {
-        console.warn('Backend fetch failed, using mock data:', apiError)
-        stats.value = {
-          totalPrograms: 28,
-          totalAreas: 12,
-          complianceScore: 92,
-          pendingSubmissions: 17,
-          assignmentCompletion: 84,
-          performanceTrend: 14,
-          securityStatus: 'protected',
-          collaborationActivity: 34
-        }
-        setMockActivities()
+      const dashboard = await getDashboard()
+      const apiStats = dashboard?.data || dashboard
+      stats.value = {
+        ...stats.value,
+        totalPrograms: apiStats.totalPrograms ?? apiStats.total_programs ?? 0,
+        totalAreas: apiStats.totalAreas ?? apiStats.total_areas ?? 0,
+        complianceScore: apiStats.complianceScore ?? apiStats.compliance_score ?? 0,
+        pendingSubmissions: apiStats.pendingSubmissions ?? apiStats.pending_submissions ?? 0,
+        assignmentCompletion: apiStats.assignmentCompletion ?? apiStats.assignment_completion ?? 0,
+        performanceTrend: apiStats.performanceTrend ?? apiStats.performance_trend ?? 0,
+        securityStatus: 'protected',
+        collaborationActivity: apiStats.collaborationActivity ?? apiStats.collaboration_activity ?? 34
       }
 
-      if (!activities.value.length) {
-        setMockActivities()
-      }
+      const activitiesData = apiStats.activities || []
+      activities.value = (activitiesData || []).map((item: any) => ({
+        id: item.id,
+        title: item.title,
+        status: item.status,
+        icon: item.icon || 'document-outline',
+        color: item.color || 'rgba(59,130,246,0.1)',
+        time: formatTimeAgo(item.created_at),
+        created_at: item.created_at
+      }))
     } catch (err: any) {
       error.value = err.message || 'Failed to fetch dashboard stats'
-      setMockActivities()
+      stats.value = {
+        totalPrograms: 0,
+        totalAreas: 0,
+        complianceScore: 0,
+        pendingSubmissions: 0,
+        assignmentCompletion: 0,
+        performanceTrend: 0,
+        securityStatus: 'protected',
+        collaborationActivity: 0
+      }
+      activities.value = []
     } finally {
       isLoading.value = false
     }

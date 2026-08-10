@@ -45,9 +45,10 @@
 
           <div class="fac-sidebar-footer">
             <div class="fac-admin-chip">
-              <div class="fac-avatar">JR</div>
+              <img v-if="currentUserPhoto" :src="currentUserPhoto" alt="Profile photo" class="fac-avatar fac-avatar-image" />
+              <div v-else class="fac-avatar">{{ currentUserInitials }}</div>
               <div>
-                <p class="fac-admin-name">Jose Reyes</p>
+                <p class="fac-admin-name">{{ currentUserName }}</p>
                 <p class="fac-admin-role">Faculty · BS IT</p>
               </div>
             </div>
@@ -613,6 +614,11 @@ onMounted(() => {
   background: #0891b2; color: #fff;
   display: flex; align-items: center; justify-content: center;
   font-size: 0.7rem; font-weight: 700; flex-shrink: 0;
+  object-fit: cover;
+}
+
+.fac-avatar-image {
+  display: block;
 }
 
 .fac-admin-name { margin: 0; font-size: 0.8rem; color: #f0f9ff; font-weight: 600; }

@@ -1,5 +1,5 @@
 // User and Authentication
-export type UserRole = 'dean' | 'program-chair' | 'faculty' | 'admin' | 'staff' | string
+export type UserRole = 'dean' | 'program-chair' | 'faculty' | 'admin' | 'staff'
 
 export interface User {
   id: string
@@ -9,7 +9,7 @@ export interface User {
   last_name?: string
   email: string
   teamId?: string
-  role: string
+  role: UserRole
   role_slug?: string
   institution?: string
   avatar?: string

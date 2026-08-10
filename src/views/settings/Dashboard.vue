@@ -73,7 +73,7 @@ const router = useRouter()
 const roleSummary = computed(() => {
   const role = String(authStore.userRole || '')
   switch (role) {
-    case 'super-admin':
+    case 'superadmin':
       return { title: 'Super Administrator workspace', description: 'You can manage users, teams, compliance, and institutional oversight from one place.' }
     case 'dean':
       return { title: 'Dean leadership view', description: 'Review program health, priorities, and approvals without leaving the dashboard.' }
@@ -84,6 +84,7 @@ const roleSummary = computed(() => {
     case 'qa':
       return { title: 'QA review workspace', description: 'Inspect quality checks and monitor review readiness.' }
     case 'vpaa':
+    case 'vpaa/di':
       return { title: 'VPAA oversight view', description: 'Focus on executive-level reporting and strategic monitoring.' }
     default:
       return { title: 'Role-based dashboard', description: 'Your workspace will adapt as soon as your role is detected.' }
@@ -93,18 +94,19 @@ const roleSummary = computed(() => {
 const pageTitle = computed(() => {
   const role = String(authStore.userRole || '')
   switch (role) {
-    case 'super-admin': return 'Super Administrator Dashboard'
+    case 'superadmin': return 'Super Administrator Dashboard'
     case 'dean': return 'Dean Dashboard'
     case 'program-chair': return 'Program Chair Dashboard'
     case 'faculty': return 'Faculty Dashboard'
     case 'qa': return 'QA Dashboard'
-    case 'vpaa': return 'VPAA Dashboard'
+    case 'vpaa':
+    case 'vpaa/di': return 'VPAA Dashboard'
     default: return 'Dashboard'
   }
 })
 
 const pageDescription = computed(() => 'Welcome back. Your dashboard is tailored to your access level.')
-const isSuperAdmin = computed(() => authStore.userRole === 'super-admin' || authStore.userRole === 'superadministrator' || authStore.userRole === 'admin')
+const isSuperAdmin = computed(() => authStore.isSuperAdmin)
 
 onMounted(async () => {
   await dashboardStore.fetchDashboardStats()

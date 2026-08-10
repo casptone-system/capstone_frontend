@@ -124,6 +124,38 @@ export const deleteProgram = async (id: number | string) => {
 }
 
 /* ===========================
+   PROGRAM INVITATIONS
+=========================== */
+
+export const getProgramInvitations = async (programId: number | string) => {
+  const response = await api.get(`/programs/${programId}/invitations`)
+  return response.data
+}
+
+export const createProgramInvitation = async (
+  programId: number | string,
+  data: { email?: string; role?: string; expires_in_hours?: number }
+) => {
+  const response = await api.post(`/programs/${programId}/invitations`, data)
+  return response.data
+}
+
+export const resendInvitation = async (token: string) => {
+  const response = await api.post(`/invitations/${token}/resend`)
+  return response.data
+}
+
+export const revokeInvitation = async (token: string) => {
+  const response = await api.post(`/invitations/${token}/revoke`)
+  return response.data
+}
+
+export const acceptInvitationToken = async (token: string) => {
+  const response = await api.post(`/invitations/${token}/accept`)
+  return response.data
+}
+
+/* ===========================
    ACCREDITATION AREAS
 =========================== */
 
