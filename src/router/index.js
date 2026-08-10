@@ -75,7 +75,7 @@ const routes = [
   },
   {
     path: '/email-verified',
-    name: 'email-verified',
+    name: 'EmailVerified',
     component: EmailVerified,
     meta: { requiresAuth: false },
   },
