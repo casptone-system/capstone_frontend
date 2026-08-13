@@ -3,7 +3,7 @@
     <ion-content fullscreen>
       <DashboardLayout title="User Administration" description="Manage system users, roles, and access state from one place." role="super-admin">
         <template #actions>
-          <ion-button fill="outline" class="action-btn" @click="goTo('/user/dashboard/super-admin')">Back to dashboard</ion-button>
+          <ion-button fill="outline" class="action-btn" @click="goTo('/superadmin')">Back to dashboard</ion-button>
           <ion-button class="action-btn" @click="openCreateModal">Add user</ion-button>
         </template>
 
@@ -51,8 +51,8 @@
                     <td><span :class="['chip', statusClass(user.status)]">{{ formatStatus(user.status) }}</span></td>
                     <td>
                       <div class="action-group">
-                        <ion-button fill="clear" size="small" @click="editUser(user)">Edit</ion-button>
-                        <ion-button fill="clear" size="small" color="danger">Remove</ion-button>
+                        <ion-button class="action-pill action-edit" fill="clear" size="small" @click="editUser(user)">Edit</ion-button>
+                        <ion-button class="action-pill action-delete" fill="clear" size="small" color="danger">Remove</ion-button>
                       </div>
                     </td>
                   </tr>
@@ -268,7 +268,28 @@ th { color: #64748b; font-size: 0.8rem; text-transform: uppercase; letter-spacin
 .active { background: #dcfce7; color: #166534; }
 .pending { background: #fef3c7; color: #92400e; }
 .inactive { background: #fee2e2; color: #b91c1c; }
-.action-group { display: flex; gap: 0.2rem; }
+.action-group { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+.action-pill {
+  --padding-top: 0.5rem;
+  --padding-bottom: 0.5rem;
+  --padding-start: 0.8rem;
+  --padding-end: 0.8rem;
+  --border-radius: 999px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.action-edit {
+  --background: #eff6ff;
+  --color: #1d4ed8;
+  --background-hover: #dbeafe;
+  --background-activated: #dbeafe;
+}
+.action-delete {
+  --background: #fef2f2;
+  --color: #b91c1c;
+  --background-hover: #fee2e2;
+  --background-activated: #fee2e2;
+}
 .error-box { padding: 0.8rem 1rem; border-radius: 0.8rem; background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
 label { display: flex; flex-direction: column; gap: 0.3rem; color: #334155; font-size: 0.9rem; }
 input, select { padding: 0.65rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 0.7rem; background: #f8fafc; }

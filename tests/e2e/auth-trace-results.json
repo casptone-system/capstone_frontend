@@ -1,0 +1,128 @@
+[
+  {
+    "testName": "auth-vpaa",
+    "role": "vpaa",
+    "tokenSetBeforeNavigation": true,
+    "authorizationHeaderPresent": true,
+    "apiMeUrl": "http://127.0.0.1:8000/api/me",
+    "apiMeStatus": 401,
+    "apiMeResponseRole": null,
+    "restoreSessionRequested": true,
+    "authStoreAuthenticated": false,
+    "routeBefore": "N/A (root)",
+    "routeAfter": "/",
+    "finalUrl": "http://localhost:8080/",
+    "notes": [
+      "Neither dashboard nor join view found"
+    ],
+    "authorizationHeaderMatchesKnown": true
+  },
+  {
+    "testName": "auth-dean",
+    "role": "dean",
+    "tokenSetBeforeNavigation": true,
+    "authorizationHeaderPresent": true,
+    "apiMeUrl": "http://127.0.0.1:8000/api/me",
+    "apiMeStatus": 401,
+    "apiMeResponseRole": null,
+    "restoreSessionRequested": true,
+    "authStoreAuthenticated": false,
+    "routeBefore": "N/A (root)",
+    "routeAfter": "/login",
+    "finalUrl": "http://localhost:8080/login",
+    "notes": [
+      "Neither dashboard nor join view found"
+    ],
+    "authorizationHeaderMatchesKnown": true
+  },
+  {
+    "testName": "auth-program-chair",
+    "role": "program-chair",
+    "tokenSetBeforeNavigation": true,
+    "authorizationHeaderPresent": true,
+    "apiMeUrl": "http://127.0.0.1:8000/api/me",
+    "apiMeStatus": 401,
+    "apiMeResponseRole": null,
+    "restoreSessionRequested": true,
+    "authStoreAuthenticated": false,
+    "routeBefore": "N/A (root)",
+    "routeAfter": "/",
+    "finalUrl": "http://localhost:8080/",
+    "notes": [
+      "Neither dashboard nor join view found"
+    ],
+    "authorizationHeaderMatchesKnown": true
+  },
+  {
+    "testName": "auth-faculty",
+    "role": "faculty",
+    "tokenSetBeforeNavigation": true,
+    "authorizationHeaderPresent": true,
+    "apiMeUrl": "http://127.0.0.1:8000/api/me",
+    "apiMeStatus": 401,
+    "apiMeResponseRole": null,
+    "restoreSessionRequested": true,
+    "authStoreAuthenticated": false,
+    "routeBefore": "N/A (root)",
+    "routeAfter": "/login",
+    "finalUrl": "http://localhost:8080/login",
+    "notes": [
+      "Neither dashboard nor join view found"
+    ],
+    "authorizationHeaderMatchesKnown": true
+  },
+  {
+    "testName": "auth-area-in-charge",
+    "role": "area-in-charge",
+    "tokenSetBeforeNavigation": true,
+    "authorizationHeaderPresent": true,
+    "apiMeUrl": "http://127.0.0.1:8000/api/me",
+    "apiMeStatus": 401,
+    "apiMeResponseRole": null,
+    "restoreSessionRequested": true,
+    "authStoreAuthenticated": false,
+    "routeBefore": "N/A (root)",
+    "routeAfter": "/login",
+    "finalUrl": "http://localhost:8080/login",
+    "notes": [
+      "Neither dashboard nor join view found"
+    ],
+    "authorizationHeaderMatchesKnown": true
+  },
+  {
+    "testName": "auth-qa",
+    "role": "qa",
+    "tokenSetBeforeNavigation": true,
+    "authorizationHeaderPresent": true,
+    "apiMeUrl": "http://127.0.0.1:8000/api/me",
+    "apiMeStatus": 401,
+    "apiMeResponseRole": null,
+    "restoreSessionRequested": true,
+    "authStoreAuthenticated": false,
+    "routeBefore": "N/A (root)",
+    "routeAfter": "/login",
+    "finalUrl": "http://localhost:8080/login",
+    "notes": [
+      "Neither dashboard nor join view found"
+    ],
+    "authorizationHeaderMatchesKnown": true
+  },
+  {
+    "testName": "auth-superadmin",
+    "role": "superadmin",
+    "tokenSetBeforeNavigation": true,
+    "authorizationHeaderPresent": true,
+    "apiMeUrl": "http://127.0.0.1:8000/api/me",
+    "apiMeStatus": 401,
+    "apiMeResponseRole": null,
+    "restoreSessionRequested": true,
+    "authStoreAuthenticated": false,
+    "routeBefore": "N/A (root)",
+    "routeAfter": "/login",
+    "finalUrl": "http://localhost:8080/login",
+    "notes": [
+      "Neither dashboard nor join view found"
+    ],
+    "authorizationHeaderMatchesKnown": true
+  }
+]

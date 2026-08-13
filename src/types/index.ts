@@ -27,6 +27,7 @@ export interface Program {
   status: 'active' | 'inactive' | 'archived' | 'pending'
   description?: string
   chair?: string
+  chairId?: string | number | null
   accreditationStatus?: string
   complianceScore?: number
 }

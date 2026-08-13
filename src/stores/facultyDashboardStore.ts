@@ -115,38 +115,7 @@ export const useFacultyDashboardStore = defineStore('facultyDashboard', () => {
       const payload = Array.isArray(data) ? data : data?.data ?? []
       selectedDocuments.value = payload.map(normalizeDocument)
     } catch {
-      selectedDocuments.value = [
-        {
-          id: '1',
-          title: 'Faculty CV',
-          area: 'Faculty Profile',
-          program: dashboardProgram.value,
-          uploadedBy: authStore.user?.name || 'Faculty',
-          uploadedAt: new Date(Date.now() - 86400000).toISOString(),
-          version: 1,
-          status: 'approved',
-        },
-        {
-          id: '2',
-          title: 'Course Matrix',
-          area: 'Curriculum',
-          program: dashboardProgram.value,
-          uploadedBy: authStore.user?.name || 'Faculty',
-          uploadedAt: new Date(Date.now() - 172800000).toISOString(),
-          version: 1,
-          status: 'revision',
-        },
-        {
-          id: '3',
-          title: 'Research Output',
-          area: 'Research & Development',
-          program: dashboardProgram.value,
-          uploadedBy: authStore.user?.name || 'Faculty',
-          uploadedAt: new Date(Date.now() - 259200000).toISOString(),
-          version: 1,
-          status: 'pending',
-        },
-      ]
+      selectedDocuments.value = []
     }
   }
 
@@ -164,11 +133,7 @@ export const useFacultyDashboardStore = defineStore('facultyDashboard', () => {
         createdAt: item.createdAt || item.created_at || new Date().toISOString(),
       }))
     } catch {
-      notifications.value = [
-        { id: '1', userId: authStore.user?.id || '1', title: 'Document received', message: 'Your uploaded file is under review.', type: 'info', read: false, createdAt: new Date(Date.now() - 3600000).toISOString() },
-        { id: '2', userId: authStore.user?.id || '1', title: 'Revision requested', message: 'Please revise and resubmit your latest document.', type: 'warning', read: false, createdAt: new Date(Date.now() - 7200000).toISOString() },
-        { id: '3', userId: authStore.user?.id || '1', title: 'Team update', message: 'A new member joined your accreditation team.', type: 'success', read: true, createdAt: new Date(Date.now() - 86400000).toISOString() },
-      ]
+      notifications.value = []
     }
   }
 
@@ -182,25 +147,25 @@ export const useFacultyDashboardStore = defineStore('facultyDashboard', () => {
       const payload = data?.data || data || {}
 
       dashboardSummary.value = {
-        totalPrograms: payload.totalPrograms ?? payload.total_programs ?? 1,
-        totalAreas: payload.totalAreas ?? payload.total_areas ?? 4,
-        totalEvidence: payload.totalEvidence ?? payload.total_evidence ?? 12,
-        totalCycles: payload.totalCycles ?? payload.total_cycles ?? 2,
-        compliancePercent: payload.compliancePercent ?? payload.compliance_percent ?? 78,
-        readinessPercent: payload.readinessPercent ?? payload.readiness_percent ?? 66,
-        pendingReviews: payload.pendingReviews ?? payload.pending_reviews ?? 3,
-        overdueTasks: payload.overdueTasks ?? payload.overdue_tasks ?? 1,
+        totalPrograms: payload.totalPrograms ?? payload.total_programs ?? 0,
+        totalAreas: payload.totalAreas ?? payload.total_areas ?? 0,
+        totalEvidence: payload.totalEvidence ?? payload.total_evidence ?? 0,
+        totalCycles: payload.totalCycles ?? payload.total_cycles ?? 0,
+        compliancePercent: payload.compliancePercent ?? payload.compliance_percent ?? 0,
+        readinessPercent: payload.readinessPercent ?? payload.readiness_percent ?? 0,
+        pendingReviews: payload.pendingReviews ?? payload.pending_reviews ?? 0,
+        overdueTasks: payload.overdueTasks ?? payload.overdue_tasks ?? 0,
       }
     } catch {
       dashboardSummary.value = {
-        totalPrograms: 1,
-        totalAreas: 4,
-        totalEvidence: 8,
-        totalCycles: 2,
-        compliancePercent: 72,
-        readinessPercent: 63,
-        pendingReviews: 3,
-        overdueTasks: 1,
+        totalPrograms: 0,
+        totalAreas: 0,
+        totalEvidence: 0,
+        totalCycles: 0,
+        compliancePercent: 0,
+        readinessPercent: 0,
+        pendingReviews: 0,
+        overdueTasks: 0,
       }
     }
   }

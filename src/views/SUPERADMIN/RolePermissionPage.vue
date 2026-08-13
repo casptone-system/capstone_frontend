@@ -1,11 +1,24 @@
 <template>
-  <ion-page>
-    <ion-content :fullscreen="true">
-      <div class="sa-page-shell">
+  <div class="sa-page-shell">
         <div class="sa-page-header">
           <div>
             <p class="sa-breadcrumb">Super Admin</p>
             <h1 class="sa-page-title">Roles & Permissions</h1>
+          </div>
+        </div>
+
+        <div class="sa-metric-grid">
+          <div class="sa-metric-card">
+            <p class="sa-metric-label">Roles</p>
+            <p class="sa-metric-value">{{ roles.length }}</p>
+          </div>
+          <div class="sa-metric-card">
+            <p class="sa-metric-label">Permissions</p>
+            <p class="sa-metric-value">{{ permissions.length }}</p>
+          </div>
+          <div class="sa-metric-card">
+            <p class="sa-metric-label">Assigned access</p>
+            <p class="sa-metric-value">{{ roles.reduce((sum, role) => sum + (Array.isArray(role.permissions) ? role.permissions.length : 0), 0) }}</p>
           </div>
         </div>
 
@@ -72,12 +85,9 @@
           </div>
         </div>
       </div>
-    </ion-content>
-  </ion-page>
 </template>
 
 <script setup lang="ts">
-import { IonPage, IonContent } from '@ionic/vue'
 import { computed, onMounted, ref } from 'vue'
 import AppModal from '@/components/AppModal.vue'
 import api, { getRolePermissions, updateRolePermissions } from '@/lib/api'

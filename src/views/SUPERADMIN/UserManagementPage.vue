@@ -1,13 +1,30 @@
 <template>
-  <ion-page>
-    <ion-content :fullscreen="true">
-      <div class="sa-page-shell">
+  <div class="sa-page-shell">
         <div class="sa-page-header">
           <div>
             <p class="sa-breadcrumb">Super Admin</p>
             <h1 class="sa-page-title">User Management</h1>
           </div>
           <button class="sa-btn sa-btn-primary" @click="openCreateModal">Create User</button>
+        </div>
+
+        <div class="sa-metric-grid">
+          <div class="sa-metric-card">
+            <p class="sa-metric-label">Total users</p>
+            <p class="sa-metric-value">{{ store.users.length }}</p>
+          </div>
+          <div class="sa-metric-card">
+            <p class="sa-metric-label">Active</p>
+            <p class="sa-metric-value">{{ store.users.filter((user) => user.status === 'Active').length }}</p>
+          </div>
+          <div class="sa-metric-card">
+            <p class="sa-metric-label">Deans</p>
+            <p class="sa-metric-value">{{ store.users.filter((user) => String(user.role || '').toLowerCase().includes('dean')).length }}</p>
+          </div>
+          <div class="sa-metric-card">
+            <p class="sa-metric-label">Faculty</p>
+            <p class="sa-metric-value">{{ store.users.filter((user) => String(user.role || '').toLowerCase().includes('faculty')).length }}</p>
+          </div>
         </div>
 
         <div class="sa-toolbar">
@@ -29,6 +46,7 @@
               <label><span>Last Name</span><input v-model="form.last_name" required /></label>
               <label><span>Email</span><input v-model="form.email" type="email" required /></label>
               <label><span>Role</span><input v-model="form.role" placeholder="Faculty" required /></label>
+              <label><span>Department</span><input v-model="form.department" placeholder="Department / College" /></label>
               <label><span>Password</span><input v-model="form.password" type="password" :required="!editingUser" /></label>
               <label><span>Confirm Password</span><input v-model="form.password_confirmation" type="password" :required="!editingUser" /></label>
             </div>
@@ -57,18 +75,28 @@
 
         <div class="sa-card">
           <div class="sa-table-header">
-            <span>Name</span><span>Email</span><span>Role</span><span>Status</span><span>Last Login</span><span>Actions</span>
+            <span>Name</span><span>Email</span><span>Role</span><span>Department</span><span>Status</span><span>Lock</span><span>Last Login</span><span>Actions</span>
           </div>
           <div v-if="filteredUsers.length" class="sa-table-body">
             <div v-for="user in filteredUsers" :key="user.id" class="sa-table-row">
               <span>{{ user.name }}</span>
               <span>{{ user.email }}</span>
               <span>{{ user.role }}</span>
+              <span>{{ user.department || '—' }}</span>
               <span>{{ user.status }}</span>
+              <span>
+                <span :class="['sa-badge', user.lockStatus === 'Locked' ? 'sa-badge--locked' : 'sa-badge--unlocked']">
+                  {{ user.lockStatus === 'Locked' ? 'Locked' : 'Unlocked' }}
+                </span>
+              </span>
               <span>{{ formatDate(user.lastLogin) }}</span>
               <div class="sa-action-group">
                 <button class="sa-link-btn" @click="openEditModal(user)">Edit</button>
                 <button class="sa-link-btn" @click="deleteUser(user)">Delete</button>
+                <button class="sa-link-btn" @click="restoreUser(user)">Restore</button>
+                <button class="sa-link-btn" @click="toggleActivation(user)">{{ user.status === 'Active' ? 'Deactivate' : 'Activate' }}</button>
+                <button class="sa-link-btn" @click="toggleLock(user)">{{ user.lockStatus === 'Locked' ? 'Unlock' : 'Lock' }}</button>
+                <button class="sa-link-btn" @click="resetUserPassword(user)">Reset PW</button>
                 <button class="sa-link-btn" @click="assignRoleToUser(user)">Role</button>
               </div>
             </div>
@@ -76,13 +104,10 @@
           <div v-else class="sa-empty">No matching users found.</div>
         </div>
       </div>
-    </ion-content>
-  </ion-page>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { IonPage, IonContent } from '@ionic/vue'
 import AppModal from '@/components/AppModal.vue'
 import { useSuperAdminStore } from '@/stores/superAdminStore'
 import api, { assignRole } from '@/lib/api'
@@ -96,7 +121,7 @@ const editingUser = ref<any | null>(null)
 const selectedUser = ref<any | null>(null)
 const selectedRole = ref('Faculty')
 const availableRoles = ref<string[]>([])
-const form = reactive({ first_name: '', last_name: '', email: '', role: 'Faculty', password: '', password_confirmation: '' })
+const form = reactive({ first_name: '', last_name: '', email: '', role: 'Faculty', department: '', password: '', password_confirmation: '' })
 
 const filteredUsers = computed(() => {
   const term = search.value.toLowerCase()
@@ -130,6 +155,7 @@ const openEditModal = (user: any) => {
   form.last_name = user.name?.split(' ').slice(1).join(' ') || ''
   form.email = user.email || ''
   form.role = user.role || 'Faculty'
+  form.department = user.department || ''
   form.password = ''
   form.password_confirmation = ''
   showForm.value = true
@@ -142,19 +168,20 @@ const cancelForm = () => {
 }
 
 const submitUser = async () => {
-  const payload = {
+  const payload: Record<string, any> = {
     first_name: form.first_name,
     last_name: form.last_name,
     email: form.email,
     role: form.role,
+    department: form.department,
     password: form.password,
     password_confirmation: form.password_confirmation,
   }
 
-  if (editingUser.value) {
-    await store.updateUser(editingUser.value.id, payload)
-  } else {
+  if (!editingUser.value) {
     await store.createUser(payload)
+  } else {
+    await store.updateUser(editingUser.value.id, payload)
   }
 
   cancelForm()
@@ -162,6 +189,30 @@ const submitUser = async () => {
 
 const deleteUser = async (user: any) => {
   await store.deleteUser(user.id)
+}
+
+const restoreUser = async (user: any) => {
+  await store.restoreUser(user.id)
+}
+
+const toggleActivation = async (user: any) => {
+  if (user.status === 'Active') {
+    await store.deactivateUserAccount(user.id)
+  } else {
+    await store.activateUserAccount(user.id)
+  }
+}
+
+const toggleLock = async (user: any) => {
+  if (user.lockStatus === 'Locked') {
+    await store.unlockUserAccount(user.id)
+  } else {
+    await store.lockUserAccount(user.id)
+  }
+}
+
+const resetUserPassword = async (user: any) => {
+  await store.resetPassword(user.id, 'Welcome123!')
 }
 
 const loadRoles = async () => {

@@ -41,6 +41,7 @@ export interface SuperAdminUserRecord {
   email: string
   role: string
   roles?: string[]
+  department?: string
   programId?: number | string | null
   teamId?: number | string | null
   status?: string
@@ -139,6 +140,7 @@ export const useSuperAdminStore = defineStore('super-admin', () => {
         email: user.email,
         role: user.role || user.roles?.[0] || 'faculty',
         roles: user.roles || [],
+        department: user.department || user.program_name || user.team_name || '',
         programId: user.programId || user.program_id || null,
         teamId: user.teamId || user.team_id || null,
         status: user.status || 'Active',

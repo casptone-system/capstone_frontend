@@ -1,11 +1,24 @@
 <template>
-  <ion-page>
-    <ion-content :fullscreen="true">
-      <div class="sa-page-shell">
+  <div class="sa-page-shell">
         <div class="sa-page-header">
           <div>
             <p class="sa-breadcrumb">Super Admin</p>
             <h1 class="sa-page-title">Backup & System Settings</h1>
+          </div>
+        </div>
+
+        <div class="sa-metric-grid">
+          <div class="sa-metric-card">
+            <p class="sa-metric-label">Backup</p>
+            <p class="sa-metric-value">{{ settings.backup_enabled ? 'Enabled' : 'Off' }}</p>
+          </div>
+          <div class="sa-metric-card">
+            <p class="sa-metric-label">Email</p>
+            <p class="sa-metric-value">{{ settings.email_configured ? 'Configured' : 'Pending' }}</p>
+          </div>
+          <div class="sa-metric-card">
+            <p class="sa-metric-label">Storage limit</p>
+            <p class="sa-metric-value">{{ settings.storage_limit_mb || 0 }}MB</p>
           </div>
         </div>
 
@@ -35,12 +48,9 @@
           </div>
         </div>
       </div>
-    </ion-content>
-  </ion-page>
 </template>
 
 <script setup lang="ts">
-import { IonPage, IonContent } from '@ionic/vue'
 import { onMounted, reactive } from 'vue'
 import { getSystemSettings, runSystemBackup } from '@/lib/api'
 

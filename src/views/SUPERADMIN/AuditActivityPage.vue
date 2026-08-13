@@ -1,11 +1,24 @@
 <template>
-  <ion-page>
-    <ion-content :fullscreen="true">
-      <div class="sa-page-shell">
+  <div class="sa-page-shell">
         <div class="sa-page-header">
           <div>
             <p class="sa-breadcrumb">Super Admin</p>
             <h1 class="sa-page-title">Audit Logs & Login History</h1>
+          </div>
+        </div>
+
+        <div class="sa-metric-grid">
+          <div class="sa-metric-card">
+            <p class="sa-metric-label">Audit entries</p>
+            <p class="sa-metric-value">{{ auditLogs.length }}</p>
+          </div>
+          <div class="sa-metric-card">
+            <p class="sa-metric-label">Login events</p>
+            <p class="sa-metric-value">{{ loginHistory.length }}</p>
+          </div>
+          <div class="sa-metric-card">
+            <p class="sa-metric-label">Critical</p>
+            <p class="sa-metric-value">{{ auditLogs.filter((log) => String(log.event || '').toLowerCase().includes('delete') || String(log.event || '').toLowerCase().includes('failed')).length }}</p>
           </div>
         </div>
 
@@ -41,12 +54,9 @@
           <div v-else class="sa-empty">No login history yet.</div>
         </div>
       </div>
-    </ion-content>
-  </ion-page>
 </template>
 
 <script setup lang="ts">
-import { IonPage, IonContent } from '@ionic/vue'
 import { computed, onMounted, ref } from 'vue'
 import api from '@/lib/api'
 

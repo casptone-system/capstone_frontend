@@ -48,9 +48,9 @@
               v-if="passwordError" class="field-error"> {{ passwordError }} </span>
           </div>
           <div v-if="loginError" class="login-error" role="alert"> {{ loginError }} </div>
-          <div v-if="showRegistrationNotice" class="login-success" role="status"> Registration completed. We sent a
-            verification email to your address. Check your inbox and spam folder to verify your account before signing
-            in. </div>
+          <div v-if="showRegistrationNotice" class="login-success" role="status"> 
+            Registration successful! Please verify your account through the email we sent you before signing in. 
+          </div>
           <div v-if="showResetNotice" class="login-success" role="status"> Your password has been reset. Please sign in
             with your new password. </div>
           <div v-if="showExpiredNotice" class="login-success warning" role="status"> Your session expired for security
@@ -60,25 +60,46 @@
               <router-link to="/forgot-password" class="forgot-password"> Forgot
               password? </router-link> </div> 
               <app-button type="submit" variant="primary" block size="lg"
-            :loading="isLoading" :disabled="isLoading" class="submit-btn"> Log In </app-button> 
+            :loading="isLoading" :disabled="isLoading" class="submit-btn"> Log In 
+          </app-button> 
             <div class="alt-btn" @click="$router.push('/register')">
             Create an account
           </div>
         </form>
 
         <form v-else @submit.prevent="handleVerifyCode" class="login-form">
-          <div class="field-group"> <label class="field-label" for="code"> Verification Code </label>
-            <div class="input-wrap" :class="{ error: codeError }"> <ion-icon name="key-outline" class="input-icon"
-                aria-hidden="true" /> <input id="code" ref="codeInputRef" v-model.trim="code" type="text" maxlength="6"
+          <div class="field-group"> 
+            <label class="field-label" for="code"> 
+              Verification Code 
+            </label>
+            <div class="input-wrap" :class="{ error: codeError }"> 
+              <ion-icon name="key-outline" class="input-icon"
+                aria-hidden="true" /> 
+                <input id="code" ref="codeInputRef" v-model.trim="code" type="text" maxlength="6"
                 minlength="6" placeholder="6-digit code" class="field-input" inputmode="numeric"
-                autocomplete="one-time-code" aria-label="Verification code" :disabled="isLoading" /> </div> <span
-              v-if="codeError" class="field-error" role="alert"> {{ codeError }} </span>
-            <p class="field-hint"> A verification code was sent to <strong>{{ challengeEmail }}</strong>. </p>
-            <p class="field-hint"> Time remaining: <strong>{{ countdown }}s</strong> </p>
-            <div aria-live="polite" class="sr-only" role="status"> {{ announce }} </div>
-          </div> <app-button type="submit" variant="primary" block size="lg" :loading="isLoading"
-            :disabled="isLoading || code.length !== 6" class="submit-btn"> Verify Code </app-button> <button
-            type="button" class="alt-btn" :disabled="isLoading" @click="cancel2FA"> Back to sign in </button>
+                autocomplete="one-time-code" aria-label="Verification code" :disabled="isLoading" /> 
+              </div> 
+              <span
+              v-if="codeError" class="field-error" role="alert"> {{ codeError }} 
+            </span>
+            <p class="field-hint"> A verification code was sent to 
+              <strong>{{ challengeEmail }}</strong>. 
+            </p>
+            <p class="field-hint"> Time remaining: 
+              <strong>{{ countdown }}s</strong> 
+            </p>
+            <div aria-live="polite" class="sr-only" role="status"> 
+              {{ announce }} 
+            </div>
+          </div> 
+
+          <app-button type="submit" variant="primary" block size="lg" :loading="isLoading"
+            :disabled="isLoading || code.length !== 6" class="submit-btn"> Verify Code 
+          </app-button> 
+          
+          <button
+            type="button" class="alt-btn" :disabled="isLoading" @click="cancel2FA"> Back to sign in
+          </button>
           <div style=" margin-top: 8px; display: flex; flex-direction: column; gap: 8px; align-items: center; ">
              <button
               type="button" class="alt-btn" :disabled="resendDisabled || countdown > 0 || isLoading"
@@ -87,21 +108,6 @@
               <span v-if="countdown > 0" class="field-hint"> You can resend in {{ countdown }}s </span> </div>
         </form>
 
-        <div class="social-divider"> <span class="divider-line"></span> 
-          <span class="divider-text">or continue with </span> 
-          <span class="divider-line"></span> 
-        </div>
-        <div class="social-login-buttons"> 
-          <button type="button" @click="handleGoogleLogin"
-            class="social-btn google-btn" :disabled="isSocialLoading || isLoading"> 
-            <ion-icon name="logo-google"
-              class="social-icon" aria-hidden="true" />
-              <span>Google</span> </button> 
-              <button type="button" @click="handleGithubLogin" class="social-btn github-btn" :disabled="isSocialLoading || isLoading"> 
-                <ion-icon name="logo-github" class="social-icon" aria-hidden="true" /> 
-              <span>GitHub</span> 
-          </button> 
-        </div>
       </div>
     </div>
   </ion-page>
@@ -124,7 +130,7 @@ const email = ref('')
 const password = ref('')
 const rememberMe = ref(false)
 const isLoading = ref(false)
-const isSocialLoading = ref(false)
+// const isSocialLoading = ref(false)
 const loginError = ref('')
 const emailError = ref('')
 const passwordError = ref('')
@@ -147,7 +153,7 @@ const getRedirectPath = () => {
   const redirect = route.query.redirect
   if (redirect && typeof redirect === 'string') return redirect
 
-  return getRoleRedirectPath(authStore.userRole)
+  return getRoleRedirectPath(authStore.userRole, authStore.hasGroup)
 }
 
 const handleLogin = async () => {
@@ -215,14 +221,18 @@ const handleVerifyCode = async () => {
       try {
         isLoading.value = true
 
+        console.debug('[LoginPage] verifying 2FA code, before verifyTwoFactor()')
         await authStore.verifyTwoFactor(cleanCode)
+        console.debug('[LoginPage] verifyTwoFactor() resolved, auth.isAuthenticated=', authStore.isAuthenticated, 'user=', authStore.user)
 
-      showCodeEntry.value = false 
-      code.value = '' 
-      // Use the existing router/auth state after successful verification. 
-      if (authStore.user) { 
-        router.push('/dashboard') 
-      }
+        // allow Vue to flush computed updates (userRole/hasGroup) before routing
+        await nextTick()
+
+        showCodeEntry.value = false
+        code.value = ''
+        const redirect = getRedirectPath()
+        console.debug('[LoginPage] navigating to redirect=', redirect)
+        await router.replace(redirect)
     } catch (error: any) { 
         codeError.value = error?.response?.data?.message || 
         error?.message || 
@@ -281,33 +291,6 @@ watch(showCodeEntry, async (val) => {
   }
 })
 
-const handleGoogleLogin = async () => {
-  loginError.value = ''
-  isSocialLoading.value = true
-  try {
-    await authStore.loginWithGoogle()
-  } catch (error: any) {
-    loginError.value = error.message || 'Google login failed'
-  } finally {
-    isSocialLoading.value = false
-  }
-}
-
-const handleGithubLogin = async () => {
-  loginError.value = ''
-  isSocialLoading.value = true
-  try {
-    await authStore.loginWithGithub()
-  } catch (error: any) {
-    loginError.value = error.message || 'GitHub login failed'
-  } finally {
-    isSocialLoading.value = false
-  }
-}
-
-// const goToRegister = () => {
-//   router.replace('/register')
-// }
 </script>
 
 <style scoped>

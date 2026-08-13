@@ -21,6 +21,8 @@
         <button class="join-button" type="submit">Accept Invitation</button>
       </form>
 
+
+
       <p v-if="message" class="message" :class="messageType">{{ message }}</p>
       <p class="help-text">Don’t have a token? Contact your Program Chair or Dean for an invitation.</p>
     </div>
@@ -34,6 +36,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useFacultyDashboardStore } from '@/stores/facultyDashboardStore'
 import { getRoleRedirectPath } from '@/lib/roleRedirects'
 
+
 export default defineComponent({
   name: 'JoinTeam',
   setup() {
@@ -43,6 +46,13 @@ export default defineComponent({
     const inviteCode = ref('')
     const message = ref('')
     const messageType = ref<'success' | 'error'>('success')
+
+
+    const handleLogout = async () => {
+  await authStore.logout()
+  router.replace('/login')
+}
+
 
     const handleJoin = async () => {
       const code = inviteCode.value.trim()
@@ -79,6 +89,7 @@ export default defineComponent({
       message,
       messageType,
       handleJoin,
+      handleLogout
     }
   },
 })

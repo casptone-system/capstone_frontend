@@ -73,8 +73,16 @@
                 <ion-icon :icon="documentTextOutline" /> Review Docs
                 <span class="pc-btn-badge">{{ documents.length }}</span>
               </button>
+              <button v-if="authStore.canViewAs('faculty')" class="pc-btn pc-btn-ghost" @click.prevent="switchToFacultyView">
+                <ion-icon :icon="peopleOutline" /> Faculty View
+              </button>
+              <button v-if="authStore.canViewAs('dean')" class="pc-btn pc-btn-ghost" @click.prevent="switchToDeanView">
+                <ion-icon :icon="barChartOutline" /> Dean View
+              </button>
             </div>
           </header>
+
+          <RoleStorageVault owner="program-chair" title="Program Chair Storage Vault" />
 
           <div v-if="callMessage" class="pc-call-banner">
             <div>{{ callMessage }}</div>
@@ -170,11 +178,10 @@
 
                         <button
                         class="pc-call-button"
-                        @click.prevent=
-                        "callUser({
+                        @click.prevent="callUser({
                             name: (team?.members || [])[0] || 'Team Member',
                             role: 'Team Member'
-                            })"
+                          })"
                         >
                         <ion-icon :icon="callOutline" />
                         </button>
@@ -380,7 +387,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { IonPage, IonContent, IonIcon } from '@ionic/vue'
+import { IonPage, IonContent, IonIcon, IonButton } from '@ionic/vue'
 import {
   gridOutline, peopleOutline, keyOutline, folderOpenOutline,
   documentTextOutline,  analyticsOutline,
@@ -400,6 +407,7 @@ import {
   resendInvitation,
   revokeInvitation,
 } from '@/lib/api'
+import RoleStorageVault from '@/components/RoleStorageVault.vue'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -472,6 +480,16 @@ const teamActions = [
   'Create Team', 'Edit Team', 'Assign Area', 'Add Members', 'Remove Members',
   'Generate Code', 'Send Invitation',
 ]
+
+const switchToFacultyView = () => {
+  authStore.setDashboardView('faculty')
+  router.push('/user/dashboard/faculty')
+}
+
+const switchToDeanView = () => {
+  authStore.setDashboardView('dean')
+  router.push('/user/dashboard/dean')
+}
 
 const handleLogout = async () => {
   await authStore.logout()
@@ -573,14 +591,17 @@ const fetchInvitations = async () => {
 const submitInvitation = async () => {
   inviteError.value = ''
   inviteSuccess.value = ''
-  const email = inviteEmail.value.trim()
 
+  const email = inviteEmail.value.trim()
   if (!email) {
     inviteError.value = 'Please enter an email address.'
     return
   }
 
-  const programId = (authStore.user as any)?.programId || (authStore.user as any)?.program_id
+  const programId =
+    (authStore.user as any)?.programId ||
+    (authStore.user as any)?.program_id
+
   if (!programId) {
     inviteError.value = 'Program ID unavailable.'
     return
@@ -600,28 +621,72 @@ const submitInvitation = async () => {
     inviteRole.value = 'faculty'
     inviteSuccess.value = `Invitation created for ${email}.`
   } catch (err: any) {
-    inviteError.value = err.response?.data?.message || 'Unable to create invitation.'
+    const message =
+      err?.response?.data?.message ||
+      err?.message ||
+      'Unable to create invitation.'
+
+    inviteError.value = message
+
+    try {
+      const { useToastStore } = await import('@/stores/toastStore')
+      useToastStore().show(message, 'error')
+    } catch {
+      // Toast is optional; preserve the main error state.
+    }
   } finally {
     inviteBusy.value = false
   }
 }
 
 const resendInvitationAction = async (token: string) => {
+  inviteError.value = ''
+  inviteSuccess.value = ''
+
   try {
     await resendInvitation(token)
     inviteSuccess.value = 'Invitation resent.'
   } catch (err: any) {
-    inviteError.value = err.response?.data?.message || 'Unable to resend invitation.'
+    const message =
+      err?.response?.data?.message ||
+      err?.message ||
+      'Unable to resend invitation.'
+
+    inviteError.value = message
+
+    try {
+      const { useToastStore } = await import('@/stores/toastStore')
+      useToastStore().show(message, 'error')
+    } catch {
+      // Toast is optional.
+    }
   }
 }
 
 const revokeInvitationAction = async (token: string) => {
+  inviteError.value = ''
+  inviteSuccess.value = ''
+
   try {
     await revokeInvitation(token)
-    invitations.value = invitations.value.filter((invitation) => invitation.token !== token)
+    invitations.value = invitations.value.filter(
+      (invitation) => invitation.token !== token,
+    )
     inviteSuccess.value = 'Invitation revoked.'
   } catch (err: any) {
-    inviteError.value = err.response?.data?.message || 'Unable to revoke invitation.'
+    const message =
+      err?.response?.data?.message ||
+      err?.message ||
+      'Unable to revoke invitation.'
+
+    inviteError.value = message
+
+    try {
+      const { useToastStore } = await import('@/stores/toastStore')
+      useToastStore().show(message, 'error')
+    } catch {
+      // Toast is optional.
+    }
   }
 }
 

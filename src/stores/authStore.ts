@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import api from '@/lib/api'
 import { TOKEN_KEY } from '@/lib/apiClient'
 import type { User } from '@/lib'
-import { normalizeRole as canonicalizeRole } from '@/lib/roleRedirects'
+import { normalizeRole as canonicalizeRole, type AppRole } from '@/lib/roleRedirects'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
@@ -94,19 +94,71 @@ export const useAuthStore = defineStore('auth', () => {
     activityListenersAttached = false
   }
 
-  // canonicalize role using central helper
+  const getAvailableDashboardViews = () => {
+    const userData = user.value as any
+    const rawRoles = [
+      userData?.role_slug,
+      userData?.role,
+      userData?.role_name,
+      ...(Array.isArray(userData?.roles) ? userData.roles : []),
+    ].filter(Boolean).map((value) => canonicalizeRole(String(value)))
+
+    const uniqueRoles = Array.from(new Set(rawRoles.filter(Boolean)))
+    const views: AppRole[] = []
+
+    if (uniqueRoles.includes('dean')) views.push('dean')
+    if (uniqueRoles.includes('program-chair')) views.push('program-chair')
+    if (uniqueRoles.includes('faculty')) views.push('faculty')
+
+    return views
+  }
+
+  const getStoredDashboardView = (): AppRole | '' => {
+    if (typeof window === 'undefined') return ''
+    const saved = window.localStorage.getItem('role_dashboard_view')
+    const normalized = saved ? canonicalizeRole(saved) : ''
+    return normalized
+  }
+
+  const dashboardView = ref<AppRole | ''>(getStoredDashboardView())
+
+  // canonicalize role using central helper, while allowing a per-session interface switch
   const userRole = computed(() => {
     const raw = (user.value as any)?.role_slug || (user.value as any)?.role || ''
-    return canonicalizeRole(String(raw))
+    const base = canonicalizeRole(String(raw))
+    const available = getAvailableDashboardViews()
+
+    if (dashboardView.value && available.includes(dashboardView.value)) {
+      return dashboardView.value
+    }
+
+    return base || (available[0] ?? '')
   })
 
   const isSuperAdmin = computed(() => userRole.value === 'superadmin' || userRole.value === 'admin')
   const isQA = computed(() => userRole.value === 'qa')
-  const isVPAA = computed(() => userRole.value === 'vpaa/di' || userRole.value === 'vpaa' || userRole.value === 'vpaa-di')
+  const isVPAA = computed(() => userRole.value === 'vpaa/di')
   const isDean = computed(() => userRole.value === 'dean')
   const isFaculty = computed(() => userRole.value === 'faculty')
-  const isAreaIncharge = computed(() => userRole.value === 'area-incharge' || userRole.value === 'area-in-charge')
+  const isAreaIncharge = computed(() => userRole.value === 'area-incharge')
   const isProgramChair = computed(() => userRole.value === 'program-chair')
+  const availableDashboardViews = computed(() => getAvailableDashboardViews())
+  const canViewAs = (view: AppRole) => availableDashboardViews.value.includes(view)
+
+  const setDashboardView = (view: AppRole) => {
+    if (!canViewAs(view)) return
+    dashboardView.value = view
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('role_dashboard_view', view)
+    }
+  }
+
+  const clearDashboardView = () => {
+    dashboardView.value = ''
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem('role_dashboard_view')
+    }
+  }
   const userName = computed(() => user.value?.name || '')
   const hasGroup = computed(() => {
     if (!user.value) return false
@@ -199,11 +251,22 @@ export const useAuthStore = defineStore('auth', () => {
         setToken(token, loginChallenge.value.remember)
       }
 
-      if (token && userData) {
-        user.value = userData
-        isAuthenticated.value = true
-        attachActivityListeners()
-        resetSessionTimer()
+      // DEBUG: log token/user presence right after setting token
+
+
+      if (token) {
+        if (userData) {
+          user.value = userData
+        } else {
+          await restoreSession()
+        }
+
+
+        if (user.value) {
+          isAuthenticated.value = true
+          attachActivityListeners()
+          resetSessionTimer()
+        }
       }
 
       clearLoginChallenge()
@@ -256,21 +319,7 @@ export const useAuthStore = defineStore('auth', () => {
       const config = data instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined
       const response = await api.post('/register', data, config)
 
-      // If backend returns token and user, persist session so user stays logged in
-      const token = response.data?.data?.token
-      const userData = response.data?.data?.user
-
-      if (token) {
-        setToken(token, false)
-      }
-
-      if (token && userData) {
-        user.value = userData
-        isAuthenticated.value = true
-        attachActivityListeners()
-        resetSessionTimer()
-      }
-
+      // Public registration requires email verification first; do not auto-authenticate the new account.
       return response.data
     } catch (err: any) {
       error.value =
@@ -306,6 +355,27 @@ export const useAuthStore = defineStore('auth', () => {
       isAuthenticated.value = true
       attachActivityListeners()
       resetSessionTimer()
+      return response.data
+    } catch {
+      localStorage.removeItem(TOKEN_KEY)
+      user.value = null
+      isAuthenticated.value = false
+    }
+  }
+
+  const refreshCurrentUser = async () => {
+    if (typeof window === 'undefined') return
+
+    const token =
+      window.localStorage.getItem(TOKEN_KEY) ||
+      window.sessionStorage.getItem(TOKEN_KEY)
+
+    if (!token) return
+
+    try {
+      const response = await api.get('/me')
+      user.value = response.data.data.user
+      isAuthenticated.value = true
       return response.data
     } catch {
       localStorage.removeItem(TOKEN_KEY)
@@ -366,6 +436,7 @@ export const useAuthStore = defineStore('auth', () => {
     removeToken()
 
     clearLoginChallenge()
+    clearDashboardView()
 
     user.value = null
     isAuthenticated.value = false
@@ -406,6 +477,10 @@ export const useAuthStore = defineStore('auth', () => {
     isFaculty,
     isAreaIncharge,
     isProgramChair,
+    availableDashboardViews,
+    canViewAs,
+    setDashboardView,
+    clearDashboardView,
 
     login,
     verifyTwoFactor,
@@ -415,6 +490,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     logout,
     restoreSession,
+    refreshCurrentUser,
 
     joinTeam,
     acceptInvitation,

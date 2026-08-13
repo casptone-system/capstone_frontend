@@ -239,7 +239,6 @@ import api from '@/lib/api'
 import { IonPage, IonIcon } from '@ionic/vue'
 import AppButton from '@/components/AppButton.vue'
 import { validateEmail, validatePasswordStrength, validateRequired } from '@/lib/validation'
-import { getRoleRedirectPath } from '@/lib/roleRedirects'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -309,16 +308,19 @@ const handleRegister = async () => {
     return
   }
 
-  if (profilePhoto.value) {
-    if (!profilePhoto.value.type.startsWith('image/')) {
-      profilePhotoError.value = 'Please select a valid image file.'
-      return
-    }
+  if (!profilePhoto.value) {
+    profilePhotoError.value = 'A profile photo is required.'
+    return
+  }
 
-    if (profilePhoto.value.size > 5 * 1024 * 1024) {
-      profilePhotoError.value = 'Profile photo must be 5MB or smaller.'
-      return
-    }
+  if (!profilePhoto.value.type.startsWith('image/')) {
+    profilePhotoError.value = 'Please select a valid image file.'
+    return
+  }
+
+  if (profilePhoto.value.size > 5 * 1024 * 1024) {
+    profilePhotoError.value = 'Profile photo must be 5MB or smaller.'
+    return
   }
 
   isLoading.value = true
@@ -346,13 +348,7 @@ const handleRegister = async () => {
       requestData.append('profile_photo', profilePhoto.value)
     }
 
-    const response = await authStore.register(requestData)
-
-    if (response?.data?.token && response?.data?.user) {
-      // If a token is provided, preserve the session and redirect normally.
-      await router.replace(getRoleRedirectPath(authStore.userRole))
-      return
-    }
+    await authStore.register(requestData)
 
     await router.replace({ path: '/login', query: { registered: '1' } })
   } catch (err: any) {

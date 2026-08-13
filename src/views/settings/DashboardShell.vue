@@ -3,9 +3,7 @@
     <ion-content fullscreen>
       <div class="dashboard-shell">
         <router-view v-slot="{ Component }">
-          <keep-alive>
-            <component :is="Component" />
-          </keep-alive>
+          <component :is="Component" />
         </router-view>
       </div>
     </ion-content>

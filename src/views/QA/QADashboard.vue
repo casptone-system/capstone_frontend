@@ -280,7 +280,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { IonPage, IonContent, IonIcon } from '@ionic/vue'
+import { IonPage, IonContent, IonIcon, IonButton } from '@ionic/vue'
 
 import {
   gridOutline, shieldCheckmarkOutline, documentTextOutline, alertCircleOutline,

@@ -15,50 +15,30 @@
             </div>
           </div>
 
-          <section v-if="showForm" class="form-card">
-            <div class="panel-head">
-              <h3>{{ editingId ? 'Edit Project' : 'Create Project' }}</h3>
-              <ion-button fill="clear" @click="cancelForm">Cancel</ion-button>
-            </div>
-            <div class="form-grid">
-              <label>
-                <span>College</span>
-                <select v-model="form.college_id">
-                  <option value="">Select college</option>
-                  <option v-for="college in colleges" :key="college.id" :value="college.id">{{ college.name }}</option>
-                </select>
-              </label>
-              <label>
-                <span>Name</span>
-                <input v-model="form.name" placeholder="Program or project name" />
-              </label>
-              <label>
-                <span>Code</span>
-                <input v-model="form.code" placeholder="PRG-001" />
-              </label>
-              <label>
-                <span>Chair</span>
-                <input v-model="form.chair" placeholder="Program Chair" />
-              </label>
-              <label>
-                <span>Status</span>
-                <select v-model="form.accreditation_status">
-                  <option value="">Select status</option>
-                  <option value="compliant">Compliant</option>
-                  <option value="at-risk">At Risk</option>
-                  <option value="non-compliant">Non Compliant</option>
-                </select>
-              </label>
-              <label>
-                <span>Compliance Score</span>
-                <input v-model.number="form.compliance_score" type="number" min="0" max="100" />
-              </label>
-            </div>
-            <div class="form-actions">
-              <ion-button fill="outline" @click="cancelForm">Discard</ion-button>
-              <ion-button @click="submitForm">Save Project</ion-button>
-            </div>
+          <section v-if="showForm">
+            <ProgramForm :editingId="editingId" :initial="editingId ? form : null" @saved="(res) => { createdResult.value = res; successModal.value = true; loadData(); cancelForm(); }" @cancel="cancelForm" />
           </section>
+          <div v-if="successModal" class="success-modal">
+            <div class="modal-card">
+              <h3>Program Created Successfully</h3>
+              <p>{{ createdResult?.name }} has been created.</p>
+              <div class="result-row">
+                <div>
+                  <strong>Program Chair</strong>
+                  <div>{{ createdResult?.chairUser?.name || createdResult?.chair }}</div>
+                  <div class="muted">{{ createdResult?.chairUser?.email || '' }}</div>
+                </div>
+                <div v-if="createdResult?.chairUser?.profilePhoto">
+                  <img :src="createdResult.chairUser.profilePhoto" alt="Chair photo" class="photo-preview-small" />
+                </div>
+              </div>
+              <p>The Program Chair account/setup information has been sent.</p>
+              <div class="form-actions">
+                <ion-button fill="outline" @click="closeSuccess">Close</ion-button>
+                <ion-button @click="viewCreatedProgram">View Program</ion-button>
+              </div>
+            </div>
+          </div>
 
           <section class="stats-grid">
             <div class="stat-card"><p class="stat-title">Projects</p><p class="stat-value">{{ projects.length }}</p></div>
@@ -76,7 +56,14 @@
                 <h4>{{ project.name }}</h4>
                 <p>{{ project.code }} • {{ project.college?.name || 'N/A' }}</p>
                 <div class="meta-row">
-                  <span>{{ project.chair || 'No chair assigned' }}</span>
+                  <div class="chair-display">
+                    <img v-if="project.chairUser?.profilePhoto" :src="project.chairUser.profilePhoto" alt="Profile photo" class="mini-avatar" />
+                    <div v-else class="mini-avatar initials">{{ (project.chair || '').charAt(0) }}</div>
+                    <div class="chair-info">
+                      <div>{{ project.chair || (project.chairUser?.name ?? 'No chair assigned') }}</div>
+                      <div class="muted small">{{ project.chairUser?.email || '' }}</div>
+                    </div>
+                  </div>
                   <span>{{ project.compliance_score || 0 }}%</span>
                 </div>
                 <div class="meta-row mt-1">
@@ -97,14 +84,20 @@ import { IonPage, IonContent, IonButton } from '@ionic/vue'
 import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import DashboardLayout from '@/components/DashboardLayout.vue'
-import { createProgram, getColleges, getPrograms, updateProgram } from '@/lib/api'
+import { getColleges, getPrograms, getProgramChairs } from '@/lib/api'
+import ProgramForm from '@/components/ProgramForm.vue'
 
 const router = useRouter()
 const projects = ref<any[]>([])
 const colleges = ref<any[]>([])
+const chairs = ref<any[]>([])
 const showForm = ref(false)
 const editingId = ref<number | null>(null)
-const form = ref({ college_id: '', name: '', code: '', chair: '', accreditation_status: '', compliance_score: 0 })
+const form = ref({ college_id: '', name: '', code: '', chair_id: '', chair_name: '', chair_email: '', accreditation_status: '', compliance_score: 0 })
+// program form is now handled by ProgramForm component
+// local inline form state removed
+const successModal = ref(false)
+const createdResult = ref<any>(null)
 
 const atRiskCount = computed(() => projects.value.filter((project) => project.accreditation_status === 'at-risk').length)
 const averageScore = computed(() => {
@@ -115,25 +108,34 @@ const averageScore = computed(() => {
 
 const loadData = async () => {
   try {
-    const [programsResponse, collegesResponse] = await Promise.all([getPrograms(), getColleges()])
+    const [programsResponse, collegesResponse, chairsResponse] = await Promise.all([
+      getPrograms(),
+      getColleges(),
+      getProgramChairs(),
+    ])
     projects.value = Array.isArray(programsResponse?.data) ? programsResponse.data : []
     colleges.value = Array.isArray(collegesResponse?.data) ? collegesResponse.data : []
+    chairs.value = Array.isArray(chairsResponse?.data) ? chairsResponse.data : []
   } catch (error) {
     console.error('Failed to load projects', error)
+    projects.value = []
+    colleges.value = []
+    chairs.value = []
   }
 }
 
 const openForm = () => {
   showForm.value = true
   editingId.value = null
-  form.value = { college_id: '', name: '', code: '', chair: '', accreditation_status: '', compliance_score: 0 }
+  form.value = { college_id: '', name: '', code: '', chair_id: '', chair_name: '', chair_email: '', accreditation_status: '', compliance_score: 0 }
 }
 
 const cancelForm = () => {
   showForm.value = false
   editingId.value = null
-  form.value = { college_id: '', name: '', code: '', chair: '', accreditation_status: '', compliance_score: 0 }
+  form.value = { college_id: '', name: '', code: '', chair_id: '', chair_name: '', chair_email: '', accreditation_status: '', compliance_score: 0 }
 }
+
 
 const editProject = (project: any) => {
   editingId.value = project.id
@@ -141,34 +143,40 @@ const editProject = (project: any) => {
     college_id: project.college_id || '',
     name: project.name || '',
     code: project.code || '',
-    chair: project.chair || '',
+    chair_id: project.chairId ?? '',
+    chair_name: '',
+    chair_email: '',
     accreditation_status: project.accreditation_status || '',
     compliance_score: project.compliance_score || 0,
   }
+  // when editing, we do not prefill the photo input here
   showForm.value = true
 }
 
-const submitForm = async () => {
-  if (!form.value.name || !form.value.code || !form.value.college_id) return
 
-  try {
-    if (editingId.value) {
-      await updateProgram(editingId.value, form.value)
-    } else {
-      await createProgram(form.value)
-    }
-    await loadData()
-    cancelForm()
-  } catch (error) {
-    console.error('Failed to save project', error)
-  }
-}
+// selectedChair is handled inside ProgramForm now
 
 const goTo = (path: string) => router.push(path)
 
 onMounted(() => {
   void loadData()
 })
+
+const closeSuccess = () => {
+  successModal.value = false
+  createdResult.value = null
+}
+
+const viewCreatedProgram = () => {
+  if (createdResult.value?.id) {
+    const id = createdResult.value.id
+    successModal.value = false
+    createdResult.value = null
+    goTo(`/programs/${id}`)
+  } else {
+    successModal.value = false
+  }
+}
 </script>
 
 <style scoped>

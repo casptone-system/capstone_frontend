@@ -76,8 +76,16 @@
                 <ion-icon :icon="refreshOutline" /> Revisions
                 <span class="fac-btn-badge">{{ revisions.length }}</span>
               </button>
+              <button v-if="authStore.canViewAs('dean')" class="fac-btn fac-btn-ghost" @click="switchToDeanView">
+                <ion-icon :icon="barChartOutline" /> Dean View
+              </button>
+              <button v-if="authStore.canViewAs('program-chair')" class="fac-btn fac-btn-ghost" @click="switchToProgramChairView">
+                <ion-icon :icon="peopleOutline" /> Program Chair View
+              </button>
             </div>
           </header>
+
+          <RoleStorageVault owner="faculty" title="Faculty Storage Vault" />
 
           <div v-if="callMessage" class="fac-call-banner">
             <div>{{ callMessage }}</div>
@@ -277,12 +285,13 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { IonPage, IonContent, IonIcon } from '@ionic/vue'
+import { IonPage, IonContent, IonIcon, IonButton } from '@ionic/vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@/stores/authStore'
 import { useUserCalls } from '@/lib/useUserCalls'
 import { useFacultyDashboardStore } from '@/stores/facultyDashboardStore'
+import RoleStorageVault from '@/components/RoleStorageVault.vue'
 import type { AppDocument, NotificationMessage } from '@/lib'
 
 import {
@@ -296,6 +305,19 @@ import {
 const router = useRouter()
 const authStore = useAuthStore()
 const facultyDashboard = useFacultyDashboardStore()
+const authUser = computed(() => authStore.user)
+const currentUserPhoto = computed(() => (authUser.value as any)?.profilePhoto || (authUser.value as any)?.avatar || null)
+const currentUserInitials = computed(() => {
+  const name = authUser.value?.name || authUser.value?.first_name || ''
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || '')
+    .join('') || 'U'
+})
+const currentUserName = computed(() => authUser.value?.name || 'Faculty User')
+
 const {
   team,
 //   program,
@@ -427,6 +449,16 @@ const alerts = computed(() => notifications.value.slice(0, 4).map((notification:
     urgency,
   }
 }))
+
+const switchToDeanView = () => {
+  authStore.setDashboardView('dean')
+  router.push('/user/dashboard/dean')
+}
+
+const switchToProgramChairView = () => {
+  authStore.setDashboardView('program-chair')
+  router.push('/user/dashboard/program-chair')
+}
 
 const handleLogout = async () => {
   await authStore.logout()

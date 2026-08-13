@@ -24,6 +24,10 @@
         <button class="join-button" type="submit" :disabled="isLoading">
           {{ isLoading ? 'Accepting...' : 'Accept Invitation' }}
         </button>
+         <ion-button color="danger" fill="solid" @click="handleLogout">
+          <ion-icon :icon="logOutOutline" />
+          Logout
+        </ion-button>
       </form>
 
       <p v-if="message" class="message" :class="messageType">{{ message }}</p>
@@ -46,6 +50,11 @@ const inviteCode = ref('')
 const message = ref('')
 const messageType = ref<'success' | 'error'>('success')
 const isLoading = ref(false)
+
+const handleLogout = async () => {
+  await authStore.logout()
+  router.replace('/login')
+}
 
 const handleJoin = async () => {
   const code = inviteCode.value.trim()

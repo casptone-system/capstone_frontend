@@ -1,52 +1,115 @@
-export const normalizeRole = (role: string = '') => {
-  const base = String(role || '')
+import type { User } from '@/types'
+
+export type AppRole =
+  | 'superadmin'
+  | 'admin'
+  | 'vpaa/di'
+  | 'qa'
+  | 'dean'
+  | 'program-chair'
+  | 'area-incharge'
+  | 'faculty'
+  | ''
+
+const normalizeRoleValue = (value: unknown): AppRole => {
+  const role = String(value ?? '')
     .trim()
     .toLowerCase()
-    .replace(/[_\s]+/g, '-')
-    .replace(/-+/g, '-')
+    .replace(/_/g, '-')
+    .replace(/\s+/g, '-')
 
-  // Handle VPAA/DI variants -> keep the slash
-  if (base.includes('vpaa') && base.includes('di')) return 'vpaa/di'
+  const aliases: Record<string, AppRole> = {
+    // Super Admin
+    'super-admin': 'superadmin',
+    'super-administrator': 'superadmin',
+    superadministrator: 'superadmin',
+    superadmin: 'superadmin',
 
-  // Super admin variants -> canonical 'superadmin'
-  if (base.startsWith('super') || base.includes('super-administrator') || base.includes('super-administrator')) return 'superadmin'
+    // Admin
+    admin: 'admin',
 
-  // Area in-charge variants -> canonical 'area-incharge'
-  if (base.includes('area') && (base.includes('in-charge') || base.includes('incharge') || base.includes('in-charge'))) return 'area-incharge'
+    // VPAA
+    vpaa: 'vpaa/di',
+    'vpaa-di': 'vpaa/di',
+    'vpaa/di': 'vpaa/di',
 
-  // Program chair normalization
-  if (base === 'programchair') return 'program-chair'
+    // QA
+    qa: 'qa',
 
-  return base
-}
+    // Dean
+    dean: 'dean',
 
-export const getRoleRedirectPath = (role: string = '') => {
-  const normalizedRole = normalizeRole(role)
+    // Program Chair
+    'program-chair': 'program-chair',
+    programchair: 'program-chair',
 
-  const roleRedirects: Record<string, string> = {
-    dean: '/user/dashboard/dean',
-    'program-chair': '/user/dashboard/program-chair',
-    programchair: '/user/dashboard/program-chair',
-    faculty: '/user/dashboard/faculty',
-    // When a new user has no group, send them to the dedicated new-user landing page
-    'new-user': '/new-user',
-    'new-user-no-groups': '/new-user',
-    'no-group': '/new-user',
-    'no-groups': '/new-user',
-    nogroups: '/new-user',
-    qa: '/user/dashboard/qa',
-    'qa-review': '/user/dashboard/qa',
-    'vpaa/di': '/user/dashboard/vpaa',
-    vpaa: '/user/dashboard/vpaa',
-    'vpaa-di': '/user/dashboard/vpaa',
-    superadmin: '/user/dashboard/super-admin',
-    'super-admin': '/user/dashboard/super-admin',
-    'super-administrator': '/user/dashboard/super-admin',
-    admin: '/users',
-    staff: '/documents',
-    'area-incharge': '/documents',
-    'area-in-charge': '/documents',
+    // Area In-Charge
+    'area-incharge': 'area-incharge',
+    'area-in-charge': 'area-incharge',
+    areaincharge: 'area-incharge',
+
+    // Faculty
+    faculty: 'faculty',
   }
 
-  return roleRedirects[normalizedRole] || '/user/dashboard'
+  return aliases[role] ?? ''
+}
+
+export const normalizeRole = (value: unknown): AppRole => {
+  return normalizeRoleValue(value)
+}
+
+const roleFromUser = (
+  user: User | null | undefined,
+): AppRole => {
+  if (!user) {
+    return ''
+  }
+
+  return normalizeRoleValue(
+    user.role_slug ||
+      (user as any).role?.slug ||
+      (user as any).role?.name ||
+      (user as any).role_name ||
+      (user as any).role,
+  )
+}
+
+export const getRoleRedirectPath = (
+  roleValue: unknown,
+  hasGroup = false,
+  user?: User | null,
+): string => {
+  const role =
+    roleFromUser(user) ||
+    normalizeRoleValue(roleValue)
+
+  switch (role) {
+    case 'superadmin':
+    case 'admin':
+      return '/superadmin'
+
+    case 'dean':
+      return '/user/dashboard/dean'
+
+    case 'program-chair':
+      return '/user/dashboard/program-chair'
+
+    case 'area-incharge':
+      return '/user/dashboard/area-incharge'
+
+    case 'faculty':
+      return hasGroup
+        ? '/user/dashboard/faculty'
+        : '/join-team'
+
+    case 'qa':
+      return '/user/dashboard/qa'
+
+    case 'vpaa/di':
+      return '/user/dashboard/vpaa'
+
+    default:
+      return '/user/dashboard'
+  }
 }

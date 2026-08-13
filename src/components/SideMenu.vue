@@ -65,6 +65,8 @@ import {
   receiptSharp,
   ribbonOutline,
   ribbonSharp,
+  businessOutline,
+  businessSharp,
 } from 'ionicons/icons'
 
 const appPages = [
@@ -100,6 +102,12 @@ const adminPages = [
     url: '/accreditation',
     iosIcon: ribbonOutline,
     mdIcon: ribbonSharp,
+  },
+  {
+    title: 'Colleges',
+    url: '/superadmin/colleges',
+    iosIcon: businessOutline,
+    mdIcon: businessSharp,
   },
   {
     title: 'Users',

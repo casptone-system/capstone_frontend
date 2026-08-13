@@ -143,17 +143,19 @@ const handleLogout = () => {
   grid-template-columns: 1fr;
   grid-template-rows: auto 1fr;
   min-height: 100vh;
-  background-color: var(--color-background);
+  background-color: #f7f3ea;
+  color: #0f172a;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 /* Header */
 .app-header {
-  background-color: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
-  box-shadow: var(--shadow-sm);
+  background-color: #f7f3ea;
+  border-bottom: 1px solid rgba(185, 141, 70, 0.25);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
   position: sticky;
   top: 0;
-  z-index: var(--z-sticky);
+  z-index: 50;
 }
 
 .header-content {
@@ -162,27 +164,27 @@ const handleLogout = () => {
   justify-content: space-between;
   max-width: 1920px;
   margin: 0 auto;
-  padding: var(--spacing-md) var(--spacing-xl);
-  gap: var(--spacing-xl);
+  padding: 1rem 1.5rem;
+  gap: 1rem;
 }
 
 .logo-section {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  min-width: 200px;
+  gap: 0.75rem;
+  min-width: 220px;
 }
 
 .logo {
-  font-size: var(--text-2xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-primary);
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #09491c;
   letter-spacing: -0.5px;
 }
 
 .logo-text {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
+  font-size: 0.95rem;
+  color: rgba(15, 23, 42, 0.65);
   display: none;
 }
 
@@ -194,7 +196,7 @@ const handleLogout = () => {
 
 .header-nav {
   display: none;
-  gap: var(--spacing-xl);
+  gap: 1.25rem;
   flex: 1;
 }
 
@@ -205,25 +207,25 @@ const handleLogout = () => {
 }
 
 .header-nav a {
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-secondary);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgba(15, 23, 42, 0.72);
   text-decoration: none;
-  padding: var(--spacing-sm) 0;
+  padding: 0.35rem 0;
   border-bottom: 2px solid transparent;
-  transition: color var(--transition-base), border-color var(--transition-base);
+  transition: color 0.18s ease, border-color 0.18s ease;
 }
 
 .header-nav a:hover,
 .header-nav a.active {
-  color: var(--color-primary);
-  border-bottom-color: var(--color-primary);
+  color: #09491c;
+  border-bottom-color: #b98d46;
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: var(--spacing-lg);
+  gap: 1rem;
 }
 
 .notification-button {
@@ -231,32 +233,32 @@ const handleLogout = () => {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: var(--text-xl);
-  color: var(--color-text-secondary);
-  transition: color var(--transition-base);
-  padding: var(--spacing-md);
-  border-radius: var(--radius-lg);
+  font-size: 1.2rem;
+  color: rgba(15, 23, 42, 0.75);
+  transition: color 0.18s ease, background 0.18s ease;
+  padding: 0.85rem;
+  border-radius: 0.9rem;
 }
 
 .notification-button:hover {
-  color: var(--color-primary);
-  background-color: var(--color-gray-50);
+  color: #09491c;
+  background-color: rgba(9, 73, 28, 0.08);
 }
 
 .notification-button:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid #b98d46;
   outline-offset: 2px;
 }
 
 .badge {
   position: absolute;
-  top: 0;
-  right: 0;
-  background-color: var(--color-danger);
-  color: var(--color-white);
-  font-size: var(--text-xs);
-  font-weight: var(--font-weight-bold);
-  border-radius: var(--radius-full);
+  top: 4px;
+  right: 4px;
+  background-color: #b98d46;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: 999px;
   width: 20px;
   height: 20px;
   display: flex;
@@ -267,37 +269,38 @@ const handleLogout = () => {
 .profile-button {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  background: none;
-  border: none;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(185, 141, 70, 0.25);
   cursor: pointer;
-  padding: var(--spacing-sm) var(--spacing-md);
-  color: var(--color-text);
-  font-size: var(--text-sm);
-  border-radius: var(--radius-lg);
-  transition: all var(--transition-base);
+  padding: 0.5rem 0.9rem;
+  color: #0f172a;
+  font-size: 0.95rem;
+  border-radius: 1rem;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
 .profile-button:hover {
-  background-color: var(--color-gray-50);
+  background-color: #ffffff;
+  transform: translateY(-1px);
 }
 
 .profile-button:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid #b98d46;
   outline-offset: 2px;
 }
 
 .avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-full);
-  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
-  color: var(--color-white);
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #09491c 0%, #1e2f4e 100%);
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: var(--font-weight-bold);
-  font-size: var(--text-sm);
+  font-weight: 700;
+  font-size: 0.9rem;
   object-fit: cover;
 }
 
@@ -309,49 +312,49 @@ const handleLogout = () => {
   position: absolute;
   top: 100%;
   right: 0;
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
+  background-color: #f7f3ea;
+  border: 1px solid rgba(185, 141, 70, 0.22);
+  border-radius: 1rem;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.1);
   min-width: 240px;
-  margin-top: var(--spacing-sm);
-  z-index: var(--z-dropdown);
+  margin-top: 0.55rem;
+  z-index: 40;
 }
 
 .menu-item {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  padding: var(--spacing-md) var(--spacing-lg);
-  background: none;
+  gap: 0.75rem;
+  padding: 0.95rem 1rem;
+  background: transparent;
   border: none;
-  color: var(--color-text);
-  font-size: var(--text-sm);
+  color: #0f172a;
+  font-size: 0.95rem;
   text-decoration: none;
   cursor: pointer;
-  transition: all var(--transition-base);
+  transition: background 0.18s ease, color 0.18s ease;
   width: 100%;
   text-align: left;
 }
 
 .menu-item:hover {
-  background-color: var(--color-gray-50);
-  color: var(--color-primary);
+  background-color: rgba(9, 73, 28, 0.08);
+  color: #09491c;
 }
 
 .menu-divider {
-  margin: var(--spacing-sm) 0;
+  margin: 0.15rem 0;
   border: none;
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid rgba(185, 141, 70, 0.2);
 }
 
 .logout-item {
-  color: var(--color-danger);
+  color: #7a2530;
 }
 
 .logout-item:hover {
-  background-color: rgba(239, 68, 68, 0.05);
-  color: var(--color-danger);
+  background-color: rgba(122, 37, 48, 0.08);
+  color: #7a2530;
 }
 
 /* Main Content Layout */
@@ -363,9 +366,9 @@ const handleLogout = () => {
 
 .app-sidebar {
   width: 280px;
-  background-color: var(--color-surface);
-  border-right: 1px solid var(--color-border);
-  padding: var(--spacing-xl) 0;
+  background: linear-gradient(180deg, #09491c 0%, #1e2f4e 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 2rem 0;
   position: sticky;
   top: 64px;
   max-height: calc(100vh - 64px);
@@ -382,49 +385,50 @@ const handleLogout = () => {
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xl);
+  gap: 1.25rem;
 }
 
 .nav-section {
-  padding: 0 var(--spacing-lg);
+  padding: 0 1.25rem;
 }
 
 .nav-label {
-  font-size: var(--text-xs);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(247, 243, 234, 0.75);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: var(--spacing-md);
+  letter-spacing: 0.12em;
+  margin-bottom: 0.75rem;
 }
 
 .nav-link {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  padding: var(--spacing-md) var(--spacing-lg);
-  color: var(--color-text-secondary);
+  gap: 0.9rem;
+  padding: 0.95rem 1rem;
+  color: rgba(247, 243, 234, 0.95);
   text-decoration: none;
-  border-radius: var(--radius-lg);
-  transition: all var(--transition-base);
-  margin-bottom: var(--spacing-sm);
-  font-size: var(--text-sm);
+  border-radius: 1rem;
+  transition: background 0.2s ease, color 0.2s ease;
+  margin-bottom: 0.4rem;
 }
 
 .nav-link:hover {
-  background-color: var(--color-gray-50);
-  color: var(--color-primary);
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
 }
 
 .nav-link.active {
-  background-color: rgba(30, 64, 175, 0.08);
-  color: var(--color-primary);
-  font-weight: var(--font-weight-semibold);
+  background-color: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: inset 4px 0 0 #b98d46;
 }
 
 .app-main {
   overflow-y: auto;
-  padding: var(--spacing-xl);
+  padding: 1.5rem 1.5rem 2rem;
+  background-color: #f7f3ea;
 }
 
 @media (max-width: 1024px) {
@@ -433,11 +437,11 @@ const handleLogout = () => {
   }
 
   .header-content {
-    padding: var(--spacing-md);
+    padding: 1rem;
   }
 
   .app-main {
-    padding: var(--spacing-lg);
+    padding: 1.2rem;
   }
 }
 
@@ -451,7 +455,7 @@ const handleLogout = () => {
   }
 
   .app-main {
-    padding: var(--spacing-md);
+    padding: 1rem;
   }
 }
 </style>

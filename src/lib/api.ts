@@ -7,12 +7,24 @@ import type { Accreditation, AccreditationReview } from '@/lib'
 =========================== */
 
 const api = axios.create({
-  baseURL: 'http://127.0.0.1:8000/api',
+  baseURL: process.env.VUE_APP_API_BASE_URL || '/api',
   headers: {
     Accept: 'application/json',
     'Content-Type': 'application/json',
   },
 })
+
+function unwrap(resp: any) {
+  if (!resp) return resp
+  // axios response object
+  const body = resp.data ?? resp
+  if (body && typeof body === 'object') {
+    if (Array.isArray(body.data)) return body.data
+    if (body.data && typeof body.data === 'object' && (body.data.id || body.data.length === undefined)) return body.data
+    return body
+  }
+  return body
+}
 
 /* ===========================
    AUTH TOKEN
@@ -60,17 +72,17 @@ export const me = async () => {
 
 export const getColleges = async () => {
   const response = await api.get('/colleges')
-  return response.data
+  return unwrap(response)
 }
 
 export const getCollege = async (id: number | string) => {
   const response = await api.get(`/colleges/${id}`)
-  return response.data
+  return unwrap(response)
 }
 
 export const createCollege = async (data: any) => {
   const response = await api.post('/colleges', data)
-  return response.data
+  return unwrap(response)
 }
 
 export const updateCollege = async (
@@ -78,12 +90,12 @@ export const updateCollege = async (
   data: any
 ) => {
   const response = await api.put(`/colleges/${id}`, data)
-  return response.data
+  return unwrap(response)
 }
 
 export const deleteCollege = async (id: number | string) => {
   const response = await api.delete(`/colleges/${id}`)
-  return response.data
+  return unwrap(response)
 }
 
 /* ===========================
@@ -92,12 +104,12 @@ export const deleteCollege = async (id: number | string) => {
 
 export const getPrograms = async () => {
   const response = await api.get('/programs')
-  return response.data
+  return unwrap(response)
 }
 
 export const getProgram = async (id: number | string) => {
   const response = await api.get(`/programs/${id}`)
-  return response.data
+  return unwrap(response)
 }
 
 export const getTeam = async (id: number | string) => {
@@ -106,8 +118,9 @@ export const getTeam = async (id: number | string) => {
 }
 
 export const createProgram = async (data: any) => {
-  const response = await api.post('/programs', data)
-  return response.data
+  const isForm = (typeof FormData !== 'undefined') && data instanceof FormData
+  const response = await api.post('/programs', data, isForm ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined)
+  return unwrap(response)
 }
 
 export const updateProgram = async (
@@ -129,7 +142,7 @@ export const deleteProgram = async (id: number | string) => {
 
 export const getProgramInvitations = async (programId: number | string) => {
   const response = await api.get(`/programs/${programId}/invitations`)
-  return response.data
+  return unwrap(response)
 }
 
 export const createProgramInvitation = async (
@@ -137,7 +150,7 @@ export const createProgramInvitation = async (
   data: { email?: string; role?: string; expires_in_hours?: number }
 ) => {
   const response = await api.post(`/programs/${programId}/invitations`, data)
-  return response.data
+  return unwrap(response)
 }
 
 export const resendInvitation = async (token: string) => {
@@ -457,6 +470,90 @@ export const updateDocument = async (
 }
 
 /* ===========================
+   ROLE STORAGE
+=========================== */
+
+export const getRoleStorageFolders = async (role: string) => {
+  const response = await api.get('/role-storage', {
+    params: { role },
+  })
+  return response.data
+}
+
+export const createRoleStorageFolder = async (data: { name: string; role: string; parent_id?: number | null }) => {
+  const response = await api.post('/role-storage/folders', data)
+  return response.data
+}
+
+export const uploadRoleStorageFile = async (folderId: number | string, file: File, role: string) => {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const response = await api.post(`/role-storage/folders/${folderId}/upload?role=${encodeURIComponent(role)}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
+
+  return response.data
+}
+
+export const deleteRoleStorageFile = async (fileId: number | string) => {
+  const response = await api.delete(`/role-storage/files/${fileId}`)
+  return response.data
+}
+
+const getRoleStorageHeaders = () => {
+  const token = window.localStorage.getItem(TOKEN_KEY) || window.sessionStorage.getItem(TOKEN_KEY)
+
+  return {
+    Authorization: token ? `Bearer ${token}` : '',
+    Accept: '*/*',
+  }
+}
+
+const fetchRoleStorageFile = async (fileId: number | string) => {
+  const base = process.env.VUE_APP_API_BASE_URL || '/api'
+  const response = await fetch(`${base}/role-storage/files/${fileId}/download`, {
+    headers: getRoleStorageHeaders(),
+  })
+
+  if (!response.ok) {
+    throw new Error('Unable to access file')
+  }
+
+  return response
+}
+
+export const openRoleStorageFile = async (fileId: number | string) => {
+  const response = await fetchRoleStorageFile(fileId)
+  const blob = await response.blob()
+  const url = URL.createObjectURL(blob)
+  window.open(url, '_blank', 'noopener,noreferrer')
+  setTimeout(() => URL.revokeObjectURL(url), 30000)
+
+  return url
+}
+
+export const downloadRoleStorageFile = async (fileId: number | string, filename?: string) => {
+  const response = await fetchRoleStorageFile(fileId)
+  const blob = await response.blob()
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  const safeName = filename || `vault-file-${fileId}`
+
+  anchor.href = url
+  anchor.download = safeName
+  anchor.rel = 'noopener'
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 30000)
+
+  return url
+}
+
+/* ===========================
    DASHBOARD
 =========================== */
 
@@ -623,6 +720,11 @@ export const updateReview = async (
 
 export const getUsers = async () => {
   const response = await api.get('/admin/users')
+  return response.data
+}
+
+export const getProgramChairs = async () => {
+  const response = await api.get('/program-chairs')
   return response.data
 }
 
