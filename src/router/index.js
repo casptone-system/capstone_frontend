@@ -28,8 +28,20 @@ const EmailVerified = () =>
 const Upload = () =>
   import('@/views/settings/Upload.vue')
 
+const Documents = () =>
+  import('@/views/settings/DocumentsPage.vue')
+
 const Reports = () =>
   import('@/views/settings/Reports.vue')
+
+const NotificationsPage = () =>
+  import('@/views/settings/NotificationsPage.vue')
+
+const AreasPage = () =>
+  import('@/views/settings/AreasPage.vue')
+
+const DeadlinesPage = () =>
+  import('@/views/settings/DeadlinesPage.vue')
 
 const Users = () =>
   import('@/views/login/Users.vue')
@@ -74,10 +86,76 @@ const DashboardQA = () =>
     '@/views/QA/QADashboard.vue'
   )
 
-const DashboardVPAA = () =>
+const VPaaLayout = () =>
   import(
-    /* webpackChunkName: "dashboard-vpaa", webpackPrefetch: true */
-    '@/views/VPAA/VPaaDashboard.vue'
+    /* webpackChunkName: "vpaa-layout", webpackPrefetch: true */
+    '@/views/VPAA/VPaaLayout.vue'
+  )
+
+const VPaaDashboardHome = () =>
+  import(
+    /* webpackChunkName: "vpaa-dashboard" */
+    '@/views/VPAA/VPaaDashboardHome.vue'
+  )
+
+const VPaaAccreditations = () =>
+  import(
+    /* webpackChunkName: "vpaa-accreditations" */
+    '@/views/VPAA/VPaaAccreditations.vue'
+  )
+
+const VPaaCreateAccreditation = () =>
+  import(
+    /* webpackChunkName: "vpaa-create-accreditation" */
+    '@/views/VPAA/VPaaCreateAccreditation.vue'
+  )
+
+const VPaaAccreditationDetail = () =>
+  import(
+    /* webpackChunkName: "vpaa-accreditation-detail" */
+    '@/views/VPAA/VPaaAccreditationDetail.vue'
+  )
+
+const VPaaInstruments = () =>
+  import(
+    /* webpackChunkName: "vpaa-instruments" */
+    '@/views/VPAA/VPaaInstruments.vue'
+  )
+
+const VPaaSchedule = () =>
+  import(
+    /* webpackChunkName: "vpaa-schedule" */
+    '@/views/VPAA/VPaaSchedule.vue'
+  )
+
+const VPaaReadiness = () =>
+  import(
+    /* webpackChunkName: "vpaa-readiness" */
+    '@/views/VPAA/VPaaReadiness.vue'
+  )
+
+const VPaaAtRisk = () =>
+  import(
+    /* webpackChunkName: "vpaa-at-risk" */
+    '@/views/VPAA/VPaaAtRisk.vue'
+  )
+
+const VPaaReports = () =>
+  import(
+    /* webpackChunkName: "vpaa-reports" */
+    '@/views/VPAA/VPaaReports.vue'
+  )
+
+const VPaaNotifications = () =>
+  import(
+    /* webpackChunkName: "vpaa-notifications" */
+    '@/views/VPAA/VPaaNotifications.vue'
+  )
+
+const VPaaActivity = () =>
+  import(
+    /* webpackChunkName: "vpaa-activity" */
+    '@/views/VPAA/VPaaActivity.vue'
   )
 
 const DashboardAreaIncharge = () =>
@@ -142,6 +220,9 @@ const ReviewsPage = () =>
 
 const ReportsPage = () =>
   import('@/views/DEAN/ReportsPage.vue')
+
+const ProgramManagementPage = () =>
+  import('@/views/DEAN/ProgramManagementPage.vue')
 
 // ============================================================
 // ROUTES
@@ -220,9 +301,45 @@ const routes = [
   },
 
   {
+    path: '/documents',
+    name: 'documents',
+    component: Documents,
+    meta: {
+      requiresAuth: true,
+    },
+  },
+
+  {
     path: '/reports',
     name: 'reports',
     component: Reports,
+    meta: {
+      requiresAuth: true,
+    },
+  },
+
+  {
+    path: '/notifications',
+    name: 'notifications',
+    component: NotificationsPage,
+    meta: {
+      requiresAuth: true,
+    },
+  },
+
+  {
+    path: '/areas',
+    name: 'areas',
+    component: AreasPage,
+    meta: {
+      requiresAuth: true,
+    },
+  },
+
+  {
+    path: '/deadlines',
+    name: 'deadlines',
+    component: DeadlinesPage,
     meta: {
       requiresAuth: true,
     },
@@ -287,6 +404,15 @@ const routes = [
   },
 
   {
+    path: '/dean/programs/:programId',
+    name: 'dean-program-management',
+    component: ProgramManagementPage,
+    meta: {
+      requiresAuth: true,
+    },
+  },
+
+  {
     path: '/user/dashboard/program-chair',
     name: 'dashboard-program-chair',
     component: DashboardProgramChair,
@@ -316,10 +442,67 @@ const routes = [
   {
     path: '/user/dashboard/vpaa',
     name: 'dashboard-vpaa',
-    component: DashboardVPAA,
+    component: VPaaLayout,
     meta: {
       requiresAuth: true,
     },
+    children: [
+      {
+        path: '',
+        name: 'vpaa-dashboard',
+        component: VPaaDashboardHome,
+      },
+      {
+        path: 'accreditations',
+        name: 'vpaa-accreditations',
+        component: VPaaAccreditations,
+      },
+      {
+        path: 'accreditations/create',
+        name: 'vpaa-create-accreditation',
+        component: VPaaCreateAccreditation,
+      },
+      {
+        path: 'accreditations/:id',
+        name: 'vpaa-accreditation-detail',
+        component: VPaaAccreditationDetail,
+      },
+      {
+        path: 'instruments',
+        name: 'vpaa-instruments',
+        component: VPaaInstruments,
+      },
+      {
+        path: 'schedule',
+        name: 'vpaa-schedule',
+        component: VPaaSchedule,
+      },
+      {
+        path: 'readiness',
+        name: 'vpaa-readiness',
+        component: VPaaReadiness,
+      },
+      {
+        path: 'at-risk',
+        name: 'vpaa-at-risk',
+        component: VPaaAtRisk,
+      },
+      {
+        path: 'reports',
+        name: 'vpaa-reports',
+        component: VPaaReports,
+      },
+      {
+        path: 'notifications',
+        name: 'vpaa-notifications',
+        component: VPaaNotifications,
+      },
+      {
+        path: 'activity',
+        name: 'vpaa-activity',
+        component: VPaaActivity,
+      },
+    ],
   },
 
   {

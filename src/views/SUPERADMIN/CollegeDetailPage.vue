@@ -399,13 +399,105 @@
         </div>
       </div>
     </section>
+
+    <!-- Assign Program Chair Modal -->
+    <section v-if="showAssignChairModal" class="edit-modal">
+      <div class="edit-modal-backdrop" @click="cancelAssignChair"></div>
+      <div class="edit-modal-card">
+        <div class="modal-header">
+          <div>
+            <h3>Assign Program Chair</h3>
+            <p>Select a chair for {{ selectedProgramForChair?.name || 'this program' }}.</p>
+          </div>
+          <button class="sa-btn sa-btn-ghost" @click="cancelAssignChair">Close</button>
+        </div>
+
+        <div class="form-grid">
+          <div v-if="selectedProgramForChair" class="current-chair-info">
+            <p><strong>Current Chair:</strong> {{ selectedProgramForChair.chairUser?.name || selectedProgramForChair.chair || 'Unassigned' }}</p>
+          </div>
+
+          <label>
+            <span>Select Program Chair</span>
+            <select v-model="assignChairForm.chair_id" required>
+              <option value="">Choose a program chair...</option>
+              <option 
+                v-for="chair in chairCandidates" 
+                :key="chair.id" 
+                :value="chair.id"
+              >
+                {{ chair.name || chair.first_name + ' ' + chair.last_name }} ({{ chair.email }})
+              </option>
+            </select>
+            <small v-if="chairCandidates.length === 0" class="warning">No program chair users available</small>
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button class="sa-btn sa-btn-ghost" @click="cancelAssignChair">Cancel</button>
+          <button 
+            class="sa-btn sa-btn-primary" 
+            @click="submitAssignChair"
+            :disabled="!assignChairForm.chair_id || isAssigningChair"
+          >
+            {{ isAssigningChair ? 'Assigning...' : 'Assign Chair' }}
+          </button>
+        </div>
+
+        <p v-if="assignChairError" class="error-message">{{ assignChairError }}</p>
+      </div>
+    </section>
+
+    <!-- Change User Role Modal -->
+    <section v-if="showChangeRoleModal" class="edit-modal">
+      <div class="edit-modal-backdrop" @click="cancelChangeRole"></div>
+      <div class="edit-modal-card">
+        <div class="modal-header">
+          <div>
+            <h3>Change Role</h3>
+            <p>Update the role for {{ selectedUserForRole?.name || 'this user' }}.</p>
+          </div>
+          <button class="sa-btn sa-btn-ghost" @click="cancelChangeRole">Close</button>
+        </div>
+
+        <div class="form-grid">
+          <div v-if="selectedUserForRole" class="current-role-info">
+            <p><strong>Current Role:</strong> {{ selectedUserForRole.role }}</p>
+            <p><strong>Email:</strong> {{ selectedUserForRole.email }}</p>
+          </div>
+
+          <label>
+            <span>New Role</span>
+            <select v-model="changeRoleForm.role" required>
+              <option value="">Choose a role...</option>
+              <option value="Dean">Dean</option>
+              <option value="Program Chair">Program Chair</option>
+              <option value="Faculty">Faculty</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button class="sa-btn sa-btn-ghost" @click="cancelChangeRole">Cancel</button>
+          <button 
+            class="sa-btn sa-btn-primary" 
+            @click="submitChangeRole"
+            :disabled="!changeRoleForm.role || isChangingRole"
+          >
+            {{ isChangingRole ? 'Updating...' : 'Change Role' }}
+          </button>
+        </div>
+
+        <p v-if="changeRoleError" class="error-message">{{ changeRoleError }}</p>
+      </div>
+    </section>
   </section>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { getCollege, getUsers, updateCollege, updateUser, createProgram as apiCreateProgram } from '@/lib/api'
+import { getCollege, getUsers, updateCollege, updateUser, updateProgram, createProgram as apiCreateProgram } from '@/lib/api'
 import { useToastStore } from '@/stores/toastStore'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -418,6 +510,8 @@ const authStore = useAuthStore()
 const college = ref<any>({})
 const users = ref<any[]>([])
 const auditLogs = ref<any[]>([])
+const selectedProgramForChair = ref<any>(null)
+const selectedUserForRole = ref<any>(null)
 
 // UI state
 const activeTab = ref('overview')
@@ -426,10 +520,14 @@ const showAssignRoleModal = ref(false)
 const showCreateProgramModal = ref(false)
 const showChangeDeanModal = ref(false)
 const showAssignDeanModal = ref(false)
+const showAssignChairModal = ref(false)
+const showChangeRoleModal = ref(false)
 const isAssigning = ref(false)
 const isCreatingProgram = ref(false)
 const isChangingDean = ref(false)
 const isAssigningDean = ref(false)
+const isAssigningChair = ref(false)
+const isChangingRole = ref(false)
 
 // Forms
 const editForm = ref({ name: '', code: '', description: '' })
@@ -437,6 +535,8 @@ const roleForm = ref({ role: '', user_id: '' })
 const programForm = ref({ name: '', code: '', chair_id: '' })
 const changeDeanForm = ref({ user_id: '' })
 const assignDeanForm = ref({ user_id: '' })
+const assignChairForm = ref({ chair_id: '' })
+const changeRoleForm = ref({ role: '' })
 
 // Errors
 const assignError = ref('')
@@ -444,6 +544,8 @@ const programError = ref('')
 const programInvitationCode = ref('')
 const changeDeanError = ref('')
 const assignDeanError = ref('')
+const assignChairError = ref('')
+const changeRoleError = ref('')
 
 const collegeId = route.params.id
 
@@ -469,6 +571,9 @@ const roleCandidates = computed(() => {
   )
 })
 const programChairCandidates = computed(() => 
+  users.value.filter((user) => String(user.role).toLowerCase().includes('program chair'))
+)
+const chairCandidates = computed(() => 
   users.value.filter((user) => String(user.role).toLowerCase().includes('program chair'))
 )
 const deanCandidates = computed(() => 
@@ -734,17 +839,97 @@ const editProgram = (program: any) => {
 }
 
 const assignProgramChair = (program: any) => {
-  console.log('Assign chair to program:', program)
+  selectedProgramForChair.value = program
+  assignChairForm.value = { chair_id: program.chair_id || '' }
+  assignChairError.value = ''
+  showAssignChairModal.value = true
+}
+
+const cancelAssignChair = () => {
+  showAssignChairModal.value = false
+  selectedProgramForChair.value = null
+  assignChairForm.value = { chair_id: '' }
+  assignChairError.value = ''
+}
+
+const submitAssignChair = async () => {
+  if (!assignChairForm.value.chair_id || !selectedProgramForChair.value?.id) return
+
+  isAssigningChair.value = true
+  assignChairError.value = ''
+
+  try {
+    await updateProgram(selectedProgramForChair.value.id, {
+      chair_id: assignChairForm.value.chair_id,
+    })
+    
+    await Promise.all([loadCollege(), loadUsers()])
+    const selectedChair = users.value.find((u) => String(u.id) === String(assignChairForm.value.chair_id))
+    const chairName = selectedChair?.name || selectedChair?.email || 'Selected user'
+    const message = `Program chair assigned: ${chairName} is now the chair of ${selectedProgramForChair.value.name}.`
+    toastStore.show(message, 'success')
+    cancelAssignChair()
+  } catch (error: any) {
+    console.error('Failed to assign program chair:', error)
+    assignChairError.value = error?.response?.data?.message || 'Failed to assign program chair. Please try again.'
+  } finally {
+    isAssigningChair.value = false
+  }
 }
 
 // Edit/Remove user
 const editUserRole = (user: any) => {
-  console.log('Edit user role:', user)
+  selectedUserForRole.value = user
+  changeRoleForm.value = { role: user.role || '' }
+  changeRoleError.value = ''
+  showChangeRoleModal.value = true
 }
 
-const removeUser = (user: any) => {
-  if (confirm(`Remove ${user.name || user.email} from ${college.value.name}?`)) {
-    console.log('Remove user:', user)
+const cancelChangeRole = () => {
+  showChangeRoleModal.value = false
+  selectedUserForRole.value = null
+  changeRoleForm.value = { role: '' }
+  changeRoleError.value = ''
+}
+
+const submitChangeRole = async () => {
+  if (!changeRoleForm.value.role || !selectedUserForRole.value?.id) return
+
+  isChangingRole.value = true
+  changeRoleError.value = ''
+
+  try {
+    await updateUser(selectedUserForRole.value.id, {
+      role: changeRoleForm.value.role,
+    })
+    
+    await Promise.all([loadCollege(), loadUsers()])
+    const message = `Role updated: ${selectedUserForRole.value.name || selectedUserForRole.value.email} is now a ${changeRoleForm.value.role}.`
+    toastStore.show(message, 'success')
+    cancelChangeRole()
+  } catch (error: any) {
+    console.error('Failed to change user role:', error)
+    changeRoleError.value = error?.response?.data?.message || 'Failed to change user role. Please try again.'
+  } finally {
+    isChangingRole.value = false
+  }
+}
+
+const removeUser = async (user: any) => {
+  if (!confirm(`Remove ${user.name || user.email} from ${college.value.name}?`)) return
+
+  try {
+    await updateUser(user.id, {
+      college_id: null,
+    })
+    
+    await Promise.all([loadCollege(), loadUsers()])
+    const message = `${user.name || user.email} has been removed from ${college.value.name}.`
+    toastStore.show(message, 'success')
+  } catch (error: any) {
+    console.error('Failed to remove user:', error)
+    const errorMsg = error?.response?.data?.message || 'Failed to remove user. Please try again.'
+    toastStore.show(errorMsg, 'error')
   }
 }
 

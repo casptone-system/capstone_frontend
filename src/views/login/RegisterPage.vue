@@ -96,7 +96,7 @@
               />
             </div>
             <span v-if="emailError" class="field-error">{{ emailError }}</span>
-            <div class="smtp-check-row">
+            <!-- <div class="smtp-check-row">
               <button
                 type="button"
                 class="smtp-check-button"
@@ -108,7 +108,7 @@
               <span v-if="smtpCheckMessage" :class="{ 'smtp-success': smtpCheckSuccess, 'smtp-fail': !smtpCheckSuccess }" class="smtp-check-note">
                 {{ smtpCheckMessage }}
               </span>
-            </div>
+            </div> -->
           </div>
 
           <!-- Phone Number -->
@@ -235,7 +235,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
-import api from '@/lib/api'
+// import api from '@/lib/api'
 import { IonPage, IonIcon } from '@ionic/vue'
 import AppButton from '@/components/AppButton.vue'
 import { validateEmail, validatePasswordStrength, validateRequired } from '@/lib/validation'
@@ -255,7 +255,7 @@ const confirmPassword = ref('')
 const profilePhoto = ref<File | null>(null)
 const profilePhotoPreview = ref('')
 const photoInput = ref<HTMLInputElement>()
-const isCheckingSmtp = ref(false)
+// const isCheckingSmtp = ref(false)
 const smtpCheckMessage = ref('')
 const smtpCheckSuccess = ref(false)
 
@@ -318,8 +318,8 @@ const handleRegister = async () => {
     return
   }
 
-  if (profilePhoto.value.size > 5 * 1024 * 1024) {
-    profilePhotoError.value = 'Profile photo must be 5MB or smaller.'
+  if (profilePhoto.value.size > 10 * 1024 * 1024) {
+    profilePhotoError.value = 'Profile photo must be 10MB or smaller.'
     return
   }
 
@@ -396,34 +396,34 @@ const handleRegister = async () => {
   }
 }
 
-const handleSmtpCheck = async () => {
-  smtpCheckMessage.value = ''
-  smtpCheckSuccess.value = false
+// const handleSmtpCheck = async () => {
+//   smtpCheckMessage.value = ''
+//   smtpCheckSuccess.value = false
 
-  const emailValidation = validateEmail(email.value)
-  if (emailValidation) {
-    emailError.value = emailValidation
-    return
-  }
+//   const emailValidation = validateEmail(email.value)
+//   if (emailValidation) {
+//     emailError.value = emailValidation
+//     return
+//   }
 
-  isCheckingSmtp.value = true
-  try {
-    const response = await api.post('/auth/email/check', {
-      email: email.value.trim().toLowerCase(),
-    })
+//   isCheckingSmtp.value = true
+//   try {
+//     const response = await api.post('/auth/email/check', {
+//       email: email.value.trim().toLowerCase(),
+//     })
 
-    smtpCheckSuccess.value = response.data?.success === true
-    smtpCheckMessage.value = response.data?.message || 'SMTP check completed.'
-  } catch (error: any) {
-    smtpCheckSuccess.value = false
-    smtpCheckMessage.value =
-      error?.response?.data?.message ||
-      error?.message ||
-      'SMTP check failed. Please verify your mail configuration.'
-  } finally {
-    isCheckingSmtp.value = false
-  }
-}
+//     smtpCheckSuccess.value = response.data?.success === true
+//     smtpCheckMessage.value = response.data?.message || 'SMTP check completed.'
+//   } catch (error: any) {
+//     smtpCheckSuccess.value = false
+//     smtpCheckMessage.value =
+//       error?.response?.data?.message ||
+//       error?.message ||
+//       'SMTP check failed. Please verify your mail configuration.'
+//   } finally {
+//     isCheckingSmtp.value = false
+//   }
+// }
 
 const handleProfilePhotoChange = (event: Event) => {
   profilePhotoError.value = ''

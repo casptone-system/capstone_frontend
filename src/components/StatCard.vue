@@ -1,29 +1,22 @@
 <template>
-  <div class="bg-white rounded-lg shadow p-6 border-l-4" :style="{ borderLeftColor: color }">
-    <div class="flex items-center justify-between">
-      <div>
-        <p class="text-gray-500 text-sm font-medium">{{ title }}</p>
-        <p class="text-3xl font-bold text-gray-900 mt-2">{{ value }}</p>
+  <div class="stat-card" :style="{ borderColor: color }">
+    <div class="stat-header">
+      <div class="stat-copy">
+        <p class="stat-title">{{ title }}</p>
+        <p class="stat-value">{{ value }}</p>
       </div>
-      <div class="text-4xl" :style="{ color }">
-        <ion-icon :icon="icon"></ion-icon>
+      <div class="stat-icon" :style="{ color, background: `${color}16` }">
+        <ion-icon :icon="icon" />
       </div>
     </div>
 
-    <div class="stat-value">
-      <span v-if="isLoading" class="skeleton"></span>
-      <span v-else>{{ value }}</span>
-    </div>
-
-    <div v-if="subtitle" class="stat-subtitle">{{ subtitle }}</div>
-
-    <div v-if="badge" :class="['stat-badge', badgeClass]">
-      {{ typeof badge === 'string' ? badge : badge.label }}
-    </div>
-
-    <div v-if="trendInfo" :class="['stat-trend', `trend-${trendInfo.direction}`]">
-      <ion-icon :name="trendInfo.direction === 'up' ? 'arrow-up' : 'arrow-down'"></ion-icon>
-      <span>{{ trendInfo.value }}%</span>
+    <div v-if="subtitle || badge || trendInfo" class="stat-footer">
+      <span v-if="subtitle" class="stat-subtitle">{{ subtitle }}</span>
+      <span v-if="badge" :class="['stat-badge', badgeClass]">{{ typeof badge === 'string' ? badge : badge.label }}</span>
+      <span v-if="trendInfo" :class="['stat-trend', `trend-${trendInfo.direction}`]">
+        <ion-icon :icon="trendInfo.direction === 'up' ? chevronUpOutline : chevronDownOutline" />
+        {{ trendInfo.value }}%
+      </span>
     </div>
   </div>
 </template>
@@ -39,6 +32,7 @@ export default defineComponent({
 <script setup lang="ts">
 import { IonIcon } from '@ionic/vue'
 import { computed } from 'vue'
+import { chevronUpOutline, chevronDownOutline } from 'ionicons/icons'
 
 interface Trend {
   direction: 'up' | 'down'
@@ -63,7 +57,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  color: '#3b82f6',
+  color: '#0f766e',
   isLoading: false,
   change: undefined,
   subtitle: undefined,
@@ -72,128 +66,109 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const trendInfo = computed<Trend | null>(() => {
-  if (props.trend) {
-    return props.trend
-  }
-
+  if (props.trend) return props.trend
   if (props.change !== undefined) {
     return {
       direction: props.change >= 0 ? 'up' : 'down',
       value: Math.abs(props.change),
     }
   }
-
   return null
 })
 
 const badgeClass = computed(() => {
   if (!props.badge) return ''
-  return typeof props.badge === 'string'
-    ? 'badge-primary'
-    : `badge-${props.badge.variant}`
+  return typeof props.badge === 'string' ? 'badge-primary' : `badge-${props.badge.variant}`
 })
 </script>
 
-
 <style scoped>
 .stat-card {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-2xl);
-  padding: var(--spacing-xl);
-  transition: all var(--transition-base);
-  box-shadow: var(--shadow-sm);
-}
-
-.stat-card:hover {
-  box-shadow: var(--shadow-md);
-  border-color: var(--color-border-hover);
-  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid #dfe7eb;
+  border-left-width: 4px;
+  border-radius: 1rem;
+  padding: 1rem 1.1rem;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
 }
 
 .stat-header {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: var(--spacing-lg);
+  gap: 0.8rem;
+}
+
+.stat-copy {
+  flex: 1;
+  min-width: 0;
 }
 
 .stat-title {
-  font-size: var(--text-xs);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-secondary);
+  margin: 0;
+  font-size: 0.75rem;
+  color: #64748b;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.stat-badge {
-  display: inline-block;
-  padding: var(--spacing-2xs) var(--spacing-sm);
-  border-radius: var(--radius-full);
-  font-size: var(--text-xs);
-  font-weight: var(--font-weight-semibold);
-}
-
-.badge-primary {
-  background-color: rgba(30, 64, 175, 0.1);
-  color: var(--color-primary);
-}
-
-.badge-success {
-  background-color: rgba(34, 197, 94, 0.1);
-  color: var(--color-success);
-}
-
-.badge-warning {
-  background-color: rgba(245, 158, 11, 0.1);
-  color: var(--color-warning);
-}
-
-.badge-danger {
-  background-color: rgba(239, 68, 68, 0.1);
-  color: var(--color-danger);
+  letter-spacing: 0.08em;
+  font-weight: 700;
 }
 
 .stat-value {
-  font-size: var(--text-4xl);
-  font-weight: var(--font-weight-extrabold);
-  color: var(--color-text);
-  margin-bottom: var(--spacing-md);
+  margin: 0.4rem 0 0;
+  font-size: clamp(1.8rem, 2.2vw, 2.6rem);
   line-height: 1;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.05em;
 }
 
-.stat-trend {
+.stat-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 0.8rem;
   display: flex;
   align-items: center;
-  gap: var(--spacing-2xs);
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-semibold);
+  justify-content: center;
+  font-size: 1.05rem;
+  flex-shrink: 0;
 }
 
-.trend-up {
-  color: var(--color-success);
+.stat-footer {
+  margin-top: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
-.trend-down {
-  color: var(--color-danger);
+.stat-subtitle {
+  color: #64748b;
+  font-size: 0.72rem;
 }
 
-.stat-loading {
-  opacity: 0.6;
+.stat-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
 }
 
-.skeleton {
-  display: block;
-  height: 2.25rem;
-  width: 60%;
-  background: linear-gradient(90deg, var(--color-gray-200) 25%, var(--color-gray-100) 50%, var(--color-gray-200) 75%);
-  background-size: 200% 100%;
-  animation: loading 1.5s infinite;
-  border-radius: var(--radius-lg);
+.badge-primary { background: rgba(37,99,235,0.12); color: #1d4ed8; }
+.badge-success { background: rgba(22,163,74,0.12); color: #15803d; }
+.badge-warning { background: rgba(217,119,6,0.12); color: #b45309; }
+.badge-danger { background: rgba(239,68,68,0.12); color: #b91c1c; }
+
+.stat-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.7rem;
+  font-weight: 700;
 }
 
-@keyframes loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
+.trend-up { color: #15803d; }
+.trend-down { color: #dc2626; }
 </style>

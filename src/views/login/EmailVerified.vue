@@ -150,16 +150,27 @@ const resendVerification = async () => {
 
 <style scoped>
 .auth-shell {
+  --green-900: #0d5b44;
+  --green-800: #0e6149;
+  --green-700: #1d7a5c;
+  --green-100: #dfeee7;
+  --bg-soft: #eef1ee;
+  --card-bg: #f5f3f1;
+  --text: #1f2f2f;
+  --muted: rgba(31, 47, 47, 0.68);
+  --line: rgba(255, 255, 255, 0.18);
+
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  background: linear-gradient(135deg, #f5f7fb 0%, #eef4f1 100%);
+  grid-template-columns: 1.08fr 0.92fr;
+  background: var(--bg-soft);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .brand-panel {
   position: relative;
-  padding: 48px 42px;
-  background: linear-gradient(135deg, #0b5d3f 0%, #0f766e 100%);
+  padding: 42px 44px 18px;
+  background: linear-gradient(180deg, #0b513f 0%, #0a6653 100%);
   color: white;
   display: flex;
   flex-direction: column;
@@ -170,159 +181,199 @@ const resendVerification = async () => {
 .ledger-lines {
   position: absolute;
   inset: 0;
-  background-image: linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px);
-  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: 0.7;
   pointer-events: none;
 }
 
-.brand-content {
+.brand-content,
+.brand-footer {
   position: relative;
   z-index: 1;
-  max-width: 420px;
+}
+
+.brand-content {
+  max-width: 440px;
+  margin-top: 60px;
 }
 
 .eyebrow {
   display: inline-block;
-  padding: 8px 12px;
+  padding: 0.45rem 0.8rem;
   border-radius: 999px;
-  background: rgba(255,255,255,0.16);
-  font-size: 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.65rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  margin-bottom: 18px;
+  margin-bottom: 1.2rem;
 }
 
 .brand-title {
-  font-size: 2.2rem;
-  line-height: 1.08;
-  margin: 0 0 15px;
+  font-size: clamp(2.2rem, 2.7vw, 3.3rem);
+  line-height: 0.96;
+  letter-spacing: -0.04em;
   font-weight: 800;
+  margin: 0 0 1.2rem;
+  color: #ffffff;
 }
 
 .brand-title em {
   font-style: normal;
-  color: #dcefe7;
+  color: #dff3ea;
 }
 
 .brand-copy {
-  font-size: 1rem;
+  font-size: 0.98rem;
   line-height: 1.7;
-  color: rgba(255,255,255,0.9);
-  margin-bottom: 24px;
+  color: rgba(255, 255, 255, 0.8);
+  max-width: 30rem;
+  margin: 0 0 2rem;
 }
 
 .brand-facts {
   list-style: none;
-  padding: 0;
+  padding: 1.1rem 0 0;
   margin: 0;
-  display: grid;
-  gap: 10px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
 }
 
 .brand-facts li {
   display: flex;
-  gap: 12px;
   align-items: center;
-  font-weight: 600;
+  gap: 0.8rem;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.92rem;
+  color: rgba(255, 255, 255, 0.83);
+  font-weight: 500;
 }
 
 .fact-num {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 1.9rem;
+  height: 1.9rem;
   border-radius: 50%;
-  background: rgba(255,255,255,0.16);
-  font-size: 0.8rem;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #d7efe3;
+  font-size: 0.7rem;
+  font-weight: 700;
 }
 
 .brand-footer {
-  position: relative;
-  z-index: 1;
   margin: 0;
-  font-size: 0.9rem;
-  color: rgba(255,255,255,0.8);
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  padding-bottom: 0.25rem;
 }
 
 .form-panel {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: 2rem;
+  background: #edf0ee;
 }
 
 .form-wrap {
-  width: min(100%, 440px);
-  background: white;
-  border-radius: 24px;
-  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
-  padding: 34px 32px;
+  width: min(100%, 430px);
+  min-height: 420px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 26px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+  padding: 2.1rem 2.2rem 1.8rem;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .login-logo {
-  width: 86px;
-  margin: 0 auto 20px;
+  width: 92px;
+  margin: 0 auto 1.2rem;
+  filter: drop-shadow(0 10px 18px rgba(10, 40, 28, 0.12));
 }
 
 .result-icon {
-  width: 72px;
-  height: 72px;
+  width: 78px;
+  height: 78px;
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
-  margin-bottom: 14px;
+  font-size: 2.2rem;
+  margin: 0 auto 1rem;
+  background: #e4f3ea;
+  color: #0f5f49;
 }
 
 .result-icon.success {
-  background: #e8f7ee;
-  color: #0b5d3f;
+  background: #e3f4ea;
+  color: #0d5d49;
 }
 
 .result-icon.info {
-  background: #e9f5ff;
-  color: #0f766e;
+  background: #e8f4ff;
+  color: #0d6473;
 }
 
 .result-icon.danger {
-  background: #feefef;
-  color: #b91c1c;
+  background: #fdecec;
+  color: #b33d3d;
 }
 
 .result-icon.neutral {
-  background: #f3f4f6;
-  color: #374151;
+  background: #eef2f5;
+  color: #46525b;
 }
 
 .form-title {
-  margin: 0 0 10px;
-  color: #111827;
-  font-size: 1.65rem;
+  margin: 0 0 0.55rem;
+  color: #1f2a2d;
+  font-size: clamp(1.8rem, 2vw, 2.35rem);
   font-weight: 800;
+  letter-spacing: -0.04em;
+  text-align: center;
 }
 
 .form-subtitle {
-  color: #4b5563;
+  margin: 0 0 1.5rem;
+  color: rgba(31, 42, 45, 0.72);
   line-height: 1.7;
-  margin-bottom: 24px;
+  font-size: 0.98rem;
+  text-align: center;
 }
 
 .actions {
+  color: #ffffff;
+  background: #06662e;
+  width: 100%;
   display: grid;
-  gap: 10px;
+  gap: 0.9rem;
 }
+
 
 .secondary-link {
   border: 0;
   background: transparent;
-  color: #0f766e;
+  color: #0f6c57;
   font-weight: 700;
   cursor: pointer;
-  padding: 8px 0;
+  padding: 0.1rem 0;
+  font-size: 0.9rem;
 }
 
 .secondary-link:hover {
@@ -330,9 +381,10 @@ const resendVerification = async () => {
 }
 
 .resend-note {
-  margin-top: 12px;
-  color: #4b5563;
-  font-size: 0.95rem;
+  margin-top: 0.8rem;
+  color: rgba(31, 42, 45, 0.7);
+  font-size: 0.92rem;
+  text-align: center;
 }
 
 @media (max-width: 900px) {
@@ -341,7 +393,25 @@ const resendVerification = async () => {
   }
 
   .brand-panel {
-    min-height: 280px;
+    min-height: 300px;
+    padding: 2rem 1.4rem 1.6rem;
+  }
+
+  .brand-content {
+    margin-top: 0;
+  }
+
+  .brand-facts {
+    display: none;
+  }
+
+  .form-panel {
+    padding: 1.5rem 1.2rem 2.4rem;
+  }
+
+  .form-wrap {
+    min-height: unset;
+    padding: 1.6rem 1.4rem;
   }
 }
 </style>

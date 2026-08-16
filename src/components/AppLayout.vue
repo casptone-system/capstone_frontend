@@ -70,7 +70,7 @@
             </router-link>
           </div>
 
-          <div class="nav-section" v-if="isDean">
+          <div class="nav-section" v-if="showManagementNav">
             <div class="nav-label">Management</div>
             <router-link
               v-for="item in adminNavItems"
@@ -100,6 +100,7 @@
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
+import { normalizeRole } from '@/lib/roleRedirects'
 import { IonIcon } from '@ionic/vue'
 
 const router = useRouter()
@@ -107,24 +108,69 @@ const route = useRoute()
 const authStore = useAuthStore()
 const showProfileMenu = ref(false)
 
+const currentRole = computed(() => normalizeRole(String(authStore.userRole || '')))
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const userName = computed(() => authStore.userName)
-const isDean = computed(() => authStore.isDean)
-const userPhotoUrl = computed(() => (authStore.user as any)?.profilePhoto || (authStore.user as any)?.avatar || null)
+const userPhotoUrl = computed(() => {
+  const user = authStore.user as any
+  const candidate =
+    user?.profilePhoto ||
+    user?.profilePhotoPath ||
+    user?.profile_photo ||
+    user?.profile_photo_url ||
+    user?.avatar ||
+    user?.avatar_url ||
+    user?.photo_url ||
+    user?.image_url ||
+    null
 
-const navItems = [
-  { path: '/user/dashboard', label: 'Dashboard', icon: 'grid-outline' },
-  { path: '/documents', label: 'Documents', icon: 'document-text-outline' },
-  { path: '/reports', label: 'Reports', icon: 'bar-chart-outline' },
-  { path: '/notifications', label: 'Notifications', icon: 'notifications-outline' }
-]
+  if (!candidate || typeof candidate !== 'string') return null
+  const trimmed = candidate.trim()
+  if (!trimmed) return null
+  if (trimmed.startsWith('data:') || /^https?:\/\//i.test(trimmed)) return trimmed
 
-const adminNavItems = [
-  { path: '/users', label: 'Manage Users', icon: 'people-outline' },
-  { path: '/areas', label: 'Accreditation Areas', icon: 'layers-outline' },
-  { path: '/deadlines', label: 'Deadlines', icon: 'calendar-outline' },
-  { path: '/audit-logs', label: 'Audit Logs', icon: 'list-outline' }
-]
+  const rawBase = process.env.VUE_APP_API_BASE_URL || '/api'
+  const backendOrigin = rawBase.replace(/\/api\/?$/, '')
+
+  if (trimmed.startsWith('/')) return `${backendOrigin}${trimmed}`
+  if (trimmed.includes('/storage/')) return trimmed
+  if (trimmed.startsWith('storage/')) return `${backendOrigin}/${trimmed.replace(/^\/+/, '')}`
+  return `${backendOrigin}/${trimmed.replace(/^\/+/, '')}`
+})
+
+const navItems = computed(() => {
+  const items = [
+    { path: '/user/dashboard', label: 'Dashboard', icon: 'grid-outline' },
+    { path: '/documents', label: 'Documents', icon: 'document-text-outline' },
+    { path: '/reports', label: 'Reports', icon: 'bar-chart-outline' },
+    { path: '/notifications', label: 'Notifications', icon: 'notifications-outline' },
+    { path: '/settings', label: 'Settings', icon: 'settings-outline' },
+  ]
+
+  if (currentRole.value === 'superadmin' || currentRole.value === 'admin') {
+    items.splice(1, 0, { path: '/users', label: 'Manage Users', icon: 'people-outline' })
+  }
+
+  return items
+})
+
+const adminNavItems = computed(() => {
+  const role = currentRole.value
+  const items: Array<{ path: string; label: string; icon: string }> = []
+
+  if (role === 'dean' || role === 'vpaa/di' || role === 'program-chair') {
+    items.push({ path: '/areas', label: 'Areas', icon: 'layers-outline' })
+    items.push({ path: '/deadlines', label: 'Deadlines', icon: 'calendar-outline' })
+  }
+
+  if (role === 'vpaa/di' || role === 'superadmin' || role === 'admin') {
+    items.push({ path: '/audit', label: 'Audit Logs', icon: 'list-outline' })
+  }
+
+  return items
+})
+
+const showManagementNav = computed(() => adminNavItems.value.length > 0)
 
 const isActiveRoute = (path: string) => {
   return route.path === path || route.path.startsWith(path + '/')

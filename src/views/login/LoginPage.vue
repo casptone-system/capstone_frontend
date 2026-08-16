@@ -117,6 +117,7 @@
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
+import { useToastStore } from '@/stores/toastStore'
 import AppButton from '@/components/AppButton.vue'
 import { IonPage, IonIcon } from '@ionic/vue'
 import { getRoleRedirectPath } from '@/lib/roleRedirects'
@@ -125,6 +126,7 @@ import { validateEmail, validateRequired } from '@/lib/validation'
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const toastStore = useToastStore()
 
 const email = ref('')
 const password = ref('')
@@ -194,6 +196,12 @@ const handleLogin = async () => {
       return
     }
 
+    const welcomeName = authStore.user?.name || email.value.trim() || 'there'
+    const welcomeMessage = authStore.user?.programId || authStore.hasGroup
+      ? `Welcome to ADAMS, ${welcomeName}! Your program access is ready.`
+      : `Welcome back to ADAMS, ${welcomeName}!`
+    toastStore.show(welcomeMessage, 'success')
+
     // Fallback: if token issued directly, proceed as before
     await router.replace(getRedirectPath())
   } catch (error: any) {
@@ -224,6 +232,12 @@ const handleVerifyCode = async () => {
         console.debug('[LoginPage] verifying 2FA code, before verifyTwoFactor()')
         await authStore.verifyTwoFactor(cleanCode)
         console.debug('[LoginPage] verifyTwoFactor() resolved, auth.isAuthenticated=', authStore.isAuthenticated, 'user=', authStore.user)
+
+        const welcomeName = authStore.user?.name || 'there'
+        const welcomeMessage = authStore.user?.programId || authStore.hasGroup
+          ? `Welcome to ADAMS, ${welcomeName}! Your program access is ready.`
+          : `Welcome back to ADAMS, ${welcomeName}!`
+        toastStore.show(welcomeMessage, 'success')
 
         // allow Vue to flush computed updates (userRole/hasGroup) before routing
         await nextTick()

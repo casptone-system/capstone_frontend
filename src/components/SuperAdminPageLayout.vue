@@ -133,8 +133,9 @@
                 <span class="sa-notification-dot"></span>
               </button>
 
-              <div class="sa-user">
-                <div class="sa-avatar">
+              <div class="sa-profile-chip" aria-label="User profile">
+                <img v-if="userPhotoUrl" :src="userPhotoUrl" alt="Profile photo" class="sa-avatar sa-avatar-image" />
+                <div v-else class="sa-avatar">
                   {{ initials }}
                 </div>
 
@@ -181,6 +182,35 @@ const route = useRoute()
 const authStore = useAuthStore()
 
 const mobileOpen = ref(false)
+
+const resolveUserImageUrl = (value: unknown): string | null => {
+  if (!value || typeof value !== 'string') return null
+
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  if (trimmed.startsWith('data:') || /^https?:\/\//i.test(trimmed)) return trimmed
+  if (trimmed.startsWith('/')) return `${(process.env.VUE_APP_API_BASE_URL || '/api').replace(/\/api\/?$/, '')}${trimmed}`
+  if (trimmed.includes('/storage/')) return trimmed
+  if (trimmed.startsWith('storage/')) return `${(process.env.VUE_APP_API_BASE_URL || '/api').replace(/\/api\/?$/, '')}/${trimmed.replace(/^\/+/, '')}`
+
+  return `${(process.env.VUE_APP_API_BASE_URL || '/api').replace(/\/api\/?$/, '')}/${trimmed.replace(/^\/+/, '')}`
+}
+
+const userPhotoUrl = computed(() => {
+  const user = authStore.user as any
+  const candidate =
+    user?.profilePhoto ||
+    user?.profilePhotoPath ||
+    user?.profile_photo ||
+    user?.profile_photo_url ||
+    user?.avatar ||
+    user?.avatar_url ||
+    user?.photo_url ||
+    user?.image_url ||
+    null
+
+  return resolveUserImageUrl(candidate)
+})
 
 const userName = computed(() => {
   return authStore.user?.name || authStore.user?.email || 'Administrator'
@@ -519,10 +549,15 @@ export default {
   border: 2px solid #fff;
 }
 
-.sa-user {
+.sa-profile-chip {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.7rem;
+  padding: 0.35rem 0.7rem 0.35rem 0.4rem;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 0.9rem;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
 }
 
 .sa-avatar {
@@ -531,15 +566,22 @@ export default {
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: #ccfbf1;
+  background: linear-gradient(135deg, #ccfbf1, #7dd3fc);
   color: #0f766e;
   font-size: 0.78rem;
   font-weight: 900;
+  object-fit: cover;
+}
+
+.sa-avatar-image {
+  display: block;
+  border: 2px solid rgba(15, 118, 110, 0.12);
 }
 
 .sa-user-copy {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .sa-user-copy strong {

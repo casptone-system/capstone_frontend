@@ -2,98 +2,85 @@
   <ion-page>
     <ion-content :fullscreen="true">
       <div class="vpaa-shell">
-
-        <!-- Sidebar -->
         <aside class="vpaa-sidebar">
           <div class="vpaa-brand">
             <div class="vpaa-brand-icon">A</div>
             <span class="vpaa-brand-name">ADAMS</span>
           </div>
 
-          <nav class="vpaa-nav">
+          <nav class="vpaa-nav" aria-label="VPAA navigation">
             <p class="vpaa-nav-label">Overview</p>
-            <a class="vpaa-nav-item active" href="#">
+            <button type="button" class="vpaa-nav-item active">
               <ion-icon :icon="gridOutline" /> Dashboard
-            </a>
-            <a class="vpaa-nav-item" href="#">
-              <ion-icon :icon="ribbonOutline" /> Accreditation Readiness
-            </a>
-            <a class="vpaa-nav-item" href="#">
-              <ion-icon :icon="barChartOutline" /> Institutional Reports
-            </a>
+            </button>
+            <button type="button" class="vpaa-nav-item">
+              <ion-icon :icon="shieldCheckmarkOutline" /> Accreditation Cycle
+            </button>
+            <button type="button" class="vpaa-nav-item">
+              <ion-icon :icon="schoolOutline" /> College Programs
+            </button>
+            <button type="button" class="vpaa-nav-item">
+              <ion-icon :icon="documentTextOutline" /> Evidence Review
+              <span class="vpaa-nav-badge">{{ finalReviewQueue.length }}</span>
+            </button>
 
             <p class="vpaa-nav-label">Monitoring</p>
-            <a class="vpaa-nav-item" href="#">
-              <ion-icon :icon="businessOutline" /> College Progress
-            </a>
-            <a class="vpaa-nav-item" href="#">
-              <ion-icon :icon="shieldCheckmarkOutline" /> Compliance Reports
-            </a>
-            <a class="vpaa-nav-item" href="#">
-              <ion-icon :icon="documentTextOutline" /> Document Completion
-              <span class="vpaa-nav-badge">{{ finalReviewQueue.length }}</span>
-            </a>
-
-            <p class="vpaa-nav-label">Coordination</p>
-            <a class="vpaa-nav-item" href="#">
-              <ion-icon :icon="chatbubblesOutline" /> Deans & QA Office
-            </a>
-            <a class="vpaa-nav-item" href="#">
+            <button type="button" class="vpaa-nav-item">
+              <ion-icon :icon="alertCircleOutline" /> Critical Issues
+            </button>
+            <button type="button" class="vpaa-nav-item">
+              <ion-icon :icon="timeOutline" /> Deadlines
+            </button>
+            <button type="button" class="vpaa-nav-item">
+              <ion-icon :icon="barChartOutline" /> Reports
+            </button>
+            <button type="button" class="vpaa-nav-item">
               <ion-icon :icon="notificationsOutline" /> Notifications
               <span class="vpaa-nav-badge">{{ criticalIssues.length }}</span>
-            </a>
+            </button>
           </nav>
 
           <ion-button color="danger" fill="solid" @click="handleLogout">
             <ion-icon :icon="logOutOutline" />
             Logout
           </ion-button>
-
-          <div class="vpaa-sidebar-footer">
-            <div class="vpaa-admin-chip">
-              <img v-if="currentUserPhoto" :src="currentUserPhoto" alt="Profile photo" class="vpaa-avatar vpaa-avatar-image" />
-              <div v-else class="vpaa-avatar">{{ currentUserInitials }}</div>
-              <div>
-                <p class="vpaa-admin-name">{{ currentUserName }}</p>
-                <p class="vpaa-admin-role">VPAA / Director of Instruction</p>
-              </div>
-            </div>
-          </div>
         </aside>
 
-        <!-- Main -->
         <main class="vpaa-main">
-
-          <!-- Topbar -->
           <header class="vpaa-topbar">
             <div>
-              <p class="vpaa-breadcrumb">Office of the VPAA</p>
-              <h1 class="vpaa-page-title">VPAA Dashboard</h1>
+              <p class="vpaa-breadcrumb">Institutional Quality Assurance</p>
+              <h1 class="vpaa-page-title">VPAA / DI Dashboard</h1>
             </div>
+
             <div class="vpaa-topbar-actions">
-              <button class="vpaa-icon-btn" title="Notifications">
+              <button class="vpaa-icon-btn" type="button" aria-label="Notifications">
                 <ion-icon :icon="notificationsOutline" />
                 <span class="vpaa-badge">{{ criticalIssues.length }}</span>
               </button>
-              <button class="vpaa-btn vpaa-btn-primary">
-                <ion-icon :icon="barChartOutline" /> Generate Institutional Report
-              </button>
-              <button class="vpaa-btn vpaa-btn-ghost">
-                <ion-icon :icon="checkmarkDoneOutline" /> Readiness Dashboard
-              </button>
+              <div class="vpaa-user-chip">
+                <div class="vpaa-user-avatar">{{ currentUserInitials }}</div>
+                <div>
+                  <strong>{{ currentUserName }}</strong>
+                  <small>VPAA / DI</small>
+                </div>
+              </div>
             </div>
           </header>
 
-          <div v-if="callMessage" class="vpaa-call-banner">
-            <div>{{ callMessage }}</div>
-            <button class="vpaa-btn vpaa-btn-ghost" v-if="activeCall" @click="endCall">End Call</button>
-          </div>
+          <section class="vpaa-header-panel">
+            <div>
+              <p class="vpaa-header-kicker">Accreditation Coordination</p>
+              <h2>Institutional readiness overview</h2>
+            </div>
+            <button class="vpaa-btn primary" type="button" @click="refreshDashboard">Refresh</button>
+          </section>
 
-          <div v-if="feedback" :class="['vpaa-feedback-banner', feedbackType]">{{ feedback }}</div>
+          <div v-if="vpaaStore.loading" class="vpaa-loading">Loading dashboard data…</div>
+          <div v-else-if="vpaaStore.error" class="vpaa-error">{{ vpaaStore.error }}</div>
 
-          <!-- Stat Strip -->
-          <section class="vpaa-stat-strip">
-            <div class="vpaa-stat" v-for="stat in stats" :key="stat.label">
+          <section v-else class="vpaa-stat-strip">
+            <div v-for="stat in stats" :key="stat.label" class="vpaa-stat">
               <div class="vpaa-stat-icon" :style="{ background: stat.bg, color: stat.color }">
                 <ion-icon :icon="stat.icon" />
               </div>
@@ -104,167 +91,97 @@
             </div>
           </section>
 
-          <!-- Content Grid -->
-          <div class="vpaa-content-grid">
-
-            <!-- Left Column -->
+          <div v-if="!vpaaStore.loading && !vpaaStore.error" class="vpaa-content-grid">
             <div class="vpaa-col-left">
-
-              <!-- Accreditation Progress by College -->
               <div class="vpaa-card">
                 <div class="vpaa-card-header">
                   <div class="vpaa-card-title-group">
                     <div class="vpaa-card-icon teal"><ion-icon :icon="shieldCheckmarkOutline" /></div>
                     <div>
-                      <h2 class="vpaa-card-title">Accreditation Progress by College</h2>
-                      <p class="vpaa-card-sub">Institution-wide compliance across all colleges</p>
+                      <h2 class="vpaa-card-title">Accreditation pipeline</h2>
+                      <p class="vpaa-card-sub">Institutional workflow from cycle creation to final validation.</p>
                     </div>
                   </div>
-                  <button class="vpaa-link-btn">Full Report →</button>
                 </div>
-                <div class="vpaa-compliance-list">
-                  <div class="vpaa-compliance-row" v-for="item in colleges" :key="item.name">
-                    <div class="vpaa-comp-left">
-                      <p class="vpaa-comp-program">{{ item.name }}</p>
-                      <p class="vpaa-comp-college">Dean: {{ item.dean }} · {{ item.programsReady }}/{{ item.programsTotal }} programs ready</p>
+
+                <div class="vpaa-pipeline-list">
+                  <div v-for="step in pipeline" :key="step.name" class="vpaa-pipeline-row">
+                    <span class="vpaa-step-badge" :class="step.status">{{ step.step }}</span>
+                    <div class="vpaa-pipeline-copy">
+                      <strong>{{ step.name }}</strong>
+                      <small>{{ step.meta }}</small>
                     </div>
-                    <div class="vpaa-comp-bar-wrap">
-                      <div class="vpaa-comp-bar-track">
-                        <div class="vpaa-comp-bar-fill"
-                          :style="{ width: item.compliance + '%', background: item.color }"></div>
-                      </div>
-                      <span class="vpaa-comp-pct" :style="{ color: item.color }">{{ item.compliance }}%</span>
-                    </div>
-                    <span :class="['vpaa-comp-status', item.statusClass]">{{ item.status }}</span>
                   </div>
                 </div>
               </div>
 
-              <!-- Final Review Queue -->
               <div class="vpaa-card">
                 <div class="vpaa-card-header">
                   <div class="vpaa-card-title-group">
                     <div class="vpaa-card-icon blue"><ion-icon :icon="documentTextOutline" /></div>
                     <div>
-                      <h2 class="vpaa-card-title">Final Review Queue</h2>
-                      <p class="vpaa-card-sub">Forwarded by QA — your endorsement marks accreditation ready</p>
+                      <h2 class="vpaa-card-title">Final review queue</h2>
+                      <p class="vpaa-card-sub">Programs awaiting institutional validation and monitoring.</p>
                     </div>
                   </div>
-                  <button class="vpaa-link-btn">All Documents →</button>
                 </div>
-                <div class="vpaa-doc-table">
+
+                <div class="vpaa-table">
                   <div class="vpaa-table-header">
-                    <span>Document</span><span>College</span><span>QA Officer</span><span>Submitted</span><span>Action</span>
+                    <span>Program</span>
+                    <span>Status</span>
+                    <span>Action</span>
                   </div>
-                  <div class="vpaa-table-row" v-for="doc in finalReviewQueue" :key="doc.title">
-                    <span class="vpaa-doc-title-cell">
-                      <ion-icon :icon="documentOutline" class="vpaa-doc-icon" />
-                      {{ doc.title }}
-                    </span>
-                    <span class="vpaa-prog-tag">{{ doc.college }}</span>
-                    <span class="vpaa-muted">{{ doc.qaOfficer }}</span>
-                    <span class="vpaa-muted">{{ doc.submitted }}</span>
-                    <div class="vpaa-action-btns">
-                      <button class="vpaa-call-button" @click="callUser({ name: doc.qaOfficer, role: 'QA Officer' })">
-                        <ion-icon :icon="callOutline" />
-                      </button>
-                      <button class="vpaa-approve-btn" :disabled="pendingReviewId === doc.reviewId" @click="handleReviewAction(doc, 'approve')">
-                        {{ pendingReviewId === doc.reviewId ? 'Working...' : 'Endorse' }}
-                      </button>
-                      <button class="vpaa-return-btn" :disabled="pendingReviewId === doc.reviewId" @click="handleReviewAction(doc, 'return')">Return</button>
-                    </div>
+                  <div v-for="item in finalReviewQueue" :key="item.program" class="vpaa-table-row">
+                    <span>{{ item.program }}</span>
+                    <span :class="['vpaa-status-pill', item.statusClass]">{{ item.status }}</span>
+                    <button type="button" class="vpaa-link-btn">Open</button>
                   </div>
                 </div>
               </div>
-
             </div>
 
-            <!-- Right Column -->
             <div class="vpaa-col-right">
-
-              <!-- Critical Compliance Issues -->
               <div class="vpaa-card">
                 <div class="vpaa-card-header">
                   <div class="vpaa-card-title-group">
-                    <div class="vpaa-card-icon rose"><ion-icon :icon="alertCircleOutline" /></div>
+                    <div class="vpaa-card-icon orange"><ion-icon :icon="alertCircleOutline" /></div>
                     <div>
-                      <h2 class="vpaa-card-title">Major Compliance Issues</h2>
-                      <p class="vpaa-card-sub">Escalated from QA, Deans, and Program Chairs</p>
+                      <h2 class="vpaa-card-title">Critical issues</h2>
+                      <p class="vpaa-card-sub">Follow-up items requiring immediate VPAA attention.</p>
                     </div>
                   </div>
-                  <span class="vpaa-urgent-pill">{{ criticalIssues.length }} Items</span>
                 </div>
-                <div class="vpaa-missing-list">
-                  <div class="vpaa-missing-item" v-for="item in criticalIssues" :key="item.college + item.message"
-                    :class="item.type">
-                    <div class="vpaa-missing-left">
-                      <ion-icon :icon="item.icon" :style="{ color: item.color }" class="vpaa-miss-icon" />
-                      <div>
-                        <p class="vpaa-miss-doc">{{ item.message }}</p>
-                        <p class="vpaa-miss-meta">{{ item.college }}</p>
-                      </div>
-                    </div>
-                    <div class="vpaa-missing-right">
-                      <span :class="['vpaa-miss-type', item.type]">{{ item.label }}</span>
-                      <p class="vpaa-miss-due">{{ item.date }}</p>
-                    </div>
+
+                <div class="vpaa-issue-list">
+                  <div v-for="issue in criticalIssues" :key="issue.label" class="vpaa-issue-item">
+                    <strong>{{ issue.label }}</strong>
+                    <small>{{ issue.detail }}</small>
                   </div>
                 </div>
               </div>
 
-              <!-- Accreditation Pipeline -->
               <div class="vpaa-card">
                 <div class="vpaa-card-header">
                   <div class="vpaa-card-title-group">
-                    <div class="vpaa-card-icon violet"><ion-icon :icon="gitMergeOutline" /></div>
+                    <div class="vpaa-card-icon purple"><ion-icon :icon="barChartOutline" /></div>
                     <div>
-                      <h2 class="vpaa-card-title">Review Pipeline</h2>
-                      <p class="vpaa-card-sub">VPAA is the final stage — endorsement sets Accreditation Ready</p>
+                      <h2 class="vpaa-card-title">Institutional reports</h2>
+                      <p class="vpaa-card-sub">Performance summary by college and program.</p>
                     </div>
                   </div>
                 </div>
-                <div class="vpaa-pipeline">
-                  <div class="vpaa-pipeline-step" v-for="(step, i) in pipeline" :key="step.label"
-                    :class="{ active: step.active, done: step.done }">
-                    <div class="vpaa-step-dot">
-                      <ion-icon v-if="step.done" :icon="checkmarkCircleOutline" />
-                      <span v-else>{{ i + 1 }}</span>
+
+                <div class="vpaa-report-list">
+                  <div v-for="report in reports" :key="report.name" class="vpaa-report-item">
+                    <div>
+                      <strong>{{ report.name }}</strong>
+                      <small>{{ report.caption }}</small>
                     </div>
-                    <div class="vpaa-step-body">
-                      <p class="vpaa-step-label">{{ step.label }}</p>
-                      <p class="vpaa-step-sub">{{ step.sub }}</p>
-                    </div>
+                    <span>{{ report.value }}</span>
                   </div>
                 </div>
               </div>
-
-              <!-- Institutional Reports -->
-              <div class="vpaa-card">
-                <div class="vpaa-card-header">
-                  <div class="vpaa-card-title-group">
-                    <div class="vpaa-card-icon amber"><ion-icon :icon="barChartOutline" /></div>
-                    <div>
-                      <h2 class="vpaa-card-title">Institutional Reports</h2>
-                      <p class="vpaa-card-sub">For accreditation decision-making</p>
-                    </div>
-                  </div>
-                </div>
-                <div class="vpaa-coord-list">
-                  <div class="vpaa-coord-item" v-for="r in institutionalReports" :key="r.title">
-                    <div class="vpaa-coord-avatar" :style="{ background: r.bg, color: r.color }">
-                      <ion-icon :icon="documentTextOutline" />
-                    </div>
-                    <div class="vpaa-coord-info">
-                      <p class="vpaa-coord-name">{{ r.title }}</p>
-                      <p class="vpaa-coord-role">Updated {{ r.updated }}</p>
-                    </div>
-                    <div class="vpaa-coord-right">
-                      <button class="vpaa-view-btn" type="button" @click="$emit('open-report', r.title)">View</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
             </div>
           </div>
         </main>
@@ -274,253 +191,661 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { IonPage, IonContent, IonIcon, IonButton } from '@ionic/vue'
-
+import { computed, onMounted } from 'vue'
+import { IonPage, IonContent, IonButton, IonIcon } from '@ionic/vue'
 import {
-  gridOutline, shieldCheckmarkOutline, documentTextOutline, alertCircleOutline,
-  checkmarkDoneOutline, chatbubblesOutline, barChartOutline,
-  notificationsOutline, documentOutline, gitMergeOutline, checkmarkCircleOutline,
-  closeCircleOutline, businessOutline, ribbonOutline, logOutOutline, callOutline,
+  alertCircleOutline,
+  barChartOutline,
+  checkmarkDoneOutline,
+  documentTextOutline,
+  gridOutline,
+  logOutOutline,
+  notificationsOutline,
+  schoolOutline,
+  shieldCheckmarkOutline,
+  timeOutline,
 } from 'ionicons/icons'
-
-import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
-import { useUserCalls } from '@/lib/useUserCalls'
-import { approveReview, getColleges, getDocuments, getPrograms, getReviews, requestRevisionReview, submitReview } from '@/lib/api'
+import { useVPAADashboardStore } from '@/stores/vpaaDashboardStore'
+import { useRouter } from 'vue-router'
 
 const authStore = useAuthStore()
 const router = useRouter()
-const { activeCall, callMessage, callUser, endCall } = useUserCalls()
-const currentUserName = computed(() => authStore.user?.name || 'VPAA User')
+const vpaaStore = useVPAADashboardStore()
+
+const currentUser = computed(() => (authStore.user ?? {}) as any)
+const currentUserName = computed(() => currentUser.value?.name || 'VPAA / DI')
 const currentUserInitials = computed(() => {
-  const name = authStore.user?.name || 'VPAA User'
-  return name.split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase() || 'VP'
-})
-const currentUserPhoto = computed(() => (authStore.user as any)?.profilePhoto || (authStore.user as any)?.avatar || null)
-
-const loading = ref(false)
-const error = ref<string | null>(null)
-const colleges = ref<any[]>([])
-const programs = ref<any[]>([])
-const documents = ref<any[]>([])
-const reviews = ref<any[]>([])
-const feedback = ref<string | null>(null)
-const feedbackType = ref<'success' | 'error'>('success')
-const pendingReviewId = ref<number | string | null>(null)
-
-const handleLogout = async () => {
-  await authStore.logout()
-  router.replace('/login')
-}
-
-const pipeline = [
-  { label: 'Faculty Upload', sub: 'Evidence submitted by faculty', done: true, active: false },
-  { label: 'Area In-Charge Review', sub: 'Documents reviewed per area', done: true, active: false },
-  { label: 'Faculty Upload', sub: 'Evidence submitted by faculty', done: true, active: false },
-  { label: 'Area In-Charge Review', sub: 'Reviewed per area', done: true, active: false },
-  { label: 'Program Chair Review', sub: 'Approved and forwarded', done: true, active: false },
-  { label: 'Dean Monitoring', sub: 'Dean monitors progress only', done: true, active: false },
-  { label: 'QA Monitoring', sub: 'QA monitors compliance', done: true, active: false },
-  { label: 'VPAA Monitoring', sub: 'Your stage — monitor institutional readiness', done: false, active: true },
-]
-
-const loadData = async () => {
-  loading.value = true
-  error.value = null
-  try {
-    const [collegesResponse, programsResponse, documentsResponse, reviewsResponse] = await Promise.all([
-      getColleges(),
-      getPrograms(),
-      getDocuments({ per_page: 10 }),
-      getReviews({ per_page: 10 }),
-    ])
-
-    const collegeList = (collegesResponse?.data || collegesResponse || []).map((college: any) => ({
-      id: college.id,
-      name: college.name,
-      dean: college.dean || 'Pending assignment',
-      programsTotal: 0,
-      programsReady: 0,
-      compliance: 0,
-      color: '#2563eb',
-      status: 'In Progress',
-      statusClass: 'cs-progress',
-    }))
-
-    const programList = (programsResponse?.data || programsResponse || []).map((program: any) => ({
-      ...program,
-      collegeName: program.college?.name || 'Unassigned',
-      compliance: Number(program.compliance_score || 0),
-      status: program.accreditation_status || 'Planning',
-    }))
-
-    collegeList.forEach((college: any) => {
-      const matchingPrograms = programList.filter((program: any) => program.college_id === college.id || program.college?.id === college.id)
-      college.programsTotal = matchingPrograms.length
-      college.programsReady = matchingPrograms.filter((program: any) => Number(program.compliance) >= 80).length
-      college.compliance = matchingPrograms.length
-        ? Math.round(matchingPrograms.reduce((sum: number, program: any) => sum + Number(program.compliance || 0), 0) / matchingPrograms.length)
-        : 0
-      college.color = college.compliance >= 80 ? '#16a34a' : college.compliance >= 60 ? '#2563eb' : '#dc2626'
-      college.status = college.compliance >= 80 ? 'Ready' : college.compliance >= 60 ? 'In Progress' : 'At Risk'
-      college.statusClass = college.compliance >= 80 ? 'cs-ready' : college.compliance >= 60 ? 'cs-progress' : 'cs-risk'
-    })
-
-    colleges.value = collegeList
-    programs.value = programList
-
-    reviews.value = (reviewsResponse?.data || reviewsResponse || []).map((review: any) => ({
-      id: review.id,
-      status: review.current_status || 'Draft',
-      cycleId: review.cycle_id,
-    }))
-
-    documents.value = (documentsResponse?.data || documentsResponse || []).map((document: any, index: number) => {
-      const review = reviews.value[index] || reviews.value.find((item: any) => item?.id) || null
-
-      return {
-        title: document.title,
-        college: document.program?.college?.name || 'Unassigned',
-        qaOfficer: 'QA Office',
-        submitted: document.created_at || 'Recently submitted',
-        reviewId: review?.id ?? null,
-        reviewStatus: review?.status || 'Draft',
-      }
-    })
-  } catch (err: any) {
-    error.value = err.response?.data?.message || 'Unable to load VPAA dashboard.'
-  } finally {
-    loading.value = false
-  }
-}
-
-const avgCompliance = computed(() => {
-  if (!colleges.value.length) return 0
-  return Math.round(colleges.value.reduce((sum, college) => sum + Number(college.compliance || 0), 0) / colleges.value.length)
+  const pieces = currentUserName.value.split(/\s+/)
+  const initials = pieces.slice(0, 2).map((piece: string) => piece.charAt(0).toUpperCase())
+  return initials.join('') || 'VP'
 })
 
 const stats = computed(() => [
-  { label: 'Colleges Monitored', value: String(colleges.value.length), icon: businessOutline, color: '#0d9488', bg: '#ccfbf1' },
-  { label: 'Programs Tracked', value: String(programs.value.length), icon: gridOutline, color: '#2563eb', bg: '#dbeafe' },
-  { label: 'Avg. Compliance', value: `${avgCompliance.value}%`, icon: checkmarkDoneOutline, color: '#7c3aed', bg: '#ede9fe' },
-  { label: 'Documents Complete', value: `${Math.min(100, Math.round((documents.value.length / Math.max(1, programs.value.length)) * 100))}%`, icon: documentTextOutline, color: '#2563eb', bg: '#dbeafe' },
-  { label: 'Critical Alerts', value: String(Math.max(0, programs.value.filter((program) => Number(program.compliance || 0) < 60).length)), icon: alertCircleOutline, color: '#dc2626', bg: '#fee2e2' },
-  { label: 'Review Status', value: String(reviews.value.length), icon: barChartOutline, color: '#db2777', bg: '#fce7f3' },
+  {
+    label: 'Active cycles',
+    value: String(vpaaStore.summary.active_accreditations),
+    bg: '#e0f2fe',
+    color: '#075985',
+    icon: shieldCheckmarkOutline,
+  },
+  {
+    label: 'Programs ready',
+    value: String(vpaaStore.summary.ready_programs),
+    bg: '#dcfce7',
+    color: '#166534',
+    icon: checkmarkDoneOutline,
+  },
+  {
+    label: 'Upcoming visits',
+    value: String(vpaaStore.summary.upcoming_accreditations),
+    bg: '#fef3c7',
+    color: '#92400e',
+    icon: timeOutline,
+  },
+  {
+    label: 'Critical issues',
+    value: String(vpaaStore.summary.at_risk_programs),
+    bg: '#fee2e2',
+    color: '#991b1b',
+    icon: alertCircleOutline,
+  },
 ])
 
-const finalReviewQueue = computed(() => documents.value.slice(0, 5))
-const criticalIssues = computed(() => programs.value.filter((program) => Number(program.compliance || 0) < 60).slice(0, 4).map((program) => ({
-  message: `${program.name} has low compliance.`,
-  college: program.collegeName,
-  label: 'Critical',
-  type: 'missing',
-  icon: closeCircleOutline,
-  color: '#dc2626',
-  date: 'Pending review',
-})))
-
-const institutionalReports = computed(() => [
-  { title: 'Institutional Compliance Report', updated: 'Live', bg: '#ccfbf1', color: '#0d9488' },
-  { title: 'Accreditation Readiness Summary', updated: 'Live', bg: '#dbeafe', color: '#2563eb' },
-  { title: 'Cross-College Audit Trail', updated: 'Live', bg: '#ede9fe', color: '#7c3aed' },
-  { title: 'Faculty Participation Report', updated: 'Live', bg: '#fef3c7', color: '#d97706' },
+const pipeline = computed(() => [
+  { step: '1', name: 'Cycle creation', meta: 'VPAA assigns college and program', status: 'done' },
+  { step: '2', name: 'Dean notice', meta: 'Dean acknowledges and forwards to chair', status: 'done' },
+  { step: '3', name: 'Chair requirements', meta: 'Program chair sets requirements and deadlines', status: 'active' },
+  { step: '4', name: 'Faculty evidence', meta: 'Faculty prepares and submits evidence', status: 'pending' },
+  { step: '5', name: 'Dean validation', meta: 'Institutional validation and final review', status: 'pending' },
 ])
 
-const handleReviewAction = async (item: any, action: 'approve' | 'return') => {
-  if (!item.reviewId) {
-    feedback.value = 'No review workflow is available for this document yet.'
-    feedbackType.value = 'error'
-    return
-  }
+const finalReviewQueue = computed(() =>
+  vpaaStore.accreditations.slice(0, 3).map((item: any) => {
+    const normalized = String(item.status || item.phase || 'Under review')
+    const statusText = normalized === 'Ready' || normalized === 'Completed' ? 'Ready' : normalized === 'Revision Required' ? 'Revision' : 'Under review'
+    const statusClass = normalized === 'Ready' || normalized === 'Completed' ? 'success' : normalized === 'Revision Required' ? 'danger' : 'warning'
 
-  pendingReviewId.value = item.reviewId
-  feedback.value = null
-
-  try {
-    const review = reviews.value.find((entry: any) => entry.id === item.reviewId)
-    const currentStatus = review?.status || 'Draft'
-
-    if (action === 'approve') {
-      if (currentStatus === 'Draft') {
-        await submitReview(item.reviewId)
-        feedback.value = 'Review submitted for VPAA consideration.'
-      } else {
-        await approveReview(item.reviewId)
-        feedback.value = 'Review endorsed and marked ready.'
-      }
-    } else {
-      await requestRevisionReview(item.reviewId, { comment: `Returned for revision: ${item.title}` })
-      feedback.value = 'Review returned to the prior review stage.'
+    return {
+      program: item.program || 'Program',
+      status: statusText,
+      statusClass,
     }
+  }),
+)
 
-    feedbackType.value = 'success'
-    await loadData()
-  } catch (err: any) {
-    feedback.value = err.response?.data?.message || 'Unable to update the review workflow.'
-    feedbackType.value = 'error'
-  } finally {
-    pendingReviewId.value = null
+const criticalIssues = computed(() =>
+  vpaaStore.atRisk.slice(0, 3).map((item: any) => ({
+    label: item.program || 'Program review',
+    detail: `${item.phase || 'Monitoring'} • ${item.level || 'Cycle'} • ${item.status || 'At risk'}`,
+  })),
+)
+
+const reports = computed(() => {
+  const pendingValidations = vpaaStore.accreditations.filter((item: any) => {
+    const phase = String(item.phase || '')
+    return phase.includes('Dean') || phase.includes('Review') || phase.includes('Chair')
+  }).length
+
+  return [
+    { name: 'College compliance', caption: 'Institutional average', value: `${vpaaStore.readiness.overall || 0}%` },
+    { name: 'Readiness snapshots', caption: 'Current cycle snapshot', value: `${vpaaStore.readiness.programs.length || 0} programs` },
+    { name: 'Pending validations', caption: 'Awaiting institutional signoff', value: String(pendingValidations) },
+  ]
+})
+
+const refreshDashboard = async () => {
+  await vpaaStore.fetchDashboard()
+}
+
+const handleLogout = async () => {
+  try {
+    await authStore.logout()
+    await router.push('/login')
+  } catch (error) {
+    console.warn('VPAA logout failed', error)
   }
 }
 
 onMounted(() => {
-  void loadData()
+  void refreshDashboard()
 })
 </script>
 
 <style scoped>
-/* ── Shell ── */
 .vpaa-shell {
   display: flex;
-  height: 100vh;
-  background: #f8fafc;
-  font-family: 'Inter', system-ui, sans-serif;
-  overflow: hidden;
+  min-height: 100vh;
+  background: #f7f9fc;
+  color: #1f2937;
+  font-family: 'Segoe UI', Arial, sans-serif;
 }
 
-/* ── Sidebar ── */
 .vpaa-sidebar {
-  width: 228px;
-  flex-shrink: 0;
-  background: #0f1e2e;
+  width: 260px;
+  background: #ffffff;
+  border-right: 1px solid #e5e7eb;
   display: flex;
   flex-direction: column;
-  padding: 1.25rem 0.75rem;
+  padding: 24px 18px;
+  gap: 18px;
+}
+
+.vpaa-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px 18px;
+}
+
+.vpaa-brand-icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #0f766e, #2563eb);
+  color: #fff;
+  font-weight: 700;
+}
+
+.vpaa-brand-name {
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.vpaa-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vpaa-nav-label {
+  margin: 10px 8px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.vpaa-nav-item {
+  border: none;
+  background: transparent;
+  color: #374151;
+  padding: 11px 12px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.vpaa-nav-item.active {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.vpaa-nav-badge,
+.vpaa-badge {
+  margin-left: auto;
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.vpaa-main {
+  flex: 1;
+  padding: 24px;
+}
+
+.vpaa-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.vpaa-breadcrumb {
+  margin: 0;
+  color: #6b7280;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.vpaa-page-title {
+  margin: 6px 0 0;
+  font-size: 32px;
+  font-weight: 800;
+}
+
+.vpaa-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vpaa-icon-btn {
+  border: 1px solid #d1d5db;
+  background: #fff;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.vpaa-user-chip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 8px 12px;
+}
+
+.vpaa-user-avatar {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0f172a, #2563eb);
+  color: #fff;
+  font-weight: 700;
+}
+
+.vpaa-user-chip strong,
+.vpaa-user-chip small {
+  display: block;
+}
+
+.vpaa-user-chip small {
+  color: #6b7280;
+}
+
+.vpaa-header-panel {
+  background: linear-gradient(135deg, #eff6ff, #f8fafc);
+  border: 1px solid #dbeafe;
+  border-radius: 18px;
+  padding: 20px 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.vpaa-header-kicker {
+  margin: 0 0 6px;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.vpaa-header-panel h2 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.vpaa-btn {
+  border: none;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vpaa-btn.primary {
+  background: linear-gradient(135deg, #2563eb, #0f766e);
+  color: white;
+}
+
+.vpaa-stat-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.vpaa-stat {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 18px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.vpaa-stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+}
+
+.vpaa-stat-value {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.vpaa-stat-label {
+  margin: 6px 0 0;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.vpaa-content-grid {
+  display: grid;
+  grid-template-columns: 1.55fr 1fr;
+  gap: 20px;
+}
+
+.vpaa-col-left,
+.vpaa-col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.vpaa-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  padding: 20px;
+}
+
+.vpaa-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.vpaa-card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vpaa-card-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+}
+
+.vpaa-card-icon.teal { background: #14b8a6; }
+.vpaa-card-icon.blue { background: #3b82f6; }
+.vpaa-card-icon.orange { background: #f59e0b; }
+.vpaa-card-icon.purple { background: #8b5cf6; }
+
+.vpaa-card-title {
+  margin: 0;
+  font-size: 20px;
+}
+
+.vpaa-card-sub {
+  margin: 4px 0 0;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.vpaa-pipeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.vpaa-pipeline-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 8px;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.vpaa-step-badge {
+  min-width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.vpaa-step-badge.done {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.vpaa-step-badge.active {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.vpaa-step-badge.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.vpaa-pipeline-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vpaa-pipeline-copy small {
+  color: #6b7280;
+}
+
+.vpaa-table {
+  display: grid;
+  gap: 10px;
+}
+
+.vpaa-table-header,
+.vpaa-table-row {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 0.8fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.vpaa-table-header {
+  color: #6b7280;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0 8px;
+}
+
+.vpaa-table-row {
+  padding: 12px 8px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.vpaa-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.vpaa-status-pill.success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.vpaa-status-pill.warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.vpaa-status-pill.danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.vpaa-link-btn {
+  border: none;
+  background: transparent;
+  color: #2563eb;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.vpaa-issue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.vpaa-issue-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #f8fafc;
+}
+
+.vpaa-issue-item small {
+  color: #4b5563;
+}
+
+.vpaa-report-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.vpaa-report-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.vpaa-report-item:last-child {
+  border-bottom: none;
+}
+
+.vpaa-report-item strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.vpaa-report-item small {
+  color: #6b7280;
+}
+
+.vpaa-loading,
+.vpaa-error {
+  margin-top: 18px;
+  padding: 14px 16px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.vpaa-error {
+  color: #b91c1c;
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+@media (max-width: 980px) {
+  .vpaa-shell {
+    flex-direction: column;
+  }
+
+  .vpaa-sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .vpaa-stat-strip,
+  .vpaa-content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+<!-- 
+/* ── Sidebar ── */
+.vpaa-sidebar {
+  width: 214px;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.64);
+  display: flex;
+  flex-direction: column;
+  padding: 0.8rem 0.7rem 0.75rem;
   overflow-y: auto;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-right: none;
+  border-radius: 1.6rem 0 0 1.6rem;
 }
 
 .vpaa-brand {
   display: flex; align-items: center; gap: 0.6rem;
-  padding: 0 0.5rem 1rem;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding: 1rem 0.5rem 1.1rem;
+  border-bottom: 1px solid #dfe7eb;
   margin-bottom: 0.75rem;
 }
 
 .vpaa-brand-icon {
   width: 32px; height: 32px; border-radius: 8px;
-  background: #0d9488; color: #fff;
+  background: linear-gradient(135deg, #0d9488, #0f172a); color: #fff;
   display: flex; align-items: center; justify-content: center;
   font-weight: 800; font-size: 0.95rem;
 }
 
-.vpaa-brand-name { color: #f8fafc; font-weight: 700; font-size: 1rem; letter-spacing: 0.12em; }
+.vpaa-brand-name { color: #0f172a; font-weight: 700; font-size: 1rem; letter-spacing: 0.12em; }
 
 .vpaa-nav { flex: 1; }
 
 .vpaa-nav-label {
   font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.15em;
-  color: #1e3a4c; padding: 0.85rem 0.5rem 0.3rem; margin: 0;
+  color: #64748b; padding: 0.85rem 0.5rem 0.3rem; margin: 0;
+  font-weight: 700;
 }
 
 .vpaa-nav-item {
   display: flex; align-items: center; gap: 0.6rem;
-  padding: 0.5rem 0.75rem; border-radius: 0.5rem;
-  color: #5eead4; text-decoration: none; font-size: 0.85rem;
+  padding: 0.68rem 0.8rem; border-radius: 0.7rem;
+  color: #1f2937; text-decoration: none; font-size: 0.85rem;
   transition: background 0.15s, color 0.15s; cursor: pointer; position: relative;
 }
-.vpaa-nav-item:hover  { background: rgba(255,255,255,0.06); color: #ccfbf1; }
-.vpaa-nav-item.active { background: #0d9488; color: #fff; font-weight: 600; }
+.vpaa-nav-item:hover  { background: rgba(13, 148, 136, 0.08); color: #0f172a; }
+.vpaa-nav-item.active { background: rgba(13, 148, 136, 0.12); color: #0f766e; font-weight: 700; }
 
 .vpaa-nav-badge {
   margin-left: auto; background: #ef4444; color: #fff;
@@ -528,7 +853,7 @@ onMounted(() => {
 }
 
 .vpaa-sidebar-footer {
-  border-top: 1px solid rgba(255,255,255,0.08);
+  border-top: 1px solid #dfe7eb;
   padding-top: 0.75rem; margin-top: 0.5rem;
 }
 
@@ -536,7 +861,7 @@ onMounted(() => {
 
 .vpaa-avatar {
   width: 34px; height: 34px; border-radius: 50%;
-  background: #0d9488; color: #fff;
+  background: linear-gradient(135deg, #5eead4, #0f766e); color: #fff;
   display: flex; align-items: center; justify-content: center;
   font-size: 0.7rem; font-weight: 700; flex-shrink: 0;
   object-fit: cover;
@@ -546,20 +871,41 @@ onMounted(() => {
   display: block;
 }
 
-.vpaa-admin-name { margin: 0; font-size: 0.8rem; color: #f8fafc; font-weight: 600; }
-.vpaa-admin-role { margin: 0; font-size: 0.68rem; color: #2dd4bf; }
+.vpaa-admin-name { margin: 0; font-size: 0.8rem; color: #0f172a; font-weight: 600; }
+.vpaa-admin-role { margin: 0; font-size: 0.68rem; color: #64748b; }
 
 /* ── Main ── */
 .vpaa-main {
-  flex: 1; overflow-y: auto; padding: 1.5rem 1.75rem;
-  display: flex; flex-direction: column; gap: 1.25rem;
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.05rem 1.15rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+  background: rgba(245, 247, 246, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-left: none;
+  border-radius: 0 1.6rem 1.6rem 0;
 }
 
 /* ── Topbar ── */
-.vpaa-topbar { display: flex; align-items: center; justify-content: space-between; }
+.vpaa-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 0.2rem 0.7rem;
+  background: rgba(255, 255, 255, 0.86);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+}
 
 .vpaa-breadcrumb { margin: 0; font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; }
-.vpaa-page-title { margin: 0.1rem 0 0; font-size: 1.4rem; font-weight: 700; color: #0f172a; }
+.vpaa-page-title { margin: 0.15rem 0 0; font-size: clamp(1.8rem, 2.2vw, 2.4rem); font-weight: 800; color: #0f172a; letter-spacing: -0.05em; }
 
 .vpaa-topbar-actions { display: flex; align-items: center; gap: 0.6rem; }
 
@@ -588,14 +934,17 @@ onMounted(() => {
 
 /* ── Stat Strip ── */
 .vpaa-stat-strip {
-  display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.75rem;
+  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.7rem;
 }
 
 .vpaa-stat {
   display: flex; align-items: center; gap: 0.7rem;
-  background: #fff; border: 1px solid #e2e8f0;
-  border-radius: 0.75rem; padding: 0.85rem;
-  box-shadow: 0 1px 4px rgba(15,23,42,0.04);
+  min-height: 78px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid #e7edf3;
+  border-radius: 0.9rem;
+  padding: 0.8rem 0.9rem;
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.04);
 }
 
 .vpaa-stat-icon {
@@ -615,13 +964,18 @@ onMounted(() => {
 
 /* ── Cards ── */
 .vpaa-card {
-  background: #fff; border: 1px solid #e2e8f0;
-  border-radius: 1rem; padding: 1.1rem;
-  box-shadow: 0 2px 8px rgba(15,23,42,0.04);
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid #e6edf3;
+  border-radius: 1.1rem;
+  padding: 1.15rem 1.1rem 1.1rem;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
 }
 
 .vpaa-card-header {
-  display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1rem;
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .vpaa-card-title-group { display: flex; align-items: flex-start; gap: 0.65rem; }
@@ -822,4 +1176,4 @@ onMounted(() => {
   background: #ccfbf1; border: none; padding: 0.25rem 0.6rem;
   border-radius: 999px; cursor: pointer;
 }
-</style>
+</style> -->

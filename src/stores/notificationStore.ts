@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { getNotifications } from '@/lib/api'
+import { getNotifications, markAsRead as apiMarkAsRead, markAllAsRead as apiMarkAllAsRead, downloadInstrumentFile } from '@/lib/api'
 import type { NotificationMessage } from '@/lib'
 
 export const useNotificationStore = defineStore('notifications', () => {
@@ -21,7 +21,7 @@ export const useNotificationStore = defineStore('notifications', () => {
       }
 
       const data = await getNotifications()
-      notifications.value = data
+      notifications.value = Array.isArray(data) ? data : data?.data || []
       unreadCount.value = notifications.value.filter(n => !n.read).length
     } catch (err: any) {
       error.value = err.message || 'Failed to fetch notifications'
@@ -34,11 +34,11 @@ export const useNotificationStore = defineStore('notifications', () => {
 
   const markAsRead = async (id: string) => {
     try {
-      await getNotifications()
+      await apiMarkAsRead(id)
       const notification = notifications.value.find(n => n.id === id)
       if (notification) {
         notification.read = true
-        unreadCount.value = notifications.value.filter(n => !n.read).length
+        unreadCount.value = Math.max(0, unreadCount.value - 1)
       }
     } catch (err: any) {
       error.value = err.message || 'Failed to mark notification as read'
@@ -48,11 +48,31 @@ export const useNotificationStore = defineStore('notifications', () => {
 
   const markAllAsRead = async () => {
     try {
-      await getNotifications()
+      await apiMarkAllAsRead()
       notifications.value.forEach(n => { n.read = true })
       unreadCount.value = 0
     } catch (err: any) {
       error.value = err.message || 'Failed to mark all as read'
+      throw err
+    }
+  }
+
+  const downloadInstrument = async (notificationId: string, fileName: string) => {
+    try {
+      const blob = await downloadInstrumentFile(notificationId)
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      
+      // Mark the notification as read after download
+      await markAsRead(notificationId)
+    } catch (err: any) {
+      error.value = err.message || 'Failed to download file'
       throw err
     }
   }
@@ -64,6 +84,7 @@ export const useNotificationStore = defineStore('notifications', () => {
     error,
     fetchNotifications,
     markAsRead,
-    markAllAsRead
+    markAllAsRead,
+    downloadInstrument
   }
 })

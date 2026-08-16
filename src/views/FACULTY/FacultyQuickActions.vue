@@ -17,7 +17,7 @@
           <template #start><ion-icon :icon="barChartOutline"></ion-icon></template>
           Reports
         </ion-button>
-        <ion-button expand="block" fill="outline" :router-link="'/join-team'">
+        <ion-button v-if="!hasGroup" expand="block" fill="outline" :router-link="'/join-team'">
           <template #start><ion-icon :icon="peopleOutline"></ion-icon></template>
           Join Team
         </ion-button>
@@ -27,6 +27,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import {
   IonCard,
   IonCardContent,
@@ -41,6 +42,10 @@ import {
   barChartOutline,
   peopleOutline,
 } from 'ionicons/icons'
+import { useAuthStore } from '@/stores/authStore'
+
+const authStore = useAuthStore()
+const hasGroup = computed(() => authStore.hasGroup)
 </script>
 
 <script lang="ts">

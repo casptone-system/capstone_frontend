@@ -51,6 +51,32 @@
           </article>
         </section>
 
+        <section class="sa-card sa-todo-card">
+          <div class="sa-section-heading">
+            <div class="sa-title-with-icon">
+              <div class="sa-card-icon sa-blue">
+                <ion-icon :icon="checkmarkDoneOutline" />
+              </div>
+              <div>
+                <h2>Today’s To-dos</h2>
+                <p>Priority actions for the system admin workload.</p>
+              </div>
+            </div>
+            <span class="sa-notification-badge">{{ todayTodos.length }}</span>
+          </div>
+
+          <div class="sa-todo-list">
+            <div v-for="todo in todayTodos" :key="todo.id" class="sa-todo-item">
+              <span class="sa-todo-status" :class="todo.statusClass"></span>
+              <div class="sa-todo-copy">
+                <strong>{{ todo.title }}</strong>
+                <span>{{ todo.meta }}</span>
+              </div>
+              <small>{{ todo.time }}</small>
+            </div>
+          </div>
+        </section>
+
         <!-- Overview -->
         <section class="sa-card sa-overview-card">
           <div class="sa-section-heading">
@@ -459,6 +485,7 @@ import {
   alertCircleOutline,
   barChartOutline,
   businessOutline,
+  checkmarkDoneOutline,
   chevronForwardOutline,
   cloudOutline,
   closeOutline,
@@ -622,6 +649,30 @@ const compliance = computed(() => [
   { label: 'Pending QA Review', pct: 43, color: '#d97706' },
   { label: 'Overdue Requirements', pct: 12, color: '#ef4444' },
 ])
+
+const todayTodos = [
+  {
+    id: 1,
+    title: 'Review pending user approvals',
+    meta: '3 accounts waiting for activation',
+    time: 'Today',
+    statusClass: 'sa-todo-urgent',
+  },
+  {
+    id: 2,
+    title: 'Check dean assignment updates',
+    meta: '2 colleges require confirmation',
+    time: 'Today',
+    statusClass: 'sa-todo-warn',
+  },
+  {
+    id: 3,
+    title: 'Audit accreditation alerts',
+    meta: '5 documents need follow-up',
+    time: 'Tomorrow',
+    statusClass: 'sa-todo-ok',
+  },
+]
 
 const alerts = [
   {

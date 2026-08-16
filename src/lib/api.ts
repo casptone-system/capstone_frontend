@@ -112,6 +112,14 @@ export const getProgram = async (id: number | string) => {
   return unwrap(response)
 }
 
+export const removeProgramMember = async (
+  programId: number | string,
+  userId: number | string
+) => {
+  const response = await api.delete(`/programs/${programId}/members/${userId}`)
+  return response.data
+}
+
 export const getTeam = async (id: number | string) => {
   const response = await api.get(`/teams/${id}`)
   return response.data
@@ -168,6 +176,11 @@ export const acceptInvitationToken = async (token: string) => {
   return response.data
 }
 
+export const approveInvitationToken = async (token: string) => {
+  const response = await api.post(`/invitations/${token}/approve`)
+  return response.data
+}
+
 /* ===========================
    ACCREDITATION AREAS
 =========================== */
@@ -182,6 +195,74 @@ export const getAccreditationArea = async (
 ) => {
   const response = await api.get(`/accreditation-areas/${id}`)
   return response.data
+}
+
+export const getAccreditationCycles = async (params: Record<string, any> = {}) => {
+  const response = await api.get('/accreditation-cycles', { params })
+  return unwrap(response)
+}
+
+export const getAccreditationCycle = async (id: number | string) => {
+  const response = await api.get(`/accreditation-cycles/${id}`)
+  return unwrap(response)
+}
+
+export const getAccreditationStructure = async (id: number | string) => {
+  const response = await api.get(`/accreditation-cycles/${id}/structure`)
+  return unwrap(response)
+}
+
+export const acknowledgeAccreditationCycle = async (id: number | string, remarks?: string | null) => {
+  const response = await api.post(`/accreditation-cycles/${id}/acknowledge`, { remarks: remarks || null })
+  return unwrap(response)
+}
+
+export const forwardAccreditationCycleToChair = async (id: number | string, remarks?: string | null) => {
+  const response = await api.post(`/accreditation-cycles/${id}/forward-to-chair`, { remarks: remarks || null })
+  return unwrap(response)
+}
+
+export const getAreaInCharges = async () => {
+  const response = await api.get('/area-in-charges')
+  return unwrap(response)
+}
+
+export const getProgramFaculty = async () => {
+  const response = await api.get('/program-faculty')
+  return unwrap(response)
+}
+
+export const addAreaMember = async (areaId: number | string, userId: number | string) => {
+  const response = await api.post(`/accreditation-areas/${areaId}/members`, { user_id: userId, role: 'faculty' })
+  return unwrap(response)
+}
+
+export const assignAreaInCharge = async (areaId: number | string, chairId: number | string) => {
+  const response = await api.post(`/accreditation-areas/${areaId}/assign-in-charge`, { chair_id: chairId })
+  return unwrap(response)
+}
+
+export const getAccreditationCycleDashboard = async (params: Record<string, any> = {}) => {
+  const response = await api.get('/accreditation-cycles/dashboard', { params })
+  return unwrap(response)
+}
+
+export const getVPAADashboard = async () => {
+  const response = await api.get('/vpaa/dashboard')
+  return unwrap(response)
+}
+
+export const createAccreditationCycle = async (data: any) => {
+  const response = await api.post('/accreditation-cycles', data)
+  return unwrap(response)
+}
+
+export const updateAccreditationCycle = async (
+  id: number | string,
+  data: any
+) => {
+  const response = await api.put(`/accreditation-cycles/${id}`, data)
+  return unwrap(response)
 }
 
 export const createAccreditationArea = async (data: any) => {
@@ -473,8 +554,15 @@ export const updateDocument = async (
    ROLE STORAGE
 =========================== */
 
-export const getRoleStorageFolders = async (role: string) => {
+export const getRoleStorageFolders = async (role: string, params: Record<string, any> = {}) => {
   const response = await api.get('/role-storage', {
+    params: { role, ...params },
+  })
+  return response.data
+}
+
+export const getRoleStorageSummary = async (role: string) => {
+  const response = await api.get('/role-storage/storage', {
     params: { role },
   })
   return response.data
@@ -482,6 +570,11 @@ export const getRoleStorageFolders = async (role: string) => {
 
 export const createRoleStorageFolder = async (data: { name: string; role: string; parent_id?: number | null }) => {
   const response = await api.post('/role-storage/folders', data)
+  return response.data
+}
+
+export const updateRoleStorageFile = async (fileId: number | string, data: { name?: string; folder_id?: number | null }) => {
+  const response = await api.patch(`/role-storage/files/${fileId}`, data)
   return response.data
 }
 
@@ -500,6 +593,11 @@ export const uploadRoleStorageFile = async (folderId: number | string, file: Fil
 
 export const deleteRoleStorageFile = async (fileId: number | string) => {
   const response = await api.delete(`/role-storage/files/${fileId}`)
+  return response.data
+}
+
+export const linkRoleStorageFileAsEvidence = async (fileId: number | string, data: Record<string, any>) => {
+  const response = await api.post(`/role-storage/files/${fileId}/link-evidence`, data)
   return response.data
 }
 
@@ -590,6 +688,28 @@ export const getDeanPrograms = async (
   return response.data
 }
 
+export const getDeanDocuments = async (
+  params: Record<string, any> = {}
+) => {
+  const response = await api.get(
+    '/dean/documents',
+    { params }
+  )
+
+  return response.data
+}
+
+export const getDeanReviewQueue = async (
+  params: Record<string, any> = {}
+) => {
+  const response = await api.get(
+    '/dean/review-queue',
+    { params }
+  )
+
+  return response.data
+}
+
 /* ===========================
    NOTIFICATIONS
 =========================== */
@@ -620,6 +740,17 @@ export const markAsRead = async (
 export const markAllAsRead = async () => {
   const response = await api.post(
     '/notifications/mark-all-read'
+  )
+
+  return response.data
+}
+
+export const downloadInstrumentFile = async (
+  notificationId: number | string
+) => {
+  const response = await api.get(
+    `/notifications/${notificationId}/download-instrument`,
+    { responseType: 'blob' }
   )
 
   return response.data

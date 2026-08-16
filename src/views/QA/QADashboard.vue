@@ -151,29 +151,23 @@
                     <div class="qa-card-icon blue"><ion-icon :icon="documentTextOutline" /></div>
                     <div>
                       <h2 class="qa-card-title">Submitted Documents</h2>
-                      <p class="qa-card-sub">Forwarded by Deans — verify and endorse for VPAA</p>
+                      <p class="qa-card-sub">Evidence submitted by programs — QA monitoring</p>
                     </div>
                   </div>
                   <button class="qa-link-btn">All Documents →</button>
                 </div>
                 <div class="qa-doc-table">
                   <div class="qa-table-header">
-                    <span>Document</span><span>Program</span><span>Dean</span><span>Submitted</span><span>Action</span>
+                    <span>Program</span><span>Phase</span><span>Status</span><span>Readiness</span><span>Updated</span>
                   </div>
-                  <div class="qa-table-row" v-for="doc in documentList" :key="doc.title">
-                    <span class="qa-doc-title-cell">
-                      <ion-icon :icon="documentOutline" class="qa-doc-icon" />
-                      {{ doc.title }}
-                    </span>
+                  <div class="qa-table-row" v-for="doc in documentList" :key="doc.reviewId">
                     <span class="qa-prog-tag">{{ doc.program }}</span>
                     <span class="qa-muted">{{ doc.dean }}</span>
+                    <span :class="['qa-status-badge', { 'ready': doc.status === 'On Track', 'risk': doc.status === 'At Risk' }]">
+                      {{ doc.status }}
+                    </span>
+                    <span class="qa-readiness">{{ documentList.indexOf(doc) >= 0 ? programs[programs.findIndex((p: any) => p.program_name === doc.program)]?.readiness + '%' : 'N/A' }}</span>
                     <span class="qa-muted">{{ doc.submitted }}</span>
-                    <div class="qa-action-btns">
-                      <button class="qa-approve-btn" :disabled="pendingReviewId === doc.reviewId" @click="handleReviewAction(doc, 'approve')">
-                        {{ pendingReviewId === doc.reviewId ? 'Working...' : 'Approve' }}
-                      </button>
-                      <button class="qa-return-btn" :disabled="pendingReviewId === doc.reviewId" @click="handleReviewAction(doc, 'return')">Return</button>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -285,14 +279,14 @@ import { IonPage, IonContent, IonIcon, IonButton } from '@ionic/vue'
 import {
   gridOutline, shieldCheckmarkOutline, documentTextOutline, alertCircleOutline,
   timeOutline, checkmarkDoneOutline, chatbubblesOutline, barChartOutline,
-  notificationsOutline, documentOutline, gitMergeOutline, checkmarkCircleOutline,
+  notificationsOutline, gitMergeOutline, checkmarkCircleOutline,
   closeCircleOutline, logOutOutline, callOutline
 } from 'ionicons/icons'
 
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { useUserCalls } from '@/lib/useUserCalls'
-import { approveReview, getDocuments, getPrograms, getReviews, requestRevisionReview, submitReview } from '@/lib/api'
+import * as api from '@/lib/api'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -307,11 +301,9 @@ const currentUserPhoto = computed(() => (authStore.user as any)?.profilePhoto ||
 const loading = ref(false)
 const error = ref<string | null>(null)
 const programs = ref<any[]>([])
-const documentRecords = ref<any[]>([])
-const reviews = ref<any[]>([])
+const metrics = ref({ active_programs: 0, at_risk_programs: 0, evidence_completion: 0, pending_reviews: 0 })
 const feedback = ref<string | null>(null)
 const feedbackType = ref<'success' | 'error'>('success')
-const pendingReviewId = ref<number | string | null>(null)
 
 const handleLogout = async () => {
   await authStore.logout()
@@ -319,65 +311,58 @@ const handleLogout = async () => {
 }
 
 const stats = computed(() => [
-  { label: 'Programs Monitored', value: String(programs.value.length), icon: shieldCheckmarkOutline, color: '#0d9488', bg: '#ccfbf1' },
-  { label: 'Docs Under Review', value: String(documentRecords.value.length), icon: documentTextOutline, color: '#2563eb', bg: '#dbeafe' },
-  { label: 'Missing Documents', value: String(programs.value.filter((program) => Number(program.compliance_score || 0) < 60).length), icon: alertCircleOutline, color: '#dc2626', bg: '#fee2e2' },
-  { label: 'Overdue Items', value: String(Math.max(0, documentRecords.value.length - 3)), icon: timeOutline, color: '#d97706', bg: '#fef3c7' },
-  { label: 'Avg. Compliance', value: `${Math.round(programs.value.reduce((sum, program) => sum + Number(program.compliance_score || 0), 0) / Math.max(1, programs.value.length))}%`, icon: checkmarkDoneOutline, color: '#7c3aed', bg: '#ede9fe' },
-  { label: 'Reports Generated', value: String(reviews.value.length || 0), icon: barChartOutline, color: '#db2777', bg: '#fce7f3' },
+  { label: 'Active Programs', value: String(metrics.value.active_programs), icon: shieldCheckmarkOutline, color: '#0d9488', bg: '#ccfbf1' },
+  { label: 'At-Risk Programs', value: String(metrics.value.at_risk_programs), icon: alertCircleOutline, color: '#dc2626', bg: '#fee2e2' },
+  { label: 'Evidence Completion', value: `${metrics.value.evidence_completion}%`, icon: checkmarkDoneOutline, color: '#7c3aed', bg: '#ede9fe' },
+  { label: 'Pending Reviews', value: String(metrics.value.pending_reviews), icon: documentTextOutline, color: '#2563eb', bg: '#dbeafe' },
 ])
 
 const compliance = computed(() => programs.value.slice(0, 6).map((program) => ({
-  program: program.name,
-  college: program.college?.name || 'Unassigned',
-  pct: Number(program.compliance_score || 0),
-  color: Number(program.compliance_score || 0) >= 80 ? '#16a34a' : Number(program.compliance_score || 0) >= 60 ? '#2563eb' : '#dc2626',
-  status: Number(program.compliance_score || 0) >= 80 ? 'Ready' : Number(program.compliance_score || 0) >= 60 ? 'In Progress' : 'At Risk',
-  statusClass: Number(program.compliance_score || 0) >= 80 ? 'cs-ready' : Number(program.compliance_score || 0) >= 60 ? 'cs-progress' : 'cs-risk',
+  program: program.program_name,
+  college: program.college_name || 'Unassigned',
+  pct: program.readiness,
+  color: program.readiness >= 80 ? '#16a34a' : program.readiness >= 50 ? '#2563eb' : '#dc2626',
+  status: program.readiness_status || (program.readiness >= 80 ? 'Ready' : program.readiness >= 50 ? 'In Progress' : 'At Risk'),
+  statusClass: program.readiness >= 80 ? 'cs-ready' : program.readiness >= 50 ? 'cs-progress' : 'cs-risk',
 })))
 
-const documentList = computed(() => {
-  return documentRecords.value.slice(0, 5).map((document: any, index: number) => {
-    const review = reviews.value[index] || reviews.value.find((item: any) => item?.id) || null
+const documentList = computed(() => programs.value.slice(0, 5).map((program: any) => ({
+  title: `${program.program_name} Evidence`,
+  program: program.program_name,
+  dean: program.phase || 'In Progress',
+  submitted: program.updated_at || 'Recently updated',
+  reviewId: program.id,
+  status: program.readiness_status,
+})))
 
-    return {
-      title: document.title,
-      program: document.program?.name || 'Unassigned',
-      dean: document.uploader?.name || 'Pending',
-      submitted: document.created_at || 'Recently submitted',
-      reviewId: review?.id ?? null,
-      reviewStatus: review?.current_status || 'Draft',
-    }
-  })
+const missingItems = computed(() => {
+  const atRisk = programs.value.filter((p) => p.readiness < 60)
+  return atRisk.slice(0, 5).map((program) => ({
+    doc: `${program.program_name} evidence set`,
+    program: program.program_name,
+    area: program.college_name || 'Unassigned',
+    label: 'Missing',
+    type: 'missing',
+    icon: closeCircleOutline,
+    color: '#dc2626',
+    due: `${program.total_areas - program.evidence_items} items pending`,
+  }))
 })
-
-const missingItems = computed(() => programs.value.filter((program) => Number(program.compliance_score || 0) < 60).slice(0, 5).map((program) => ({
-  doc: `${program.name} evidence set`,
-  program: program.name,
-  area: program.college?.name || 'Unassigned',
-  label: 'Missing',
-  type: 'missing',
-  icon: closeCircleOutline,
-  color: '#dc2626',
-  due: 'Pending review',
-})))
 
 const pipeline = [
   { label: 'Faculty Upload', sub: 'Evidence submitted by faculty', done: true, active: false },
   { label: 'Area In-Charge Review', sub: 'Documents reviewed per area', done: true, active: false },
-  { label: 'Faculty Upload', sub: 'Evidence submitted by faculty', done: true, active: false },
-  { label: 'Area In-Charge Review', sub: 'Reviewed per area', done: true, active: false },
   { label: 'Program Chair Review', sub: 'Approved and forwarded', done: true, active: false },
-  { label: 'Dean Monitoring', sub: 'Dean monitors progress only', done: true, active: false },
+  { label: 'Dean Validation', sub: 'Dean monitors progress', done: true, active: false },
   { label: 'QA Officer Review', sub: 'Monitor and verify compliance', done: false, active: true },
   { label: 'VPAA Monitoring', sub: 'VPAA tracks institutional readiness', done: false, active: false },
 ]
 
 const coordination = computed(() => programs.value.slice(0, 4).map((program) => ({
-  initials: (program.name || 'PR').split(' ').slice(0, 2).map((word: string) => word[0]).join('').toUpperCase(),
-  name: program.name,
-  role: program.college?.name || 'Program',
-  flag: Number(program.compliance_score || 0) < 60 ? 'Needs attention' : 'On track',
+  initials: (program.program_name || 'PR').split(' ').slice(0, 2).map((word: string) => word[0]).join('').toUpperCase(),
+  name: program.program_name,
+  role: program.college_name || 'Program',
+  flag: program.readiness < 60 ? 'Needs attention' : 'On track',
   time: 'Live data',
   bg: '#dbeafe',
   color: '#2563eb',
@@ -389,67 +374,15 @@ const loadData = async () => {
   feedback.value = null
 
   try {
-    const [programsResponse, documentsResponse, reviewsResponse] = await Promise.all([
-      getPrograms(),
-      getDocuments({ per_page: 10 }),
-      getReviews({ per_page: 10 }),
-    ])
+    const response = await api.get('/qa/dashboard')
+    const data = response.data.data
 
-    programs.value = (programsResponse?.data || programsResponse || []).map((program: any) => ({
-      ...program,
-      compliance_score: Number(program.compliance_score || 0),
-    }))
-
-    reviews.value = (reviewsResponse?.data || reviewsResponse || []).map((review: any) => ({
-      ...review,
-      current_status: review.current_status || 'Draft',
-    }))
-
-    documentRecords.value = (documentsResponse?.data || documentsResponse || []).map((document: any) => ({
-      ...document,
-      created_at: document.created_at || 'Recently submitted',
-    }))
+    metrics.value = data.metrics || {}
+    programs.value = data.programs || []
   } catch (err: any) {
     error.value = err.response?.data?.message || 'Unable to load QA dashboard.'
   } finally {
     loading.value = false
-  }
-}
-
-const handleReviewAction = async (item: any, action: 'approve' | 'return') => {
-  if (!item.reviewId) {
-    feedback.value = 'No review workflow is available for this document yet.'
-    feedbackType.value = 'error'
-    return
-  }
-
-  pendingReviewId.value = item.reviewId
-  feedback.value = null
-
-  try {
-    const review = reviews.value.find((entry: any) => entry.id === item.reviewId)
-    const currentStatus = review?.current_status || 'Draft'
-
-    if (action === 'approve') {
-      if (currentStatus === 'Draft') {
-        await submitReview(item.reviewId)
-        feedback.value = 'Review submitted for the next review stage.'
-      } else {
-        await approveReview(item.reviewId)
-        feedback.value = 'Review approved and advanced.'
-      }
-    } else {
-      await requestRevisionReview(item.reviewId, { comment: `Returned for revision: ${item.title}` })
-      feedback.value = 'Review returned with a revision request.'
-    }
-
-    feedbackType.value = 'success'
-    await loadData()
-  } catch (err: any) {
-    feedback.value = err.response?.data?.message || 'Unable to update the review workflow.'
-    feedbackType.value = 'error'
-  } finally {
-    pendingReviewId.value = null
   }
 }
 
@@ -463,54 +396,60 @@ onMounted(() => {
 .qa-shell {
   display: flex;
   height: 100vh;
-  background: #f8fafc;
+  background: #e3e5e4;
+  color: #0f172a;
   font-family: 'Inter', system-ui, sans-serif;
   overflow: hidden;
+  padding: 0.9rem 0.9rem 0.9rem 0.2rem;
+  box-sizing: border-box;
 }
 
 /* ── Sidebar ── */
 .qa-sidebar {
-  width: 228px;
+  width: 214px;
   flex-shrink: 0;
-  background: #0f1e2e;
+  background: rgba(255, 255, 255, 0.64);
   display: flex;
   flex-direction: column;
-  padding: 1.25rem 0.75rem;
+  padding: 0.8rem 0.7rem 0.75rem;
   overflow-y: auto;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-right: none;
+  border-radius: 1.6rem 0 0 1.6rem;
 }
-
 
 .qa-brand {
   display: flex; align-items: center; gap: 0.6rem;
-  padding: 0 0.5rem 1rem;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding: 1rem 0.5rem 1.1rem;
+  border-bottom: 1px solid #dfe7eb;
   margin-bottom: 0.75rem;
 }
 
 .qa-brand-icon {
   width: 32px; height: 32px; border-radius: 8px;
-  background: #0d9488; color: #fff;
+  background: linear-gradient(135deg, #0d9488, #0f172a); color: #fff;
   display: flex; align-items: center; justify-content: center;
   font-weight: 800; font-size: 0.95rem;
 }
 
-.qa-brand-name { color: #f8fafc; font-weight: 700; font-size: 1rem; letter-spacing: 0.12em; }
+.qa-brand-name { color: #0f172a; font-weight: 700; font-size: 1rem; letter-spacing: 0.12em; }
 
 .qa-nav { flex: 1; }
 
 .qa-nav-label {
   font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.15em;
-  color: #1e3a4c; padding: 0.85rem 0.5rem 0.3rem; margin: 0;
+  color: #64748b; padding: 0.85rem 0.5rem 0.3rem; margin: 0;
+  font-weight: 700;
 }
 
 .qa-nav-item {
   display: flex; align-items: center; gap: 0.6rem;
-  padding: 0.5rem 0.75rem; border-radius: 0.5rem;
-  color: #5eead4; text-decoration: none; font-size: 0.85rem;
+  padding: 0.68rem 0.8rem; border-radius: 0.7rem;
+  color: #1f2937; text-decoration: none; font-size: 0.85rem;
   transition: background 0.15s, color 0.15s; cursor: pointer; position: relative;
 }
-.qa-nav-item:hover  { background: rgba(255,255,255,0.06); color: #ccfbf1; }
-.qa-nav-item.active { background: #0d9488; color: #fff; font-weight: 600; }
+.qa-nav-item:hover  { background: rgba(13, 148, 136, 0.08); color: #0f172a; }
+.qa-nav-item.active { background: rgba(13, 148, 136, 0.12); color: #0f766e; font-weight: 700; }
 
 .qa-nav-badge {
   margin-left: auto; background: #ef4444; color: #fff;
@@ -518,7 +457,7 @@ onMounted(() => {
 }
 
 .qa-sidebar-footer {
-  border-top: 1px solid rgba(255,255,255,0.08);
+  border-top: 1px solid #dfe7eb;
   padding-top: 0.75rem; margin-top: 0.5rem;
 }
 
@@ -526,7 +465,7 @@ onMounted(() => {
 
 .qa-avatar {
   width: 34px; height: 34px; border-radius: 50%;
-  background: #0d9488; color: #fff;
+  background: linear-gradient(135deg, #5eead4, #0f766e); color: #fff;
   display: flex; align-items: center; justify-content: center;
   font-size: 0.7rem; font-weight: 700; flex-shrink: 0;
   object-fit: cover;
@@ -536,20 +475,41 @@ onMounted(() => {
   display: block;
 }
 
-.qa-admin-name { margin: 0; font-size: 0.8rem; color: #f8fafc; font-weight: 600; }
-.qa-admin-role { margin: 0; font-size: 0.68rem; color: #2dd4bf; }
+.qa-admin-name { margin: 0; font-size: 0.8rem; color: #0f172a; font-weight: 600; }
+.qa-admin-role { margin: 0; font-size: 0.68rem; color: #64748b; }
 
 /* ── Main ── */
 .qa-main {
-  flex: 1; overflow-y: auto; padding: 1.5rem 1.75rem;
-  display: flex; flex-direction: column; gap: 1.25rem;
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.05rem 1.15rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+  background: rgba(245, 247, 246, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-left: none;
+  border-radius: 0 1.6rem 1.6rem 0;
 }
 
 /* ── Topbar ── */
-.qa-topbar { display: flex; align-items: center; justify-content: space-between; }
+.qa-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 0.2rem 0.7rem;
+  background: rgba(255, 255, 255, 0.86);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+}
 
 .qa-breadcrumb { margin: 0; font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; }
-.qa-page-title { margin: 0.1rem 0 0; font-size: 1.4rem; font-weight: 700; color: #0f172a; }
+.qa-page-title { margin: 0.15rem 0 0; font-size: clamp(1.8rem, 2.2vw, 2.4rem); font-weight: 800; color: #0f172a; letter-spacing: -0.05em; }
 
 .qa-topbar-actions { display: flex; align-items: center; gap: 0.6rem; }
 
@@ -578,14 +538,17 @@ onMounted(() => {
 
 /* ── Stat Strip ── */
 .qa-stat-strip {
-  display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.75rem;
+  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.7rem;
 }
 
 .qa-stat {
   display: flex; align-items: center; gap: 0.7rem;
-  background: #fff; border: 1px solid #e2e8f0;
-  border-radius: 0.75rem; padding: 0.85rem;
-  box-shadow: 0 1px 4px rgba(15,23,42,0.04);
+  min-height: 78px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid #e7edf3;
+  border-radius: 0.9rem;
+  padding: 0.8rem 0.9rem;
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.04);
 }
 
 .qa-stat-icon {
@@ -605,13 +568,18 @@ onMounted(() => {
 
 /* ── Cards ── */
 .qa-card {
-  background: #fff; border: 1px solid #e2e8f0;
-  border-radius: 1rem; padding: 1.1rem;
-  box-shadow: 0 2px 8px rgba(15,23,42,0.04);
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid #e6edf3;
+  border-radius: 1.1rem;
+  padding: 1.15rem 1.1rem 1.1rem;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
 }
 
 .qa-card-header {
-  display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1rem;
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .qa-card-title-group { display: flex; align-items: flex-start; gap: 0.65rem; }

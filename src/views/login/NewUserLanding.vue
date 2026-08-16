@@ -5,19 +5,19 @@
       <div class="header-copy">
         <h1>Welcome to ADAMS</h1>
         <p>
-          Your account is ready. Enter the 6-digit invitation code given by your Program
+          Your account is ready. Enter the invitation code or token shared by your Program
           Chair or Dean to join your accreditation team.
         </p>
       </div>
 
       <form class="join-form" @submit.prevent="handleJoin">
-        <label class="field-label" for="invite-code">Invitation token</label>
+        <label class="field-label" for="invite-code">Invitation code or token</label>
         <input
           id="invite-code"
           v-model="inviteCode"
           type="text"
           autocomplete="one-time-code"
-          placeholder="Enter your invitation token"
+          placeholder="Enter your invitation code or token"
           class="invite-input"
         />
 

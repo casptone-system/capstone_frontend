@@ -59,20 +59,51 @@ export const normalizeRole = (value: unknown): AppRole => {
   return normalizeRoleValue(value)
 }
 
+const getUserRoleCandidates = (user: User | null | undefined): AppRole[] => {
+  if (!user) {
+    return []
+  }
+
+  const rawValues = [
+    user.role_slug,
+    (user as any).role?.slug,
+    (user as any).role?.name,
+    (user as any).role_name,
+    (user as any).role,
+    ...(Array.isArray((user as any).roles) ? (user as any).roles : []),
+  ]
+
+  return Array.from(
+    new Set(
+      rawValues
+        .filter((value) => value !== null && value !== undefined && value !== '')
+        .map((value) => normalizeRoleValue(value))
+        .filter(Boolean) as AppRole[],
+    ),
+  )
+}
+
 const roleFromUser = (
   user: User | null | undefined,
 ): AppRole => {
-  if (!user) {
+  const candidates = getUserRoleCandidates(user)
+
+  if (candidates.length === 0) {
     return ''
   }
 
-  return normalizeRoleValue(
-    user.role_slug ||
-      (user as any).role?.slug ||
-      (user as any).role?.name ||
-      (user as any).role_name ||
-      (user as any).role,
-  )
+  const preferredOrder: AppRole[] = [
+    'dean',
+    'program-chair',
+    'area-incharge',
+    'faculty',
+    'qa',
+    'vpaa/di',
+    'superadmin',
+    'admin',
+  ]
+
+  return preferredOrder.find((role) => candidates.includes(role)) ?? candidates[0]
 }
 
 export const getRoleRedirectPath = (
@@ -80,8 +111,9 @@ export const getRoleRedirectPath = (
   hasGroup = false,
   user?: User | null,
 ): string => {
+  const userRoles = getUserRoleCandidates(user)
   const role =
-    roleFromUser(user) ||
+    (userRoles.length > 0 ? roleFromUser(user) : '') ||
     normalizeRoleValue(roleValue)
 
   switch (role) {

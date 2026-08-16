@@ -106,11 +106,19 @@ export const useAuthStore = defineStore('auth', () => {
     const uniqueRoles = Array.from(new Set(rawRoles.filter(Boolean)))
     const views: AppRole[] = []
 
-    if (uniqueRoles.includes('dean')) views.push('dean')
+    if (uniqueRoles.includes('dean')) {
+      views.push('dean')
+      // A dean assigned to a department should be able to toggle between the
+      // dean workspace and the faculty workspace for that department.
+      if (!uniqueRoles.includes('faculty')) {
+        views.push('faculty')
+      }
+    }
+
     if (uniqueRoles.includes('program-chair')) views.push('program-chair')
     if (uniqueRoles.includes('faculty')) views.push('faculty')
 
-    return views
+    return Array.from(new Set(views))
   }
 
   const getStoredDashboardView = (): AppRole | '' => {
@@ -132,7 +140,21 @@ export const useAuthStore = defineStore('auth', () => {
       return dashboardView.value
     }
 
-    return base || (available[0] ?? '')
+    const preferredOrder: AppRole[] = [
+      'dean',
+      'program-chair',
+      'area-incharge',
+      'faculty',
+      'qa',
+      'vpaa/di',
+      'superadmin',
+      'admin',
+    ]
+
+    const candidates = Array.from(new Set([base, ...available].filter(Boolean) as AppRole[]))
+    const selected = preferredOrder.find((role) => candidates.includes(role))
+
+    return selected || base || (available[0] ?? '')
   })
 
   const isSuperAdmin = computed(() => userRole.value === 'superadmin' || userRole.value === 'admin')
@@ -150,6 +172,44 @@ export const useAuthStore = defineStore('auth', () => {
     dashboardView.value = view
     if (typeof window !== 'undefined') {
       window.localStorage.setItem('role_dashboard_view', view)
+    }
+  }
+
+  const setDefaultDashboardViewForRole = () => {
+    if (!user.value || typeof window === 'undefined') return
+
+    const available = getAvailableDashboardViews()
+
+    const defaultOrder: AppRole[] = [
+      'dean',
+      'program-chair',
+      'faculty',
+    ]
+
+    const preferred = defaultOrder.find((role) => available.includes(role))
+
+    if (preferred) {
+      dashboardView.value = preferred
+      window.localStorage.setItem('role_dashboard_view', preferred)
+      return
+    }
+
+    if (available.includes('area-incharge')) {
+      dashboardView.value = 'area-incharge'
+      window.localStorage.setItem('role_dashboard_view', 'area-incharge')
+      return
+    }
+
+    if (available.includes('qa')) {
+      dashboardView.value = 'qa'
+      window.localStorage.setItem('role_dashboard_view', 'qa')
+      return
+    }
+
+    if (available.includes('vpaa/di')) {
+      dashboardView.value = 'vpaa/di'
+      window.localStorage.setItem('role_dashboard_view', 'vpaa/di')
+      return
     }
   }
 
@@ -261,8 +321,10 @@ export const useAuthStore = defineStore('auth', () => {
           await restoreSession()
         }
 
-
         if (user.value) {
+          if (canonicalizeRole((user.value as any)?.role_slug || (user.value as any)?.role || '') === 'dean') {
+            setDefaultDashboardViewForRole()
+          }
           isAuthenticated.value = true
           attachActivityListeners()
           resetSessionTimer()
@@ -352,6 +414,9 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await api.get('/me')
 
       user.value = response.data.data.user
+      if (canonicalizeRole((user.value as any)?.role_slug || (user.value as any)?.role || '') === 'dean') {
+        setDefaultDashboardViewForRole()
+      }
       isAuthenticated.value = true
       attachActivityListeners()
       resetSessionTimer()
@@ -404,17 +469,30 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // Accept a program invitation token
-  const acceptInvitation = async (token: string) => {
+  // Accept a program invitation token or a 6-character team/program code
+  const acceptInvitation = async (value: string) => {
     isLoading.value = true
     error.value = null
 
     try {
-      const response = await api.post(`/invitations/${token}/accept`)
+      const input = value.trim()
+
+      if (!input) {
+        throw new Error('Invitation code is required.')
+      }
+
+      // Team/program join codes are 6 characters long; invitation tokens are longer.
+      if (/^[A-Z0-9]{6}$/i.test(input)) {
+        const response = await api.post('/teams/join', { code: input.toUpperCase() })
+        await restoreSession()
+        return response.data
+      }
+
+      const response = await api.post(`/invitations/${encodeURIComponent(input)}/accept`)
       await restoreSession()
       return response.data
     } catch (err: any) {
-      error.value = err.response?.data?.message || 'Failed to accept invitation.'
+      error.value = err.response?.data?.message || err.message || 'Failed to accept invitation.'
       throw err
     } finally {
       isLoading.value = false
@@ -480,6 +558,7 @@ export const useAuthStore = defineStore('auth', () => {
     availableDashboardViews,
     canViewAs,
     setDashboardView,
+    setDefaultDashboardViewForRole,
     clearDashboardView,
 
     login,

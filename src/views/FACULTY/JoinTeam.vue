@@ -4,21 +4,24 @@
       <img src="@/assets/Archiving_logo.png" alt="ADAMS Logo" class="login-logo" />
       <h1>Welcome to ADAMS</h1>
       <p class="subtitle">
-        You’re almost ready. Enter your invitation code to join your program team and unlock your workspace.
+        You’re almost ready. Enter the invitation code or token shared by your Program Chair to join your team and unlock your workspace.
       </p>
 
       <form class="join-form" @submit.prevent="handleJoin">
-        <label class="field-label" for="invite-code">Invitation token</label>
+        <label class="field-label" for="invite-code">Invitation code or token</label>
         <input
           id="invite-code"
           v-model="inviteCode"
           type="text"
           autocomplete="one-time-code"
-          placeholder="Enter your invitation token"
+          placeholder="Enter your invitation code or token"
           class="invite-input"
         />
 
         <button class="join-button" type="submit">Accept Invitation</button>
+        <button class="fac-nav-icon" type="button" @click="handleLogout">
+          Logout
+        </button>
       </form>
 
 
@@ -184,6 +187,15 @@ h1 {
   filter: brightness(1.03);
 }
 
+.fac-nav-icon {
+  border: none;
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  cursor: pointer;
+}
 .message {
   margin-top: 1rem;
   font-weight: 600;
