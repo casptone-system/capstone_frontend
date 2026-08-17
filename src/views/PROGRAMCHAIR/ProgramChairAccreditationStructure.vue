@@ -112,8 +112,13 @@ const loadAreaInCharges = async () => {
 const loadFaculty = async () => {
   try {
     const response = await getProgramFaculty()
-    faculty.value = Array.isArray(response?.data) ? response.data : Array.isArray(response) ? response : []
-  } catch {
+
+    faculty.value = Array.isArray(response?.data) 
+    ? response.data 
+    : Array.isArray(response) 
+    ? response : []
+  } catch (err: any) {
+    console.error('Unable to load program faculty:', err)
     faculty.value = []
   }
 }

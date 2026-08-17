@@ -15,12 +15,9 @@
             <a class="pc-nav-item" :class="{ active: selectedSection === 'dashboard' }" href="#" @click.prevent="selectSection('dashboard')">
               <ion-icon :icon="gridOutline" /> Dashboard
             </a>
-            <a class="pc-nav-item" :class="{ active: selectedSection === 'codes' }" href="#" @click.prevent="selectSection('codes')">
-              <ion-icon :icon="keyOutline" /> Invitation Codes
+            <a class="pc-nav-item" :class="{ active: selectedSection === 'team' }" href="#" @click.prevent="selectSection('team')">
+              <ion-icon :icon="peopleOutline" /> Team & Invitations
               <span class="pc-nav-badge">{{ recentCodes.length }}</span>
-            </a>
-            <a class="pc-nav-item" :class="{ active: selectedSection === 'users' }" href="#" @click.prevent="selectSection('users')">
-              <ion-icon :icon="peopleOutline" /> User Management
             </a>
 
             <p class="pc-nav-label">Communication</p>
@@ -30,17 +27,14 @@
             </a>
 
             <p class="pc-nav-label">Accreditation</p>
-            <a class="pc-nav-item" :class="{ active: selectedSection === 'setup' }" href="#" @click.prevent="selectSection('setup')">
-              <ion-icon :icon="settingsOutline" /> Accreditation Setup
+            <a class="pc-nav-item" :class="{ active: selectedSection === 'accreditation' }" href="#" @click.prevent="selectSection('accreditation')">
+              <ion-icon :icon="settingsOutline" /> Accreditation
             </a>
-            <a class="pc-nav-item" :class="{ active: selectedSection === 'structure' }" href="#" @click.prevent="selectSection('structure')">
-              <ion-icon :icon="documentTextOutline" /> Instrument Structure
-            </a>
-            <a class="pc-nav-item" :class="{ active: selectedSection === 'assignments' }" href="#" @click.prevent="selectSection('assignments')">
-              <ion-icon :icon="folderOpenOutline" /> Assign Areas
+            <a class="pc-nav-item" :class="{ active: selectedSection === 'faculty-areas' }" href="#" @click.prevent="selectSection('faculty-areas')">
+              <ion-icon :icon="peopleOutline" /> Faculty Area Assignments
             </a>
             <a class="pc-nav-item" :class="{ active: selectedSection === 'review' }" href="#" @click.prevent="selectSection('review')">
-              <ion-icon :icon="documentTextOutline" /> Document Review
+              <ion-icon :icon="documentTextOutline" /> Area Documents
             </a>
           </nav>
            <ion-button color="danger" fill="solid" @click="handleLogout">
@@ -66,10 +60,7 @@
             </div>
 
             <div class="pc-topbar-actions">
-              <button class="pc-icon-btn" title="Notifications" @click.prevent="selectSection('notifications')">
-                <ion-icon :icon="notificationsOutline" />
-                <span class="pc-badge">{{ activeNotificationCount }}</span>
-              </button>
+              <NotificationBell />
               <div class="pc-profile-chip" aria-label="User profile">
                 <img v-if="currentUserPhoto" :src="currentUserPhoto" alt="Profile photo" class="pc-user-avatar pc-user-avatar-image" />
                 <div v-else class="pc-user-avatar">{{ currentUserInitials }}</div>
@@ -132,7 +123,87 @@
             
           </section>
 
-          <section v-if="selectedSection === 'users'" class="pc-faculty-management-card">
+          <section v-if="selectedSection === 'team'" class="pc-faculty-management-card">
+            <div class="pc-card-header">
+              <div class="pc-card-title-group">
+                <div class="pc-card-icon emerald"><ion-icon :icon="peopleOutline" /></div>
+                <div>
+                  <h2 class="pc-card-title">Team & Invitations</h2>
+                  <p class="pc-card-sub">Manage users and invitation codes</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Invitation Codes Section -->
+            <div class="pc-section-group">
+              <h3 class="pc-section-title">Invitation Codes</h3>
+              <div class="pc-code-form">
+                <label class="pc-field-label">Team name</label>
+                <input class="pc-input" v-model="createTeamName" placeholder="Enter team name" />
+                <button class="pc-btn pc-btn-primary" @click.prevent="generateTeamCode">
+                  <ion-icon :icon="keyOutline" /> Generate Invitation Code / Token
+                </button>
+                <p v-if="createTeamError" class="pc-error-text">{{ createTeamError }}</p>
+                <p v-if="createTeamSuccess" class="pc-success-text">{{ createTeamSuccess }}</p>
+              </div>
+              <div class="pc-code-display">
+                <p class="pc-code-label">Exact value to copy and send</p>
+                <div class="pc-code-digits">
+                  <span v-for="(d, idx) in activeCode.split('')" :key="d + idx" class="pc-digit">{{ d }}</span>
+                </div>
+                <div class="pc-code-actions">
+                  <button class="pc-code-btn copy" @click.prevent="copyCode">
+                    <ion-icon :icon="copyOutline" /> Copy Code / Token
+                  </button>
+                  <button class="pc-code-btn send" @click.prevent="() => sendInvite()">
+                    <ion-icon :icon="mailOutline" /> Send to Member
+                  </button>
+                  <button class="pc-code-btn regen" @click.prevent="regenCode">
+                    <ion-icon :icon="refreshOutline" /> New Value
+                  </button>
+                </div>
+                <p v-if="codeMessage" class="pc-code-hint">{{ codeMessage }}</p>
+              </div>
+              <div class="pc-invite-form">
+                <label class="pc-field-label">Invite faculty by email</label>
+                <input class="pc-input" v-model="inviteEmail" placeholder="faculty@example.com" />
+                <select class="pc-input" v-model="inviteRole">
+                  <option value="faculty">Faculty</option>
+                  <option value="area-incharge">Area In-Charge</option>
+                  <option value="program-chair">Program Chair</option>
+                </select>
+                <button class="pc-btn pc-btn-primary" :disabled="inviteBusy" @click.prevent="submitInvitation">
+                  <ion-icon :icon="mailOutline" /> {{ inviteBusy ? 'Creating...' : 'Create Invitation' }}
+                </button>
+                <p v-if="inviteError" class="pc-error-text">{{ inviteError }}</p>
+                <p v-if="inviteSuccess" class="pc-success-text">{{ inviteSuccess }}</p>
+              </div>
+              <div class="pc-recent-codes">
+                <p class="pc-recent-label">Recent Codes</p>
+                <div class="pc-recent-row" v-for="c in recentCodes" :key="c.code">
+                  <span class="pc-recent-code">{{ c.code }}</span>
+                  <span class="pc-recent-used">{{ c.used }}</span>
+                  <span :class="['pc-recent-status', c.expired ? 'expired' : 'active']">
+                    {{ c.expired ? 'Expired' : 'Active' }}
+                  </span>
+                </div>
+              </div>
+              <div class="pc-recent-codes" v-if="invitations.length">
+                <p class="pc-recent-label">Recent Invitations</p>
+                <div class="pc-recent-row" v-for="invitation in invitations" :key="invitation.id || invitation.token">
+                  <span class="pc-recent-code">{{ invitation.email || invitation.token }}</span>
+                  <span class="pc-recent-used">{{ invitation.status }}</span>
+                  <div class="pc-code-actions">
+                    <button class="pc-code-btn copy" @click.prevent="resendInvitationAction(invitation.token)">Resend</button>
+                    <button class="pc-code-btn regen" @click.prevent="revokeInvitationAction(invitation.token)">Revoke</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- User Management Section -->
+            <div class="pc-section-group" style="margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 2rem;">
+              <h3 class="pc-section-title">User Management</h3>
             <div class="pc-card-header">
               <div class="pc-card-title-group">
                 <div class="pc-card-icon emerald"><ion-icon :icon="peopleOutline" /></div>
@@ -141,7 +212,7 @@
                   <p class="pc-card-sub">Manage users assigned to the selected program</p>
                 </div>
               </div>
-              <button class="pc-link-btn" type="button" @click.prevent="selectSection('codes')">Invite user →</button>
+              <button class="pc-link-btn" type="button" @click.prevent="selectSection('team')">Invite user →</button>
             </div>
 
             <div v-if="facultyRoster.length" class="pc-faculty-roster">
@@ -165,6 +236,7 @@
             </div>
 
             <p v-else class="pc-empty-state">No faculty members have been assigned to this program yet.</p>
+            </div>
           </section>
 
           <section v-if="selectedSection === 'dashboard'" class="pc-documents-section">
@@ -204,7 +276,8 @@
             <!-- Left Column -->
             <div class="pc-col-left">
 
-              <div v-if="selectedSection === 'dashboard' || selectedSection === 'review'" class="pc-card">
+              <!-- Dashboard/Review Document Table -->
+              <div v-if="selectedSection === 'dashboard'" class="pc-card">
                 <div class="pc-card-header">
                   <div class="pc-card-title-group">
                     <div class="pc-card-icon blue"><ion-icon :icon="documentTextOutline" /></div>
@@ -242,7 +315,7 @@
             <!-- Right Column -->
             <div class="pc-col-right">
 
-                <div v-if="selectedSection === 'codes'" class="pc-card pc-invite-card">
+                <!-- <div v-if="selectedSection === 'team'" class="pc-card pc-invite-card">
                 <div class="pc-card-header">
                   <div class="pc-card-title-group">
                     <div class="pc-card-icon violet"><ion-icon :icon="keyOutline" /></div>
@@ -314,42 +387,36 @@
                     </div>
                   </div>
                 </div>
-              </div>
+              </div> -->
 
-              <!-- Area Assignments -->
-              <div v-if="selectedSection === 'setup'" class="pc-card">
-                <ProgramChairAccreditationSetup />
-              </div>
-
-              <div v-if="selectedSection === 'structure'" class="pc-card">
-                <ProgramChairAccreditationStructure />
-              </div>
-
-              <div v-if="selectedSection === 'dashboard' || selectedSection === 'assignments'" class="pc-card">
-                <div class="pc-card-header">
-                  <div class="pc-card-title-group">
-                    <div class="pc-card-icon amber"><ion-icon :icon="folderOpenOutline" /></div>
-                    <div>
-                      <h2 class="pc-card-title">Area Assignments</h2>
-                      <p class="pc-card-sub">Accreditation areas & their In-Charges</p>
-                    </div>
-                  </div>
-                  <button class="pc-link-btn" @click.prevent="selectSection('assignments')">Assign →</button>
-                </div>
-                <div class="pc-area-list">
-                  <div class="pc-area-row" v-for="area in areas" :key="area.name">
-                    <div class="pc-area-num">{{ area.num }}</div>
-                    <div class="pc-area-info">
-                      <p class="pc-area-name">{{ area.name }}</p>
-                      <p class="pc-area-ic">In-Charge: {{ area.incharge }}</p>
-                    </div>
-                    <div class="pc-area-right">
-                      <div class="pc-mini-bar">
-                        <div class="pc-mini-fill" :style="{ width: area.pct + '%', background: area.color }"></div>
+              <!-- Accreditation Section: Setup and Area Assignments Side-by-Side -->
+              <div v-if="selectedSection === 'accreditation'" class="pc-accreditation-grid" style="grid-column: 1 / -1;">
+                <!-- Left: Accreditation Setup -->
+                <div class="pc-card">
+                  <div class="pc-card-header">
+                    <div class="pc-card-title-group">
+                      <div class="pc-card-icon blue"><ion-icon :icon="settingsOutline" /></div>
+                      <div>
+                        <h2 class="pc-card-title">Accreditation Setup</h2>
+                        <p class="pc-card-sub">Configure your program accreditation level and phase</p>
                       </div>
-                      <span :class="['pc-area-status', area.statusClass]">{{ area.status }}</span>
                     </div>
                   </div>
+                  <ProgramChairAccreditationSetup />
+                </div>
+
+                <!-- Right: Area Assignments -->
+                <div class="pc-card">
+                  <div class="pc-card-header">
+                    <div class="pc-card-title-group">
+                      <div class="pc-card-icon amber"><ion-icon :icon="folderOpenOutline" /></div>
+                      <div>
+                        <h2 class="pc-card-title">Area Assignments</h2>
+                        <p class="pc-card-sub">Assign faculty to accreditation areas with tasks</p>
+                      </div>
+                    </div>
+                  </div>
+                  <AreaAssignmentCard />
                 </div>
               </div>
 
@@ -379,28 +446,41 @@
                 </div>
               </div> -->
 
-              <div v-if="selectedSection === 'notifications'" class="pc-card pc-notifications-card">
+              <div v-if="selectedSection === 'notifications'" class="pc-card pc-notifications-card" style="grid-column: 1 / -1;">
                 <div class="pc-card-header">
                   <div class="pc-card-title-group">
                     <div class="pc-card-icon teal"><ion-icon :icon="notificationsOutline" /></div>
                     <div>
-                      <h2 class="pc-card-title">Notifications</h2>
-                      <p class="pc-card-sub">Updates for team assignments, submissions, and codes</p>
+                      <h2 class="pc-card-title">Task Notifications</h2>
+                      <p class="pc-card-sub">Tasks assigned by your dean and program updates</p>
                     </div>
                   </div>
                 </div>
-                <div class="pc-notification-list">
-                  <div class="pc-notification-item" v-for="item in notificationItems" :key="item.id">
-                    <div class="pc-notification-body">
-                      <p class="pc-notification-title">{{ item.title }}</p>
-                      <p class="pc-notification-msg">{{ item.message }}</p>
-                    </div>
-                    <span class="pc-notification-time">{{ item.time }}</span>
-                  </div>
-                </div>
+                <NotificationBell />
               </div>
 
             </div>
+          </div>
+
+          <!-- Full-Width Faculty Area Assignments Section -->
+          <div v-if="selectedSection === 'faculty-areas'" class="pc-full-width-section">
+            <div class="pc-card">
+              <div class="pc-card-header">
+                <div class="pc-card-title-group">
+                  <div class="pc-card-icon emerald"><ion-icon :icon="peopleOutline" /></div>
+                  <div>
+                    <h2 class="pc-card-title">Faculty Area Assignments</h2>
+                    <p class="pc-card-sub">View and manage which accreditation areas each faculty member is assigned to</p>
+                  </div>
+                </div>
+              </div>
+              <FacultyAreaAssignmentList />
+            </div>
+          </div>
+
+          <!-- Full-Width Area Documents Review Section -->
+          <div v-if="selectedSection === 'review'" class="pc-full-width-section">
+            <AreaDocumentsReview />
           </div>
         </main>
       </div>
@@ -428,6 +508,7 @@ import {
   createProgramInvitation,
   getProgramInvitations,
   getProgram,
+  getProgramFaculty,
   resendInvitation,
   revokeInvitation,
   getDocuments,
@@ -437,7 +518,10 @@ import {
 } from '@/lib/api'
 import RoleStorageVault from '@/components/RoleStorageVault.vue'
 import ProgramChairAccreditationSetup from './ProgramChairAccreditationSetup.vue'
-import ProgramChairAccreditationStructure from './ProgramChairAccreditationStructure.vue'
+import NotificationBell from '@/components/NotificationBell.vue'
+import AreaAssignmentCard from '@/components/AreaAssignmentCard.vue'
+import AreaDocumentsReview from '@/components/AreaDocumentsReview.vue'
+import FacultyAreaAssignmentList from '@/components/FacultyAreaAssignmentList.vue'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -449,7 +533,7 @@ const currentUserInitials = computed(() => {
 })
 const currentUserPhoto = computed(() => (authStore.user as any)?.profilePhoto || (authStore.user as any)?.avatar || null)
 
-const selectedSection = ref<'setup' | 'dashboard' | 'codes' | 'users' | 'assignments' | 'review' | 'notifications' | 'structure'>('dashboard')
+const selectedSection = ref<'accreditation' | 'dashboard' | 'team' | 'review' | 'faculty-areas' | 'notifications'>('dashboard')
 const currentProgram = ref<any>(null)
 const teams = ref<any[]>([])
 const activeCode = ref('')
@@ -499,11 +583,9 @@ const areas = ref<any[]>([])
 const sectionLabel = computed(() => {
   switch (selectedSection.value) {
     case 'dashboard': return 'Program Chair Dashboard'
-    case 'codes': return 'Invitation Codes'
-    case 'users': return 'User Management'
-    case 'assignments': return 'Assign Areas'
-    case 'setup': return 'Accreditation Setup'
-    case 'structure': return 'Instrument Structure'
+    case 'team': return 'Team & Invitations'
+    case 'accreditation': return 'Accreditation'
+    case 'faculty-areas': return 'Faculty Area Assignments'
     case 'review': return 'Document Review'
     case 'notifications': return 'Notifications'
     default: return 'Program Chair Dashboard'
@@ -658,20 +740,101 @@ const selectSection = (section: typeof selectedSection.value) => {
 }
 
 const loadAssignedProgram = async () => {
-  const programId = (authStore.user as any)?.programId || (authStore.user as any)?.program_id
-  if (!programId) {
-    currentProgram.value = null
-    return
+  const user = authStore.user as any
+
+  if (!user?.programId && !user?.program_id && !user?.program?.id) {
+    try {
+      await authStore.refreshCurrentUser()
+    } catch {
+      // proceed to backend-driven lookup if session refresh does not produce a program ID
+    }
+  }
+
+  const refreshedUser = authStore.user as any
+  const programId = refreshedUser?.programId || refreshedUser?.program_id || refreshedUser?.program?.id || null
+
+  if (programId) {
+    console.log('✓ Program Chair has program ID:', programId)
+  } else {
+    console.log('ℹ️ No direct program ID found for Program Chair; using session-scoped roster lookup.')
   }
 
   try {
-    const response = await getProgram(programId)
-    currentProgram.value = response?.data ?? response ?? null
-    if (currentProgram.value?.code) {
-      activeCode.value = currentProgram.value.code
+    let programData: any = null
+    if (programId) {
+      try {
+        const programResponse = await getProgram(programId)
+        programData = programResponse?.data ?? programResponse ?? null
+        if (programData) {
+          console.log('✓ Program details loaded:', programData.name || programData.title)
+          currentProgram.value = programData
+
+          if (programData?.code) {
+            activeCode.value = programData.code
+          }
+        }
+      } catch (programErr: any) {
+        console.warn('⚠️ Failed to load program details:', programErr.message)
+      }
     }
-  } catch (err) {
-    console.warn('Failed to load assigned program for Program Chair:', err)
+
+    let facultyData: any[] = []
+    try {
+      const facultyResponse = await getProgramFaculty()
+      facultyData = Array.isArray(facultyResponse?.data)
+        ? facultyResponse.data
+        : Array.isArray(facultyResponse)
+          ? facultyResponse
+          : []
+
+      if (facultyData.length > 0) {
+        const mappedFaculty = facultyData.map((person: any) => ({
+          id: person.id || person.user_id,
+          name: person.name || person.full_name || 'Unknown Faculty',
+          email: person.email || 'no-email@university.edu',
+          role: person.role || person.role_name || 'Faculty',
+          profilePhoto: person.profilePhoto || person.profile_photo || person.photo || null,
+          program_id: person.program_id || programId || null,
+        }))
+
+        if (currentProgram.value) {
+          currentProgram.value.faculty = mappedFaculty
+          currentProgram.value.members = mappedFaculty
+        } else {
+          currentProgram.value = {
+            id: programId || facultyData[0]?.program_id || facultyData[0]?.programId || null,
+            name: 'Program',
+            code: 'PROG',
+            faculty: mappedFaculty,
+            members: mappedFaculty,
+          }
+        }
+
+        if (currentProgram.value?.id && !user?.programId) {
+          user.programId = currentProgram.value.id
+          user.program_id = currentProgram.value.id
+        }
+      } else {
+        console.warn('⚠️ No faculty returned from getProgramFaculty - program may have no faculty assigned yet')
+      }
+    } catch (facultyErr: any) {
+      console.warn('⚠️ Failed to load faculty from backend:', facultyErr.message)
+    }
+
+    if (!currentProgram.value && programId) {
+      currentProgram.value = { id: programId, name: 'Program', code: 'PROG', faculty: [], members: [] }
+    }
+
+    if (!currentProgram.value) {
+      console.error('❌ Could not load program or any faculty roster for this Program Chair session')
+    } else if ((!currentProgram.value.faculty || currentProgram.value.faculty.length === 0) &&
+               (!currentProgram.value.members || currentProgram.value.members.length === 0)) {
+      console.log('ℹ️ Program loaded but no faculty assigned yet')
+    } else {
+      console.log('✓ Program and faculty loaded successfully')
+    }
+  } catch (err: any) {
+    console.error('❌ Critical error in loadAssignedProgram:', err.message)
     currentProgram.value = null
   }
 }
@@ -882,11 +1045,6 @@ const regenCode = async () => {
   activeCode.value = String(Math.floor(100000 + Math.random() * 900000))
   codeMessage.value = 'Generated a temporary code — save or send it.'
 }
-
-const notificationItems = computed(() => notifications.value.map((notification) => ({
-  ...notification,
-  time: new Date(notification.createdAt).toLocaleString(),
-})))
 
 const loadProgramDocumentsForReview = async () => {
   if (!authStore.user?.programId) {
@@ -1561,6 +1719,20 @@ onMounted(async () => {
 }
 .pc-col-left, .pc-col-right { display: flex; flex-direction: column; gap: 1.25rem; }
 
+/* ── Accreditation Grid (Side-by-Side Layout) ── */
+.pc-accreditation-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 1200px) {
+  .pc-accreditation-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ── Cards ── */
 .pc-card {
   background: rgba(255, 255, 255, 0.98);
@@ -2050,5 +2222,12 @@ onMounted(async () => {
   padding: 0.7rem 0.8rem;
   color: #0f172a;
   outline: none;
+}
+
+/* Full-Width Sections */
+.pc-full-width-section {
+  width: 100%;
+  margin: 1.25rem 0;
+  padding: 0;
 }
 </style>

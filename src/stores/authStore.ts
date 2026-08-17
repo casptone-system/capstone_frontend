@@ -220,14 +220,43 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
   const userName = computed(() => user.value?.name || '')
+  const normalizeUserProgramContext = (userData: any) => {
+    if (!userData || typeof userData !== 'object') return userData
+
+    const programId =
+      userData.programId ??
+      userData.program_id ??
+      userData.program?.id ??
+      userData.program?.program_id ??
+      null
+
+    if (programId !== null && programId !== undefined) {
+      userData.programId = String(programId)
+      userData.program_id = String(programId)
+    }
+
+    if (!userData.program && programId !== null && programId !== undefined) {
+      userData.program = { id: String(programId) }
+    }
+
+    if (!userData.programId && userData.program?.id) {
+      userData.programId = String(userData.program.id)
+    }
+
+    if (!userData.program_id && userData.program?.id) {
+      userData.program_id = String(userData.program.id)
+    }
+
+    return userData
+  }
+
   const hasGroup = computed(() => {
     if (!user.value) return false
     const currentUser = user.value as any
 
     if (!currentUser) return false
 
-    if (currentUser.programId) return true
-    if (currentUser.program) return true
+    if (currentUser.programId || currentUser.program_id || currentUser.program?.id) return true
     if (currentUser.teamId) return true
     if (Array.isArray(currentUser.groups) && currentUser.groups.length > 0)
       return true
@@ -316,7 +345,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       if (token) {
         if (userData) {
-          user.value = userData
+          user.value = normalizeUserProgramContext(userData)
         } else {
           await restoreSession()
         }
@@ -413,7 +442,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await api.get('/me')
 
-      user.value = response.data.data.user
+      user.value = normalizeUserProgramContext(response.data.data.user)
       if (canonicalizeRole((user.value as any)?.role_slug || (user.value as any)?.role || '') === 'dean') {
         setDefaultDashboardViewForRole()
       }
@@ -439,7 +468,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       const response = await api.get('/me')
-      user.value = response.data.data.user
+      user.value = normalizeUserProgramContext(response.data.data.user)
       isAuthenticated.value = true
       return response.data
     } catch {

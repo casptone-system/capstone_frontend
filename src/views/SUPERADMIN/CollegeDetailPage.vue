@@ -267,18 +267,28 @@
           </div>
 
           <label>
+            <span>Search Dean</span>
+            <input 
+              v-model="deanSearchText" 
+              type="text" 
+              placeholder="Search by name or email..."
+              class="search-input"
+            />
+          </label>
+
+          <label>
             <span>Select New Dean</span>
             <select v-model="changeDeanForm.user_id" required>
               <option value="">Choose a user...</option>
               <option 
-                v-for="candidate in deanCandidates" 
+                v-for="candidate in filteredDeanCandidates" 
                 :key="candidate.id" 
                 :value="candidate.id"
               >
                 {{ candidate.name || candidate.first_name + ' ' + candidate.last_name }} ({{ candidate.email }})
               </option>
             </select>
-            <small v-if="deanCandidates.length === 0" class="warning">No dean users available</small>
+            <small v-if="filteredDeanCandidates.length === 0" class="warning">{{ deanSearchText ? 'No matching users found' : 'No dean users available' }}</small>
           </label>
         </div>
 
@@ -311,18 +321,28 @@
 
         <div class="form-grid">
           <label>
+            <span>Search Dean</span>
+            <input 
+              v-model="deanSearchText" 
+              type="text" 
+              placeholder="Search by name or email..."
+              class="search-input"
+            />
+          </label>
+
+          <label>
             <span>Select Dean</span>
             <select v-model="assignDeanForm.user_id" required>
               <option value="">Choose a user...</option>
               <option 
-                v-for="candidate in deanCandidates" 
+                v-for="candidate in filteredDeanCandidates" 
                 :key="candidate.id" 
                 :value="candidate.id"
               >
                 {{ candidate.name || candidate.first_name + ' ' + candidate.last_name }} ({{ candidate.email }})
               </option>
             </select>
-            <small v-if="deanCandidates.length === 0" class="warning">No dean users available</small>
+            <small v-if="filteredDeanCandidates.length === 0" class="warning">{{ deanSearchText ? 'No matching users found' : 'No dean users available' }}</small>
           </label>
         </div>
 
@@ -418,18 +438,28 @@
           </div>
 
           <label>
+            <span>Search Program Chair</span>
+            <input 
+              v-model="chairSearchText" 
+              type="text" 
+              placeholder="Search by name or email..."
+              class="search-input"
+            />
+          </label>
+
+          <label>
             <span>Select Program Chair</span>
             <select v-model="assignChairForm.chair_id" required>
               <option value="">Choose a program chair...</option>
               <option 
-                v-for="chair in chairCandidates" 
+                v-for="chair in filteredChairCandidates" 
                 :key="chair.id" 
                 :value="chair.id"
               >
                 {{ chair.name || chair.first_name + ' ' + chair.last_name }} ({{ chair.email }})
               </option>
             </select>
-            <small v-if="chairCandidates.length === 0" class="warning">No program chair users available</small>
+            <small v-if="filteredChairCandidates.length === 0" class="warning">{{ chairSearchText ? 'No matching users found' : 'No program chair users available' }}</small>
           </label>
         </div>
 
@@ -538,6 +568,10 @@ const assignDeanForm = ref({ user_id: '' })
 const assignChairForm = ref({ chair_id: '' })
 const changeRoleForm = ref({ role: '' })
 
+// Search functionality
+const deanSearchText = ref('')
+const chairSearchText = ref('')
+
 // Errors
 const assignError = ref('')
 const programError = ref('')
@@ -586,6 +620,26 @@ const deanCandidates = computed(() =>
     return isEligible && notInCollege
   })
 )
+
+const filteredDeanCandidates = computed(() => {
+  const searchLower = deanSearchText.value.toLowerCase()
+  if (!searchLower) return deanCandidates.value
+  return deanCandidates.value.filter((user) => {
+    const name = (user.name || `${user.first_name} ${user.last_name}`).toLowerCase()
+    const email = (user.email || '').toLowerCase()
+    return name.includes(searchLower) || email.includes(searchLower)
+  })
+})
+
+const filteredChairCandidates = computed(() => {
+  const searchLower = chairSearchText.value.toLowerCase()
+  if (!searchLower) return chairCandidates.value
+  return chairCandidates.value.filter((user) => {
+    const name = (user.name || `${user.first_name} ${user.last_name}`).toLowerCase()
+    const email = (user.email || '').toLowerCase()
+    return name.includes(searchLower) || email.includes(searchLower)
+  })
+})
 
 // Load data
 const loadCollege = async () => {
@@ -677,6 +731,7 @@ const assignRole = async () => {
 const openChangeDeanModal = () => {
   changeDeanForm.value = { user_id: '' }
   changeDeanError.value = ''
+  deanSearchText.value = ''
   showChangeDeanModal.value = true
 }
 
@@ -684,6 +739,7 @@ const cancelChangeDean = () => {
   showChangeDeanModal.value = false
   changeDeanForm.value = { user_id: '' }
   changeDeanError.value = ''
+  deanSearchText.value = ''
 }
 
 const changeDean = async () => {
@@ -731,6 +787,7 @@ const changeDean = async () => {
 const openAssignDeanModal = () => {
   assignDeanForm.value = { user_id: '' }
   assignDeanError.value = ''
+  deanSearchText.value = ''
   showAssignDeanModal.value = true
 }
 
@@ -738,6 +795,7 @@ const cancelAssignDean = () => {
   showAssignDeanModal.value = false
   assignDeanForm.value = { user_id: '' }
   assignDeanError.value = ''
+  deanSearchText.value = ''
 }
 
 const assignDean = async () => {
@@ -842,12 +900,14 @@ const assignProgramChair = (program: any) => {
   selectedProgramForChair.value = program
   assignChairForm.value = { chair_id: program.chair_id || '' }
   assignChairError.value = ''
+  chairSearchText.value = ''
   showAssignChairModal.value = true
 }
 
 const cancelAssignChair = () => {
   showAssignChairModal.value = false
   selectedProgramForChair.value = null
+  chairSearchText.value = ''
   assignChairForm.value = { chair_id: '' }
   assignChairError.value = ''
 }

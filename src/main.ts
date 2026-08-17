@@ -39,6 +39,7 @@ addIcons({
   'call-outline': callOutline,
   'calendar-outline': calendarOutline,
   'chevron-down-outline': chevronDownOutline,
+  'notifications': notificationsOutline,
   'notifications-outline': notificationsOutline,
   'document-text-outline': documentTextOutline,
   'bar-chart-outline': barChartOutline,

@@ -106,9 +106,7 @@
               <button class="dean-icon-circle" type="button" aria-label="Inbox" @click="handleInboxClick">
                 <ion-icon :icon="mailOutline" />
               </button>
-              <button class="dean-icon-circle" type="button" aria-label="Notifications" @click="handleTopbarNotificationsClick">
-                <ion-icon :icon="notificationsOutline" />
-              </button>
+              <NotificationBell />
               <div class="dean-profile-chip" aria-label="User profile">
                 <img v-if="topbarUserPhoto" :src="topbarUserPhoto" alt="Profile photo" class="dean-user-avatar dean-user-avatar-image" />
                 <div v-else class="dean-user-avatar">{{ topbarUserInitials }}</div>
@@ -857,20 +855,12 @@
                     <div class="dean-card-title-group">
                       <div class="dean-card-icon rose"><ion-icon :icon="notificationsOutline" /></div>
                       <div>
-                        <h2 class="dean-card-title">Notifications</h2>
-                        <p class="dean-card-sub">Important alerts and action items for the Dean.</p>
+                        <h2 class="dean-card-title">Task Notifications</h2>
+                        <p class="dean-card-sub">Tasks and action items assigned to you.</p>
                       </div>
                     </div>
                   </div>
-                  <div class="dean-alert-list">
-                    <div class="dean-alert-item" v-for="alert in alerts" :key="alert.msg" :class="alert.urgency">
-                      <ion-icon :icon="alert.icon" :style="{ color: alert.color }" />
-                      <div class="dean-alert-body">
-                        <p class="dean-alert-msg">{{ alert.msg }}</p>
-                        <p class="dean-alert-time">{{ alert.time }}</p>
-                      </div>
-                    </div>
-                  </div>
+                  <NotificationBell />
                 </div>
               </template>
             </div>
@@ -929,6 +919,7 @@ import DeanCreateProgramModal from '@/components/DeanCreateProgramModal.vue'
 import DeanNotifyProgramChairModal from '@/components/DeanNotifyProgramChairModal.vue'
 import RoleStorageVault from '@/components/RoleStorageVault.vue'
 import DeanAccreditationSection from '@/views/DEAN/DeanAccreditationSection.vue'
+import NotificationBell from '@/components/NotificationBell.vue'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -1577,16 +1568,6 @@ const handleInboxClick = () => {
   }
 
   toastStore.show('Your inbox is clear. No new messages.', 'success')
-}
-
-const handleTopbarNotificationsClick = () => {
-  selectSection('notifications')
-  if (alerts.value.length) {
-    toastStore.show(`Open notifications: ${alerts.value.length} items pending review.`, 'info')
-    return
-  }
-
-  toastStore.show('There are no new notifications right now.', 'success')
 }
 
 const switchToProgramChairView = () => {
