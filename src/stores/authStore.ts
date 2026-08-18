@@ -297,13 +297,37 @@ export const useAuthStore = defineStore('auth', () => {
         password,
       })
 
-      loginChallenge.value = {
-        challengeToken: response.data.data.challenge_token,
-        email: response.data.data.email,
-        expiresIn: response.data.data.expires_in,
-        remember,
+      // DISABLED: 2FA code entry — backend now returns token immediately, see [2026-08-18]
+      // Check if backend returned a token directly (2FA bypassed) or a challenge token (old flow)
+      const token = response.data.data.token
+      if (token) {
+        // New flow: backend returned token immediately (2FA is skipped)
+        setToken(token, remember)
+        const userData = response.data.data.user
+        if (userData) {
+          user.value = normalizeUserProgramContext(userData)
+        } else {
+          await restoreSession()
+        }
+        if (user.value) {
+          if (canonicalizeRole((user.value as any)?.role_slug || (user.value as any)?.role || '') === 'dean') {
+            setDefaultDashboardViewForRole()
+          }
+          isAuthenticated.value = true
+          attachActivityListeners()
+          resetSessionTimer()
+        }
+        clearLoginChallenge()
+      } else {
+        // Old flow: backend returned challenge token (2FA still enabled)
+        loginChallenge.value = {
+          challengeToken: response.data.data.challenge_token,
+          email: response.data.data.email,
+          expiresIn: response.data.data.expires_in,
+          remember,
+        }
+        persistLoginChallenge()
       }
-      persistLoginChallenge()
 
       return response.data
     } catch (err: any) {
@@ -319,84 +343,31 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  // DISABLED: 2FA verification — skipped in login, see [2026-08-18]
+  // This method is kept as a stub to avoid breaking any lingering frontend calls
+  // Original implementation commented out:
+  // const verifyTwoFactor = async (code: string) => {
+  //   if (!loginChallenge.value) { ... }
+  //   const response = await api.post('/auth/verify-2fa', { ... })
+  //   ...
+  // }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- param kept so the signature stays stable when 2FA is re-enabled
   const verifyTwoFactor = async (code: string) => {
-    if (!loginChallenge.value) {
-      throw new Error('No active login challenge. Please sign in again.')
-    }
-
-    isLoading.value = true
-    error.value = null
-
-    try {
-      const response = await api.post('/auth/verify-2fa', {
-        challenge_token: loginChallenge.value.challengeToken,
-        code,
-      })
-
-      const token = response.data?.data?.token
-      const userData = response.data?.data?.user
-
-      if (token) {
-        setToken(token, loginChallenge.value.remember)
-      }
-
-      // DEBUG: log token/user presence right after setting token
-
-
-      if (token) {
-        if (userData) {
-          user.value = normalizeUserProgramContext(userData)
-        } else {
-          await restoreSession()
-        }
-
-        if (user.value) {
-          if (canonicalizeRole((user.value as any)?.role_slug || (user.value as any)?.role || '') === 'dean') {
-            setDefaultDashboardViewForRole()
-          }
-          isAuthenticated.value = true
-          attachActivityListeners()
-          resetSessionTimer()
-        }
-      }
-
-      clearLoginChallenge()
-
-      return response.data
-    } catch (err: any) {
-      error.value = err.response?.data?.message || 'Verification failed.'
-      throw err
-    } finally {
-      isLoading.value = false
-    }
+    error.value = '2FA verification is skipped for development. The login endpoint now returns a token directly.'
+    throw new Error(error.value)
   }
 
+  // DISABLED: 2FA resend — skipped in login, see [2026-08-18]
+  // This method is kept as a stub to avoid breaking any lingering frontend calls
+  // Original implementation commented out:
+  // const resendTwoFactor = async () => {
+  //   if (!loginChallenge.value) { ... }
+  //   const response = await api.post('/auth/resend-2fa', { ... })
+  //   ...
+  // }
   const resendTwoFactor = async () => {
-    if (!loginChallenge.value) {
-      throw new Error('No active login challenge.')
-    }
-
-    isLoading.value = true
-    error.value = null
-    try {
-      const response = await api.post('/auth/resend-2fa', {
-        challenge_token: loginChallenge.value.challengeToken,
-      })
-
-      // Update stored expires if backend provided a new one
-      const expires = response.data?.expires_in
-      if (expires && loginChallenge.value) {
-        loginChallenge.value.expiresIn = Number(expires)
-        persistLoginChallenge()
-      }
-
-      return response.data
-    } catch (err: any) {
-      error.value = err.response?.data?.message || 'Resend failed.'
-      throw err
-    } finally {
-      isLoading.value = false
-    }
+    error.value = '2FA resend is skipped for development. The login endpoint now returns a token directly.'
+    throw new Error(error.value)
   }
 
   // ======================

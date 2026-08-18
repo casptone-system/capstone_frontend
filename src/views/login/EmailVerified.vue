@@ -23,129 +23,48 @@
     <div class="form-panel">
       <div class="form-wrap">
         <img src="@/assets/Archiving_logo.png" alt="ADAMS Logo" class="login-logo" />
-        <div class="result-icon" :class="statusClass" aria-hidden="true">
-          <ion-icon :icon="statusIcon" />
+        <div class="result-icon success" aria-hidden="true">
+          <ion-icon :icon="checkmarkCircleOutline" />
         </div>
-        <h2 class="form-title">{{ title }}</h2>
-        <p class="form-subtitle">{{ message }}</p>
+        <!-- DISABLED: Email verification page — no longer needed for dev, see [2026-08-18]
+             All users are auto-verified on registration; this page is kept for backward compatibility. -->
+        <h2 class="form-title">Email Verification Skipped</h2>
+        <p class="form-subtitle">Email verification has been disabled for development. Redirecting to login...</p>
 
         <div class="actions">
           <app-button variant="primary" block size="lg" @click="goToLogin">
-            {{ actionText }}
+            Go to Login
           </app-button>
-
-          <button
-            v-if="showResend"
-            type="button"
-            class="secondary-link"
-            :disabled="isResending"
-            @click="resendVerification"
-          >
-            {{ isResending ? 'Resending...' : 'Request New Verification Email' }}
-          </button>
         </div>
-
-        <p v-if="resendMessage" class="resend-note">{{ resendMessage }}</p>
       </div>
     </div>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { IonPage, IonIcon } from '@ionic/vue'
-import { alertCircleOutline, checkmarkCircleOutline, helpCircleOutline, refreshCircleOutline } from 'ionicons/icons'
+import { checkmarkCircleOutline } from 'ionicons/icons'
 import AppButton from '@/components/AppButton.vue'
-import api from '@/lib/api'
 
-const route = useRoute()
 const router = useRouter()
 const currentYear = new Date().getFullYear()
-const status = computed(() => String(route.query.status || 'invalid'))
-const email = computed(() => String(route.query.email || ''))
-const isResending = ref(false)
-const resendMessage = ref('')
 
-const title = computed(() => {
-  switch (status.value) {
-    case 'success':
-      return 'Email Verified Successfully'
-    case 'already_verified':
-      return 'Email Already Verified'
-    case 'invalid':
-      return 'Verification Link Invalid or Expired'
-    default:
-      return 'Verification Status'
-  }
-})
-
-const message = computed(() => {
-  switch (status.value) {
-    case 'success':
-      return 'Your email address has been successfully verified. Your ADAMS account is now ready to use.'
-    case 'already_verified':
-      return 'Your email address has already been verified. You can now sign in to your ADAMS account.'
-    case 'invalid':
-      return 'The verification link is invalid or has expired. Please request a new verification email.'
-    default:
-      return 'We could not determine the verification status. Please return to login and try again when you have a valid verification link.'
-  }
-})
-
-const actionText = computed(() => 'Go to Login')
-const showResend = computed(() => status.value === 'invalid')
-
-const statusClass = computed(() => {
-  switch (status.value) {
-    case 'success':
-      return 'success'
-    case 'already_verified':
-      return 'info'
-    case 'invalid':
-      return 'danger'
-    default:
-      return 'neutral'
-  }
-})
-
-const statusIcon = computed(() => {
-  switch (status.value) {
-    case 'success':
-      return checkmarkCircleOutline
-    case 'already_verified':
-      return refreshCircleOutline
-    case 'invalid':
-      return alertCircleOutline
-    default:
-      return helpCircleOutline
-  }
-})
+// DISABLED: Email verification logic — no longer needed for dev, see [2026-08-18]
+// Original logic: parse status query param, show different messages, handle resends
+// All users are now auto-verified on registration, so this page is a pass-through
 
 const goToLogin = () => {
   router.push('/login')
 }
 
-const resendVerification = async () => {
-  if (!email.value) {
-    resendMessage.value = 'Unable to resend without the email address. Please try again from the login page.'
-    return
-  }
-
-  isResending.value = true
-  resendMessage.value = ''
-
-  try {
-    const response = await api.post('/auth/email/resend', { email: email.value })
-    resendMessage.value = response?.data?.message || 'Verification email resent. Please check your inbox.'
-  } catch (error: any) {
-    resendMessage.value =
-      error?.response?.data?.message ||
-      'Unable to resend the verification email at this time. Please try again later.'
-  } finally {
-    isResending.value = false
-  }
-}
+// Auto-redirect to login after 3 seconds
+onMounted(() => {
+  setTimeout(() => {
+    goToLogin()
+  }, 3000)
+})
 </script>
 
 <style scoped>

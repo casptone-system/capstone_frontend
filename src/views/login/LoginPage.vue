@@ -32,7 +32,7 @@
         <h2 class="form-title">Sign in to your account</h2>
         <p class="form-subtitle">Use your institutional credentials to continue.</p>
 
-        <form v-if="!showCodeEntry" @submit.prevent="handleLogin" class="login-form">
+        <form @submit.prevent="handleLogin" class="login-form">
           <div class="field-group"> <label class="field-label" for="email"> Email Address <span class="req">*</span>
             </label>
             <div class="input-wrap" :class="{ error: emailError }"> <ion-icon name="mail-outline" class="input-icon"
@@ -67,6 +67,7 @@
           </div>
         </form>
 
+        <!-- DISABLED: 2FA code entry form — temporarily off for dev, see [2026-08-18]
         <form v-else @submit.prevent="handleVerifyCode" class="login-form">
           <div class="field-group"> 
             <label class="field-label" for="code"> 
@@ -107,6 +108,7 @@
             </button> 
               <span v-if="countdown > 0" class="field-hint"> You can resend in {{ countdown }}s </span> </div>
         </form>
+        -->
 
       </div>
     </div>
@@ -140,16 +142,16 @@ const showRegistrationNotice = ref(route.query.registered === '1')
 const showResetNotice = ref(route.query.reset === '1')
 const showExpiredNotice = ref(route.query.expired === '1')
 
-// 2FA challenge state
-const showCodeEntry = ref(false)
-const code = ref('')
-const codeError = ref('')
-const challengeEmail = ref('')
-const challengeExpires = ref(0)
-const countdown = ref(0)
-const resendDisabled = ref(false)
-const announce = ref('')
-const codeInputRef = ref<HTMLInputElement | null>(null)
+// DISABLED: 2FA challenge state — temporarily off for dev, see [2026-08-18]
+// const showCodeEntry = ref(false)
+// const code = ref('')
+// const codeError = ref('')
+// const challengeEmail = ref('')
+// const challengeExpires = ref(0)
+// const countdown = ref(0)
+// const resendDisabled = ref(false)
+// const announce = ref('')
+// const codeInputRef = ref<HTMLInputElement | null>(null)
 
 const getRedirectPath = () => {
   const redirect = route.query.redirect
@@ -177,24 +179,13 @@ const handleLogin = async () => {
 
   isLoading.value = true
   try {
-    const resp = await authStore.login(email.value.trim().toLowerCase(), password.value, rememberMe.value)
+    await authStore.login(email.value.trim().toLowerCase(), password.value, rememberMe.value)
 
-    // If backend returned a challenge (2FA), show code entry UI
-    const challenge = resp?.data
-    if (challenge?.challenge_token) {
-      challengeEmail.value = challenge.email || email.value.trim().toLowerCase()
-      challengeExpires.value = Number(challenge.expires_in) || 300
-      countdown.value = challengeExpires.value
-      showCodeEntry.value = true
-      // clear any previous code/errors
-      code.value = ''
-      codeError.value = ''
-      // start countdown timer
-      startCountdown()
-      announce.value = 'Verification code sent to your email.'
-      // autofocus handled by watcher
-      return
-    }
+    // DISABLED: 2FA challenge check — backend now returns token immediately, see [2026-08-18]
+    // Original code checked for response.data.challenge_token and showed code entry form
+    // Backend now returns token directly after password validation (2FA skipped)
+    // if (challenge?.challenge_token) { ... } block is removed
+    // Code now assumes immediate authentication after login()
 
     const welcomeName = authStore.user?.name || email.value.trim() || 'there'
     const welcomeMessage = authStore.user?.programId || authStore.hasGroup
@@ -216,95 +207,42 @@ const handleLogin = async () => {
   }
 }
 
+// DISABLED: 2FA handler methods — temporarily off for dev, see [2026-08-18]
+// const handleVerifyCode = async () => { ... }
+// const startCountdown = () => { ... }
+// const handleResend = async () => { ... }
+// const cancel2FA = () => { ... }
+
+// Placeholder methods to prevent undefined errors if accidentally called:
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- placeholder kept while 2FA is disabled
 const handleVerifyCode = async () => {
-  codeError.value = ''
+  console.warn('[2FA DISABLED] handleVerifyCode() called but 2FA is disabled for development')
+}
 
-  const cleanCode = code.value.trim()
-
- if (!/^\d{6}$/.test(cleanCode)) { 
-      codeError.value = 'Please enter the 6-digit verification code.' 
-      return 
-    }
-
-      try {
-        isLoading.value = true
-
-        console.debug('[LoginPage] verifying 2FA code, before verifyTwoFactor()')
-        await authStore.verifyTwoFactor(cleanCode)
-        console.debug('[LoginPage] verifyTwoFactor() resolved, auth.isAuthenticated=', authStore.isAuthenticated, 'user=', authStore.user)
-
-        const welcomeName = authStore.user?.name || 'there'
-        const welcomeMessage = authStore.user?.programId || authStore.hasGroup
-          ? `Welcome to ADAMS, ${welcomeName}! Your program access is ready.`
-          : `Welcome back to ADAMS, ${welcomeName}!`
-        toastStore.show(welcomeMessage, 'success')
-
-        // allow Vue to flush computed updates (userRole/hasGroup) before routing
-        await nextTick()
-
-        showCodeEntry.value = false
-        code.value = ''
-        const redirect = getRedirectPath()
-        console.debug('[LoginPage] navigating to redirect=', redirect)
-        await router.replace(redirect)
-    } catch (error: any) { 
-        codeError.value = error?.response?.data?.message || 
-        error?.message || 
-        'Invalid or expired verification code.' 
-      } finally { 
-        isLoading.value = false 
-      } 
-    }
-
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- placeholder kept while 2FA is disabled
 const startCountdown = () => {
-  clearInterval((startCountdown as any)._timer);
-  (startCountdown as any)._timer = setInterval(() => {
-    if (countdown.value > 0) {
-      countdown.value -= 1
-    } else {
-      clearInterval((startCountdown as any)._timer)
-    }
-  }, 1000)
+  console.warn('[2FA DISABLED] startCountdown() called but 2FA is disabled for development')
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- placeholder kept while 2FA is disabled
 const handleResend = async () => {
-  if (
-    resendDisabled.value || 
-    countdown.value > 0 ||
-    isLoading.value
-) {
-    return
-  }
+  console.warn('[2FA DISABLED] handleResend() called but 2FA is disabled for development')
+}
 
-  try {
-    resendDisabled.value = true
-    codeError.value = ''
-
-    await authStore.resendTwoFactor()
-
-    code.value = ''
-    countdown.value = 60
-
-    startCountdown()
-  } catch (error: any) {
-    codeError.value =
-      error?.response?.data?.message ||
-      error?.message ||
-      'Unable to resend the verification code.'
-  } finally {
-    resendDisabled.value = false
-  }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- placeholder kept while 2FA is disabled
+const cancel2FA = () => {
+  console.warn('[2FA DISABLED] cancel2FA() called but 2FA is disabled for development')
 }
 
 
-import { watch, nextTick } from 'vue'
-watch(showCodeEntry, async (val) => {
-  if (val) {
-    await nextTick()
-    codeInputRef.value?.focus()
-  }
-})
-
+// DISABLED: 2FA watcher — showCodeEntry is no longer used, see [2026-08-18]
+// import { watch, nextTick } from 'vue'
+// watch(showCodeEntry, async (val) => {
+//   if (val) {
+//     await nextTick()
+//     codeInputRef.value?.focus()
+//   }
+// })
 </script>
 
 <style scoped>
