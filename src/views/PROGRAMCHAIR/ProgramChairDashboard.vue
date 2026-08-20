@@ -478,7 +478,7 @@
                   </div>
                 </div>
               </div>
-              <FacultyAreaAssignmentList />
+              <AreaAssignmentFolders />
             </div>
           </div>
 
@@ -527,7 +527,7 @@ import NotificationBell from '@/components/NotificationBell.vue'
 //import AreaAssignmentCard from '@/components/AreaAssignmentCard.vue'
 import AccreditationWorkspaceBoard from '@/components/AccreditationWorkspaceBoard.vue'
 import AreaDocumentsReview from '@/components/AreaDocumentsReview.vue'
-import FacultyAreaAssignmentList from '@/components/FacultyAreaAssignmentList.vue'
+import AreaAssignmentFolders from '@/components/AreaAssignmentFolders.vue'
 import AccreditationMessages from '@/components/AccreditationMessages.vue'
 
 const authStore = useAuthStore()

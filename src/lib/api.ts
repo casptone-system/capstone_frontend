@@ -285,6 +285,53 @@ export const deleteAccreditationArea = async (
   return response.data
 }
 
+/* ---------------------------
+   AREA ASSIGNMENT MODULE (Program Chair UI)
+   --------------------------- */
+
+export const searchUsers = async (q: string, limit = 25) => {
+  const response = await api.get('/users/search', { params: { q, limit } })
+  return unwrap(response)
+}
+
+export const getProgramChairAreas = async () => {
+  const response = await api.get('/program-chair/areas')
+  return unwrap(response)
+}
+
+export const assignAreaChair = async (
+  areaId: number | string,
+  userId: number | string
+) => {
+  const response = await api.post(
+    `/accreditation-areas/${areaId}/assign-chair`,
+    { chair_id: userId }
+  )
+  return unwrap(response)
+}
+
+export const setAreaMembers = async (
+  areaId: number | string,
+  userIds: (number | string)[]
+) => {
+  const response = await api.post(
+    `/accreditation-areas/${areaId}/set-members`,
+    { user_ids: userIds }
+  )
+  return unwrap(response)
+}
+
+export const setAreaDeadline = async (
+  areaId: number | string,
+  deadline: string
+) => {
+  const response = await api.post(
+    `/accreditation-areas/${areaId}/set-deadline`,
+    { deadline }
+  )
+  return unwrap(response)
+}
+
 /* ===========================
    ACCREDITATIONS
 =========================== */
