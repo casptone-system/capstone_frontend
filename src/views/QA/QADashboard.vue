@@ -12,8 +12,14 @@
 
           <nav class="qa-nav">
             <p class="qa-nav-label">Overview</p>
-            <a class="qa-nav-item active" href="#">
+            <a class="qa-nav-item" :class="{ active: qaSection === 'dashboard' }" href="#" @click.prevent="qaSection = 'dashboard'">
               <ion-icon :icon="gridOutline" /> Dashboard
+            </a>
+            <a class="qa-nav-item" :class="{ active: qaSection === 'templates' }" href="#" @click.prevent="qaSection = 'templates'">
+              <ion-icon :icon="documentTextOutline" /> Templates
+            </a>
+            <a class="qa-nav-item" :class="{ active: qaSection === 'monitor' }" href="#" @click.prevent="qaSection = 'monitor'">
+              <ion-icon :icon="shieldCheckmarkOutline" /> Program Monitoring
             </a>
             <a class="qa-nav-item" href="#">
               <ion-icon :icon="shieldCheckmarkOutline" /> Compliance Monitor
@@ -36,8 +42,8 @@
             </a>
 
             <p class="qa-nav-label">Coordination</p>
-            <a class="qa-nav-item" href="#">
-              <ion-icon :icon="chatbubblesOutline" /> Deans & Chairs
+            <a class="qa-nav-item" :class="{ active: qaSection === 'messages' }" href="#" @click.prevent="qaSection = 'messages'">
+              <ion-icon :icon="chatbubblesOutline" /> Messages
             </a>
             <a class="qa-nav-item" href="#">
               <ion-icon :icon="barChartOutline" /> Compliance Reports
@@ -106,6 +112,25 @@
                 <p class="qa-stat-label">{{ stat.label }}</p>
               </div>
             </div>
+          </section>
+
+          <section v-if="qaSection === 'templates'" class="qa-card" style="margin: 1rem 1.5rem;">
+            <div class="qa-card-header">
+              <div>
+                <h2 class="qa-card-title">Accreditation templates</h2>
+                <p>QA edits the master instrument. Program Level and Phase are view-only and come from the Program Chair.</p>
+              </div>
+            </div>
+            <InstrumentTemplateEditor />
+          </section>
+          <section v-else-if="qaSection === 'monitor'" class="qa-card" style="margin: 1rem 1.5rem;">
+            <AccreditationMonitorCard />
+          </section>
+          <section v-else-if="qaSection === 'messages'" class="qa-card" style="margin: 1rem 1.5rem;">
+            <AccreditationMessages />
+          </section>
+          <section v-else class="qa-card" style="margin: 1rem 1.5rem;">
+            <AccreditationMonitorCard />
           </section>
 
           <!-- Content Grid -->
@@ -286,7 +311,12 @@ import {
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { useUserCalls } from '@/lib/useUserCalls'
-import * as api from '@/lib/api'
+import InstrumentTemplateEditor from '@/components/InstrumentTemplateEditor.vue'
+import AccreditationMonitorCard from '@/components/AccreditationMonitorCard.vue'
+import AccreditationMessages from '@/components/AccreditationMessages.vue'
+import api from '@/lib/api'
+
+const qaSection = ref<'dashboard' | 'templates' | 'monitor' | 'messages'>('dashboard')
 
 const authStore = useAuthStore()
 const router = useRouter()

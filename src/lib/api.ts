@@ -551,8 +551,72 @@ export const updateDocument = async (
 }
 
 /* ===========================
-   ROLE STORAGE
+   ACCREDITATION WORKFLOW
 =========================== */
+
+export const getInstrumentTemplates = async () => {
+  const response = await api.get('/instrument-templates')
+  return unwrap(response)
+}
+
+export const saveInstrumentTemplate = async (payload: Record<string, any>) => {
+  const response = await api.post('/instrument-templates', payload)
+  return unwrap(response)
+}
+
+export const getAccreditationWorkspaces = async () => {
+  const response = await api.get('/accreditation-workspaces')
+  return unwrap(response)
+}
+
+export const createAccreditationWorkspace = async (payload: { level: string; deadline?: string | null }) => {
+  const response = await api.post('/accreditation-workspaces', payload)
+  return unwrap(response)
+}
+
+export const getAccreditationWorkspace = async (id: number | string) => {
+  const response = await api.get(`/accreditation-workspaces/${id}`)
+  return unwrap(response)
+}
+
+export const assignWorkspaceAreaChair = async (workspaceId: number | string, areaId: number | string, chairId: number | string) => {
+  const response = await api.post(`/accreditation-workspaces/${workspaceId}/areas/${areaId}/chair`, { chair_id: chairId })
+  return unwrap(response)
+}
+
+export const addWorkspaceAreaMember = async (workspaceId: number | string, areaId: number | string, userId: number | string) => {
+  const response = await api.post(`/accreditation-workspaces/${workspaceId}/areas/${areaId}/members`, { user_id: userId })
+  return unwrap(response)
+}
+
+export const removeWorkspaceAreaMember = async (workspaceId: number | string, areaId: number | string, userId: number | string) => {
+  const response = await api.delete(`/accreditation-workspaces/${workspaceId}/areas/${areaId}/members/${userId}`)
+  return unwrap(response)
+}
+
+export const getWorkspaceParameter = async (workspaceId: number | string, parameterId: number | string) => {
+  const response = await api.get(`/accreditation-workspaces/${workspaceId}/parameters/${parameterId}`)
+  return unwrap(response)
+}
+
+export const uploadWorkspaceEvidence = async (workspaceId: number | string, requirementId: number | string, file: File) => {
+  const form = new FormData()
+  form.append('file', file)
+  const response = await api.post(`/accreditation-workspaces/${workspaceId}/criteria/${requirementId}/evidence`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return unwrap(response)
+}
+
+export const markWorkspaceCriterionDone = async (workspaceId: number | string, requirementId: number | string) => {
+  const response = await api.post(`/accreditation-workspaces/${workspaceId}/criteria/${requirementId}/done`)
+  return unwrap(response)
+}
+
+export const getWorkspaceProgress = async (id: number | string) => {
+  const response = await api.get(`/accreditation-workspaces/${id}/progress`)
+  return unwrap(response)
+}
 
 export const getRoleStorageFolders = async (role: string, params: Record<string, any> = {}) => {
   const response = await api.get('/role-storage', {

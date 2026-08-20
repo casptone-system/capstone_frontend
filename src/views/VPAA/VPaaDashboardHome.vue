@@ -46,6 +46,10 @@
       </div>
     </section>
 
+    <section class="vpaa-monitor-wrap">
+      <AccreditationMonitorCard />
+    </section>
+
     <div v-if="!vpaaStore.loading && !vpaaStore.error" class="vpaa-content-grid">
       <div class="vpaa-col-left">
         <div class="vpaa-card">
@@ -184,6 +188,7 @@ import {
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { useVPAADashboardStore } from '@/stores/vpaaDashboardStore'
+import AccreditationMonitorCard from '@/components/AccreditationMonitorCard.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()

@@ -48,29 +48,7 @@
 
             <div class="vpaa-form-section-divider">
               <h3>Accreditation Details</h3>
-
-              <div class="vpaa-form-group">
-                <label for="level">Accreditation Level *</label>
-                <select v-model="form.level" id="level" class="vpaa-form-input" required>
-                  <option value="">Select accreditation level</option>
-                  <option value="Level I">Level I</option>
-                  <option value="Level II">Level II</option>
-                  <option value="Level III">Level III</option>
-                </select>
-                <span v-if="errors.level" class="vpaa-error-text">{{ errors.level }}</span>
-              </div>
-
-              <div class="vpaa-form-group">
-                <label for="phase">Accreditation Phase *</label>
-                <select v-model="form.phase" id="phase" class="vpaa-form-input" required>
-                  <option value="">Select phase</option>
-                  <option value="Self-Study">Self-Study</option>
-                  <option value="Formal Survey">Formal Survey</option>
-                  <option value="Initial Evaluation">Initial Evaluation</option>
-                  <option value="Comprehensive Review">Comprehensive Review</option>
-                </select>
-                <span v-if="errors.phase" class="vpaa-error-text">{{ errors.phase }}</span>
-              </div>
+              <p class="vpaa-card-sub">Program Chair sets Level and Phase after receiving this notice. VPAA/DI only initiates the cycle and monitors progress.</p>
 
               <div class="vpaa-form-row">
                 <div class="vpaa-form-group">
@@ -306,8 +284,6 @@ const submitForm = async () => {
     const payload = {
       college_id: Number(form.value.college_id),
       program_id: Number(form.value.program_id),
-      level: form.value.level,
-      phase: form.value.phase || 'Initial Notice',
       status: 'Preparation',
       scheduled_visit: form.value.scheduled_visit || null,
       valid_until: form.value.valid_until || null,

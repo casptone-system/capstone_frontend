@@ -493,6 +493,11 @@ const routes = [
         component: VPaaReports,
       },
       {
+        path: 'messages',
+        name: 'vpaa-messages',
+        component: () => import('@/views/VPAA/VPaaMessagesPage.vue'),
+      },
+      {
         path: 'notifications',
         name: 'vpaa-notifications',
         component: VPaaNotifications,

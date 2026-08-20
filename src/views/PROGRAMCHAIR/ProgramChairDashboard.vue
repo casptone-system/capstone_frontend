@@ -21,6 +21,9 @@
             </a>
 
             <p class="pc-nav-label">Communication</p>
+            <a class="pc-nav-item" :class="{ active: selectedSection === 'messages' }" href="#" @click.prevent="selectSection('messages')">
+              <ion-icon :icon="chatbubblesOutline" /> Messages
+            </a>
             <a class="pc-nav-item" :class="{ active: selectedSection === 'notifications' }" href="#" @click.prevent="selectSection('notifications')">
               <ion-icon :icon="notificationsOutline" /> Notifications
               <span class="pc-nav-badge">{{ activeNotificationCount }}</span>
@@ -391,7 +394,18 @@
 
               <!-- Accreditation Section: Setup and Area Assignments Side-by-Side -->
               <div v-if="selectedSection === 'accreditation'" class="pc-accreditation-grid" style="grid-column: 1 / -1;">
-                <!-- Left: Accreditation Setup -->
+                <div class="pc-card" style="grid-column: 1 / -1;">
+                  <div class="pc-card-header">
+                    <div class="pc-card-title-group">
+                      <div class="pc-card-icon amber"><ion-icon :icon="folderOpenOutline" /></div>
+                      <div>
+                        <h2 class="pc-card-title">Accreditation Folders</h2>
+                        <p class="pc-card-sub">Create a Level + deadline folder, then assign an Area Chair. Members are optional via the + button.</p>
+                      </div>
+                    </div>
+                  </div>
+                  <AccreditationWorkspaceBoard />
+                </div>
                 <div class="pc-card">
                   <div class="pc-card-header">
                     <div class="pc-card-title-group">
@@ -403,20 +417,6 @@
                     </div>
                   </div>
                   <ProgramChairAccreditationSetup />
-                </div>
-
-                <!-- Right: Area Assignments -->
-                <div class="pc-card">
-                  <div class="pc-card-header">
-                    <div class="pc-card-title-group">
-                      <div class="pc-card-icon amber"><ion-icon :icon="folderOpenOutline" /></div>
-                      <div>
-                        <h2 class="pc-card-title">Area Assignments</h2>
-                        <p class="pc-card-sub">Assign faculty to accreditation areas with tasks</p>
-                      </div>
-                    </div>
-                  </div>
-                  <AreaAssignmentCard />
                 </div>
               </div>
 
@@ -445,6 +445,10 @@
                   </div>
                 </div>
               </div> -->
+
+              <div v-if="selectedSection === 'messages'" class="pc-card" style="grid-column: 1 / -1;">
+                <AccreditationMessages />
+              </div>
 
               <div v-if="selectedSection === 'notifications'" class="pc-card pc-notifications-card" style="grid-column: 1 / -1;">
                 <div class="pc-card-header">
@@ -495,6 +499,7 @@ import {
   gridOutline, peopleOutline, keyOutline, folderOpenOutline,
   documentTextOutline, analyticsOutline, settingsOutline,
   barChartOutline, notificationsOutline, searchOutline,
+  chatbubblesOutline,
   documentOutline, copyOutline, mailOutline, refreshOutline,
   checkmarkCircleOutline, hourglassOutline, logOutOutline, callOutline
 } from 'ionicons/icons'
@@ -519,9 +524,11 @@ import {
 import RoleStorageVault from '@/components/RoleStorageVault.vue'
 import ProgramChairAccreditationSetup from './ProgramChairAccreditationSetup.vue'
 import NotificationBell from '@/components/NotificationBell.vue'
-import AreaAssignmentCard from '@/components/AreaAssignmentCard.vue'
+//import AreaAssignmentCard from '@/components/AreaAssignmentCard.vue'
+import AccreditationWorkspaceBoard from '@/components/AccreditationWorkspaceBoard.vue'
 import AreaDocumentsReview from '@/components/AreaDocumentsReview.vue'
 import FacultyAreaAssignmentList from '@/components/FacultyAreaAssignmentList.vue'
+import AccreditationMessages from '@/components/AccreditationMessages.vue'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -533,7 +540,7 @@ const currentUserInitials = computed(() => {
 })
 const currentUserPhoto = computed(() => (authStore.user as any)?.profilePhoto || (authStore.user as any)?.avatar || null)
 
-const selectedSection = ref<'accreditation' | 'dashboard' | 'team' | 'review' | 'faculty-areas' | 'notifications'>('dashboard')
+const selectedSection = ref<'accreditation' | 'dashboard' | 'team' | 'review' | 'faculty-areas' | 'notifications' | 'messages'>('dashboard')
 const currentProgram = ref<any>(null)
 const teams = ref<any[]>([])
 const activeCode = ref('')
@@ -588,6 +595,7 @@ const sectionLabel = computed(() => {
     case 'faculty-areas': return 'Faculty Area Assignments'
     case 'review': return 'Document Review'
     case 'notifications': return 'Notifications'
+    case 'messages': return 'Messages'
     default: return 'Program Chair Dashboard'
   }
 })

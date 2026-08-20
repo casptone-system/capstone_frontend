@@ -30,6 +30,10 @@
             </button>
 
             <p class="fac-nav-label">General</p>
+            <button class="fac-nav-item" type="button" @click="selectSection('messages')">
+              <span class="fac-nav-icon"><ion-icon :icon="chatbubblesOutline" /></span>
+              <span>Messages</span>
+            </button>
             <button class="fac-nav-item" type="button" @click="selectSection('notifications')">
               <span class="fac-nav-icon"><ion-icon :icon="notificationsOutline" /></span>
               <span>Notifications</span>
@@ -282,8 +286,9 @@
           <div v-else-if="selectedSection === 'revisions'" class="fac-tasks-shell">
             <div class="fac-tasks-header">
               <h2>My Tasks</h2>
-              <p>View and manage your assigned requirements</p>
+              <p>Open the Level + area + deadline folder assigned by your Program Chair.</p>
             </div>
+            <FacultyAccreditationFolder />
             <div v-if="facultyDashboard.tasks.length" class="fac-tasks-list">
               <div v-for="task in facultyDashboard.tasks" :key="task.id" class="fac-task-card" @click="facultyDashboard.openTaskDetail(task)">
                 <div class="fac-task-header">
@@ -306,8 +311,7 @@
                 <button type="button" class="fac-task-action">View Details →</button>
               </div>
             </div>
-            <div v-else class="fac-empty-state">
-              <p>No tasks assigned yet</p>
+            <div v-else-if="facultyDashboard.tasks.length === 0" class="fac-empty-state">
             </div>
           </div>
 
@@ -347,6 +351,14 @@
           </div>
 
           <!-- Notifications Section -->
+          <div v-else-if="selectedSection === 'messages'" class="fac-tasks-shell">
+            <div class="fac-tasks-header">
+              <h2>Messages</h2>
+              <p>Talk with your Program Chair or Area Chair about assigned parameters and evidence.</p>
+            </div>
+            <AccreditationMessages />
+          </div>
+
           <div v-else-if="selectedSection === 'notifications'" class="fac-notifications-shell">
             <div class="fac-notifications-header">
               <h2>Notifications</h2>
@@ -521,6 +533,8 @@ import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@/stores/authStore'
 import { useUserCalls } from '@/lib/useUserCalls'
 import { useFacultyDashboardStore } from '@/stores/facultyDashboardStore'
+import FacultyAccreditationFolder from '@/components/FacultyAccreditationFolder.vue'
+import AccreditationMessages from '@/components/AccreditationMessages.vue'
 import { getSystemSettings, linkRoleStorageFileAsEvidence } from '@/lib/api'
 import type { AppDocument } from '@/lib'
 
@@ -529,6 +543,7 @@ import {
   folderOpenOutline,
   peopleOutline,
   notificationsOutline,
+  chatbubblesOutline,
   checkmarkDoneOutline,
   logOutOutline,
   cloudUploadOutline,

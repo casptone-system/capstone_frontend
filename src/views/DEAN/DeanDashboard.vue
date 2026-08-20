@@ -68,6 +68,11 @@
                 </button>
               </li>
               <li>
+                <button type="button" class="dean-nav-item" :class="{ active: isSectionActive('messages') }" @click="selectSection('messages')" :aria-current="isSectionActive('messages') ? 'page' : undefined">
+                  <ion-icon :icon="chatbubblesOutline" /> Messages
+                </button>
+              </li>
+              <li>
                 <button type="button" class="dean-nav-item" :class="{ active: isSectionActive('notifications') }" @click="selectSection('notifications')" :aria-current="isSectionActive('notifications') ? 'page' : undefined">
                   <ion-icon :icon="notificationsOutline" /> Notifications
                   <span class="dean-nav-badge">{{ alerts.length }}</span>
@@ -145,6 +150,26 @@
                   <strong>{{ item.value }}</strong>
                 </div>
               </div>
+            </section>
+            <section v-if="selectedSection === 'dashboard'" class="dean-card">
+              <div class="dean-card-header">
+                <div>
+                  <h2 class="dean-card-title">Program accreditation progress</h2>
+                  <p class="dean-card-sub">Percent complete and remaining work by program folder.</p>
+                </div>
+              </div>
+              <div v-if="workspaceProgress.length" class="dean-todo-list">
+                <div v-for="item in workspaceProgress" :key="item.id" class="dean-todo-item">
+                  <div class="dean-todo-copy">
+                    <strong>{{ item.program?.name || item.name }} · {{ item.level }}</strong>
+                    <span>{{ item.overallProgress || 0 }}% done · {{ Math.max(0, 100 - (item.overallProgress || 0)) }}% remaining</span>
+                    <span v-for="area in item.areas || []" :key="area.id">
+                      {{ area.name }}: {{ area.progress || 0 }}% done · {{ Math.max(0, 100 - (area.progress || 0)) }}% remaining
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <p v-else class="dean-card-sub">No accreditation folders have been created yet.</p>
             </section>
             <section v-if="selectedSection === 'dashboard'" class="dean-card dean-todo-card">
               <div class="dean-card-header">
@@ -849,6 +874,18 @@
                 </div>
               </template>
 
+              <template v-else-if="selectedSection === 'messages'">
+                <div class="dean-card">
+                  <div class="dean-card-header">
+                    <div>
+                      <h2 class="dean-card-title">Messages</h2>
+                      <p class="dean-card-sub">Communicate with VPAA/DI, Program Chairs, and QA. Level and Phase remain view-only.</p>
+                    </div>
+                  </div>
+                  <AccreditationMessages />
+                </div>
+              </template>
+
               <template v-else-if="selectedSection === 'notifications'">
                 <div class="dean-card">
                   <div class="dean-card-header">
@@ -889,7 +926,7 @@ import {
   checkmarkCircleOutline, alarmOutline, logOutOutline,
   businessOutline, shieldCheckmarkOutline,
   alertCircleOutline, timeOutline, personCircleOutline,
-  searchOutline, mailOutline, briefcaseOutline
+  searchOutline, mailOutline, briefcaseOutline, chatbubblesOutline
 } from 'ionicons/icons'
 
 import { onMounted, ref, computed, watch } from 'vue'
@@ -910,6 +947,7 @@ import {
   getProgramInvitations,
   getTasks,
   getUsers,
+  getAccreditationWorkspaces,
   markAsRead as apiMarkAsRead,
   removeProgramMember,
   updateDocument,
@@ -920,6 +958,7 @@ import DeanNotifyProgramChairModal from '@/components/DeanNotifyProgramChairModa
 import RoleStorageVault from '@/components/RoleStorageVault.vue'
 import DeanAccreditationSection from '@/views/DEAN/DeanAccreditationSection.vue'
 import NotificationBell from '@/components/NotificationBell.vue'
+import AccreditationMessages from '@/components/AccreditationMessages.vue'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -937,6 +976,7 @@ const collegeName = ref('Dean Dashboard')
 const assignedDean = ref<{ name: string; role: string; department: string; position?: string } | null>(null)
 const stats = ref<Array<{ label: string; value: string; icon: any; color: string; bg: string }>>([])
 const programs = ref<any[]>([])
+const workspaceProgress = ref<any[]>([])
 const documents = ref<any[]>([])
 const deanWorkflowPhase = computed(() => {
   if (!programs.value.length) return 'Planning'
@@ -1797,6 +1837,13 @@ const loadDashboard = async () => {
         ),
       }))
     }).slice(0, 12)
+
+    try {
+      const folders = await getAccreditationWorkspaces()
+      workspaceProgress.value = Array.isArray(folders) ? folders : []
+    } catch {
+      workspaceProgress.value = []
+    }
 
   } catch (err: any) {
     error.value = err.response?.data?.message || 'Unable to load Dean dashboard.'

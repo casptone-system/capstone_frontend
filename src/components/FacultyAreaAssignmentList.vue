@@ -12,6 +12,12 @@
         />
       </div>
       <div class="fal-filter-group">
+        <select v-model="selectedWorkspaceId" class="fal-filter-select">
+          <option v-if="!workspaces.length" value="">Create a Level folder first</option>
+          <option v-for="workspace in workspaces" :key="workspace.id" :value="workspace.id">
+            {{ workspace.name }}
+          </option>
+        </select>
         <select v-model="filterArea" class="fal-filter-select">
           <option value="">All Areas</option>
           <option v-for="area in areas" :key="area.id" :value="area.id">
@@ -19,7 +25,7 @@
           </option>
         </select>
       </div>
-      <button class="fal-btn fal-btn-primary" @click="isAddModalOpen = true">
+      <button class="fal-btn fal-btn-primary" :disabled="!workspaceId || !areas.length" @click="openAddModal('chair')">
         <ion-icon :icon="addOutline" /> Add Assignment
       </button>
     </div>
@@ -75,6 +81,15 @@
                 class="fal-area-badge"
               >
                 <span class="fal-area-name">{{ area.name }}</span>
+                <small class="fal-role-tag">{{ isAreaChair(faculty.id, area.id) ? 'Area Chair' : 'Member' }}</small>
+                <button
+                  class="fal-plus-mini"
+                  type="button"
+                  title="Add optional area member"
+                  @click="openAddModal('member', area.id)"
+                >
+                  <ion-icon :icon="addOutline" />
+                </button>
                 <button
                   class="fal-badge-remove"
                   @click="removeAssignment(faculty.id, area.id)"
@@ -89,32 +104,10 @@
             </p>
           </div>
 
-          <!-- Add New Assignment -->
           <div class="fal-add-section">
-            <div class="fal-add-form">
-              <select
-                v-model="newAssignment[faculty.id]"
-                class="fal-input-select"
-              >
-                <option value="">Select an area to assign...</option>
-                <option
-                  v-for="area in getUnassignedAreasForFaculty(faculty.id)"
-                  :key="area.id"
-                  :value="area.id"
-                >
-                  {{ area.name }}
-                </option>
-              </select>
-              <button
-                v-if="getUnassignedAreasForFaculty(faculty.id).length"
-                class="fal-btn fal-btn-small"
-                :disabled="!newAssignment[faculty.id]"
-                @click="addAssignment(faculty.id)"
-              >
-                <ion-icon :icon="addOutline" /> Assign
-              </button>
-              <span v-else class="fal-all-assigned">All areas assigned</span>
-            </div>
+            <button type="button" class="fal-btn fal-btn-small" @click="openAddModal('member')">
+              <ion-icon :icon="addOutline" /> Add optional member
+            </button>
           </div>
 
           <!-- Messages -->
@@ -140,92 +133,42 @@
     <div v-if="isAddModalOpen" class="fal-modal-overlay" @click="isAddModalOpen = false">
       <div class="fal-modal" @click.stop>
         <div class="fal-modal-header">
-          <h3>Add New Assignment</h3>
+          <h3>{{ modalRole === 'chair' ? 'Assign Area Chair' : 'Add optional area member' }}</h3>
           <button class="fal-modal-close" @click="isAddModalOpen = false">
             <ion-icon :icon="closeOutline" />
           </button>
         </div>
         <div class="fal-modal-body">
-          <label class="fal-field-label">Select Faculty</label>
-          <select v-model="modalFacultyId" class="fal-input-select">
-            <option value="">Choose a faculty member...</option>
-            <option
-              v-for="faculty in facultyForAssignmentOptions"
-              :key="faculty.id"
-              :value="faculty.id"
+          <label class="fal-field-label">Search faculty</label>
+          <input v-model="facultySearch" class="fal-search-input" placeholder="Search faculty by name or email..." />
+          <div class="fal-faculty-picker">
+            <label
+              v-for="person in searchableFaculty"
+              :key="person.id"
+              class="fal-faculty-option"
+              :class="{ selected: String(modalFacultyId) === String(person.id) }"
             >
-              {{ faculty.name }} ({{ faculty.email }})
-            </option>
-          </select>
-
-          <label class="fal-field-label">Select Area</label>
-          <select
-            v-model="modalAreaId"
-            class="fal-input-select"
-            :disabled="!modalFacultyId"
-          >
-            <option value="">Choose an area...</option>
-            <option
-              v-for="area in getUnassignedAreasForFaculty(Number(modalFacultyId))"
-              :key="area.id"
-              :value="area.id"
-            >
-              {{ area.name }}
-            </option>
-          </select>
-
-          <label class="fal-field-label">Instructions (Optional)</label>
-          <textarea
-            v-model="modalInstructions"
-            class="fal-input-textarea"
-            placeholder="Provide task instructions..."
-          />
-
-          <label class="fal-field-label">Attach task file (Optional)</label>
-          <div
-            class="fal-upload-box"
-            :class="{ 'is-dragging': isDragging }"
-            @click="fileInputEl?.click()"
-            @dragover.prevent="isDragging = true"
-            @dragleave.prevent="isDragging = false"
-            @drop.prevent="handleFileDrop"
-          >
-            <input
-              ref="fileInputEl"
-              type="file"
-              class="fal-hidden-input"
-              @change="handleFileSelect"
-            />
-            <div class="fal-upload-content">
-              <div class="fal-upload-icon">📎</div>
-              <p v-if="!uploadedFile">Drag and drop a file here or click to browse</p>
-              <p v-else class="fal-upload-file-name">{{ uploadedFile.name }}</p>
-            </div>
+              <input type="radio" :value="person.id" v-model="modalFacultyId" />
+              <img v-if="person.photo" :src="person.photo" :alt="person.name" class="fal-avatar-img" />
+              <div v-else class="fal-avatar-fallback">{{ getInitials(person.name) }}</div>
+              <span>
+                <strong>{{ person.name }}</strong>
+                <small>{{ person.email }}</small>
+              </span>
+            </label>
+            <p v-if="!searchableFaculty.length" class="fal-empty-state">No faculty found in this program.</p>
           </div>
 
-          <div class="fal-task-workflow">
-            <div class="fal-workflow-title">Task flow</div>
-            <div class="fal-workflow-steps">
-              <span class="fal-workflow-step active">Assigned</span>
-              <span class="fal-workflow-separator">→</span>
-              <span class="fal-workflow-step">Faculty works</span>
-              <span class="fal-workflow-separator">→</span>
-              <span class="fal-workflow-step">Resubmission</span>
-              <span class="fal-workflow-separator">→</span>
-              <span class="fal-workflow-step">Marked submitted</span>
-            </div>
-            <p class="fal-workflow-copy">
-              Once this assignment is created, the faculty will receive a task notification and complete the work. After submission, the faculty can send it back for your review and you can mark it as submitted.
-            </p>
-          </div>
-
-          <label class="fal-field-label">Deadline (Optional)</label>
-          <input
-            v-model="modalDeadline"
-            type="date"
-            class="fal-input-date"
-            :min="todayDate"
-          />
+          <label class="fal-field-label">Area</label>
+          <select v-model="modalAreaId" class="fal-input-select" disabled>
+            <option v-if="lockedArea" :value="lockedArea.id">{{ lockedArea.name }}</option>
+            <option v-else value="">Select an area in the filter above first</option>
+          </select>
+          <p class="fal-empty-state">
+            {{ modalRole === 'chair'
+              ? 'This faculty becomes the Area Chair for the selected area. Members are optional and can be added with +.'
+              : 'Members are optional. Small programs can skip this and keep only the Area Chair.' }}
+          </p>
 
           <p v-if="modalMessage" :class="['fal-modal-message', modalMessageType]">
             {{ modalMessage }}
@@ -240,7 +183,7 @@
             :disabled="!modalFacultyId || !modalAreaId || isModalLoading"
             @click="submitModalAssignment"
           >
-            {{ isModalLoading ? 'Adding...' : 'Add Assignment' }}
+            {{ isModalLoading ? 'Saving...' : (modalRole === 'chair' ? 'Assign Area Chair' : 'Add member') }}
           </button>
         </div>
       </div>
@@ -249,7 +192,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { IonIcon } from '@ionic/vue'
 import {
   searchOutline,
@@ -259,10 +202,13 @@ import {
   chevronUpOutline,
   peopleOutline,
 } from 'ionicons/icons'
-import api from '@/lib/api'
-console.log('DEBUG api import:', api, typeof api)
-import taskFileAPI from '@/lib/taskFileAPI'
-import { useAuthStore } from '@/stores/authStore'
+import {
+  addWorkspaceAreaMember,
+  assignWorkspaceAreaChair,
+  getAccreditationWorkspaces,
+  getProgramFaculty,
+  removeWorkspaceAreaMember,
+} from '@/lib/api'
 
 interface Area {
   id: number
@@ -281,8 +227,7 @@ interface Faculty {
 interface Assignment {
   faculty_id: number
   area_id: number
-  deadline?: string
-  instructions?: string
+  role: 'chair' | 'member'
 }
 
 const searchQuery = ref('')
@@ -290,29 +235,22 @@ const filterArea = ref('')
 const areas = ref<Area[]>([])
 const faculty = ref<Faculty[]>([])
 const assignments = ref<Assignment[]>([])
+const workspaces = ref<any[]>([])
+const selectedWorkspaceId = ref<number | null>(null)
 const expandedCards = ref<Set<number>>(new Set())
-const newAssignment = ref<Record<number, string>>({})
 const successMessage = ref<Record<number, string>>({})
 const errorMessage = ref<Record<number, string>>({})
 const isLoading = ref(false)
-const isDragging = ref(false)
 
-// Modal state
 const isAddModalOpen = ref(false)
+const modalRole = ref<'chair' | 'member'>('chair')
+const facultySearch = ref('')
+const workspaceId = computed(() => selectedWorkspaceId.value)
 const modalFacultyId = ref('')
 const modalAreaId = ref('')
-const modalInstructions = ref('')
-const modalDeadline = ref('')
 const modalMessage = ref('')
 const modalMessageType = ref<'success' | 'error'>('success')
 const isModalLoading = ref(false)
-const uploadedFile = ref<File | null>(null)
-const fileInputEl = ref<HTMLInputElement | null>(null)
-
-const todayDate = computed(() => {
-  const today = new Date()
-  return today.toISOString().split('T')[0]
-})
 
 // Computed properties
 const filteredFaculty = computed(() => {
@@ -334,15 +272,27 @@ const filteredFaculty = computed(() => {
 
 const facultyForAssignmentOptions = computed(() => {
   const uniqueFaculty = new Map<number, Faculty>()
-
   faculty.value.forEach((person) => {
     if (!person?.id) return
-    if (!uniqueFaculty.has(person.id)) {
-      uniqueFaculty.set(person.id, person)
-    }
+    if (!uniqueFaculty.has(person.id)) uniqueFaculty.set(person.id, person)
   })
-
   return [...uniqueFaculty.values()].sort((a, b) => a.name.localeCompare(b.name))
+})
+
+const lockedArea = computed(() => areas.value.find((area) => String(area.id) === String(filterArea.value || modalAreaId.value)) || areas.value[0] || null)
+
+const searchableFaculty = computed(() => {
+  const query = facultySearch.value.trim().toLowerCase()
+  return facultyForAssignmentOptions.value.filter((person) => {
+    if (!query) return true
+    return `${person.name} ${person.email}`.toLowerCase().includes(query)
+  })
+})
+
+watch([filterArea, lockedArea, isAddModalOpen], () => {
+  if (lockedArea.value) {
+    modalAreaId.value = String(lockedArea.value.id)
+  }
 })
 
 // Roles that should NOT be assignable to accreditation areas.
@@ -413,29 +363,10 @@ const getFacultyAreas = (facultyId: number): Area[] => {
   return areas.value.filter(a => areaIds.includes(a.id))
 }
 
-const handleFileSelect = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
-  if (file) {
-    uploadedFile.value = file
-  }
-  isDragging.value = false
-}
-
-const handleFileDrop = (event: DragEvent) => {
-  const file = event.dataTransfer?.files?.[0]
-  if (file) {
-    uploadedFile.value = file
-  }
-  isDragging.value = false
-}
-
-const getUnassignedAreasForFaculty = (facultyId: number): Area[] => {
-  const assignedAreaIds = assignments.value
-    .filter(a => a.faculty_id === facultyId)
-    .map(a => a.area_id)
-
-  return areas.value.filter(a => !assignedAreaIds.includes(a.id))
+const isAreaChair = (facultyId: number, areaId: number): boolean => {
+  return assignments.value.some(
+    (item) => item.faculty_id === facultyId && item.area_id === areaId && item.role === 'chair'
+  )
 }
 
 const isCardExpanded = (facultyId: number): boolean => {
@@ -451,282 +382,97 @@ const toggleCardExpanded = (facultyId: number) => {
 }
 
 // Load data
+const applyWorkspace = (current: any) => {
+  areas.value = (current?.areas || []).map((area: any) => ({ id: area.id, name: area.name }))
+  assignments.value = (current?.areas || []).flatMap((area: any) => [
+    ...(area.chair ? [{ faculty_id: Number(area.chair.id), area_id: Number(area.id), role: 'chair' as const }] : []),
+    ...(area.members || []).map((member: any) => ({
+      faculty_id: Number(member.userId || member.id),
+      area_id: Number(area.id),
+      role: 'member' as const,
+    })),
+  ])
+}
+
 const loadData = async () => {
   isLoading.value = true
   try {
-    const authStore = useAuthStore()
-
-    if (!authStore.user?.programId && !authStore.user?.program_id) {
-      try {
-        await authStore.refreshCurrentUser()
-      } catch {
-        // ignore and continue; backend may still return roster data for the active program
-      }
-    }
-
-    // Load areas
-    try {
-      const areasResponse = await api.get('/accreditation-areas')
-      areas.value = areasResponse.data?.data || areasResponse.data || []
-      console.log('✓ Areas loaded from backend:', areas.value.length)
-    } catch (err) {
-      console.warn('⚠️ Failed to load areas:', err)
-      areas.value = [
-        { id: 1, name: 'Student Learning Outcomes', code: 'SLO' },
-        { id: 2, name: 'Curriculum', code: 'CUR' },
-        { id: 3, name: 'Faculty Development', code: 'FD' },
-        { id: 4, name: 'Assessment Methods', code: 'AM' },
-      ]
-      console.log('Using demo areas for testing')
-    }
-
-    // Load faculty from backend (REAL DATA)
-    let facultyLoaded = false
-    
-    // Try 1: Use /program-faculty endpoint (preferred)
-    try {
-      const facultyResponse = await api.get('/program-faculty')
-      const responseData = facultyResponse.data?.data || facultyResponse.data || []
-      
-      if (Array.isArray(responseData) && responseData.length > 0) {
-        faculty.value = responseData
-  .filter(hasFacultyRole)
-  .map(mapFacultyPerson)
-
-        console.log('✓ Faculty loaded from /program-faculty:', faculty.value.length)
-        facultyLoaded = true
-      }
-    } catch (err: any) {
-      console.warn('⚠️ /program-faculty endpoint failed, trying alternative...')
-    }
-    
-    // Try 2: Load from /programs/{id} endpoint (fallback)
-    if (!facultyLoaded) {
-      try {
-        const authStore = useAuthStore()
-        const user = authStore.user as any
-        const programId = user?.programId || user?.program_id
-        
-        if (programId) {
-          const programResponse = await api.get(`/programs/${programId}`)
-          const program = programResponse.data?.data || programResponse.data
-          const programFaculty = program?.faculty || program?.members || program?.users || []
-          
-          if (Array.isArray(programFaculty) && programFaculty.length > 0) {
-            faculty.value = programFaculty
-  .filter(hasFacultyRole)
-  .map(mapFacultyPerson)
-
-            console.log('✓ Faculty loaded from /programs/{id}:', faculty.value.length)
-            facultyLoaded = true
-          }
-        }
-      } catch (err: any) {
-        console.warn('⚠️ /programs/{id} endpoint failed, trying /admin/users...')
-      }
-    }
-    
-    // Try 3: Load all users if program endpoints fail (last resort)
-    if (!facultyLoaded) {
-      try {
-        const usersResponse = await api.get('/admin/users')
-        const users = usersResponse.data?.data || usersResponse.data || []
-        
-        if (Array.isArray(users) && users.length > 0) {
-        faculty.value = users
-  .filter(hasFacultyRole)
-  .map(mapFacultyPerson)
-
-          console.log('✓ Faculty loaded from /admin/users:', faculty.value.length)
-          facultyLoaded = true
-        }
-      } catch (err: any) {
-        console.warn('⚠️ /admin/users endpoint failed too')
-      }
-    }
-    
-    // If all real endpoints failed, show warning
-    if (!facultyLoaded) {
-      console.error('❌ Could not load faculty from any backend endpoint')
-      console.log('Make sure these endpoints are implemented:')
-      console.log('  - GET /api/program-faculty')
-      console.log('  - GET /api/programs/{id}')
-      console.log('  - GET /api/admin/users')
-      faculty.value = []
-    }
-
-    // Load assignments
-    try {
-      const assignmentsResponse = await api.get('/accreditation-areas/assignments')
-      assignments.value = assignmentsResponse.data?.data || assignmentsResponse.data || []
-      console.log('✓ Assignments loaded:', assignments.value.length)
-    } catch (err) {
-      console.warn('⚠️ Failed to load assignments (new endpoint, may not exist yet)')
-      assignments.value = []
-    }
+    const [workspaceData, facultyData] = await Promise.all([
+      getAccreditationWorkspaces(),
+      getProgramFaculty(),
+    ])
+    const list = Array.isArray(workspaceData) ? workspaceData : []
+    workspaces.value = list
+    const current = list.find((item: any) => Number(item.id) === Number(selectedWorkspaceId.value)) || list[0]
+    selectedWorkspaceId.value = current?.id || null
+    applyWorkspace(current)
+    faculty.value = (Array.isArray(facultyData) ? facultyData : []).filter(hasFacultyRole).map(mapFacultyPerson)
+  } catch (err) {
+    areas.value = []
+    faculty.value = []
+    assignments.value = []
+    workspaces.value = []
   } finally {
     isLoading.value = false
   }
 }
 
-// Assignment actions
-const addAssignment = async (facultyId: number) => {
-  const areaId = newAssignment.value[facultyId]
-  if (!areaId) return
+watch(selectedWorkspaceId, (id) => {
+  const current = workspaces.value.find((item: any) => Number(item.id) === Number(id))
+  if (current) applyWorkspace(current)
+})
 
-  try {
-    const payload = {
-      faculty_id: facultyId,
-      area_id: Number(areaId),
-    }
-
-    try {
-      await api.post(`/accreditation-areas/${areaId}/members`, {
-        user_id: facultyId,
-      })
-      console.log('✓ Assignment created')
-    } catch (apiErr) {
-      console.warn('API assignment failed, using demo mode')
-      // Demo mode: add to local assignments
-    }
-
-    // Add to local list
-    assignments.value.push(payload)
-    newAssignment.value[facultyId] = ''
-
-      // Send notification to faculty
-      const area = areas.value.find(a => a.id === Number(areaId))
-      await sendAssignmentNotification(facultyId, area?.name || 'Area Assignment')
-
-      successMessage.value[facultyId] = 'Area assigned successfully! Faculty notified.'
-    setTimeout(() => {
-      successMessage.value[facultyId] = ''
-    }, 3000)
-  } catch (err: any) {
-    console.error('Assignment error:', err)
-    errorMessage.value[facultyId] = err.message || 'Failed to assign area'
+const openAddModal = (role: 'chair' | 'member', areaId?: number) => {
+  modalRole.value = role
+  facultySearch.value = ''
+  modalFacultyId.value = ''
+  modalMessage.value = ''
+  if (areaId) {
+    filterArea.value = String(areaId)
+    modalAreaId.value = String(areaId)
   }
+  isAddModalOpen.value = true
 }
 
 const removeAssignment = async (facultyId: number, areaId: number) => {
+  if (!workspaceId.value) return
   try {
-    try {
-      await api.delete(`/accreditation-areas/${areaId}/members/${facultyId}`)
-      console.log('✓ Assignment removed')
-    } catch (apiErr) {
-      console.warn('API removal failed, using demo mode')
-    }
-
-    // Remove from local list
-    assignments.value = assignments.value.filter(
-      a => !(a.faculty_id === facultyId && a.area_id === areaId)
-    )
-
-    successMessage.value[facultyId] = 'Area removed successfully!'
-    setTimeout(() => {
-      successMessage.value[facultyId] = ''
-    }, 3000)
+    await removeWorkspaceAreaMember(workspaceId.value, areaId, facultyId)
+    successMessage.value[facultyId] = 'Area removed successfully.'
+    await loadData()
   } catch (err: any) {
-    console.error('Removal error:', err)
-    errorMessage.value[facultyId] = err.message || 'Failed to remove assignment'
+    errorMessage.value[facultyId] = err?.response?.data?.message || 'Failed to remove assignment'
   }
 }
 
 const submitModalAssignment = async () => {
-  if (!modalFacultyId.value || !modalAreaId.value) return
+  if (!modalFacultyId.value || !modalAreaId.value || !workspaceId.value) {
+    modalMessage.value = 'Select a faculty member. The area is taken from the selected accreditation folder.'
+    modalMessageType.value = 'error'
+    return
+  }
 
   isModalLoading.value = true
   try {
-    const payload = {
-      faculty_id: Number(modalFacultyId.value),
-      area_id: Number(modalAreaId.value),
-      deadline: modalDeadline.value || undefined,
-      instructions: modalInstructions.value || undefined,
+    if (modalRole.value === 'chair') {
+      await assignWorkspaceAreaChair(workspaceId.value, modalAreaId.value, modalFacultyId.value)
+      modalMessage.value = 'Faculty assigned as Area Chair.'
+    } else {
+      await addWorkspaceAreaMember(workspaceId.value, modalAreaId.value, modalFacultyId.value)
+      modalMessage.value = 'Optional area member added.'
     }
-
-    try {
-      await api.post(`/accreditation-areas/${modalAreaId.value}/members`, {
-        user_id: Number(modalFacultyId.value),
-        deadline: modalDeadline.value,
-        instructions: modalInstructions.value,
-      })
-      console.log('✓ Assignment created via modal')
-    } catch (apiErr) {
-      console.warn('API assignment failed, using demo mode')
-    }
-
-    assignments.value.push({
-      faculty_id: payload.faculty_id,
-      area_id: payload.area_id,
-      deadline: payload.deadline,
-      instructions: payload.instructions,
-    })
-
-    const area = areas.value.find(a => a.id === Number(modalAreaId.value))
-    const taskTitle = `New task: ${area?.name || 'Area Assignment'}`
-    const taskDescription = modalInstructions.value || `You have been assigned to the ${area?.name || 'selected'} accreditation area.`
-
-    const taskResponse = await api.post('/task-notifications', {
-      assigned_to_id: payload.faculty_id,
-      title: taskTitle,
-      description: taskDescription,
-      type: 'document_upload',
-      related_id: payload.area_id,
-      related_model: 'accreditation_area',
-      badge_clear_hours: 72,
-    })
-
-    const createdTask = taskResponse.data?.data ?? taskResponse.data ?? null
-    if (createdTask?.id && uploadedFile.value) {
-      await taskFileAPI.uploadFile(
-        Number(createdTask.id),
-        uploadedFile.value,
-        'document',
-        taskDescription,
-      )
-    }
-
-    await sendAssignmentNotification(payload.faculty_id, area?.name || 'Area Assignment')
-
-    modalMessage.value = 'Assignment added successfully! Faculty notified with task details.'
     modalMessageType.value = 'success'
-
+    await loadData()
     setTimeout(() => {
       isAddModalOpen.value = false
       modalFacultyId.value = ''
-      modalAreaId.value = ''
-      modalInstructions.value = ''
-      modalDeadline.value = ''
-      uploadedFile.value = null
-      if (fileInputEl.value) {
-        fileInputEl.value.value = ''
-      }
       modalMessage.value = ''
-    }, 1500)
+    }, 800)
   } catch (err: any) {
-    console.error('Modal assignment error:', err)
-    modalMessage.value = err.message || 'Failed to add assignment'
+    modalMessage.value = err?.response?.data?.message || 'Failed to add assignment'
     modalMessageType.value = 'error'
   } finally {
     isModalLoading.value = false
-  }
-}
-
-// Send notification to faculty when assigned
-const sendAssignmentNotification = async (facultyId: number, areaName: string) => {
-  try {
-    await api.post('/notifications', {
-      user_id: facultyId,
-      type: 'area_assignment',
-      title: `New Area Assignment: ${areaName}`,
-      message: `You have been assigned to the ${areaName} accreditation area. Please review the task details in your Tasks section.`,
-      related_entity_type: 'area_assignment',
-      related_entity_id: facultyId,
-    })
-    console.log('✓ Notification sent to faculty:', facultyId)
-  } catch (err: any) {
-    console.warn('Failed to send notification:', err.message)
-    // Don't fail the assignment if notification fails
   }
 }
 
@@ -996,6 +742,30 @@ onMounted(() => {
   font-weight: 500;
 }
 
+.fal-role-tag {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.fal-plus-mini {
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: #16a34a;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fal-plus-mini ion-icon {
+  font-size: 0.85rem;
+}
+
 .fal-badge-remove {
   width: 1.25rem;
   height: 1.25rem;
@@ -1156,6 +926,31 @@ onMounted(() => {
   ion-icon {
     font-size: 1.25rem;
   }
+}
+
+.fal-faculty-picker {
+  max-height: 240px;
+  overflow: auto;
+  display: grid;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+.fal-faculty-option {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.6rem;
+  padding: 0.5rem 0.65rem;
+  cursor: pointer;
+}
+.fal-faculty-option.selected {
+  border-color: #16a34a;
+  background: #f0fdf4;
+}
+.fal-faculty-option small {
+  display: block;
+  color: #6b7280;
 }
 
 .fal-modal-body {

@@ -21,7 +21,7 @@ import type { AppDocument, DashboardSummary, NotificationMessage } from '@/lib'
 export const useFacultyDashboardStore = defineStore('facultyDashboard', () => {
   const authStore = useAuthStore()
 
-  const selectedSection = ref<'dashboard' | 'documents' | 'revisions' | 'join' | 'team' | 'notifications'>('dashboard')
+  const selectedSection = ref<'dashboard' | 'documents' | 'revisions' | 'join' | 'team' | 'notifications' | 'messages'>('dashboard')
   const team = ref<any>(null)
   const program = ref<any>(null)
   const accreditationCycle = ref<any>(null)
