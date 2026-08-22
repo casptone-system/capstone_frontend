@@ -18,6 +18,9 @@
             <a class="qa-nav-item" :class="{ active: qaSection === 'templates' }" href="#" @click.prevent="qaSection = 'templates'">
               <ion-icon :icon="documentTextOutline" /> Templates
             </a>
+            <a class="qa-nav-item" :class="{ active: qaSection === 'area-parameters' }" href="#" @click.prevent="qaSection = 'area-parameters'">
+              <ion-icon :icon="layersOutline" /> Area Parameters
+            </a>
             <a class="qa-nav-item" :class="{ active: qaSection === 'monitor' }" href="#" @click.prevent="qaSection = 'monitor'">
               <ion-icon :icon="shieldCheckmarkOutline" /> Program Monitoring
             </a>
@@ -122,6 +125,15 @@
               </div>
             </div>
             <InstrumentTemplateEditor />
+          </section>
+          <section v-else-if="qaSection === 'area-parameters'" class="qa-card" style="margin: 1rem 1.5rem;">
+            <div class="qa-card-header">
+              <div>
+                <h2 class="qa-card-title">Area parameter content</h2>
+                <p>Edit the first-column statements faculty see in My Areas. Mark as Done stays on the faculty view.</p>
+              </div>
+            </div>
+            <AreaParameterContentEditor />
           </section>
           <section v-else-if="qaSection === 'monitor'" class="qa-card" style="margin: 1rem 1.5rem;">
             <AccreditationMonitorCard />
@@ -305,7 +317,7 @@ import {
   gridOutline, shieldCheckmarkOutline, documentTextOutline, alertCircleOutline,
   timeOutline, checkmarkDoneOutline, chatbubblesOutline, barChartOutline,
   notificationsOutline, gitMergeOutline, checkmarkCircleOutline,
-  closeCircleOutline, logOutOutline, callOutline
+  closeCircleOutline, logOutOutline, callOutline, layersOutline
 } from 'ionicons/icons'
 
 import { useRouter } from 'vue-router'
@@ -314,9 +326,10 @@ import { useUserCalls } from '@/lib/useUserCalls'
 import InstrumentTemplateEditor from '@/components/InstrumentTemplateEditor.vue'
 import AccreditationMonitorCard from '@/components/AccreditationMonitorCard.vue'
 import AccreditationMessages from '@/components/AccreditationMessages.vue'
+import AreaParameterContentEditor from '@/components/AreaParameterContentEditor.vue'
 import api from '@/lib/api'
 
-const qaSection = ref<'dashboard' | 'templates' | 'monitor' | 'messages'>('dashboard')
+const qaSection = ref<'dashboard' | 'templates' | 'area-parameters' | 'monitor' | 'messages'>('dashboard')
 
 const authStore = useAuthStore()
 const router = useRouter()

@@ -28,6 +28,11 @@
                 <ion-icon :icon="documentTextOutline" /> Instruments
               </button>
             </router-link>
+            <router-link :to="{ name: 'vpaa-area-parameters' }" custom v-slot="{ isActive, href, navigate }">
+              <button type="button" class="vpaa-nav-item" :class="{ active: isActive }" :href="href" @click="navigate">
+                <ion-icon :icon="layersOutline" /> Area Parameters
+              </button>
+            </router-link>
 
             <p class="vpaa-nav-label">Monitoring</p>
             <router-link :to="{ name: 'vpaa-schedule' }" custom v-slot="{ isActive, href, navigate }">
@@ -100,6 +105,7 @@ import {
   notificationsOutline,
   shieldCheckmarkOutline,
   trendingUpOutline,
+  layersOutline,
 } from 'ionicons/icons'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'

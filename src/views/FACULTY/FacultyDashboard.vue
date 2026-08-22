@@ -38,7 +38,27 @@
               <span class="fac-nav-icon"><ion-icon :icon="notificationsOutline" /></span>
               <span>Notifications</span>
             </button>
-           
+
+            <div class="fac-areas-nav">
+              <button class="fac-nav-item" type="button" @click="toggleAreasAccordion">
+                <span class="fac-nav-icon"><ion-icon :icon="layersOutline" /></span>
+                <span>Areas</span>
+                <span class="fac-areas-caret">{{ areasExpanded ? '▾' : '▸' }}</span>
+              </button>
+              <div v-if="areasExpanded" class="fac-areas-list">
+                <p v-if="!myAreas.length" class="fac-areas-empty">No areas assigned</p>
+                <button
+                  v-for="area in myAreas"
+                  :key="area.id"
+                  class="fac-nav-item fac-area-child"
+                  :class="{ active: selectedSection === 'areas' && Number(selectedAreaId) === Number(area.id) }"
+                  type="button"
+                  @click="openAssignedArea(area)"
+                >
+                  {{ area.label || area.name }}
+                </button>
+              </div>
+            </div>
           </nav>
 
           <div class="fac-sidebar-footer">
@@ -359,6 +379,10 @@
             <AccreditationMessages />
           </div>
 
+          <div v-else-if="selectedSection === 'areas'" class="fac-areas-shell">
+            <FacultyMyAreasPanel />
+          </div>
+
           <div v-else-if="selectedSection === 'notifications'" class="fac-notifications-shell">
             <div class="fac-notifications-header">
               <h2>Notifications</h2>
@@ -534,6 +558,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useUserCalls } from '@/lib/useUserCalls'
 import { useFacultyDashboardStore } from '@/stores/facultyDashboardStore'
 import FacultyAccreditationFolder from '@/components/FacultyAccreditationFolder.vue'
+import FacultyMyAreasPanel from '@/components/FacultyMyAreasPanel.vue'
 import AccreditationMessages from '@/components/AccreditationMessages.vue'
 import { getSystemSettings, linkRoleStorageFileAsEvidence } from '@/lib/api'
 import type { AppDocument } from '@/lib'
@@ -554,6 +579,7 @@ import {
   musicalNotesOutline,
   briefcaseOutline,
   schoolOutline,
+  layersOutline,
 } from 'ionicons/icons'
 
 const router = useRouter()
@@ -577,6 +603,8 @@ const {
   selectedSection,
   selectedDocuments,
   pendingRevisions,
+  myAreas,
+  selectedAreaId,
 } = storeToRefs(facultyDashboard)
 
 const {
@@ -586,10 +614,22 @@ const {
   loadDocuments,
   loadNotifications,
   loadDashboard,
+  loadMyAreas,
+  openMyArea,
   uploadDocument,
   updateDocumentMetadata,
   selectSection,
 } = facultyDashboard
+
+const areasExpanded = ref(false)
+
+const toggleAreasAccordion = () => {
+  areasExpanded.value = !areasExpanded.value
+}
+
+const openAssignedArea = (area: { id: number }) => {
+  openMyArea(Number(area.id))
+}
 
 const { activeCall, callMessage, endCall } = useUserCalls()
 const documentSearch = ref('')
@@ -1004,6 +1044,7 @@ const loadData = async () => {
     loadNotifications(),
     loadDashboard(),
     loadFacultyStorageLimit(),
+    loadMyAreas(),
   ])
 }
 
@@ -1063,6 +1104,9 @@ onMounted(() => {
   flex-direction: column;
   gap: 0.18rem;
   padding: 0.25rem 0.55rem 0;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .fac-nav-label {
@@ -1121,6 +1165,40 @@ onMounted(() => {
   font-size: 0.65rem;
   border-radius: 999px;
   padding: 0.18rem 0.45rem;
+}
+
+.fac-areas-nav {
+  margin-top: 0.35rem;
+}
+
+.fac-areas-caret {
+  margin-left: auto;
+  color: #7b8b99;
+  font-size: 0.85rem;
+}
+
+.fac-areas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.15rem 0 0.35rem 0.55rem;
+}
+
+.fac-area-child {
+  font-size: 0.86rem;
+  padding: 0.42rem 0.7rem;
+  color: #3f5363;
+}
+
+.fac-areas-empty {
+  margin: 0.2rem 0.7rem;
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+
+.fac-areas-shell {
+  height: 100%;
+  overflow: auto;
 }
 
 .fac-sidebar-footer {

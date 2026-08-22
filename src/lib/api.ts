@@ -321,6 +321,58 @@ export const setAreaMembers = async (
   return unwrap(response)
 }
 
+export const getMyAreas = async () => {
+  const response = await api.get('/users/me/areas')
+  return unwrap(response)
+}
+
+export const getQaAreas = async () => {
+  const response = await api.get('/qa/areas')
+  return unwrap(response)
+}
+
+export const getAreaParameters = async (areaId: number | string) => {
+  const response = await api.get(`/accreditation-areas/${areaId}/parameters`)
+  return unwrap(response)
+}
+
+export const getParameterRows = async (parameterId: number | string) => {
+  const response = await api.get(`/parameters/${parameterId}/rows`)
+  return unwrap(response)
+}
+
+export const patchParameterRowStatus = async (
+  rowId: number | string,
+  isDone: boolean
+) => {
+  const response = await api.patch(`/parameter-rows/${rowId}/status`, { is_done: isDone })
+  return unwrap(response)
+}
+
+export const patchParameterRowContent = async (
+  rowId: number | string,
+  content: string
+) => {
+  const response = await api.patch(`/parameter-rows/${rowId}/content`, { content })
+  return unwrap(response)
+}
+
+export const createAreaParameter = async (
+  areaId: number | string,
+  payload: { code: string; name: string; sort_order?: number }
+) => {
+  const response = await api.post(`/accreditation-areas/${areaId}/parameters`, payload)
+  return unwrap(response)
+}
+
+export const createParameterRow = async (
+  parameterId: number | string,
+  payload: { content: string; sort_order?: number }
+) => {
+  const response = await api.post(`/parameters/${parameterId}/rows`, payload)
+  return unwrap(response)
+}
+
 export const setAreaDeadline = async (
   areaId: number | string,
   deadline: string

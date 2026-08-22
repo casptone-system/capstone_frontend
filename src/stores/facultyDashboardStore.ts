@@ -15,13 +15,16 @@ import {
   updateDocument,
   downloadDocument as apiDownloadDocument,
   markAllAsRead,
+  getMyAreas,
 } from '@/lib/api'
 import type { AppDocument, DashboardSummary, NotificationMessage } from '@/lib'
 
 export const useFacultyDashboardStore = defineStore('facultyDashboard', () => {
   const authStore = useAuthStore()
 
-  const selectedSection = ref<'dashboard' | 'documents' | 'revisions' | 'join' | 'team' | 'notifications' | 'messages'>('dashboard')
+  const selectedSection = ref<'dashboard' | 'documents' | 'revisions' | 'join' | 'team' | 'notifications' | 'messages' | 'areas'>('dashboard')
+  const myAreas = ref<any[]>([])
+  const selectedAreaId = ref<number | null>(null)
   const team = ref<any>(null)
   const program = ref<any>(null)
   const accreditationCycle = ref<any>(null)
@@ -73,6 +76,21 @@ export const useFacultyDashboardStore = defineStore('facultyDashboard', () => {
 
   const selectSection = (section: typeof selectedSection.value) => {
     selectedSection.value = section
+  }
+
+  const loadMyAreas = async () => {
+    try {
+      const areas = await getMyAreas()
+      myAreas.value = Array.isArray(areas) ? areas : []
+    } catch (error) {
+      console.warn('Failed to load assigned areas', error)
+      myAreas.value = []
+    }
+  }
+
+  const openMyArea = (areaId: number) => {
+    selectedAreaId.value = areaId
+    selectedSection.value = 'areas'
   }
 
   const openTaskDetail = (task: any) => {
@@ -371,6 +389,8 @@ export const useFacultyDashboardStore = defineStore('facultyDashboard', () => {
     selectedTask,
     showTaskDetail,
     selectedSection,
+    myAreas,
+    selectedAreaId,
     dashboardSummary,
     dashboardProgram,
     dashboardTeamName,
@@ -396,6 +416,8 @@ export const useFacultyDashboardStore = defineStore('facultyDashboard', () => {
     downloadDocument,
     markAllNotificationsRead,
     selectSection,
+    loadMyAreas,
+    openMyArea,
     openTaskDetail,
     closeTaskDetail,
   }
