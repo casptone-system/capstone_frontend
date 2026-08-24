@@ -11,6 +11,15 @@
           Open a parameter to review its content and mark items done for the area team.
         </p>
       </div>
+      <button
+        v-if="canEditContent && selectedParameter"
+        type="button"
+        class="fma-edit"
+        :class="{ active: editMode }"
+        @click="editMode = !editMode"
+      >
+        {{ editMode ? 'Done editing' : 'Edit' }}
+      </button>
     </div>
 
     <div v-if="loading" class="fma-empty">Loading…</div>
@@ -19,10 +28,18 @@
     <div v-else-if="selectedParameter" class="fma-table-card">
       <AreaParameterRowsTable
         :rows="rows"
-        :editable="false"
+        :editable="canEditContent && editMode"
         :can-toggle="true"
+        :show-upload="true"
+        :can-upload="!!selectedArea?.canUpload"
+        :program-id="selectedArea?.programId"
+        :area-id="selectedArea?.id"
         @updated="onRowUpdated"
+        @removed="onRowRemoved"
       />
+      <div v-if="canEditContent && editMode && selectedParameter" class="fma-add-row">
+        <button type="button" class="fma-edit" @click="addRow">Add row</button>
+      </div>
     </div>
 
     <div v-else-if="parameters.length" class="fma-param-list">
@@ -45,12 +62,16 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useAuthStore } from '@/stores/authStore'
 import { useFacultyDashboardStore } from '@/stores/facultyDashboardStore'
-import { getAreaParameters, getParameterRows } from '@/lib/api'
+import { createParameterRow, getAreaParameters, getParameterRows } from '@/lib/api'
 import AreaParameterRowsTable from '@/components/AreaParameterRowsTable.vue'
 
 const facultyDashboard = useFacultyDashboardStore()
+const authStore = useAuthStore()
 const { myAreas, selectedAreaId } = storeToRefs(facultyDashboard)
+const canEditContent = computed(() => authStore.isQA || authStore.isVPAA || authStore.isSuperAdmin)
+const editMode = ref(false)
 
 const selectedArea = computed(() => myAreas.value.find((area) => Number(area.id) === Number(selectedAreaId.value)) || null)
 const parameters = ref<any[]>([])
@@ -101,6 +122,27 @@ const openParameter = async (parameter: any) => {
 
 const onRowUpdated = (updated: any) => {
   rows.value = rows.value.map((row) => (Number(row.id) === Number(updated.id) ? { ...row, ...updated } : row))
+  void facultyDashboard.loadMyAreas()
+}
+
+const onRowRemoved = (removed: any) => {
+  rows.value = rows.value.filter((row) => Number(row.id) !== Number(removed.id))
+  void facultyDashboard.loadMyAreas()
+}
+
+const addRow = async () => {
+  if (!selectedParameter.value) return
+  const content = window.prompt('New row content')
+  if (!content?.trim()) return
+
+  try {
+    error.value = ''
+    const created = await createParameterRow(selectedParameter.value.id, { content: content.trim() })
+    rows.value = [...rows.value, created]
+    void facultyDashboard.loadMyAreas()
+  } catch (err: any) {
+    error.value = err?.response?.data?.message || 'Unable to add a row.'
+  }
 }
 
 watch(selectedAreaId, () => {
@@ -118,6 +160,27 @@ watch(selectedAreaId, () => {
   flex-direction: column;
   gap: 0.75rem;
   margin-bottom: 1.25rem;
+}
+
+.fma-edit {
+  appearance: none;
+  align-self: flex-start;
+  border: none;
+  background: #0e7a5f;
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.fma-edit.active {
+  background: #0c5c4e;
+}
+
+.fma-add-row {
+  padding: 0.85rem 1rem;
+  border-top: 1px solid #dbe3ea;
 }
 
 .fma-kicker {

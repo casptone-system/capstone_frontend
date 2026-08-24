@@ -1,0 +1,249 @@
+<template>
+  <section class="als-card" :aria-label="title">
+    <header class="als-header">
+      <div>
+        <p class="als-kicker">Accreditation status</p>
+        <h2 class="als-title">{{ title }}</h2>
+        <p class="als-sub">Level I–IV status for each program in your scope.</p>
+      </div>
+    </header>
+
+    <p v-if="loading" class="als-empty">Loading accreditation status…</p>
+    <p v-else-if="error" class="als-error">{{ error }}</p>
+    <p v-else-if="!programs.length" class="als-empty">No programs are in your accreditation scope yet.</p>
+
+    <div v-else class="als-list">
+      <article v-for="program in programs" :key="program.programId" class="als-program">
+        <div class="als-program-meta">
+          <strong>{{ program.programName }}</strong>
+          <span>{{ program.programCode }}<template v-if="program.collegeName"> · {{ program.collegeName }}</template></span>
+        </div>
+        <div class="als-levels">
+          <div v-for="level in program.levels" :key="level.level" class="als-level">
+            <span class="als-level-name">{{ level.level }}</span>
+            <span class="als-badge" :class="statusClass(level.displayStatus)">{{ level.displayStatus }}</span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+</template>
+
+<script lang="ts">
+export default {
+  name: 'AccreditationLevelStatus',
+}
+</script>
+
+<script setup lang="ts">
+import { onMounted, ref, watch } from 'vue'
+import { getAccreditationLevelStatus } from '@/lib/api'
+
+export type AccreditationDashboardView =
+  | 'dean'
+  | 'faculty'
+  | 'program-chair'
+  | 'qa'
+  | 'vpaa'
+  | 'superadmin'
+  | 'area-incharge'
+
+type LevelStatus = {
+  level: string
+  cycleId: number | null
+  cycleStatus: string | null
+  displayStatus: 'Accredited' | 'In Progress' | 'Not Started' | 'Expired' | string
+  validUntil: string | null
+  scheduledVisit: string | null
+}
+
+type ProgramStatus = {
+  programId: number
+  programName: string
+  programCode: string
+  collegeId: number | null
+  collegeName: string | null
+  levels: LevelStatus[]
+}
+
+const props = withDefaults(defineProps<{
+  view: AccreditationDashboardView
+  title?: string
+}>(), {
+  title: 'Program accreditation by level',
+})
+
+const loading = ref(false)
+const error = ref<string | null>(null)
+const programs = ref<ProgramStatus[]>([])
+
+const statusClass = (status: string) => {
+  switch (status) {
+    case 'Accredited':
+      return 'is-accredited'
+    case 'In Progress':
+      return 'is-progress'
+    case 'Expired':
+      return 'is-expired'
+    default:
+      return 'is-not-started'
+  }
+}
+
+const loadStatus = async () => {
+  loading.value = true
+  error.value = null
+
+  try {
+    const data = await getAccreditationLevelStatus({ view: props.view })
+    programs.value = Array.isArray(data) ? data : []
+  } catch (err: any) {
+    error.value = err?.response?.data?.message || 'Unable to load accreditation status.'
+    programs.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  void loadStatus()
+})
+
+watch(() => props.view, () => {
+  void loadStatus()
+})
+</script>
+
+<style scoped>
+.als-card {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 1rem;
+  padding: 1.1rem 1.15rem;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+}
+
+.als-header {
+  margin-bottom: 0.9rem;
+}
+
+.als-kicker {
+  margin: 0;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.als-title {
+  margin: 0.2rem 0 0;
+  font-size: 1.15rem;
+  color: #0f172a;
+  letter-spacing: -0.03em;
+}
+
+.als-sub {
+  margin: 0.25rem 0 0;
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.als-empty,
+.als-error {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.als-error {
+  color: #b91c1c;
+}
+
+.als-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.als-program {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.85rem 0.9rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.85rem;
+  background: #fff;
+}
+
+.als-program-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.als-program-meta strong {
+  color: #0f172a;
+}
+
+.als-program-meta span {
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.als-levels {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.als-level {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.als-level-name {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.als-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  max-width: 100%;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.als-badge.is-accredited {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.als-badge.is-progress {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.als-badge.is-not-started {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.als-badge.is-expired {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+@media (max-width: 900px) {
+  .als-levels {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+</style>

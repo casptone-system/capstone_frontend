@@ -51,6 +51,10 @@
           </article>
         </section>
 
+        <section class="sa-card">
+          <AccreditationLevelStatus view="superadmin" title="Institutional accreditation by level" />
+        </section>
+
         <section class="sa-card sa-todo-card">
           <div class="sa-section-heading">
             <div class="sa-title-with-icon">
@@ -502,6 +506,7 @@ import {
 import { useUserCalls } from '@/lib/useUserCalls'
 import { useSuperAdminStore } from '@/stores/superAdminStore'
 import { getColleges, getNotifications } from '@/lib/api'
+import AccreditationLevelStatus from '@/components/AccreditationLevelStatus.vue'
 
 const router = useRouter()
 const superAdminStore = useSuperAdminStore()
@@ -616,13 +621,6 @@ const systemModules = [
     statusText: 'Configure',
   },
   {
-    label: 'Accreditation',
-    route: '/superadmin/accreditation',
-    icon: documentTextOutline,
-    statusClass: 'sa-success',
-    statusText: 'Open',
-  },
-  {
     label: 'Notifications',
     route: '/superadmin/notifications',
     icon: notificationsOutline,
@@ -683,7 +681,7 @@ const alerts = [
   },
   {
     msg: 'Review pending accreditation activity',
-    route: '/superadmin/accreditation',
+    route: '/superadmin',
     icon: documentTextOutline,
     color: '#2563eb',
   },

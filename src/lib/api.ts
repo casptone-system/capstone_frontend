@@ -247,6 +247,11 @@ export const getAccreditationCycleDashboard = async (params: Record<string, any>
   return unwrap(response)
 }
 
+export const getAccreditationLevelStatus = async (params: Record<string, any> = {}) => {
+  const response = await api.get('/accreditation-cycles/level-status', { params })
+  return unwrap(response)
+}
+
 export const getVPAADashboard = async () => {
   const response = await api.get('/vpaa/dashboard')
   return unwrap(response)
@@ -294,18 +299,46 @@ export const searchUsers = async (q: string, limit = 25) => {
   return unwrap(response)
 }
 
-export const getProgramChairAreas = async () => {
-  const response = await api.get('/program-chair/areas')
+export const getProgramChairAreas = async (programId?: number | string) => {
+  const response = await api.get('/program-chair/areas', {
+    params: programId ? { program_id: programId } : undefined,
+  })
+  return unwrap(response)
+}
+
+export const getProgramChairAreaDocuments = async (programId?: number | string) => {
+  const response = await api.get('/program-chair/area-documents', {
+    params: programId ? { program_id: programId } : undefined,
+  })
+  return unwrap(response)
+}
+
+export const getProgramActiveLevel = async (programId: number | string) => {
+  const response = await api.get(`/programs/${programId}/active-level`)
+  return unwrap(response)
+}
+
+export const setProgramActiveLevel = async (
+  programId: number | string,
+  payload: { cycle_id?: number | string | null; level?: string | null }
+) => {
+  const response = await api.put(`/programs/${programId}/active-level`, payload)
   return unwrap(response)
 }
 
 export const assignAreaChair = async (
   areaId: number | string,
-  userId: number | string
+  userId: number | string,
+  options: { confirmReassign?: boolean } = {}
 ) => {
+  const payload: Record<string, any> = { chair_id: userId }
+  if (options.confirmReassign) {
+    payload.confirm_reassign = true
+  }
+
   const response = await api.post(
     `/accreditation-areas/${areaId}/assign-chair`,
-    { chair_id: userId }
+    payload
   )
   return unwrap(response)
 }
@@ -370,6 +403,11 @@ export const createParameterRow = async (
   payload: { content: string; sort_order?: number }
 ) => {
   const response = await api.post(`/parameters/${parameterId}/rows`, payload)
+  return unwrap(response)
+}
+
+export const deleteParameterRow = async (rowId: number | string) => {
+  const response = await api.delete(`/parameter-rows/${rowId}`)
   return unwrap(response)
 }
 
@@ -578,6 +616,43 @@ export const downloadDocument = async (
   return response.data
 }
 
+export const previewDocument = async (
+  id: number | string,
+  version?: number
+) => {
+  const response = await api.get(
+    `/documents/${id}/preview`,
+    {
+      params: { version },
+      responseType: 'blob',
+    }
+  )
+
+  const blob: Blob = response.data
+  const contentType = String(response.headers?.['content-type'] || blob?.type || '')
+
+  if (contentType.includes('json') || contentType.includes('text/html')) {
+    const text = await blob.text()
+    try {
+      const json = JSON.parse(text)
+      const error: any = new Error(json.message || 'Preview is not available for this file.')
+      error.response = { data: json, status: response.status }
+      throw error
+    } catch (err) {
+      if ((err as any)?.response) throw err
+      const error: any = new Error('Preview is not available for this file.')
+      error.response = { data: { message: text }, status: response.status }
+      throw error
+    }
+  }
+
+  if (contentType && blob.type !== contentType.split(';')[0]) {
+    return new Blob([blob], { type: contentType.split(';')[0] })
+  }
+
+  return blob
+}
+
 export const getTeams = async (
   params: Record<string, any> = {}
 ) => {
@@ -741,7 +816,102 @@ export const updateRoleStorageFile = async (fileId: number | string, data: { nam
   return response.data
 }
 
-export const uploadRoleStorageFile = async (folderId: number | string, file: File, role: string) => {
+const DEFAULT_CHUNK_SIZE = 8 * 1024 * 1024
+const DEFAULT_SINGLE_UPLOAD_MAX = 50 * 1024 * 1024
+const DEFAULT_MEDIA_UPLOAD_MAX = 1024 * 1024 * 1024
+
+export const getUploadConfig = async () => {
+  const response = await api.get('/uploads/config')
+  return unwrap(response)
+}
+
+const isMediaFile = (file: File) =>
+  file.type.startsWith('video/') || file.type.startsWith('audio/')
+
+export const uploadFileInChunks = async (payload: {
+  purpose: 'role_storage' | 'document'
+  file: File
+  extra?: Record<string, any>
+  onProgress?: (percent: number) => void
+}) => {
+  const { purpose, file, extra = {}, onProgress } = payload
+  let chunkSize = DEFAULT_CHUNK_SIZE
+
+  try {
+    const config = await getUploadConfig()
+    chunkSize = Number(config?.chunk_size_bytes || chunkSize)
+  } catch {
+    // Keep compiled defaults if the config endpoint is unavailable.
+  }
+
+  const totalChunks = Math.max(1, Math.ceil(file.size / chunkSize))
+  const initiate = await api.post('/uploads/initiate', {
+    purpose,
+    original_name: file.name,
+    mime_type: file.type || 'application/octet-stream',
+    total_size: file.size,
+    total_chunks: totalChunks,
+    ...extra,
+  })
+
+  const upload = initiate.data?.data || initiate.data
+  const uploadId = upload.upload_id
+  const serverChunkSize = Number(upload.chunk_size || chunkSize)
+
+  try {
+    for (let index = 0; index < totalChunks; index++) {
+      const start = index * serverChunkSize
+      const end = Math.min(start + serverChunkSize, file.size)
+      const form = new FormData()
+      form.append('chunk_index', String(index))
+      form.append('chunk', file.slice(start, end), file.name)
+
+      await api.post(`/uploads/${uploadId}/chunks`, form, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+
+      onProgress?.(Math.round(((index + 1) / totalChunks) * 100))
+    }
+
+    const complete = await api.post(`/uploads/${uploadId}/complete`)
+    return complete.data
+  } catch (error) {
+    try {
+      await api.delete(`/uploads/${uploadId}`)
+    } catch {
+      // Session cleanup is best-effort.
+    }
+    throw error
+  }
+}
+
+export const uploadRoleStorageFile = async (
+  folderId: number | string,
+  file: File,
+  role: string,
+  onProgress?: (percent: number) => void
+) => {
+  const maxBytes = isMediaFile(file) ? DEFAULT_MEDIA_UPLOAD_MAX : DEFAULT_SINGLE_UPLOAD_MAX
+
+  if (file.size > maxBytes) {
+    throw new Error(
+      isMediaFile(file)
+        ? 'Video and audio files cannot exceed 1 GB.'
+        : 'Files cannot exceed 50 MB.'
+    )
+  }
+
+  if (file.size > DEFAULT_SINGLE_UPLOAD_MAX) {
+    return uploadFileInChunks({
+      purpose: 'role_storage',
+      file,
+      extra: { folder_id: folderId, role },
+      onProgress,
+    })
+  }
+
   const formData = new FormData()
   formData.append('file', file)
 
@@ -751,6 +921,7 @@ export const uploadRoleStorageFile = async (folderId: number | string, file: Fil
     },
   })
 
+  onProgress?.(100)
   return response.data
 }
 

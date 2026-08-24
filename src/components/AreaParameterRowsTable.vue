@@ -1,16 +1,17 @@
 <template>
   <div class="apr-wrap">
     <div v-if="error" class="apr-error">{{ error }}</div>
-    <table v-else class="apr-table">
+    <table class="apr-table">
       <thead>
         <tr>
           <th class="apr-col-content">Content</th>
+          <th v-if="showUpload" class="apr-col-upload">Upload</th>
           <th class="apr-col-done">Mark as Done</th>
         </tr>
       </thead>
       <tbody>
         <tr v-if="!rows.length">
-          <td colspan="2" class="apr-empty">No content rows yet.</td>
+          <td :colspan="showUpload ? 3 : 2" class="apr-empty">No content rows yet.</td>
         </tr>
         <tr v-for="row in rows" :key="row.id">
           <td>
@@ -26,8 +27,38 @@
                 <button type="button" class="apr-link" @click="saveContent(row)">Save</button>
                 <button type="button" class="apr-link muted" @click="cancelEdit">Cancel</button>
               </template>
-              <button v-else type="button" class="apr-link" @click="startEdit(row)">Edit</button>
+              <template v-else>
+                <button type="button" class="apr-link" @click="startEdit(row)">Edit</button>
+                <button type="button" class="apr-link danger" @click="removeRow(row)">Remove</button>
+              </template>
             </div>
+          </td>
+          <td v-if="showUpload" class="apr-upload-cell">
+            <div v-if="row.document || row.hasFile" class="apr-file">
+              <strong>{{ fileName(row) }}</strong>
+              <div class="apr-edit-actions">
+                <button type="button" class="apr-link" @click="openPreview(row)">Preview</button>
+                <label v-if="canUpload" class="apr-link">
+                  Replace
+                  <input
+                    class="apr-file-input"
+                    type="file"
+                    :disabled="pendingId === row.id"
+                    @change="onFileSelected(row, $event)"
+                  />
+                </label>
+              </div>
+            </div>
+            <label v-else-if="canUpload" class="apr-upload-btn">
+              {{ pendingId === row.id ? 'Uploading…' : 'Upload file' }}
+              <input
+                class="apr-file-input"
+                type="file"
+                :disabled="pendingId === row.id"
+                @change="onFileSelected(row, $event)"
+              />
+            </label>
+            <span v-else class="apr-muted">No file yet</span>
           </td>
           <td class="apr-done-cell">
             <label class="apr-check">
@@ -48,24 +79,44 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { patchParameterRowContent, patchParameterRowStatus } from '@/lib/api'
+import {
+  deleteParameterRow,
+  patchParameterRowContent,
+  patchParameterRowStatus,
+  previewDocument,
+  replaceDocument,
+  uploadDocument,
+} from '@/lib/api'
+import { openBlobInNewTab } from '@/lib/documentPreview'
 
 type ParameterRow = {
   id: number
   content: string
   isDone: boolean
+  hasFile?: boolean
   doneAt?: string | null
   doneBy?: { id: number; name?: string } | null
+  document?: {
+    id: number
+    title?: string
+    latestVersion?: { originalName?: string; mimeType?: string; version?: number } | null
+    versions?: { originalName?: string; mimeType?: string; version?: number }[]
+  } | null
 }
 
-defineProps<{
+const props = defineProps<{
   rows: ParameterRow[]
   editable?: boolean
   canToggle?: boolean
+  showUpload?: boolean
+  canUpload?: boolean
+  programId?: number | string | null
+  areaId?: number | string | null
 }>()
 
 const emit = defineEmits<{
   (event: 'updated', row: ParameterRow): void
+  (event: 'removed', row: ParameterRow): void
 }>()
 
 const editingId = ref<number | null>(null)
@@ -83,6 +134,12 @@ const cancelEdit = () => {
   draftContent.value = ''
 }
 
+const fileName = (row: ParameterRow) =>
+  row.document?.latestVersion?.originalName
+  || row.document?.versions?.[0]?.originalName
+  || row.document?.title
+  || 'Uploaded file'
+
 const saveContent = async (row: ParameterRow) => {
   const content = draftContent.value.trim()
   if (!content) return
@@ -97,6 +154,18 @@ const saveContent = async (row: ParameterRow) => {
   }
 }
 
+const removeRow = async (row: ParameterRow) => {
+  if (!window.confirm('Remove this content row?')) return
+
+  try {
+    error.value = ''
+    await deleteParameterRow(row.id)
+    emit('removed', row)
+  } catch (err: any) {
+    error.value = err?.response?.data?.message || 'Unable to remove this row.'
+  }
+}
+
 const toggleDone = async (row: ParameterRow, isDone: boolean) => {
   pendingId.value = row.id
   try {
@@ -107,6 +176,60 @@ const toggleDone = async (row: ParameterRow, isDone: boolean) => {
     error.value = err?.response?.data?.message || 'Unable to update status.'
   } finally {
     pendingId.value = null
+  }
+}
+
+const onFileSelected = async (row: ParameterRow, event: Event) => {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file || !props.canUpload || !props.programId) return
+
+  pendingId.value = row.id
+  try {
+    error.value = ''
+    let updated: any
+    if (row.document?.id) {
+      const formData = new FormData()
+      formData.append('file', file)
+      updated = await replaceDocument(row.document.id, formData)
+      updated = updated?.data || updated
+      emit('updated', {
+        ...row,
+        hasFile: true,
+        document: updated,
+      })
+    } else {
+      updated = await uploadDocument(file, {
+        program_id: props.programId,
+        area_id: props.areaId,
+        content_row_id: row.id,
+        title: file.name,
+      })
+      updated = updated?.data || updated
+      emit('updated', {
+        ...row,
+        hasFile: true,
+        document: updated,
+      })
+    }
+  } catch (err: any) {
+    error.value = err?.response?.data?.message || 'Unable to upload this file.'
+  } finally {
+    pendingId.value = null
+  }
+}
+
+const openPreview = async (row: ParameterRow) => {
+  if (!row.document?.id) return
+
+  try {
+    error.value = ''
+    const current = row.document.latestVersion || row.document.versions?.[0]
+    const blob = await previewDocument(row.document.id, current?.version)
+    openBlobInNewTab(blob, fileName(row), current?.mimeType)
+  } catch (err: any) {
+    error.value = err?.response?.data?.message || err?.message || 'Preview is not available for this file.'
   }
 }
 </script>
@@ -138,8 +261,9 @@ const toggleDone = async (row: ParameterRow, isDone: boolean) => {
   text-transform: uppercase;
 }
 
-.apr-col-content { width: 78%; }
-.apr-col-done { width: 22%; }
+.apr-col-content { width: 58%; }
+.apr-col-upload { width: 24%; }
+.apr-col-done { width: 18%; }
 
 .apr-content {
   margin: 0;
@@ -174,8 +298,10 @@ const toggleDone = async (row: ParameterRow, isDone: boolean) => {
 }
 
 .apr-link.muted { color: #64748b; }
+.apr-link.danger { color: #b91c1c; }
 
-.apr-done-cell {
+.apr-done-cell,
+.apr-upload-cell {
   text-align: center;
 }
 
@@ -185,6 +311,30 @@ const toggleDone = async (row: ParameterRow, isDone: boolean) => {
   gap: 0.45rem;
   color: #334155;
   font-weight: 600;
+}
+
+.apr-file strong,
+.apr-muted {
+  display: block;
+  color: #334155;
+}
+
+.apr-muted { color: #94a3b8; }
+
+.apr-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed #0e7a5f;
+  color: #0c5c4e;
+  border-radius: 0.65rem;
+  padding: 0.45rem 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.apr-file-input {
+  display: none;
 }
 
 .apr-empty,

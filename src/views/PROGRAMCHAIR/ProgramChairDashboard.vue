@@ -21,18 +21,12 @@
             </a>
 
             <p class="pc-nav-label">Communication</p>
-            <a class="pc-nav-item" :class="{ active: selectedSection === 'messages' }" href="#" @click.prevent="selectSection('messages')">
-              <ion-icon :icon="chatbubblesOutline" /> Messages
-            </a>
             <a class="pc-nav-item" :class="{ active: selectedSection === 'notifications' }" href="#" @click.prevent="selectSection('notifications')">
               <ion-icon :icon="notificationsOutline" /> Notifications
               <span class="pc-nav-badge">{{ activeNotificationCount }}</span>
             </a>
 
             <p class="pc-nav-label">Accreditation</p>
-            <a class="pc-nav-item" :class="{ active: selectedSection === 'accreditation' }" href="#" @click.prevent="selectSection('accreditation')">
-              <ion-icon :icon="settingsOutline" /> Accreditation
-            </a>
             <a class="pc-nav-item" :class="{ active: selectedSection === 'faculty-areas' }" href="#" @click.prevent="selectSection('faculty-areas')">
               <ion-icon :icon="peopleOutline" /> Faculty Area Assignments
             </a>
@@ -80,6 +74,14 @@
               </button>
             </div>
           </header>
+
+          <section v-if="selectedSection === 'dashboard'" class="pc-card">
+            <AccreditationLevelStatus view="program-chair" title="Program accreditation by level" />
+          </section>
+
+          <section v-if="selectedSection === 'dashboard' && currentProgram?.id" class="pc-card">
+            <ProgramActiveLevelToggle :program-id="currentProgram.id" />
+          </section>
 
           <section v-if="selectedSection === 'dashboard'" class="pc-card pc-todo-card">
             <div class="pc-card-header">
@@ -446,10 +448,6 @@
                 </div>
               </div> -->
 
-              <div v-if="selectedSection === 'messages'" class="pc-card" style="grid-column: 1 / -1;">
-                <AccreditationMessages />
-              </div>
-
               <div v-if="selectedSection === 'notifications'" class="pc-card pc-notifications-card" style="grid-column: 1 / -1;">
                 <div class="pc-card-header">
                   <div class="pc-card-title-group">
@@ -474,7 +472,7 @@
                   <div class="pc-card-icon emerald"><ion-icon :icon="peopleOutline" /></div>
                   <div>
                     <h2 class="pc-card-title">Faculty Area Assignments</h2>
-                    <p class="pc-card-sub">View and manage which accreditation areas each faculty member is assigned to</p>
+                    <p class="pc-card-sub">Open a level, then assign an Area Chair, deadline, and optional members for each AACCUP area</p>
                   </div>
                 </div>
               </div>
@@ -499,7 +497,6 @@ import {
   gridOutline, peopleOutline, keyOutline, folderOpenOutline,
   documentTextOutline, analyticsOutline, settingsOutline,
   barChartOutline, notificationsOutline, searchOutline,
-  chatbubblesOutline,
   documentOutline, copyOutline, mailOutline, refreshOutline,
   checkmarkCircleOutline, hourglassOutline, logOutOutline, callOutline
 } from 'ionicons/icons'
@@ -522,13 +519,14 @@ import {
   updateDocument,
 } from '@/lib/api'
 import RoleStorageVault from '@/components/RoleStorageVault.vue'
+import AccreditationLevelStatus from '@/components/AccreditationLevelStatus.vue'
 import ProgramChairAccreditationSetup from './ProgramChairAccreditationSetup.vue'
 import NotificationBell from '@/components/NotificationBell.vue'
 //import AreaAssignmentCard from '@/components/AreaAssignmentCard.vue'
 import AccreditationWorkspaceBoard from '@/components/AccreditationWorkspaceBoard.vue'
 import AreaDocumentsReview from '@/components/AreaDocumentsReview.vue'
 import AreaAssignmentFolders from '@/components/AreaAssignmentFolders.vue'
-import AccreditationMessages from '@/components/AccreditationMessages.vue'
+import ProgramActiveLevelToggle from '@/components/ProgramActiveLevelToggle.vue'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -540,7 +538,7 @@ const currentUserInitials = computed(() => {
 })
 const currentUserPhoto = computed(() => (authStore.user as any)?.profilePhoto || (authStore.user as any)?.avatar || null)
 
-const selectedSection = ref<'accreditation' | 'dashboard' | 'team' | 'review' | 'faculty-areas' | 'notifications' | 'messages'>('dashboard')
+const selectedSection = ref<'accreditation' | 'dashboard' | 'team' | 'review' | 'faculty-areas' | 'notifications'>('dashboard')
 const currentProgram = ref<any>(null)
 const teams = ref<any[]>([])
 const activeCode = ref('')
@@ -593,9 +591,8 @@ const sectionLabel = computed(() => {
     case 'team': return 'Team & Invitations'
     case 'accreditation': return 'Accreditation'
     case 'faculty-areas': return 'Faculty Area Assignments'
-    case 'review': return 'Document Review'
+    case 'review': return 'Area Documents'
     case 'notifications': return 'Notifications'
-    case 'messages': return 'Messages'
     default: return 'Program Chair Dashboard'
   }
 })
@@ -702,27 +699,6 @@ const stats = computed(() => [
   { label: 'Active Codes', value: String(recentCodes.value.filter((code) => !code.expired).length), icon: keyOutline, color: '#0891b2', bg: '#e0f2fe' },
   { label: 'Reports Ready', value: String(invitations.value.length), icon: barChartOutline, color: '#db2777', bg: '#fce7f3' },
 ])
-
-// const activeChatId = ref(1)
-// const draftMessage = ref('')
-// const unreadMessageCount = computed(() => chatThreads.value.reduce((sum, thread) => sum + (thread.unread || 0), 0))
-// const activeThread = computed(() => chatThreads.value.find((thread) => thread.id === activeChatId.value) || chatThreads.value[0])
-
-// const sendMessage = () => {
-//   const trimmed = draftMessage.value.trim()
-//   if (!trimmed || !activeThread.value) return
-
-//   activeThread.value.messages.push({
-//     id: Date.now(),
-//     text: trimmed,
-//     time: 'Now',
-//     mine: true,
-//   })
-
-//   activeThread.value.preview = trimmed
-//   activeThread.value.time = 'Now'
-//   draftMessage.value = ''
-// }
 
 const activeNotificationCount = computed(() => notifications.value.length)
 
@@ -2036,201 +2012,6 @@ onMounted(async () => {
 .pc-pipeline-step:not(.done):not(.active) .pc-step-label { color: #94a3b8; }
 .pc-step-sub { margin: 0; font-size: 0.72rem; color: #94a3b8; }
 .pc-pipeline-step.active .pc-step-sub { color: #64748b; }
-
-.pc-messages-card {
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 1rem;
-  padding: 1rem 1.1rem;
-  box-shadow: 0 8px 25px rgba(15, 23, 42, 0.05);
-}
-
-.pc-message-shell {
-  display: grid;
-  grid-template-columns: minmax(220px, 320px) minmax(0, 1fr);
-  gap: 0.9rem;
-  margin-top: 1rem;
-}
-
-.pc-message-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  padding: 0.4rem;
-  border-right: 1px solid rgba(148, 163, 184, 0.12);
-}
-
-.pc-message-thread {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.55rem;
-  padding: 0.65rem 0.7rem;
-  border-radius: 0.8rem;
-  background: rgba(248, 250, 252, 0.9);
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.pc-message-thread.active {
-  background: rgba(22, 163, 74, 0.08);
-  border-color: rgba(22, 163, 74, 0.12);
-}
-
-.pc-thread-avatar {
-  width: 2.1rem;
-  height: 2.1rem;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #dbeafe, #bfe7d1);
-  color: #1d4ed8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.62rem;
-  font-weight: 800;
-}
-
-.pc-thread-avatar.large {
-  width: 2.55rem;
-  height: 2.55rem;
-}
-
-.pc-thread-body {
-  min-width: 0;
-}
-
-.pc-thread-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-
-.pc-thread-head strong {
-  font-size: 0.78rem;
-  color: #0f172a;
-}
-
-.pc-thread-head span {
-  font-size: 0.62rem;
-  color: #64748b;
-}
-
-.pc-thread-body p {
-  margin: 0.15rem 0 0;
-  font-size: 0.7rem;
-  color: #64748b;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.pc-thread-badge {
-  min-width: 1.2rem;
-  height: 1.2rem;
-  border-radius: 999px;
-  background: #ef4444;
-  color: white;
-  font-size: 0.6rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.pc-chat-panel {
-  display: flex;
-  flex-direction: column;
-  min-height: 340px;
-  background: rgba(248, 250, 252, 0.7);
-  border: 1px solid rgba(148, 163, 184, 0.12);
-  border-radius: 0.9rem;
-}
-
-.pc-chat-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.8rem 0.9rem;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
-}
-
-.pc-chat-user {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.pc-chat-user strong {
-  display: block;
-  color: #0f172a;
-  font-size: 0.82rem;
-}
-
-.pc-chat-user p {
-  margin: 0.1rem 0 0;
-  font-size: 0.68rem;
-  color: #64748b;
-}
-
-.pc-chat-messages {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  padding: 0.9rem;
-  overflow-y: auto;
-}
-
-.pc-message-bubble {
-  max-width: 78%;
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  padding: 0.7rem 0.8rem;
-  border-radius: 0.9rem;
-  font-size: 0.78rem;
-  line-height: 1.4;
-}
-
-.pc-message-bubble.their {
-  background: rgba(255,255,255,0.9);
-  border: 1px solid rgba(148, 163, 184, 0.12);
-  color: #0f172a;
-  align-self: flex-start;
-}
-
-.pc-message-bubble.mine {
-  background: rgba(22, 163, 74, 0.08);
-  color: #166534;
-  align-self: flex-end;
-}
-
-.pc-message-bubble small {
-  color: #64748b;
-  font-size: 0.62rem;
-}
-
-.pc-chat-composer {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.8rem 0.9rem 0.9rem;
-  border-top: 1px solid rgba(148, 163, 184, 0.12);
-}
-
-.pc-chat-composer input {
-  flex: 1;
-  min-width: 0;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  background: white;
-  border-radius: 0.75rem;
-  padding: 0.7rem 0.8rem;
-  color: #0f172a;
-  outline: none;
-}
 
 /* Full-Width Sections */
 .pc-full-width-section {

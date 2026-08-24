@@ -22,7 +22,7 @@ import type { AppDocument, DashboardSummary, NotificationMessage } from '@/lib'
 export const useFacultyDashboardStore = defineStore('facultyDashboard', () => {
   const authStore = useAuthStore()
 
-  const selectedSection = ref<'dashboard' | 'documents' | 'revisions' | 'join' | 'team' | 'notifications' | 'messages' | 'areas'>('dashboard')
+  const selectedSection = ref<'dashboard' | 'documents' | 'revisions' | 'join' | 'team' | 'notifications' | 'areas'>('dashboard')
   const myAreas = ref<any[]>([])
   const selectedAreaId = ref<number | null>(null)
   const team = ref<any>(null)

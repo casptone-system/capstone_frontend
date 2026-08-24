@@ -63,8 +63,6 @@ import {
   checkmarkDoneSharp,
   receiptOutline,
   receiptSharp,
-  ribbonOutline,
-  ribbonSharp,
   businessOutline,
   businessSharp,
 } from 'ionicons/icons'
@@ -97,12 +95,6 @@ const appPages = [
 ]
 
 const adminPages = [
-  {
-    title: 'Accreditations',
-    url: '/accreditation',
-    iosIcon: ribbonOutline,
-    mdIcon: ribbonSharp,
-  },
   {
     title: 'Colleges',
     url: '/superadmin/colleges',

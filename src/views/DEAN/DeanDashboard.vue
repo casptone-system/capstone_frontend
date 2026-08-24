@@ -38,11 +38,6 @@
                 </button>
               </li>
               <li>
-                <button type="button" class="dean-nav-item" :class="{ active: isSectionActive('accreditation') }" @click="selectSection('accreditation')" :aria-current="isSectionActive('accreditation') ? 'page' : undefined">
-                  <ion-icon :icon="shieldCheckmarkOutline" /> Accreditation
-                </button>
-              </li>
-              <li>
                 <button type="button" class="dean-nav-item" :class="{ active: isSectionActive('faculty') }" @click="selectSection('faculty')" :aria-current="isSectionActive('faculty') ? 'page' : undefined">
                   <ion-icon :icon="peopleOutline" /> Faculty Monitoring
                 </button>
@@ -65,11 +60,6 @@
               <li>
                 <button type="button" class="dean-nav-item" :class="{ active: isSectionActive('activity') }" @click="selectSection('activity')" :aria-current="isSectionActive('activity') ? 'page' : undefined">
                   <ion-icon :icon="timeOutline" /> Activity
-                </button>
-              </li>
-              <li>
-                <button type="button" class="dean-nav-item" :class="{ active: isSectionActive('messages') }" @click="selectSection('messages')" :aria-current="isSectionActive('messages') ? 'page' : undefined">
-                  <ion-icon :icon="chatbubblesOutline" /> Messages
                 </button>
               </li>
               <li>
@@ -150,6 +140,9 @@
                   <strong>{{ item.value }}</strong>
                 </div>
               </div>
+            </section>
+            <section v-if="selectedSection === 'dashboard'" class="dean-card">
+              <AccreditationLevelStatus view="dean" title="College accreditation by level" />
             </section>
             <section v-if="selectedSection === 'dashboard'" class="dean-card">
               <div class="dean-card-header">
@@ -874,18 +867,6 @@
                 </div>
               </template>
 
-              <template v-else-if="selectedSection === 'messages'">
-                <div class="dean-card">
-                  <div class="dean-card-header">
-                    <div>
-                      <h2 class="dean-card-title">Messages</h2>
-                      <p class="dean-card-sub">Communicate with VPAA/DI, Program Chairs, and QA. Level and Phase remain view-only.</p>
-                    </div>
-                  </div>
-                  <AccreditationMessages />
-                </div>
-              </template>
-
               <template v-else-if="selectedSection === 'notifications'">
                 <div class="dean-card">
                   <div class="dean-card-header">
@@ -924,9 +905,9 @@ import {
   checkmarkDoneOutline, analyticsOutline, barChartOutline,
   notificationsOutline, documentOutline,
   checkmarkCircleOutline, alarmOutline, logOutOutline,
-  businessOutline, shieldCheckmarkOutline,
+  businessOutline,
   alertCircleOutline, timeOutline, personCircleOutline,
-  searchOutline, mailOutline, briefcaseOutline, chatbubblesOutline
+  searchOutline, mailOutline, briefcaseOutline
 } from 'ionicons/icons'
 
 import { onMounted, ref, computed, watch } from 'vue'
@@ -956,9 +937,9 @@ import {
 import DeanCreateProgramModal from '@/components/DeanCreateProgramModal.vue'
 import DeanNotifyProgramChairModal from '@/components/DeanNotifyProgramChairModal.vue'
 import RoleStorageVault from '@/components/RoleStorageVault.vue'
+import AccreditationLevelStatus from '@/components/AccreditationLevelStatus.vue'
 import DeanAccreditationSection from '@/views/DEAN/DeanAccreditationSection.vue'
 import NotificationBell from '@/components/NotificationBell.vue'
-import AccreditationMessages from '@/components/AccreditationMessages.vue'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -1569,7 +1550,6 @@ const responsibilityCards = computed(() => [
   { id: 'overview', title: 'Overview', description: 'Department summary and dashboard status.', action: 'dashboard', icon: gridOutline, colorClass: 'teal' },
   { id: 'college-profile', title: 'My College', description: 'College profile, readiness, and assigned scope.', action: 'college-profile', icon: businessOutline, colorClass: 'blue' },
   { id: 'programs', title: 'Program Monitoring', description: 'Track program readiness and review progress.', action: 'programs', icon: schoolOutline, colorClass: 'amber' },
-  { id: 'accreditation', title: 'Accreditation', description: 'Monitor accreditation cycle, areas, and compliance.', action: 'accreditation', icon: shieldCheckmarkOutline, colorClass: 'violet' },
   { id: 'faculty', title: 'Faculty Monitoring', description: 'Review submissions, participation, and follow-ups.', action: 'faculty', icon: peopleOutline, colorClass: 'green' },
   { id: 'documents', title: 'Department Documents', description: 'View and manage department files and submissions.', action: 'department-documents', icon: documentTextOutline, colorClass: 'rose' },
   { id: 'issues', title: 'Issues & Actions', description: 'Check deficiencies, risks, and intervention needs.', action: 'issues', icon: alertCircleOutline, colorClass: 'teal' },

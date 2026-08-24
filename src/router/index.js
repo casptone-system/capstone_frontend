@@ -504,9 +504,8 @@ const routes = [
         component: VPaaReports,
       },
       {
-        path: 'messages',
-        name: 'vpaa-messages',
-        component: () => import('@/views/VPAA/VPaaMessagesPage.vue'),
+        path: 'messages/:conversationId?',
+        redirect: { name: 'vpaa-dashboard' },
       },
       {
         path: 'notifications',

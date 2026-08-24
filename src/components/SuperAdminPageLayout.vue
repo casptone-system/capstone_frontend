@@ -166,7 +166,6 @@ import {
   barChartOutline,
   businessOutline,
   closeOutline,
-  documentTextOutline,
   gridOutline,
   logOutOutline,
   menuOutline,
@@ -284,7 +283,6 @@ const organizationItems = [
 ]
 
 const systemItems = [
-  { label: 'Accreditation', route: '/superadmin/accreditation', icon: documentTextOutline },
   { label: 'Activity & Audit', route: '/superadmin/activity', icon: barChartOutline },
   { label: 'Settings', route: '/superadmin/settings', icon: settingsOutline },
 ]

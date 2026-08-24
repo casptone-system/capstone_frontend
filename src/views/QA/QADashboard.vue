@@ -45,9 +45,6 @@
             </a>
 
             <p class="qa-nav-label">Coordination</p>
-            <a class="qa-nav-item" :class="{ active: qaSection === 'messages' }" href="#" @click.prevent="qaSection = 'messages'">
-              <ion-icon :icon="chatbubblesOutline" /> Messages
-            </a>
             <a class="qa-nav-item" href="#">
               <ion-icon :icon="barChartOutline" /> Compliance Reports
             </a>
@@ -138,11 +135,8 @@
           <section v-else-if="qaSection === 'monitor'" class="qa-card" style="margin: 1rem 1.5rem;">
             <AccreditationMonitorCard />
           </section>
-          <section v-else-if="qaSection === 'messages'" class="qa-card" style="margin: 1rem 1.5rem;">
-            <AccreditationMessages />
-          </section>
-          <section v-else class="qa-card" style="margin: 1rem 1.5rem;">
-            <AccreditationMonitorCard />
+          <section v-else style="margin: 1rem 1.5rem;">
+            <AccreditationLevelStatus view="qa" title="Institutional accreditation by level" />
           </section>
 
           <!-- Content Grid -->
@@ -325,11 +319,11 @@ import { useAuthStore } from '@/stores/authStore'
 import { useUserCalls } from '@/lib/useUserCalls'
 import InstrumentTemplateEditor from '@/components/InstrumentTemplateEditor.vue'
 import AccreditationMonitorCard from '@/components/AccreditationMonitorCard.vue'
-import AccreditationMessages from '@/components/AccreditationMessages.vue'
+import AccreditationLevelStatus from '@/components/AccreditationLevelStatus.vue'
 import AreaParameterContentEditor from '@/components/AreaParameterContentEditor.vue'
 import api from '@/lib/api'
 
-const qaSection = ref<'dashboard' | 'templates' | 'area-parameters' | 'monitor' | 'messages'>('dashboard')
+const qaSection = ref<'dashboard' | 'templates' | 'area-parameters' | 'monitor'>('dashboard')
 
 const authStore = useAuthStore()
 const router = useRouter()

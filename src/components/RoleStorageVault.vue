@@ -18,6 +18,8 @@
       </div>
     </header>
 
+    <p v-if="uploadStatus" class="storage-upload-status" :class="uploadStatus.type">{{ uploadStatus.message }}</p>
+
     <div class="storage-breadcrumbs" aria-label="File path">
       <span class="crumb">Workspace</span>
       <span class="crumb-separator">/</span>
@@ -182,6 +184,7 @@ const typeFilter = ref('all')
 const sortBy = ref<'recent' | 'name' | 'type'>('recent')
 const viewMode = ref<'grid' | 'list'>('grid')
 const selectedFileId = ref<number | null>(null)
+const uploadStatus = ref<{ type: 'info' | 'error'; message: string } | null>(null)
 
 const title = computed(() => props.title || 'Program Documents')
 const acceptedMimeTypes = '*/*'
@@ -333,7 +336,22 @@ const handleFiles = async (event: Event) => {
 
   try {
     for (const file of selectedFiles) {
-      const response = await uploadRoleStorageFile(selectedFolderId.value, file, props.owner)
+      uploadStatus.value = {
+        type: 'info',
+        message: `Uploading ${file.name}…`,
+      }
+
+      const response = await uploadRoleStorageFile(
+        selectedFolderId.value,
+        file,
+        props.owner,
+        (percent) => {
+          uploadStatus.value = {
+            type: 'info',
+            message: `Uploading ${file.name}… ${percent}%`,
+          }
+        }
+      )
       const savedFile = response?.data || response
 
       const folder = folders.value.find((item) => item.id === selectedFolderId.value)
@@ -348,8 +366,12 @@ const handleFiles = async (event: Event) => {
         file_path: savedFile.file_path,
       })
     }
+
+    uploadStatus.value = null
   } catch (error) {
     console.error('Failed to upload storage file:', error)
+    const message = error instanceof Error ? error.message : 'Upload failed. Please try again.'
+    uploadStatus.value = { type: 'error', message }
   } finally {
     target.value = ''
   }
@@ -431,6 +453,23 @@ onMounted(() => {
   font-size: clamp(1.5rem, 2vw, 2.4rem);
   line-height: 1.1;
   letter-spacing: -0.05em;
+}
+
+.storage-upload-status {
+  margin: -0.4rem 0 0.9rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+}
+
+.storage-upload-status.info {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.storage-upload-status.error {
+  background: #fef2f2;
+  color: #b91c1c;
 }
 
 .storage-topbar-actions {

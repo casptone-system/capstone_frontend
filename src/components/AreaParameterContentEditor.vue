@@ -47,6 +47,7 @@
           :editable="true"
           :can-toggle="false"
           @updated="onRowUpdated"
+          @removed="onRowRemoved"
         />
         <p v-else class="apc-empty">Select a parameter to edit its content.</p>
       </section>
@@ -124,6 +125,10 @@ const addRow = async () => {
 
 const onRowUpdated = (updated: any) => {
   rows.value = rows.value.map((row) => (Number(row.id) === Number(updated.id) ? { ...row, ...updated } : row))
+}
+
+const onRowRemoved = (removed: any) => {
+  rows.value = rows.value.filter((row) => Number(row.id) !== Number(removed.id))
 }
 
 onMounted(() => {

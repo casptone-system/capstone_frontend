@@ -3,9 +3,20 @@
     <!-- Toolbar -->
     <div class="afa-toolbar">
       <div class="afa-toolbar-copy">
-        <h3 class="afa-title">Faculty Area Assignments</h3>
+        <button v-if="selectedLevel && !isLevelLocked" type="button" class="afa-back" @click="selectedLevel = null">
+          <ion-icon :icon="chevronBackOutline" /> All levels
+        </button>
+        <h3 class="afa-title">
+          {{ selectedLevel ? selectedLevel.level : 'Faculty Area Assignments' }}
+        </h3>
         <p class="afa-sub">
-          Assign an Area Chair, submission deadline and optional members to each of the 10 fixed AACCUP areas.
+          <template v-if="selectedLevel">
+            Assign an Area Chair, submission deadline and optional members to each of the 10 fixed AACCUP areas.
+          </template>
+          <template v-else>
+            Open a level to assign Area Chairs for that accreditation cycle.
+            <template v-if="assignment?.programName"> {{ assignment.programName }}.</template>
+          </template>
         </p>
       </div>
       <button class="afa-btn afa-btn-ghost" :disabled="isLoading" @click="loadAreas">
@@ -13,8 +24,41 @@
       </button>
     </div>
 
+    <p v-if="isLoading && !assignment" class="afa-muted">Loading accreditation levels…</p>
+
+    <!-- Level folders -->
+    <div v-else-if="!selectedLevel" class="afa-grid">
+      <button
+        v-for="level in levels"
+        :key="level.level"
+        type="button"
+        class="afa-folder-card"
+        :class="{ 'is-disabled': !level.cycleId }"
+        @click="openLevel(level)"
+      >
+        <div class="afa-folder-head">
+          <div class="afa-folder-icon"><ion-icon :icon="folderOpenOutline" /></div>
+          <span class="afa-badge" :class="statusClass(level.displayStatus)">{{ level.displayStatus }}</span>
+        </div>
+        <strong class="afa-folder-name">
+          {{ level.level }}
+          <span v-if="level.cycleId && level.cycleId === assignment?.activeCycleId" class="afa-chip afa-chip-chair">Active</span>
+        </strong>
+        <div class="afa-folder-meta">
+          <span v-if="level.cycleId" class="afa-chip afa-chip-chair">
+            {{ level.assignedCount }} of {{ level.totalAreas }} areas assigned
+          </span>
+          <span v-else class="afa-muted">No cycle yet</span>
+        </div>
+        <span class="afa-folder-action">
+          {{ level.cycleId ? 'Open areas' : 'Unavailable' }}
+          <ion-icon :icon="chevronForwardOutline" />
+        </span>
+      </button>
+    </div>
+
     <!-- 10 Fixed Folder Cards -->
-    <div class="afa-grid">
+    <div v-else class="afa-grid">
       <button
         v-for="folder in fixedAreas"
         :key="folder.code"
@@ -37,7 +81,7 @@
           <span v-if="getMemberCount(folder)" class="afa-chip afa-chip-members">
             <ion-icon :icon="peopleOutline" /> {{ getMemberCount(folder) }} member{{ getMemberCount(folder) === 1 ? '' : 's' }}
           </span>
-          <span v-else class="afa-muted">Not configured yet</span>
+          <span v-else-if="!getChair(folder)" class="afa-muted">Not configured yet</span>
         </div>
         <span class="afa-folder-action">Configure <ion-icon :icon="chevronForwardOutline" /></span>
       </button>
@@ -139,8 +183,28 @@
 
         <div class="afa-modal-footer">
           <button class="afa-btn afa-btn-ghost" @click="closeModal">Cancel</button>
-          <button class="afa-btn afa-btn-primary" :disabled="isSaving" @click="saveArea">
+          <button class="afa-btn afa-btn-primary" :disabled="isSaving" @click="saveArea(false)">
             {{ isSaving ? 'Saving…' : 'Save' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="reassignConfirmOpen" class="afa-modal-overlay afa-confirm-overlay" @click="reassignConfirmOpen = false">
+      <div class="afa-modal afa-confirm" @click.stop>
+        <div class="afa-modal-header">
+          <div>
+            <h3>Reassign Area In-Charge?</h3>
+            <p class="afa-modal-name">
+              This area is currently assigned to {{ pendingReassignName || 'another faculty member' }}.
+              Confirming will replace them and notify the new Area In-Charge by email and in-app.
+            </p>
+          </div>
+        </div>
+        <div class="afa-modal-footer">
+          <button class="afa-btn afa-btn-ghost" @click="reassignConfirmOpen = false">Cancel</button>
+          <button class="afa-btn afa-btn-primary" :disabled="isSaving" @click="saveArea(true)">
+            {{ isSaving ? 'Saving…' : 'Confirm reassignment' }}
           </button>
         </div>
       </div>
@@ -148,7 +212,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { IonIcon } from '@ionic/vue'
 import {
   folderOpenOutline,
@@ -158,6 +222,7 @@ import {
   calendarOutline,
   peopleOutline,
   chevronForwardOutline,
+  chevronBackOutline,
   addOutline,
 } from 'ionicons/icons'
 import {
@@ -175,6 +240,29 @@ interface UserOption {
   email: string
 }
 
+type LevelFolder = {
+  level: string
+  cycleId: number | null
+  cycleStatus: string | null
+  displayStatus: string
+  assignedCount: number
+  totalAreas: number
+  areas: any[]
+}
+
+type AssignmentPayload = {
+  programId: number
+  programName: string
+  activeCycleId?: number | null
+  activeLevel?: string | null
+  lockedToActiveLevel?: boolean
+  levels: LevelFolder[]
+}
+
+const props = defineProps<{
+  programId?: number | string | null
+}>()
+
 const toastStore = useToastStore()
 
 // The 10 fixed AACCUP areas (static / predefined, not user-created).
@@ -191,9 +279,14 @@ const fixedAreas = [
   { code: 'area-10', codeLabel: 'Area 10', name: 'Area 10 – Administration' },
 ]
 
-const areas = ref<any[]>([])
+const assignment = ref<AssignmentPayload | null>(null)
+const selectedLevel = ref<LevelFolder | null>(null)
 const isLoading = ref(false)
 const isSaving = ref(false)
+
+const levels = computed(() => assignment.value?.levels ?? [])
+const areas = computed(() => selectedLevel.value?.areas ?? [])
+const isLevelLocked = computed(() => Boolean(assignment.value?.lockedToActiveLevel && assignment.value?.activeCycleId))
 
 // Modal state
 const isOpen = ref(false)
@@ -208,9 +301,24 @@ const chairResults = ref<UserOption[]>([])
 const memberResults = ref<UserOption[]>([])
 const modalMessage = ref('')
 const modalMessageType = ref<'success' | 'error'>('success')
+const reassignConfirmOpen = ref(false)
+const pendingReassignName = ref('')
 
 let chairTimer: ReturnType<typeof setTimeout> | null = null
 let memberTimer: ReturnType<typeof setTimeout> | null = null
+
+const statusClass = (status: string) => {
+  switch (status) {
+    case 'Accredited':
+      return 'is-accredited'
+    case 'In Progress':
+      return 'is-progress'
+    case 'Expired':
+      return 'is-expired'
+    default:
+      return 'is-not-started'
+  }
+}
 
 /* ---------- Loading backend area data ---------- */
 
@@ -241,14 +349,28 @@ const formatDeadline = (iso: string) => {
 const loadAreas = async () => {
   isLoading.value = true
   try {
-    const data = await getProgramChairAreas()
-    areas.value = Array.isArray(data) ? data : []
+    const data = await getProgramChairAreas(props.programId || undefined)
+    const payload = data && !Array.isArray(data) ? data : { programId: 0, programName: '', levels: [] }
+    assignment.value = payload
+    if (payload.lockedToActiveLevel && payload.activeCycleId) {
+      selectedLevel.value = payload.levels.find((level: LevelFolder) => level.cycleId === payload.activeCycleId) || null
+    } else if (selectedLevel.value) {
+      selectedLevel.value = payload.levels.find((level: LevelFolder) => level.level === selectedLevel.value?.level) || null
+    }
   } catch (err: any) {
-    areas.value = []
+    assignment.value = null
     toastStore.show(err?.response?.data?.message || 'Failed to load area assignments.', 'error')
   } finally {
     isLoading.value = false
   }
+}
+
+const openLevel = (level: LevelFolder) => {
+  if (!level.cycleId) {
+    toastStore.show('No accreditation cycle exists for this level yet.', 'error')
+    return
+  }
+  selectedLevel.value = level
 }
 
 /* ---------- Helpers ---------- */
@@ -287,11 +409,13 @@ const openModal = (folder: any) => {
   modalMessage.value = ''
   modalMessageType.value = 'success'
   triedSave.value = false
+  reassignConfirmOpen.value = false
   isOpen.value = true
 }
 
 const closeModal = () => {
   isOpen.value = false
+  reassignConfirmOpen.value = false
   if (chairTimer) clearTimeout(chairTimer)
   if (memberTimer) clearTimeout(memberTimer)
 }
@@ -371,7 +495,7 @@ const deadlineToDb = (value: string): string => {
   return v.length === 16 ? `${v}:00` : v
 }
 
-const saveArea = async () => {
+const saveArea = async (confirmReassign = false) => {
   triedSave.value = true
   if (!selectedChair.value) {
     modalMessage.value = 'Please select an Area Chair before saving.'
@@ -391,17 +515,34 @@ const saveArea = async () => {
     return
   }
 
+  const existingChair = getChair(activeFolder.value)
+  if (
+    existingChair &&
+    String(existingChair.id) !== String(selectedChair.value.id) &&
+    !confirmReassign
+  ) {
+    pendingReassignName.value = existingChair.name
+    reassignConfirmOpen.value = true
+    return
+  }
+
   isSaving.value = true
   modalMessage.value = ''
   try {
-    await assignAreaChair(area.id, selectedChair.value.id)
+    await assignAreaChair(area.id, selectedChair.value.id, { confirmReassign })
     await setAreaDeadline(area.id, deadlineToDb(deadlineValue.value))
     await setAreaMembers(area.id, selectedMembers.value.map((m) => m.id))
 
     await loadAreas()
     toastStore.show(`${activeFolder.value.codeLabel} saved successfully.`, 'success')
+    reassignConfirmOpen.value = false
     isOpen.value = false
   } catch (err: any) {
+    if (err?.response?.status === 409 && err?.response?.data?.data?.requiresConfirmation) {
+      pendingReassignName.value = err.response.data.data.currentChair?.name || 'the current Area In-Charge'
+      reassignConfirmOpen.value = true
+      return
+    }
     modalMessage.value = err?.response?.data?.message || 'Failed to save area assignment.'
     modalMessageType.value = 'error'
   } finally {
@@ -432,6 +573,19 @@ onUnmounted(() => {
   gap: 1rem;
 }
 .afa-toolbar-copy { flex: 1; min-width: 0; }
+.afa-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin: 0 0 0.35rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #2563eb;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
 .afa-title {
   margin: 0;
   font-size: 1.15rem;
@@ -493,6 +647,14 @@ onUnmounted(() => {
     box-shadow: 0 6px 18px rgba(37, 99, 235, 0.12);
     transform: translateY(-2px);
   }
+  &.is-disabled {
+    opacity: 0.7;
+    &:hover {
+      border-color: #e5e7eb;
+      box-shadow: none;
+      transform: none;
+    }
+  }
 }
 .afa-folder-head {
   display: flex;
@@ -520,6 +682,17 @@ onUnmounted(() => {
   background: #f1f5f9;
   padding: 0.25rem 0.55rem;
   border-radius: 999px;
+}
+.afa-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 0.22rem 0.5rem;
+  border-radius: 999px;
+  &.is-accredited { background: #d1fae5; color: #047857; }
+  &.is-progress { background: #dbeafe; color: #1d4ed8; }
+  &.is-expired { background: #fee2e2; color: #b91c1c; }
+  &.is-not-started { background: #f1f5f9; color: #64748b; }
 }
 .afa-folder-name {
   font-size: 0.98rem;
@@ -581,6 +754,10 @@ onUnmounted(() => {
   padding: 2rem 1rem;
   z-index: 1000;
 }
+.afa-confirm-overlay {
+  z-index: 1100;
+  align-items: center;
+}
 .afa-modal {
   background: #fff;
   border-radius: 1rem;
@@ -589,6 +766,9 @@ onUnmounted(() => {
   max-height: 90vh;
   overflow: auto;
   box-shadow: 0 20px 60px rgba(2, 6, 23, 0.2);
+}
+.afa-confirm {
+  max-width: 420px;
 }
 .afa-modal-header {
   display: flex;

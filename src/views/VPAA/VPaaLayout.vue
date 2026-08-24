@@ -18,11 +18,6 @@
             </router-link>
 
             <p class="vpaa-nav-label">Management</p>
-            <router-link :to="{ name: 'vpaa-accreditations' }" custom v-slot="{ isActive, href, navigate }">
-              <button type="button" class="vpaa-nav-item" :class="{ active: isActive }" :href="href" @click="navigate">
-                <ion-icon :icon="shieldCheckmarkOutline" /> Accreditations
-              </button>
-            </router-link>
             <router-link :to="{ name: 'vpaa-instruments' }" custom v-slot="{ isActive, href, navigate }">
               <button type="button" class="vpaa-nav-item" :class="{ active: isActive }" :href="href" @click="navigate">
                 <ion-icon :icon="documentTextOutline" /> Instruments
@@ -57,11 +52,6 @@
             </router-link>
 
             <p class="vpaa-nav-label">Communication</p>
-            <router-link :to="{ name: 'vpaa-messages' }" custom v-slot="{ isActive, href, navigate }">
-              <button type="button" class="vpaa-nav-item" :class="{ active: isActive }" :href="href" @click="navigate">
-                <ion-icon :icon="chatbubblesOutline" /> Messages
-              </button>
-            </router-link>
             <router-link :to="{ name: 'vpaa-notifications' }" custom v-slot="{ isActive, href, navigate }">
               <button type="button" class="vpaa-nav-item" :class="{ active: isActive }" :href="href" @click="navigate">
                 <ion-icon :icon="notificationsOutline" /> Notifications
@@ -97,13 +87,11 @@ import {
   alertCircleOutline,
   barChartOutline,
   calendarOutline,
-  chatbubblesOutline,
   documentTextOutline,
   gridOutline,
   listOutline,
   logOutOutline,
   notificationsOutline,
-  shieldCheckmarkOutline,
   trendingUpOutline,
   layersOutline,
 } from 'ionicons/icons'

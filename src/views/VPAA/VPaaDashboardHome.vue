@@ -47,6 +47,10 @@
     </section>
 
     <section class="vpaa-monitor-wrap">
+      <AccreditationLevelStatus view="vpaa" title="Institutional accreditation by level" />
+    </section>
+
+    <section class="vpaa-monitor-wrap">
       <AccreditationMonitorCard />
     </section>
 
@@ -189,6 +193,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { useVPAADashboardStore } from '@/stores/vpaaDashboardStore'
 import AccreditationMonitorCard from '@/components/AccreditationMonitorCard.vue'
+import AccreditationLevelStatus from '@/components/AccreditationLevelStatus.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()

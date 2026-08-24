@@ -30,10 +30,6 @@
             </button>
 
             <p class="fac-nav-label">General</p>
-            <button class="fac-nav-item" type="button" @click="selectSection('messages')">
-              <span class="fac-nav-icon"><ion-icon :icon="chatbubblesOutline" /></span>
-              <span>Messages</span>
-            </button>
             <button class="fac-nav-item" type="button" @click="selectSection('notifications')">
               <span class="fac-nav-icon"><ion-icon :icon="notificationsOutline" /></span>
               <span>Notifications</span>
@@ -55,7 +51,13 @@
                   type="button"
                   @click="openAssignedArea(area)"
                 >
-                  {{ area.label || area.name }}
+                  <span class="fac-area-child-copy">
+                    <span>{{ area.label || area.name }}</span>
+                    <span class="fac-area-progress">{{ Number(area.progressPercent || 0) }}%</span>
+                  </span>
+                  <span class="fac-area-progress-track" aria-hidden="true">
+                    <span class="fac-area-progress-fill" :style="{ width: `${Number(area.progressPercent || 0)}%` }" />
+                  </span>
                 </button>
               </div>
             </div>
@@ -370,15 +372,6 @@
             </div>
           </div>
 
-          <!-- Notifications Section -->
-          <div v-else-if="selectedSection === 'messages'" class="fac-tasks-shell">
-            <div class="fac-tasks-header">
-              <h2>Messages</h2>
-              <p>Talk with your Program Chair or Area Chair about assigned parameters and evidence.</p>
-            </div>
-            <AccreditationMessages />
-          </div>
-
           <div v-else-if="selectedSection === 'areas'" class="fac-areas-shell">
             <FacultyMyAreasPanel />
           </div>
@@ -416,6 +409,8 @@
                 <button class="fac-btn fac-btn-ghost" type="button">Import Data</button>
               </div>
             </div>
+
+            <AccreditationLevelStatus view="faculty" title="Program accreditation by level" class="fac-level-status" />
 
             <section class="fac-stat-row">
               <article class="fac-stat-card fac-stat-card-primary">
@@ -559,7 +554,7 @@ import { useUserCalls } from '@/lib/useUserCalls'
 import { useFacultyDashboardStore } from '@/stores/facultyDashboardStore'
 import FacultyAccreditationFolder from '@/components/FacultyAccreditationFolder.vue'
 import FacultyMyAreasPanel from '@/components/FacultyMyAreasPanel.vue'
-import AccreditationMessages from '@/components/AccreditationMessages.vue'
+import AccreditationLevelStatus from '@/components/AccreditationLevelStatus.vue'
 import { getSystemSettings, linkRoleStorageFileAsEvidence } from '@/lib/api'
 import type { AppDocument } from '@/lib'
 
@@ -568,7 +563,6 @@ import {
   folderOpenOutline,
   peopleOutline,
   notificationsOutline,
-  chatbubblesOutline,
   checkmarkDoneOutline,
   logOutOutline,
   cloudUploadOutline,
@@ -1184,10 +1178,41 @@ onMounted(() => {
   padding: 0.15rem 0 0.35rem 0.55rem;
 }
 
-.fac-area-child {
+.fac-nav-item.fac-area-child {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.28rem;
   font-size: 0.86rem;
   padding: 0.42rem 0.7rem;
   color: #3f5363;
+}
+
+.fac-area-child-copy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.fac-area-progress {
+  color: #0e7a5f;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.fac-area-progress-track {
+  display: block;
+  height: 4px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.fac-area-progress-fill {
+  display: block;
+  height: 100%;
+  background: #0e7a5f;
 }
 
 .fac-areas-empty {
@@ -1428,6 +1453,11 @@ onMounted(() => {
 .fac-btn-light {
   background: #f7faf9;
   color: #0f172a;
+}
+
+.fac-level-status {
+  display: block;
+  margin: 0 0 1.25rem;
 }
 
 .fac-stat-row {
