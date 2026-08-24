@@ -60,7 +60,13 @@ export const taskNotificationAPI = {
    * Dismiss a task notification
    */
   dismiss(taskId: number | string) {
-    return api.post(`/task-notifications/${taskId}/dismiss`)
+    const id = String(taskId).replace(/^(inbox|task):/i, '').trim()
+    return api.post(`/task-notifications/${id}/dismiss`).catch((error: any) => {
+      if ([404, 410].includes(Number(error?.response?.status))) {
+        return { data: { success: true, message: 'Task already dismissed.' } }
+      }
+      throw error
+    })
   },
 
   /**

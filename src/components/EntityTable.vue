@@ -38,17 +38,17 @@ interface Column {
   formatter?: (value: any, item: any) => string
 }
 
-// const props = defineProps<{
-//   title: string
-//   subtitle?: string
-//   columns: Column[]
-//   items: any[]
-//   loading?: boolean
-//   showCreate?: boolean
-//   createLabel?: string
-// }>()
+const props = defineProps<{
+  title: string
+  subtitle?: string
+  columns: Column[]
+  items: any[]
+  loading?: boolean
+  showCreate?: boolean
+  createLabel?: string
+}>()
 
-// const emit = defineEmits(['create'])
+defineEmits(['create'])
 
 const getCellValue = (item: any, column: Column) => {
   const value = item[column.key]

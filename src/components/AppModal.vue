@@ -1,6 +1,6 @@
 <template>
   <div v-if="modelValue" class="modal-overlay" @click="closeModal">
-    <div class="modal-dialog" @click.stop>
+    <div class="modal-dialog" :class="`size-${size}`" @click.stop>
       <div class="modal-header">
         <h2 class="modal-title">{{ title }}</h2>
         <button class="modal-close" @click="closeModal" aria-label="Close modal">

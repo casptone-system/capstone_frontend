@@ -1,40 +1,43 @@
 <template>
-  <div class="join-team-page">
-    <div class="join-team-card">
-      <img src="@/assets/Archiving_logo.png" alt="ADAMS Logo" class="login-logo" />
-      <h1>Welcome to ADAMS</h1>
-      <p class="subtitle">
-        You’re almost ready. Enter the invitation code or token shared by your Program Chair to join your team and unlock your workspace.
-      </p>
+  <ion-page>
+    <ion-content :fullscreen="true" class="join-team-content">
+      <div class="join-team-page">
+        <div class="join-team-card">
+          <img src="@/assets/Archiving_logo.png" alt="ADAMS Logo" class="login-logo" />
+          <h1>Welcome to ADAMS</h1>
+          <p class="subtitle">
+            You’re almost ready. Enter the invitation code or token shared by your Program Chair to join your team and unlock your workspace.
+          </p>
 
-      <form class="join-form" @submit.prevent="handleJoin">
-        <label class="field-label" for="invite-code">Invitation code or token</label>
-        <input
-          id="invite-code"
-          v-model="inviteCode"
-          type="text"
-          autocomplete="one-time-code"
-          placeholder="Enter your invitation code or token"
-          class="invite-input"
-        />
+          <form class="join-form" @submit.prevent="handleJoin">
+            <label class="field-label" for="invite-code">Invitation code or token</label>
+            <input
+              id="invite-code"
+              v-model="inviteCode"
+              type="text"
+              autocomplete="one-time-code"
+              placeholder="Enter your invitation code or token"
+              class="invite-input"
+            />
 
-        <button class="join-button" type="submit">Accept Invitation</button>
-        <button class="fac-nav-icon" type="button" @click="handleLogout">
-          Logout
-        </button>
-      </form>
+            <button class="join-button" type="submit">Accept Invitation</button>
+            <button class="fac-nav-icon" type="button" @click="handleLogout">
+              Logout
+            </button>
+          </form>
 
-
-
-      <p v-if="message" class="message" :class="messageType">{{ message }}</p>
-      <p class="help-text">Don’t have a token? Contact your Program Chair or Dean for an invitation.</p>
-    </div>
-  </div>
+          <p v-if="message" class="message" :class="messageType">{{ message }}</p>
+          <p class="help-text">Don’t have a token? Contact your Program Chair or Dean for an invitation.</p>
+        </div>
+      </div>
+    </ion-content>
+  </ion-page>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { IonContent, IonPage } from '@ionic/vue'
 import { useAuthStore } from '@/stores/authStore'
 import { useFacultyDashboardStore } from '@/stores/facultyDashboardStore'
 import { getRoleRedirectPath } from '@/lib/roleRedirects'
@@ -42,6 +45,10 @@ import { getRoleRedirectPath } from '@/lib/roleRedirects'
 
 export default defineComponent({
   name: 'JoinTeam',
+  components: {
+    IonPage,
+    IonContent,
+  },
   setup() {
     const router = useRouter()
     const authStore = useAuthStore()
@@ -52,9 +59,9 @@ export default defineComponent({
 
 
     const handleLogout = async () => {
-  await authStore.logout()
-  router.replace('/login')
-}
+      await authStore.logout()
+      await router.replace('/login')
+    }
 
 
     const handleJoin = async () => {
@@ -78,9 +85,8 @@ export default defineComponent({
         message.value = 'Invitation accepted. Redirecting to your workspace...'
         messageType.value = 'success'
 
-        const redirect = getRoleRedirectPath(authStore.userRole)
-        const cleanRedirect = redirect.replace('?noGroup=1', '')
-        await router.replace(cleanRedirect)
+        const redirect = getRoleRedirectPath(authStore.userRole, authStore.hasGroup)
+        await router.replace(redirect)
       } catch (err: any) {
         message.value = err.response?.data?.message || err.message || 'Failed to join team.'
         messageType.value = 'error'
@@ -99,12 +105,15 @@ export default defineComponent({
 </script>
 
 <style scoped>
+.join-team-content {
+  --background: linear-gradient(135deg, #f5f7fb 0%, #eef4ff 100%);
+}
+
 .join-team-page {
   min-height: 100%;
   display: grid;
   place-items: center;
   padding: 2rem;
-  background: linear-gradient(135deg, #f5f7fb 0%, #eef4ff 100%);
 }
 
 .login-logo {

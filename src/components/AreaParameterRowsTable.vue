@@ -11,10 +11,14 @@
       </thead>
       <tbody>
         <tr v-if="!rows.length">
-          <td :colspan="showUpload ? 3 : 2" class="apr-empty">No content rows yet.</td>
+          <td :colspan="columnCount" class="apr-empty">No content rows yet.</td>
         </tr>
-        <tr v-for="row in rows" :key="row.id">
-          <td>
+        <tr
+          v-for="row in rows"
+          :key="row.id"
+          :class="{ 'apr-section-row': isSectionHeading(row) }"
+        >
+          <td :colspan="isSectionHeading(row) ? columnCount : 1">
             <textarea
               v-if="editable && editingId === row.id"
               v-model="draftContent"
@@ -33,44 +37,46 @@
               </template>
             </div>
           </td>
-          <td v-if="showUpload" class="apr-upload-cell">
-            <div v-if="row.document || row.hasFile" class="apr-file">
-              <strong>{{ fileName(row) }}</strong>
-              <div class="apr-edit-actions">
-                <button type="button" class="apr-link" @click="openPreview(row)">Preview</button>
-                <label v-if="canUpload" class="apr-link">
-                  Replace
-                  <input
-                    class="apr-file-input"
-                    type="file"
-                    :disabled="pendingId === row.id"
-                    @change="onFileSelected(row, $event)"
-                  />
-                </label>
+          <template v-if="!isSectionHeading(row)">
+            <td v-if="showUpload" class="apr-upload-cell">
+              <div v-if="row.document || row.hasFile" class="apr-file">
+                <strong>{{ fileName(row) }}</strong>
+                <div class="apr-edit-actions">
+                  <button type="button" class="apr-link" @click="openPreview(row)">Preview</button>
+                  <label v-if="canUpload" class="apr-link">
+                    Replace
+                    <input
+                      class="apr-file-input"
+                      type="file"
+                      :disabled="pendingId === row.id"
+                      @change="onFileSelected(row, $event)"
+                    />
+                  </label>
+                </div>
               </div>
-            </div>
-            <label v-else-if="canUpload" class="apr-upload-btn">
-              {{ pendingId === row.id ? 'Uploading…' : 'Upload file' }}
-              <input
-                class="apr-file-input"
-                type="file"
-                :disabled="pendingId === row.id"
-                @change="onFileSelected(row, $event)"
-              />
-            </label>
-            <span v-else class="apr-muted">No file yet</span>
-          </td>
-          <td class="apr-done-cell">
-            <label class="apr-check">
-              <input
-                type="checkbox"
-                :checked="row.isDone"
-                :disabled="!canToggle || pendingId === row.id"
-                @change="toggleDone(row, ($event.target as HTMLInputElement).checked)"
-              />
-              <span>{{ row.isDone ? 'Done' : 'Not done' }}</span>
-            </label>
-          </td>
+              <label v-else-if="canUpload" class="apr-upload-btn">
+                {{ pendingId === row.id ? 'Uploading…' : 'Upload file' }}
+                <input
+                  class="apr-file-input"
+                  type="file"
+                  :disabled="pendingId === row.id"
+                  @change="onFileSelected(row, $event)"
+                />
+              </label>
+              <span v-else class="apr-muted">No file yet</span>
+            </td>
+            <td class="apr-done-cell">
+              <label class="apr-check">
+                <input
+                  type="checkbox"
+                  :checked="row.isDone"
+                  :disabled="!canToggle || pendingId === row.id"
+                  @change="toggleDone(row, ($event.target as HTMLInputElement).checked)"
+                />
+                <span>{{ row.isDone ? 'Done' : 'Not done' }}</span>
+              </label>
+            </td>
+          </template>
         </tr>
       </tbody>
     </table>
@@ -78,7 +84,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import {
   deleteParameterRow,
   patchParameterRowContent,
@@ -123,6 +129,26 @@ const editingId = ref<number | null>(null)
 const draftContent = ref('')
 const pendingId = ref<number | null>(null)
 const error = ref('')
+
+const columnCount = computed(() => (props.showUpload ? 3 : 2))
+
+const normalizeHeading = (content: string) =>
+  String(content || '')
+    .trim()
+    .toUpperCase()
+    .replace(/[–—−]/g, '-')
+    .replace(/\s+/g, ' ')
+    .replace(/\s*-\s*/g, '-')
+
+const isSectionHeading = (row: ParameterRow) => {
+  const text = normalizeHeading(row.content)
+  return (
+    text === 'IMPLEMENTATION' ||
+    text === 'OUTCOME/S' ||
+    text === 'OUTCOMES' ||
+    text === 'SYSTEM-INPUTS AND PROCESSES'
+  )
+}
 
 const startEdit = (row: ParameterRow) => {
   editingId.value = row.id
@@ -264,6 +290,17 @@ const openPreview = async (row: ParameterRow) => {
 .apr-col-content { width: 58%; }
 .apr-col-upload { width: 24%; }
 .apr-col-done { width: 18%; }
+
+.apr-section-row td {
+  background: #edf7f2;
+}
+
+.apr-section-row .apr-content {
+  color: #0c5c4e;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
 
 .apr-content {
   margin: 0;

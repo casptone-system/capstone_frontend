@@ -1,10 +1,10 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
+import { useNotificationStore } from '@/stores/notificationStore'
 import {
   getDashboard,
   getDocuments,
-  getNotifications,
   getProgram,
   getTasks,
   getTeam,
@@ -18,6 +18,21 @@ import {
   getMyAreas,
 } from '@/lib/api'
 import type { AppDocument, DashboardSummary, NotificationMessage } from '@/lib'
+
+export const formatAssignedAreaLabel = (area: any): string => {
+  const code = String(area?.code || '')
+  const numberMatch = code.match(/area-(\d+)/i) || String(area?.label || '').match(/(\d+)/)
+  const number = numberMatch?.[1] || ''
+  const rawName = String(area?.name || '').trim()
+  const prettyName = rawName.replace(/^area\s*\d+\s*[–\-—:]\s*/i, '').trim() || rawName
+
+  if (number && prettyName) return `AREA ${number} (${prettyName})`
+  if (area?.label && prettyName && !String(area.label).includes('(')) {
+    return `${area.label} (${prettyName})`
+  }
+
+  return area?.label || rawName || 'Area'
+}
 
 export const useFacultyDashboardStore = defineStore('facultyDashboard', () => {
   const authStore = useAuthStore()
@@ -81,7 +96,22 @@ export const useFacultyDashboardStore = defineStore('facultyDashboard', () => {
   const loadMyAreas = async () => {
     try {
       const areas = await getMyAreas()
-      myAreas.value = Array.isArray(areas) ? areas : []
+      myAreas.value = (Array.isArray(areas) ? areas : [])
+        .filter((area: any) => {
+          const code = String(area?.code || '').trim()
+          const role = String(area?.assignmentRole || '').toLowerCase()
+          return Boolean(code) && (role === 'chair' || role === 'member')
+        })
+        .map((area: any) => ({
+          ...area,
+          displayLabel: formatAssignedAreaLabel(area),
+        }))
+      if (
+        selectedAreaId.value != null &&
+        !myAreas.value.some((area) => Number(area.id) === Number(selectedAreaId.value))
+      ) {
+        selectedAreaId.value = null
+      }
     } catch (error) {
       console.warn('Failed to load assigned areas', error)
       myAreas.value = []
@@ -246,21 +276,12 @@ export const useFacultyDashboardStore = defineStore('facultyDashboard', () => {
   }
 
   const loadNotifications = async () => {
-    try {
-      const data = await getNotifications()
-      const payload = Array.isArray(data) ? data : data?.data ?? []
-      notifications.value = payload.map((item: any) => ({
-        id: String(item.id),
-        userId: String(item.userId ?? item.user_id ?? authStore.user?.id ?? ''),
-        title: item.title || item.subject || 'Notification',
-        message: item.message || item.body || 'You have a new notification.',
-        type: item.type || 'info',
-        read: item.read ?? item.is_read ?? false,
-        createdAt: item.createdAt || item.created_at || new Date().toISOString(),
-      }))
-    } catch {
-      notifications.value = []
-    }
+    const notificationStore = useNotificationStore()
+    await notificationStore.fetchNotifications()
+    notifications.value = notificationStore.notifications.map((item) => ({
+      ...item,
+      userId: String(authStore.user?.id ?? ''),
+    }))
   }
 
   const loadDashboard = async () => {

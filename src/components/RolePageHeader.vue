@@ -29,9 +29,10 @@ defineProps<{
 
 .page-header h1 {
   margin: 0;
-  font-size: var(--text-3xl);
+  font-size: var(--text-xl);
   font-weight: var(--font-weight-bold);
   color: var(--color-text);
+  letter-spacing: -0.03em;
 }
 
 .page-description {

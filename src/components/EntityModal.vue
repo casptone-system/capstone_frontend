@@ -23,16 +23,21 @@
 <script setup lang="ts">
 import { IonButton } from '@ionic/vue'
 
-// const props = defineProps<{
-//   open: boolean
-//   title: string
-//   subtitle?: string
-//   submitLabel?: string
-//   loading?: boolean
-//   errorMessage?: string
-// }>()
+withDefaults(defineProps<{
+  open: boolean
+  title: string
+  subtitle?: string
+  submitLabel?: string
+  loading?: boolean
+  errorMessage?: string
+}>(), {
+  subtitle: '',
+  submitLabel: 'Save',
+  loading: false,
+  errorMessage: '',
+})
 
-// const emit = defineEmits(['close', 'submit'])
+defineEmits(['close', 'submit'])
 </script>
 
 <script lang="ts">

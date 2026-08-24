@@ -5,8 +5,11 @@
         ← Parameters
       </button>
       <div>
-        <p class="fma-kicker">{{ selectedArea?.label || 'My Areas' }}</p>
+        <p class="fma-kicker">{{ selectedArea?.displayLabel || selectedArea?.label || 'My Areas' }}</p>
         <h2>{{ selectedParameter ? selectedParameter.label : (selectedArea?.name || 'Select an area') }}</h2>
+        <p v-if="selectedArea?.assignmentRole" class="fma-role">
+          Working as {{ selectedArea.assignmentRole === 'chair' ? 'Area Chair' : 'Area Member' }}
+        </p>
         <p v-if="!selectedParameter">
           Open a parameter to review its content and mark items done for the area team.
         </p>
@@ -190,6 +193,13 @@ watch(selectedAreaId, () => {
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.fma-role {
+  margin: 0.15rem 0 0;
+  color: #0c5c4e;
+  font-size: 0.8rem;
+  font-weight: 700;
 }
 
 .fma-header h2 {

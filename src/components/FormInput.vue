@@ -140,7 +140,7 @@ export default defineComponent({
 .form-input:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
 }
 
 .form-input:focus + .input-icon {

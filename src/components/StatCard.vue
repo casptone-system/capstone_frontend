@@ -84,12 +84,12 @@ const badgeClass = computed(() => {
 
 <style scoped>
 .stat-card {
-  background: rgba(255, 255, 255, 0.8);
-  border: 1px solid #dfe7eb;
+  background: var(--adams-surface);
+  border: 1px solid var(--adams-border);
   border-left-width: 4px;
-  border-radius: 1rem;
+  border-radius: var(--radius-2xl);
   padding: 1rem 1.1rem;
-  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+  box-shadow: var(--adams-shadow);
 }
 
 .stat-header {

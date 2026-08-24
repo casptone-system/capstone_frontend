@@ -1,100 +1,97 @@
 <template>
   <div class="notification-bell">
-    <!-- Bell Icon with Badge -->
-    <button 
+    <button
       class="bell-button"
-      @click="togglePanel"
+      type="button"
       aria-label="Notifications"
-      title="View tasks"
+      title="View notifications"
+      @click="togglePanel"
     >
-      <ion-icon name="notifications" class="bell-icon"></ion-icon>
-      
-      <!-- Badge showing count -->
+      <ion-icon :icon="notificationsOutline" class="bell-icon" />
       <span v-if="badgeCount > 0" class="badge">
         {{ badgeCount > 99 ? '99+' : badgeCount }}
       </span>
     </button>
 
-    <!-- Notification Panel -->
     <div v-if="showPanel" class="notification-panel">
       <div class="panel-header">
-        <h3>Tasks ({{ badgeCount }})</h3>
-        <button @click="togglePanel" class="close-btn" title="Close">×</button>
+        <div>
+          <h3>Notifications</h3>
+          <p v-if="badgeCount > 0">{{ badgeCount }} unread</p>
+        </div>
+        <div class="panel-header-actions">
+          <button
+            v-if="badgeCount > 0"
+            class="text-btn"
+            type="button"
+            @click="markAll"
+          >
+            Mark all read
+          </button>
+          <button class="close-btn" type="button" title="Close" @click="showPanel = false">×</button>
+        </div>
       </div>
 
       <div class="panel-body">
-        <!-- Loading state -->
-        <div v-if="loading" class="loading-state">
-          <p>Loading tasks...</p>
-        </div>
-
-        <!-- No notifications -->
-        <div v-else-if="notifications.length === 0" class="empty-state">
-          <p>✓ No active tasks</p>
-        </div>
-
-        <!-- Notification list -->
+        <div v-if="loading && !items.length" class="empty-state">Loading notifications...</div>
+        <div v-else-if="items.length === 0" class="empty-state">No notifications yet</div>
         <div v-else class="notification-list">
-          <div 
-            v-for="notification in notifications" 
-            :key="notification.id"
+          <article
+            v-for="item in items"
+            :key="item.id"
             class="notification-item"
-            :class="{ 'is-pending': notification.status === 'pending' }"
+            :class="{ unread: !item.read }"
           >
-            <div class="notification-content">
-              <h4>{{ notification.title }}</h4>
-              <p class="description">{{ notification.description }}</p>
+            <button class="notification-content" type="button" @click="openItem(item)">
+              <h4>{{ item.title }}</h4>
+              <p class="description">{{ item.message }}</p>
               <div class="meta">
-                <span v-if="notification.type" class="type-badge">{{ notification.type }}</span>
-                <span class="time">{{ formatTime(notification.created_at) }}</span>
-                <span v-if="notification.is_welcome_task" class="welcome-badge">Welcome Task</span>
-                <span v-if="notification.files_enabled" class="files-badge">📁 Files</span>
+                <span v-if="item.type" class="type-badge">{{ labelForType(item.type) }}</span>
+                <span class="time">{{ formatTime(item.createdAt) }}</span>
+                <span v-if="item.isWelcomeTask" class="welcome-badge">Welcome</span>
+                <span v-if="item.filesEnabled" class="files-badge">Files</span>
+                <span v-if="item.hasInstrument" class="files-badge">Instrument</span>
               </div>
+            </button>
 
-              <!-- Files section -->
-              <div v-if="notification.files_enabled && notification.files && notification.files.length > 0" class="notification-files">
-                <p class="files-label">Attached Files:</p>
-                <div class="file-list">
-                  <div v-for="file in notification.files" :key="file.id" class="file-item">
-                    <span class="file-icon">📄</span>
-                    <span class="file-name">{{ file.file_name }}</span>
-                    <span class="file-size">{{ formatFileSize(file.file_size) }}</span>
-                    <div class="file-actions">
-                      <button class="btn-download" @click.stop="downloadFile(notification.id, file.id)" title="Download">⬇</button>
-                      <button class="btn-forward" @click.stop="openForwardModal(notification, file)" title="Forward to faculty">→</button>
-                    </div>
-                  </div>
+            <div v-if="item.filesEnabled && item.files?.length" class="notification-files">
+              <p class="files-label">Attached files</p>
+              <div v-for="file in item.files" :key="file.id" class="file-item">
+                <span class="file-name">{{ file.file_name }}</span>
+                <div class="file-actions">
+                  <button type="button" class="btn-download" title="Download" @click.stop="downloadTaskFile(item, file)">⬇</button>
+                  <button type="button" class="btn-forward" title="Forward" @click.stop="openForwardModal(item, file)">→</button>
                 </div>
               </div>
             </div>
 
             <div class="notification-actions">
-              <button 
-                v-if="notification.status === 'pending'"
+              <button
+                v-if="item.hasInstrument"
+                type="button"
                 class="btn-mark-viewed"
-                @click.stop="markAsViewed(notification.id)"
-                title="Mark as viewed"
+                @click.stop="downloadInstrument(item)"
               >
-                View
+                File
               </button>
-              <button 
-                class="btn-dismiss"
-                @click.stop="dismissNotification(notification.id)"
-                title="Dismiss"
+              <button
+                v-if="!item.read"
+                type="button"
+                class="btn-mark-viewed"
+                @click.stop="store.markAsRead(item)"
               >
-                ✕
+                Read
               </button>
+              <button type="button" class="btn-dismiss" title="Dismiss" @click.stop.prevent="dismissItem(item)">✕</button>
             </div>
-          </div>
+          </article>
         </div>
       </div>
     </div>
 
-    <!-- Click outside to close -->
-    <div v-if="showPanel" class="notification-overlay" @click="showPanel = false"></div>
+    <div v-if="showPanel" class="notification-overlay" @click="showPanel = false" />
   </div>
 
-  <!-- Forward File Modal -->
   <ForwardFileModal
     :isOpen="showForwardModalPanel"
     :notification="selectedNotification"
@@ -108,139 +105,108 @@
 
 <script lang="ts">
 export default {
-  name: 'NotificationBell'
+  name: 'NotificationBell',
 }
 </script>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { useTaskNotificationStore } from '@/stores/taskNotificationStore'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { IonIcon } from '@ionic/vue'
+import { notificationsOutline } from 'ionicons/icons'
+import { useNotificationStore, type InboxItem } from '@/stores/notificationStore'
 import ForwardFileModal from './ForwardFileModal.vue'
 
-const taskStore = useTaskNotificationStore()
+const store = useNotificationStore()
+const router = useRouter()
 const showPanel = ref(false)
-
-const badgeCount = computed(() => taskStore.badgeCount)
-const notifications = computed(() => taskStore.notifications)
-const loading = computed(() => taskStore.loading)
-
-// Forward modal state
 const showForwardModalPanel = ref(false)
 const selectedNotification = ref<any>(null)
 const selectedFile = ref<any>(null)
 const availableFaculty = ref<any[]>([])
 
+const badgeCount = computed(() => store.unreadCount)
+const items = computed(() => store.items)
+const loading = computed(() => store.isLoading)
+
 let pollingInterval: ReturnType<typeof setInterval> | null = null
 
-onMounted(() => {
-  // Load initial data
-  taskStore.fetchBadgeCount()
-  taskStore.fetchNotifications()
-
-  // Poll for updates every 30 seconds
-  pollingInterval = setInterval(() => {
-    taskStore.fetchBadgeCount()
-  }, 30000)
-})
-
-// Cleanup on unmount
-onBeforeUnmount(() => {
-  if (pollingInterval) {
-    clearInterval(pollingInterval)
-  }
-})
-
-const togglePanel = () => {
-  showPanel.value = !showPanel.value
-  if (showPanel.value) {
-    taskStore.fetchNotifications()
-  }
-}
-
-const markAsViewed = (notificationId: number | string) => {
-  taskStore.markAsViewed(notificationId)
-}
-
-const dismissNotification = (notificationId: number | string) => {
-  taskStore.dismissNotification(notificationId)
-}
-
-const formatTime = (dateString: string): string => {
+const formatTime = (dateString?: string): string => {
+  if (!dateString) return 'just now'
   const date = new Date(dateString)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
+  const diffMs = Date.now() - date.getTime()
   const diffMins = Math.floor(diffMs / 60000)
-  
-  if (diffMins < 1) return 'just now'
+
+  if (Number.isNaN(date.getTime()) || diffMins < 1) return 'just now'
   if (diffMins < 60) return `${diffMins}m ago`
-  
+
   const diffHours = Math.floor(diffMins / 60)
   if (diffHours < 24) return `${diffHours}h ago`
-  
-  const diffDays = Math.floor(diffHours / 24)
-  return `${diffDays}d ago`
+
+  return `${Math.floor(diffHours / 24)}d ago`
 }
 
-const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+const labelForType = (type: string) => type.replace(/_/g, ' ')
+
+const togglePanel = async () => {
+  showPanel.value = !showPanel.value
+  if (showPanel.value) {
+    await store.fetchNotifications()
+  }
 }
 
-const downloadFile = async (notificationId: number | string, fileId: number | string) => {
+const openItem = async (item: InboxItem) => {
+  const destination = await store.openItem(item)
+  showPanel.value = false
+  if (!destination?.path) return
+  await router.push({
+    path: destination.path,
+    query: destination.section ? { section: destination.section } : {},
+  })
+}
+
+const markAll = async () => {
+  await store.markAllAsRead()
+}
+
+const dismissItem = async (item: InboxItem) => {
+  await store.dismissItem(item).catch(() => null)
+}
+
+const downloadInstrument = async (item: InboxItem) => {
+  await store.downloadInstrument(item)
+}
+
+const downloadTaskFile = async (item: InboxItem, file: any) => {
   try {
     const apiBase = process.env.VUE_APP_API_BASE_URL || '/api'
     const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || ''
-    const downloadUrl = `${apiBase}/task-notifications/${notificationId}/files/${fileId}/download`
-    
-    // Fetch file as blob
-    const response = await fetch(downloadUrl, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
+    const response = await fetch(`${apiBase}/task-notifications/${item.sourceId}/files/${file.id}/download`, {
+      headers: { Authorization: `Bearer ${token}` },
     })
+    if (!response.ok) throw new Error(`Download failed with status ${response.status}`)
 
-    if (!response.ok) {
-      throw new Error(`Download failed with status ${response.status}`)
-    }
-
-    // Get filename from Content-Disposition header or use default
     const contentDisposition = response.headers.get('content-disposition')
-    let fileName = 'download'
-    
-    if (contentDisposition) {
-      const matches = contentDisposition.match(/filename="?([^"]*)"?/)
-      if (matches && matches[1]) {
-        fileName = matches[1]
-      }
-    }
+    let fileName = file.file_name || 'download'
+    const matches = contentDisposition?.match(/filename="?([^"]*)"?/)
+    if (matches?.[1]) fileName = matches[1]
 
-    // Get the blob
     const blob = await response.blob()
-
-    // Create blob URL and trigger download
     const blobUrl = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = blobUrl
     link.download = fileName
-    
-    // Append to body, click, and remove
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-    
-    // Clean up the blob URL
     window.URL.revokeObjectURL(blobUrl)
   } catch (err: any) {
     console.error('Download failed:', err)
-    alert(`Download failed: ${err.message}`)
   }
 }
 
-const openForwardModal = (notification: any, file: any) => {
-  selectedNotification.value = notification
+const openForwardModal = (item: InboxItem, file: any) => {
+  selectedNotification.value = item.raw
   selectedFile.value = file
   showForwardModalPanel.value = true
 }
@@ -251,15 +217,32 @@ const closeForwardModal = () => {
   selectedFile.value = null
 }
 
-const onForwardSuccess = (message: string) => {
-  console.log('Forward success:', message)
-  // Reload notifications
-  taskStore.fetchNotifications()
+const onForwardSuccess = () => {
+  void store.fetchNotifications()
 }
 
 const onForwardError = (error: string) => {
   console.error('Forward error:', error)
 }
+
+const onVisibilityChange = () => {
+  if (document.visibilityState === 'visible') {
+    void store.fetchBadgeCount()
+  }
+}
+
+onMounted(() => {
+  void store.fetchNotifications()
+  pollingInterval = setInterval(() => {
+    void store.fetchBadgeCount()
+  }, 30000)
+  document.addEventListener('visibilitychange', onVisibilityChange)
+})
+
+onBeforeUnmount(() => {
+  if (pollingInterval) clearInterval(pollingInterval)
+  document.removeEventListener('visibilitychange', onVisibilityChange)
+})
 </script>
 
 <style scoped>
@@ -269,148 +252,127 @@ const onForwardError = (error: string) => {
 
 .bell-button {
   position: relative;
-  background: none;
-  border: none;
-  font-size: 24px;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  background: var(--adams-surface, #fff);
+  border: 1px solid var(--adams-border, #e5e7eb);
+  border-radius: 0.75rem;
+  color: var(--adams-ink, #111827);
   cursor: pointer;
-  padding: 8px;
-  color: #333;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.2s;
 }
 
 .bell-button:hover {
-  color: #1f2937;
+  background: #fff;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(15, 23, 42, 0.08));
 }
 
 .bell-icon {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
 }
 
 .badge {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
   background: #ef4444;
   color: white;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
+  border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
-  font-weight: bold;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
+  font-size: 11px;
+  font-weight: 800;
 }
 
 .notification-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   z-index: 999;
 }
 
 .notification-panel {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 8px);
   right: 0;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  z-index: 1000;
   width: 420px;
-  max-height: 500px;
+  max-height: 520px;
   display: flex;
   flex-direction: column;
-  z-index: 1000;
-  margin-top: 8px;
-  animation: slideDown 0.2s ease-out;
+  background: var(--adams-surface, #fff);
+  border: 1px solid var(--adams-border, #e5e7eb);
+  border-radius: 0.9rem;
+  box-shadow: var(--shadow-lg, 0 18px 40px rgba(15, 23, 42, 0.16));
 }
 
 @media (max-width: 480px) {
   .notification-panel {
-    width: 100vw;
-    max-width: 100vw;
+    width: min(100vw - 1.5rem, 420px);
     right: -8px;
-    left: -8px;
-    margin-right: 0;
-  }
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
   }
 }
 
 .panel-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 16px;
-  border-bottom: 1px solid #e5e7eb;
-  background: #f9fafb;
-  border-radius: 8px 8px 0 0;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--adams-border, #e5e7eb);
 }
 
 .panel-header h3 {
   margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #1f2937;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--adams-ink, #111827);
 }
 
+.panel-header p {
+  margin: 0.15rem 0 0;
+  color: var(--adams-muted, #64748b);
+  font-size: 12px;
+}
+
+.panel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.text-btn,
 .close-btn {
   background: none;
   border: none;
-  font-size: 24px;
   cursor: pointer;
-  padding: 0;
-  color: #9ca3af;
-  transition: color 0.2s;
+  color: var(--adams-muted, #64748b);
 }
 
-.close-btn:hover {
-  color: #6b7280;
+.text-btn {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.close-btn {
+  font-size: 22px;
+  line-height: 1;
 }
 
 .panel-body {
-  flex: 1;
   overflow-y: auto;
-  max-height: 400px;
-}
-
-.loading-state {
-  padding: 32px 16px;
-  text-align: center;
-  color: #9ca3af;
-  font-size: 14px;
+  max-height: 430px;
 }
 
 .empty-state {
   padding: 32px 16px;
   text-align: center;
-  color: #9ca3af;
+  color: var(--adams-muted, #9ca3af);
   font-size: 14px;
 }
 
@@ -419,47 +381,41 @@ const onForwardError = (error: string) => {
 }
 
 .notification-item {
-  padding: 12px;
+  padding: 10px;
   margin-bottom: 8px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  background: #f9fafb;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
+  border: 1px solid var(--adams-border, #e5e7eb);
+  border-radius: 8px;
+  background: #f8fafc;
 }
 
-.notification-item:hover {
-  background: #f3f4f6;
-  border-color: #d1d5db;
-}
-
-.notification-item.is-pending {
-  border-left: 4px solid #3b82f6;
-  background: #eff6ff;
+.notification-item.unread {
+  border-left: 4px solid var(--adams-primary, #16a34a);
+  background: #f0fdf4;
 }
 
 .notification-content {
-  flex: 1;
-  min-width: 0;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
 }
 
 .notification-content h4 {
-  margin: 0 0 4px 0;
+  margin: 0 0 4px;
   font-size: 14px;
-  font-weight: 600;
-  color: #1f2937;
-  word-break: break-word;
+  font-weight: 700;
+  color: var(--adams-ink, #1f2937);
 }
 
 .description {
-  margin: 0 0 6px 0;
+  margin: 0 0 6px;
   font-size: 13px;
-  color: #6b7280;
+  color: #64748b;
   line-height: 1.4;
-  word-break: break-word;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -473,31 +429,33 @@ const onForwardError = (error: string) => {
   font-size: 11px;
 }
 
-.type-badge {
+.type-badge,
+.welcome-badge,
+.files-badge {
   display: inline-block;
-  background: #dbeafe;
-  color: #1e40af;
   padding: 2px 6px;
   border-radius: 3px;
-  font-weight: 500;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.type-badge {
+  background: #dbeafe;
+  color: #1e40af;
 }
 
 .welcome-badge {
-  display: inline-block;
   background: #dcfce7;
   color: #166534;
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-weight: 500;
 }
 
 .files-badge {
-  display: inline-block;
   background: #fef3c7;
   color: #b45309;
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-weight: 500;
+}
+
+.time {
+  color: #94a3b8;
 }
 
 .notification-files {
@@ -507,110 +465,59 @@ const onForwardError = (error: string) => {
 }
 
 .files-label {
-  margin: 0 0 6px 0;
+  margin: 0 0 6px;
   font-size: 12px;
-  font-weight: 600;
-  color: #374151;
-}
-
-.file-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  font-weight: 700;
 }
 
 .file-item {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 6px;
   padding: 6px;
-  background: #f9fafb;
-  border-radius: 4px;
+  margin-bottom: 4px;
+  background: #fff;
   border: 1px solid #e5e7eb;
+  border-radius: 4px;
   font-size: 12px;
-}
-
-.file-icon {
-  flex-shrink: 0;
-  font-size: 14px;
 }
 
 .file-name {
-  flex: 1;
   min-width: 0;
-  word-break: break-word;
-  color: #374151;
-  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.file-size {
-  flex-shrink: 0;
-  color: #9ca3af;
-  font-size: 11px;
-}
-
-.file-actions {
-  display: flex;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
-.btn-download,
-.btn-forward {
-  padding: 4px 6px;
-  border: 1px solid #d1d5db;
-  border-radius: 3px;
-  background: white;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-  color: #6b7280;
-}
-
-.btn-download:hover,
-.btn-forward:hover {
-  background: #e5e7eb;
-  color: #374151;
-}
-
+.file-actions,
 .notification-actions {
   display: flex;
   gap: 4px;
-  flex-shrink: 0;
+  justify-content: flex-end;
+  margin-top: 8px;
 }
 
+.btn-download,
+.btn-forward,
 .btn-mark-viewed,
 .btn-dismiss {
-  padding: 6px 8px;
+  padding: 5px 8px;
   border: 1px solid #d1d5db;
   border-radius: 4px;
   background: white;
   font-size: 12px;
   cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
 }
 
 .btn-mark-viewed {
-  background: #3b82f6;
+  background: var(--adams-primary, #16a34a);
   color: white;
-  border-color: #3b82f6;
-  min-width: 50px;
-}
-
-.btn-mark-viewed:hover {
-  background: #2563eb;
-  border-color: #2563eb;
+  border-color: var(--adams-primary, #16a34a);
 }
 
 .btn-dismiss {
   background: #f3f4f6;
   color: #6b7280;
-  min-width: 32px;
-}
-
-.btn-dismiss:hover {
-  background: #e5e7eb;
-  color: #374151;
 }
 </style>

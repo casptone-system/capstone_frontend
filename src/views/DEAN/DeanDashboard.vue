@@ -1,117 +1,59 @@
 <template>
-  <ion-page>
-    <ion-content :fullscreen="true">
-      <div class="dean-shell">
-        <button
-          v-if="isMobileSidebarVisible"
-          type="button"
-          class="dean-mobile-backdrop"
-          aria-label="Close sidebar"
-          @click="toggleMobileSidebar(false)"
-        ></button>
+  <AdamsAppShell
+    role-label="Dean"
+    :page-title="pageTitle"
+    :page-description="pageDescription"
+    :show-title="true"
+  >
+    <template #nav>
+      <p class="adams-nav-label">Overview</p>
+      <button type="button" class="adams-nav-item" :class="{ active: isSectionActive('dashboard') }" @click="selectSection('dashboard')" :aria-current="isSectionActive('dashboard') ? 'page' : undefined">
+        <span class="adams-nav-icon"><ion-icon :icon="gridOutline" /></span>
+        <span>Overview</span>
+      </button>
+      <button type="button" class="adams-nav-item" :class="{ active: isSectionActive('programs') }" @click="selectSection('programs')" :aria-current="isSectionActive('programs') ? 'page' : undefined">
+        <span class="adams-nav-icon"><ion-icon :icon="schoolOutline" /></span>
+        <span>Program Monitoring</span>
+      </button>
+      <button type="button" class="adams-nav-item" :class="{ active: isSectionActive('faculty') }" @click="selectSection('faculty')" :aria-current="isSectionActive('faculty') ? 'page' : undefined">
+        <span class="adams-nav-icon"><ion-icon :icon="peopleOutline" /></span>
+        <span>Faculty Monitoring</span>
+      </button>
+      <button type="button" class="adams-nav-item" :class="{ active: isSectionActive('department-documents') }" @click="selectSection('department-documents')" :aria-current="isSectionActive('department-documents') ? 'page' : undefined">
+        <span class="adams-nav-icon"><ion-icon :icon="documentTextOutline" /></span>
+        <span>Department Documents</span>
+      </button>
+      <button type="button" class="adams-nav-item" :class="{ active: isSectionActive('issues') }" @click="selectSection('issues')" :aria-current="isSectionActive('issues') ? 'page' : undefined">
+        <span class="adams-nav-icon"><ion-icon :icon="alertCircleOutline" /></span>
+        <span>Issues &amp; Actions</span>
+      </button>
+      <button type="button" class="adams-nav-item" :class="{ active: isSectionActive('program-reports') }" @click="selectSection('program-reports')" :aria-current="isSectionActive('program-reports') ? 'page' : undefined">
+        <span class="adams-nav-icon"><ion-icon :icon="barChartOutline" /></span>
+        <span>Reports</span>
+      </button>
+      <button type="button" class="adams-nav-item" :class="{ active: isSectionActive('activity') }" @click="selectSection('activity')" :aria-current="isSectionActive('activity') ? 'page' : undefined">
+        <span class="adams-nav-icon"><ion-icon :icon="timeOutline" /></span>
+        <span>Activity</span>
+      </button>
+      <button type="button" class="adams-nav-item" :class="{ active: isSectionActive('notifications') }" @click="selectSection('notifications')" :aria-current="isSectionActive('notifications') ? 'page' : undefined">
+        <span class="adams-nav-icon"><ion-icon :icon="notificationsOutline" /></span>
+        <span>Notifications</span>
+        <span v-if="inboxUnreadCount > 0" class="adams-nav-badge">{{ inboxUnreadCount }}</span>
+      </button>
+      <button type="button" class="adams-nav-item" :class="{ active: isSectionActive('college-profile') }" @click="selectSection('college-profile')" :aria-current="isSectionActive('college-profile') ? 'page' : undefined">
+        <span class="adams-nav-icon"><ion-icon :icon="businessOutline" /></span>
+        <span>My College</span>
+      </button>
+    </template>
 
-        <aside class="dean-sidebar" :class="{ 'is-open': isMobileSidebarVisible }">
-          <div class="sa-brand">
-            <img src="@/assets/Archiving_logo.png" alt="ADAMS Logo" class="sa-brand-icon" loading="eager" />
-          </div>
-
-          <button
-            type="button"
-            class="dean-mobile-sidebar-toggle"
-            @click="toggleMobileSidebar(!isMobileSidebarVisible)"
-            aria-label="Toggle dashboard menu"
-          >
-            <ion-icon :icon="gridOutline" />
-          </button>
-
-          <nav class="dean-nav" aria-label="Dean dashboard navigation">
-            <p class="dean-nav-label">Overview</p>
-            <ul class="dean-nav-list">
-              <li>
-                <button type="button" class="dean-nav-item" :class="{ active: isSectionActive('dashboard') }" @click="selectSection('dashboard')" :aria-current="isSectionActive('dashboard') ? 'page' : undefined">
-                  <ion-icon :icon="gridOutline" /> Overview
-                </button>
-              </li>
-              <li>
-                <button type="button" class="dean-nav-item" :class="{ active: isSectionActive('programs') }" @click="selectSection('programs')" :aria-current="isSectionActive('programs') ? 'page' : undefined">
-                  <ion-icon :icon="schoolOutline" /> Program Monitoring
-                </button>
-              </li>
-              <li>
-                <button type="button" class="dean-nav-item" :class="{ active: isSectionActive('faculty') }" @click="selectSection('faculty')" :aria-current="isSectionActive('faculty') ? 'page' : undefined">
-                  <ion-icon :icon="peopleOutline" /> Faculty Monitoring
-                </button>
-              </li>
-              <li>
-                <button type="button" class="dean-nav-item" :class="{ active: isSectionActive('department-documents') }" @click="selectSection('department-documents')" :aria-current="isSectionActive('department-documents') ? 'page' : undefined">
-                  <ion-icon :icon="documentTextOutline" /> Department Documents
-                </button>
-              </li>
-              <li>
-                <button type="button" class="dean-nav-item" :class="{ active: isSectionActive('issues') }" @click="selectSection('issues')" :aria-current="isSectionActive('issues') ? 'page' : undefined">
-                  <ion-icon :icon="alertCircleOutline" /> Issues &amp; Actions
-                </button>
-              </li>
-              <li>
-                <button type="button" class="dean-nav-item" :class="{ active: isSectionActive('program-reports') }" @click="selectSection('program-reports')" :aria-current="isSectionActive('program-reports') ? 'page' : undefined">
-                  <ion-icon :icon="barChartOutline" /> Reports
-                </button>
-              </li>
-              <li>
-                <button type="button" class="dean-nav-item" :class="{ active: isSectionActive('activity') }" @click="selectSection('activity')" :aria-current="isSectionActive('activity') ? 'page' : undefined">
-                  <ion-icon :icon="timeOutline" /> Activity
-                </button>
-              </li>
-              <li>
-                <button type="button" class="dean-nav-item" :class="{ active: isSectionActive('notifications') }" @click="selectSection('notifications')" :aria-current="isSectionActive('notifications') ? 'page' : undefined">
-                  <ion-icon :icon="notificationsOutline" /> Notifications
-                  <span class="dean-nav-badge">{{ alerts.length }}</span>
-                </button>
-              </li>
-              <li>
-                <button type="button" class="dean-nav-item" :class="{ active: isSectionActive('college-profile') }" @click="selectSection('college-profile')" :aria-current="isSectionActive('college-profile') ? 'page' : undefined">
-                  <ion-icon :icon="businessOutline" /> My College
-                </button>
-              </li>
-            </ul>
-          </nav>
-
-          <ion-button color="danger" fill="solid" @click="handleLogout" aria-label="Logout">
-            <ion-icon :icon="logOutOutline" />
-            Logout
-          </ion-button>
-        </aside>
-
-        <div class="dean-content-panel">
-          <header class="dean-topbar">
-            <div class="dean-search-shell">
-              <ion-icon :icon="searchOutline" class="dean-search-icon" />
-              <input type="text" class="dean-search-input" placeholder="Search task" />
-            </div>
-
-            <div class="dean-topbar-actions">
-              <div class="dean-role-switcher">
-                <button v-if="authStore.canViewAs('program-chair')" class="dean-btn dean-btn-ghost" @click.prevent="switchToProgramChairView">
-                  <ion-icon :icon="briefcaseOutline" /> Program Chair
-                </button>
-                <button v-if="authStore.canViewAs('faculty')" class="dean-btn dean-btn-ghost" @click.prevent="switchToFacultyView">
-                  <ion-icon :icon="peopleOutline" /> Faculty
-                </button>
-              </div>
-              <button class="dean-icon-circle" type="button" aria-label="Inbox" @click="handleInboxClick">
-                <ion-icon :icon="mailOutline" />
-              </button>
-              <NotificationBell />
-              <div class="dean-profile-chip" aria-label="User profile">
-                <img v-if="topbarUserPhoto" :src="topbarUserPhoto" alt="Profile photo" class="dean-user-avatar dean-user-avatar-image" />
-                <div v-else class="dean-user-avatar">{{ topbarUserInitials }}</div>
-                <div class="dean-user-meta">
-                  <strong>{{ topbarUserName }}</strong>
-                  <p class="dean-admin-role">Dean · {{ collegeName || 'College' }}</p>
-                </div>
-              </div>
-            </div>
-          </header>
+    <template #header-actions>
+      <button v-if="authStore.canViewAs('program-chair')" class="adams-btn adams-btn-ghost" type="button" @click.prevent="switchToProgramChairView">
+        <ion-icon :icon="briefcaseOutline" /> Program Chair
+      </button>
+      <button v-if="authStore.canViewAs('faculty')" class="adams-btn adams-btn-ghost" type="button" @click.prevent="switchToFacultyView">
+        <ion-icon :icon="peopleOutline" /> Faculty
+      </button>
+    </template>
 
           <main class="dean-main">
             <section v-if="selectedSection === 'dashboard'" class="dean-workspace-header">
@@ -873,15 +815,16 @@
                     <div class="dean-card-title-group">
                       <div class="dean-card-icon rose"><ion-icon :icon="notificationsOutline" /></div>
                       <div>
-                        <h2 class="dean-card-title">Task Notifications</h2>
-                        <p class="dean-card-sub">Tasks and action items assigned to you.</p>
+                        <h2 class="dean-card-title">Notifications</h2>
+                        <p class="dean-card-sub">Alerts, assignments, and follow-up items.</p>
                       </div>
                     </div>
                   </div>
-                  <NotificationBell />
+                  <NotificationInbox subtitle="Dean assignment notices, cycle updates, and pending actions." />
                 </div>
               </template>
             </div>
+          </main>
             <DeanCreateProgramModal :visible="showCreateProgramModal" @close="showCreateProgramModal = false" @created="handleProgramCreated" />
             <DeanNotifyProgramChairModal 
               :visible="showNotifyModal" 
@@ -890,28 +833,24 @@
               @close="showNotifyModal = false"
               @submitted="handleNotificationSubmitted"
             />
-          </main>
-        </div>
-      </div>
-    </ion-content>
-  </ion-page>
+  </AdamsAppShell>
 </template>
 
 <script setup lang="ts">
-import { IonPage, IonContent, IonIcon, IonButton } from '@ionic/vue'
+import { IonIcon } from '@ionic/vue'
 
 import {
   gridOutline, schoolOutline, peopleOutline, documentTextOutline,
   checkmarkDoneOutline, analyticsOutline, barChartOutline,
   notificationsOutline, documentOutline,
-  checkmarkCircleOutline, alarmOutline, logOutOutline,
+  checkmarkCircleOutline, alarmOutline,
   businessOutline,
   alertCircleOutline, timeOutline, personCircleOutline,
   searchOutline, mailOutline, briefcaseOutline
 } from 'ionicons/icons'
 
 import { onMounted, ref, computed, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { useToastStore } from '@/stores/toastStore'
 import { useUserCalls } from '@/lib/useUserCalls'
@@ -919,6 +858,7 @@ import {
   approveInvitationToken,
   createProgramInvitation,
   downloadDocument,
+  extractNotificationList,
   getDeanDashboard,
   getDeanDocuments,
   getDocument,
@@ -939,11 +879,16 @@ import DeanNotifyProgramChairModal from '@/components/DeanNotifyProgramChairModa
 import RoleStorageVault from '@/components/RoleStorageVault.vue'
 import AccreditationLevelStatus from '@/components/AccreditationLevelStatus.vue'
 import DeanAccreditationSection from '@/views/DEAN/DeanAccreditationSection.vue'
-import NotificationBell from '@/components/NotificationBell.vue'
+import NotificationInbox from '@/components/NotificationInbox.vue'
+import AdamsAppShell from '@/components/ui/AdamsAppShell.vue'
+import { useNotificationStore } from '@/stores/notificationStore'
 
 const authStore = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 const toastStore = useToastStore()
+const notificationStore = useNotificationStore()
+const inboxUnreadCount = computed(() => notificationStore.unreadCount)
 const { activeCall, callMessage, endCall } = useUserCalls()
 
 const showCreateProgramModal = ref(false)
@@ -1128,35 +1073,39 @@ const getProgramInitials = (program: any): string => {
   const source = program?.code || program?.name || 'Program'
   return String(source).split(/[^A-Za-z0-9]+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase()
 }
-const currentUserPhoto = computed(() => {
-  const user = currentUser.value as any
-  const candidate =
-    user?.profilePhoto ||
-    user?.profilePhotoPath ||
-    user?.profile_photo ||
-    user?.profile_photo_url ||
-    user?.avatar ||
-    user?.avatar_url ||
-    user?.photo_url ||
-    user?.image_url ||
-    null
-
-  return getStoredUserImage(candidate)
-})
-const currentUserInitials = computed(() => {
-  const name = (currentUser.value as any)?.name || (currentUser.value as any)?.first_name || ''
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p: string) => p[0]?.toUpperCase() || '').join('') || 'U'
-})
 const currentUserName = computed(() => (currentUser.value as any)?.name || 'Dean')
-// const currentUserEmail = computed(() => (currentUser.value as any)?.email || 'dean@college.edu')
-const topbarUserName = computed(() => currentUserName.value || 'Dean')
-// const topbarUserEmail = computed(() => currentUserEmail.value || 'dean@college.edu')
-const topbarUserPhoto = computed(() => currentUserPhoto.value)
-const topbarUserInitials = computed(() => currentUserInitials.value || 'D')
 const assignedDeanName = computed(() => assignedDean.value?.name || currentUserName.value || 'Dean')
 const assignedDeanDepartment = computed(() => assignedDean.value?.department || collegeName.value || currentUserName.value || 'Assigned department')
 
 const selectedSection = ref('dashboard')
+
+const pageTitle = computed(() => {
+  switch (selectedSection.value) {
+    case 'programs': return 'Program Monitoring'
+    case 'faculty': return 'Faculty Monitoring'
+    case 'department-documents': return 'Department Documents'
+    case 'issues': return 'Issues & Actions'
+    case 'program-reports': return 'Reports'
+    case 'activity': return 'Activity'
+    case 'notifications': return 'Notifications'
+    case 'college-profile': return 'My College'
+    default: return 'College Overview'
+  }
+})
+
+const pageDescription = computed(() => {
+  switch (selectedSection.value) {
+    case 'programs': return 'Monitor programs under your college and intervene where needed.'
+    case 'faculty': return 'Review faculty participation and assignment progress.'
+    case 'department-documents': return 'Browse college evidence and department files.'
+    case 'issues': return 'Track blockers, overdue items, and required follow-up.'
+    case 'program-reports': return 'College accreditation reports and readiness summaries.'
+    case 'activity': return 'Recent activity across programs in your college.'
+    case 'notifications': return 'Tasks and action items assigned to you.'
+    case 'college-profile': return 'College profile, leadership, and institutional context.'
+    default: return 'Drive accreditation readiness and monitor programs in your college.'
+  }
+})
 const selectedProgramId = ref<number | string | null>(null)
 const selectedProgram = computed(() => {
   if (selectedProgramId.value === null || selectedProgramId.value === undefined) return null
@@ -1181,11 +1130,6 @@ const requirementFilter = ref('all')
 const taskOptions = ref<any[]>([])
 const selectedDocument = ref<any | null>(null)
 const documentVersions = ref<any[]>([])
-const isMobileSidebarVisible = ref(false)
-const toggleMobileSidebar = (state?: boolean) => {
-  isMobileSidebarVisible.value = typeof state === 'boolean' ? state : !isMobileSidebarVisible.value
-}
-
 const programOptions = computed(() => programs.value.map((program) => ({
   id: program.id,
   name: program.name,
@@ -1562,6 +1506,16 @@ const selectSection = (section: string) => {
 }
 const isSectionActive = (section: string) => selectedSection.value === section
 
+watch(
+  () => route.query.section,
+  (section) => {
+    if (typeof section === 'string' && section) {
+      selectedSection.value = section
+    }
+  },
+  { immediate: true },
+)
+
 const viewDocument = (doc: any) => {
   if (!doc?.id) return
   selectSection('document-review')
@@ -1579,17 +1533,6 @@ const requestRevision = async (doc: any) => {
   }
 }
 
-const handleInboxClick = () => {
-  selectSection('notifications')
-  const unreadCount = alerts.value.filter((alert: any) => alert.urgency !== 'info').length
-  if (unreadCount > 0) {
-    toastStore.show(`You have ${unreadCount} unread dean notifications.`, 'info')
-    return
-  }
-
-  toastStore.show('Your inbox is clear. No new messages.', 'success')
-}
-
 const switchToProgramChairView = () => {
   authStore.setDashboardView('program-chair')
   router.push('/user/dashboard/program-chair')
@@ -1598,11 +1541,6 @@ const switchToProgramChairView = () => {
 const switchToFacultyView = () => {
   authStore.setDashboardView('faculty')
   router.push('/user/dashboard/faculty')
-}
-
-const handleLogout = async () => {
-  await authStore.logout()
-  router.replace('/login')
 }
 
 const openNotifyProgramChairModal = (programId: number | string | null) => {
@@ -1659,7 +1597,7 @@ const handleDeanNoticeRead = async () => {
 const syncDeanAssignmentNotice = async () => {
   try {
     const response = await getNotifications()
-    const notifications = Array.isArray(response) ? response : response?.data ?? []
+    const notifications = extractNotificationList(response)
     const deanNotice = [...notifications]
       .filter((item: any) => {
         const title = String(item.title || item.subject || '').toLowerCase()
@@ -1835,6 +1773,7 @@ const loadDashboard = async () => {
 onMounted(() => {
   void loadDashboard()
   void syncDeanAssignmentNotice()
+  void notificationStore.fetchNotifications()
 })
 
 watch(
@@ -2111,14 +2050,12 @@ const handleProgramCreated = async () => {
   flex: 1;
   min-width: 0;
   width: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 1rem 1.15rem 1.3rem;
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
   box-sizing: border-box;
-  background: rgba(245, 247, 246, 0.88);
+  background: transparent;
+  padding: 0;
 }
 
 .dean-panel-shell {

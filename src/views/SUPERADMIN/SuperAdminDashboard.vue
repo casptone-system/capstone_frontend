@@ -505,7 +505,7 @@ import {
 } from 'ionicons/icons'
 import { useUserCalls } from '@/lib/useUserCalls'
 import { useSuperAdminStore } from '@/stores/superAdminStore'
-import { getColleges, getNotifications } from '@/lib/api'
+import { getColleges, getNotifications, extractNotificationList } from '@/lib/api'
 import AccreditationLevelStatus from '@/components/AccreditationLevelStatus.vue'
 
 const router = useRouter()
@@ -727,7 +727,7 @@ const recentDeanAssignments = ref<any[]>([])
 const syncDeanAssignmentFeed = async () => {
   try {
     const response = await getNotifications()
-    const notifications = Array.isArray(response) ? response : response?.data ?? []
+    const notifications = extractNotificationList(response)
 
     recentDeanAssignments.value = [...notifications]
       .filter((item: any) => {

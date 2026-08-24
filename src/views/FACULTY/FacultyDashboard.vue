@@ -1,129 +1,90 @@
 <template>
-  <ion-page>
-    <ion-content :fullscreen="true">
-      <div class="fac-shell">
-        <aside class="fac-sidebar">
-          <div class="fac-brand">
-            <div class="sa-brand">
-            <!-- <img src="@/assets/Archiving_logo.png" alt="ADAMS Logo" class="sa-brand-icon" loading="eager" /> -->
-             <img src="@/assets/text.png" alt="ADAMS Logo" class="sa-brand-icon" loading="eager" />
-          </div>
-          </div>
-          <nav class="fac-nav">
-            <p class="fac-nav-label">Menu</p>
-            <button class="fac-nav-item" type="button" @click="selectSection('dashboard')">
-              <span class="fac-nav-icon"><ion-icon :icon="gridOutline" /></span>
-              <span>Dashboard</span>
-            </button>
-            <button class="fac-nav-item" type="button" @click="selectSection('documents')">
-              <span class="fac-nav-icon"><ion-icon :icon="folderOpenOutline" /></span>
-              <span>Documents</span>
-            </button>
-            <button class="fac-nav-item" type="button" @click="selectSection('revisions')">
-              <span class="fac-nav-icon"><ion-icon :icon="checkmarkDoneOutline" /></span>
-              <span>Tasks</span>
-              <span class="fac-nav-badge">{{ revisionCount }}</span>
-            </button>
-            <button class="fac-nav-item" type="button" @click="selectSection('team')">
-              <span class="fac-nav-icon"><ion-icon :icon="peopleOutline" /></span>
-              <span>Team</span>
-            </button>
-
-            <p class="fac-nav-label">General</p>
-            <button class="fac-nav-item" type="button" @click="selectSection('notifications')">
-              <span class="fac-nav-icon"><ion-icon :icon="notificationsOutline" /></span>
-              <span>Notifications</span>
-            </button>
-
-            <div class="fac-areas-nav">
-              <button class="fac-nav-item" type="button" @click="toggleAreasAccordion">
-                <span class="fac-nav-icon"><ion-icon :icon="layersOutline" /></span>
-                <span>Areas</span>
-                <span class="fac-areas-caret">{{ areasExpanded ? '▾' : '▸' }}</span>
-              </button>
-              <div v-if="areasExpanded" class="fac-areas-list">
-                <p v-if="!myAreas.length" class="fac-areas-empty">No areas assigned</p>
-                <button
-                  v-for="area in myAreas"
-                  :key="area.id"
-                  class="fac-nav-item fac-area-child"
-                  :class="{ active: selectedSection === 'areas' && Number(selectedAreaId) === Number(area.id) }"
-                  type="button"
-                  @click="openAssignedArea(area)"
-                >
-                  <span class="fac-area-child-copy">
-                    <span>{{ area.label || area.name }}</span>
-                    <span class="fac-area-progress">{{ Number(area.progressPercent || 0) }}%</span>
-                  </span>
-                  <span class="fac-area-progress-track" aria-hidden="true">
-                    <span class="fac-area-progress-fill" :style="{ width: `${Number(area.progressPercent || 0)}%` }" />
-                  </span>
-                </button>
-              </div>
-            </div>
-          </nav>
-
-          <div class="fac-sidebar-footer">
-             <button class="fac-nav-item" type="button" @click="handleLogout">
-              <span class="fac-nav-icon"><ion-icon :icon="logOutOutline" /></span>
-              <span>Logout</span>
+  <AdamsAppShell
+    role-label="Faculty"
+    :page-title="pageTitle"
+    :page-description="pageDescription"
+    :show-title="true"
+  >
+    <template #nav>
+      <p class="adams-nav-label">Workspace</p>
+      <button class="adams-nav-item" :class="{ active: selectedSection === 'dashboard' }" type="button" @click="selectSection('dashboard')">
+        <span class="adams-nav-icon"><ion-icon :icon="gridOutline" /></span>
+        <span>Dashboard</span>
+      </button>
+      <button class="adams-nav-item" :class="{ active: selectedSection === 'documents' }" type="button" @click="selectSection('documents')">
+        <span class="adams-nav-icon"><ion-icon :icon="folderOpenOutline" /></span>
+        <span>Documents</span>
+      </button>
+      <div class="fac-tasks-nav">
+        <button
+          class="adams-nav-item"
+          :class="{ active: selectedSection === 'revisions' }"
+          type="button"
+          @click="toggleTasksAccordion"
+        >
+          <span class="adams-nav-icon"><ion-icon :icon="checkmarkDoneOutline" /></span>
+          <span>Tasks</span>
+          <span class="adams-nav-badge">{{ revisionCount }}</span>
+          <span class="adams-nav-caret">{{ tasksExpanded ? '▾' : '▸' }}</span>
+        </button>
+        <div v-if="tasksExpanded" class="adams-nav-children">
+          <button
+            class="adams-nav-item"
+            :class="{ active: selectedSection === 'areas' }"
+            type="button"
+            @click="toggleAreasAccordion"
+          >
+            <span class="adams-nav-icon"><ion-icon :icon="layersOutline" /></span>
+            <span>Areas</span>
+            <span class="adams-nav-caret">{{ areasExpanded ? '▾' : '▸' }}</span>
+          </button>
+          <div v-if="areasExpanded" class="fac-areas-list">
+            <p v-if="!myAreas.length" class="adams-nav-empty">No areas assigned</p>
+            <button
+              v-for="area in myAreas"
+              :key="area.id"
+              class="adams-nav-item fac-area-child"
+              :class="{ active: selectedSection === 'areas' && Number(selectedAreaId) === Number(area.id) }"
+              type="button"
+              @click="openAssignedArea(area)"
+            >
+              <span class="fac-area-child-copy">
+                <span>{{ area.displayLabel || area.label || area.name }}</span>
+                <span class="fac-area-progress">{{ Number(area.progressPercent || 0) }}%</span>
+              </span>
+              <span class="fac-area-role">{{ area.assignmentRole === 'chair' ? 'Area Chair' : 'Member' }}</span>
+              <span class="fac-area-progress-track" aria-hidden="true">
+                <span class="fac-area-progress-fill" :style="{ width: `${Number(area.progressPercent || 0)}%` }" />
+              </span>
             </button>
           </div>
-        </aside>
+        </div>
+      </div>
+      <button class="adams-nav-item" :class="{ active: selectedSection === 'team' }" type="button" @click="selectSection('team')">
+        <span class="adams-nav-icon"><ion-icon :icon="peopleOutline" /></span>
+        <span>Team</span>
+      </button>
 
-        <main class="fac-main">
-          <header class="fac-topbar">
-            <div class="fac-search-box">
-              <ion-icon :icon="searchOutline" />
-              <input type="search" value="Search task" aria-label="Search task" />
-            </div>
+      <p class="adams-nav-label">General</p>
+      <button class="adams-nav-item" :class="{ active: selectedSection === 'notifications' }" type="button" @click="selectSection('notifications')">
+        <span class="adams-nav-icon"><ion-icon :icon="notificationsOutline" /></span>
+        <span>Notifications</span>
+        <span v-if="inboxUnreadCount > 0" class="adams-nav-badge">{{ inboxUnreadCount }}</span>
+      </button>
+    </template>
 
-            <div class="fac-header-actions">
-              <button class="fac-circle-button" type="button" aria-label="Notifications">
-                <ion-icon :icon="notificationsOutline" />
-              </button>
-              <div class="fac-role-switcher">
-                <button v-if="authStore.canViewAs('program-chair')" class="fac-btn fac-btn-ghost" @click.prevent="switchToProgramChairView">
-                  <ion-icon :icon="briefcaseOutline" /> Program Chair
-                </button>
-                <button v-if="authStore.canViewAs('dean')" class="fac-btn fac-btn-ghost" @click.prevent="switchToDeanView">
-                  <ion-icon :icon="schoolOutline" /> Dean
-                </button>
-              </div>
-              <div class="fac-user-badge">
-                <img v-if="currentUserPhoto" :src="currentUserPhoto" alt="Profile photo" class="fac-user-avatar" />
-                <div v-else class="fac-user-avatar initial">{{ currentUserInitials }}</div>
-                <div class="fac-user-meta">
-                  <strong>{{ currentUserName }}</strong>
-                  <span>{{ currentUserName }}@mail.com</span>
-                </div>
-              </div>
-            </div>
-          </header>
+    <template #header-actions>
+      <button v-if="authStore.canViewAs('program-chair')" class="adams-btn adams-btn-ghost" type="button" @click.prevent="switchToProgramChairView">
+        <ion-icon :icon="briefcaseOutline" /> Program Chair
+      </button>
+      <button v-if="authStore.canViewAs('dean')" class="adams-btn adams-btn-ghost" type="button" @click.prevent="switchToDeanView">
+        <ion-icon :icon="schoolOutline" /> Dean
+      </button>
+    </template>
 
           <div v-if="callMessage" class="fac-call-banner">
             <div>{{ callMessage }}</div>
             <button class="fac-btn fac-btn-ghost" v-if="activeCall" @click="endCall">End Call</button>
-          </div>
-
-          <!-- Program Context Header (Read-Only) -->
-          <div class="fac-accreditation-context">
-            <div class="fac-context-item">
-              <span class="fac-context-label">Program</span>
-              <span class="fac-context-value">{{ facultyDashboard.dashboardProgram }}</span>
-            </div>
-            <div class="fac-context-item">
-              <span class="fac-context-label">Level</span>
-              <span class="fac-context-value">{{ facultyDashboard.accreditationLevel }}</span>
-            </div>
-            <div class="fac-context-item">
-              <span class="fac-context-label">Phase</span>
-              <span class="fac-context-value">{{ facultyDashboard.accreditationPhase }}</span>
-            </div>
-            <div class="fac-context-item">
-              <span class="fac-context-label">Accreditation Date</span>
-              <span class="fac-context-value">{{ facultyDashboard.accreditationDate }}</span>
-            </div>
           </div>
 
           <!-- Task Detail Modal -->
@@ -381,19 +342,7 @@
               <h2>Notifications</h2>
               <p>Important updates about your accreditation work</p>
             </div>
-            <div v-if="facultyDashboard.notifications.length" class="fac-notifications-list">
-              <div v-for="notification in facultyDashboard.notifications" :key="notification.id" class="fac-notification-item" :class="{ unread: !notification.read }">
-                <div class="fac-notification-icon">📬</div>
-                <div class="fac-notification-content">
-                  <p class="fac-notification-title">{{ notification.subject }}</p>
-                  <p class="fac-notification-message">{{ notification.message }}</p>
-                  <small class="fac-notification-time">{{ formatDate(notification.created_at) }}</small>
-                </div>
-              </div>
-            </div>
-            <div v-else class="fac-empty-state">
-              <p>No notifications yet</p>
-            </div>
+            <NotificationInbox subtitle="Area assignments, reviews, deadlines, and task updates." @opened="onNotificationOpened" />
           </div>
 
           <div v-else class="fac-dashboard-content">
@@ -538,23 +487,23 @@
               </div>
             </section>
           </div>
-        </main>
-      </div>
-    </ion-content>
-  </ion-page>
+  </AdamsAppShell>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { IonPage, IonContent, IonIcon } from '@ionic/vue'
-import { useRouter } from 'vue-router'
+import { IonIcon } from '@ionic/vue'
+import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@/stores/authStore'
 import { useUserCalls } from '@/lib/useUserCalls'
 import { useFacultyDashboardStore } from '@/stores/facultyDashboardStore'
+import { useNotificationStore, type InboxItem } from '@/stores/notificationStore'
 import FacultyAccreditationFolder from '@/components/FacultyAccreditationFolder.vue'
 import FacultyMyAreasPanel from '@/components/FacultyMyAreasPanel.vue'
 import AccreditationLevelStatus from '@/components/AccreditationLevelStatus.vue'
+import AdamsAppShell from '@/components/ui/AdamsAppShell.vue'
+import NotificationInbox from '@/components/NotificationInbox.vue'
 import { getSystemSettings, linkRoleStorageFileAsEvidence } from '@/lib/api'
 import type { AppDocument } from '@/lib'
 
@@ -564,7 +513,6 @@ import {
   peopleOutline,
   notificationsOutline,
   checkmarkDoneOutline,
-  logOutOutline,
   cloudUploadOutline,
   searchOutline,
   documentTextOutline,
@@ -577,11 +525,13 @@ import {
 } from 'ionicons/icons'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const facultyDashboard = useFacultyDashboardStore()
+const notificationStore = useNotificationStore()
+const inboxUnreadCount = computed(() => notificationStore.unreadCount)
 
 const authUser = computed(() => authStore.user)
-const currentUserPhoto = computed(() => (authUser.value as any)?.profilePhoto || (authUser.value as any)?.avatar || null)
 const currentUserInitials = computed(() => {
   const name = authUser.value?.name || authUser.value?.first_name || ''
   return name
@@ -592,6 +542,28 @@ const currentUserInitials = computed(() => {
     .join('') || 'U'
 })
 const currentUserName = computed(() => authUser.value?.name || 'Faculty User')
+
+const pageTitle = computed(() => {
+  switch (selectedSection.value) {
+    case 'documents': return 'Documents'
+    case 'revisions': return 'Tasks'
+    case 'areas': return 'Assigned Area'
+    case 'team': return 'Team'
+    case 'notifications': return 'Notifications'
+    default: return 'Dashboard'
+  }
+})
+
+const pageDescription = computed(() => {
+  switch (selectedSection.value) {
+    case 'documents': return 'Upload, organize, and track evidence files for your assigned areas.'
+    case 'revisions': return 'Complete assigned accreditation tasks and revision requests.'
+    case 'areas': return 'Work through the requirements for your assigned accreditation area.'
+    case 'team': return 'See who you are collaborating with on this program.'
+    case 'notifications': return 'Stay current on assignments, reviews, and reminders.'
+    default: return 'Track assigned tasks, submissions, and personal accreditation progress.'
+  }
+})
 
 const {
   selectedSection,
@@ -615,13 +587,24 @@ const {
   selectSection,
 } = facultyDashboard
 
+const tasksExpanded = ref(false)
 const areasExpanded = ref(false)
+
+const toggleTasksAccordion = () => {
+  tasksExpanded.value = !tasksExpanded.value
+  selectSection('revisions')
+  if (!tasksExpanded.value) {
+    areasExpanded.value = false
+  }
+}
 
 const toggleAreasAccordion = () => {
   areasExpanded.value = !areasExpanded.value
 }
 
 const openAssignedArea = (area: { id: number }) => {
+  tasksExpanded.value = true
+  areasExpanded.value = true
   openMyArea(Number(area.id))
 }
 
@@ -987,11 +970,6 @@ const switchToDeanView = () => {
   router.push('/user/dashboard/dean')
 }
 
-const handleLogout = async () => {
-  await authStore.logout()
-  router.replace('/login')
-}
-
 const openUploadDialog = () => {
   const input = document.querySelector<HTMLInputElement>('#faculty-upload-input')
   input?.click()
@@ -1045,28 +1023,42 @@ const loadData = async () => {
 onMounted(() => {
   void loadData()
 })
+
+const applySectionFromRoute = (section: unknown) => {
+  if (typeof section !== 'string' || !section) return
+  selectSection(section as any)
+  if (section === 'areas' || section === 'revisions') {
+    tasksExpanded.value = true
+    if (section === 'areas') areasExpanded.value = true
+  }
+}
+
+const onNotificationOpened = async (item: InboxItem) => {
+  if (item.type === 'faculty_area_assignment' || item.type === 'accreditation_area_assigned') {
+    await loadMyAreas()
+  }
+}
+
+watch(() => route.query.section, applySectionFromRoute, { immediate: true })
 </script>
 
 <style scoped>
-.fac-shell {
+.fac-call-banner {
   display: flex;
-  height: 100vh;
-  background: #fefffe;
-  color: #0f172a;
-  font-family: Inter, 'Segoe UI', sans-serif;
-  padding: 0;
-  gap: 0;
-  overflow: hidden;
-}
-
-:deep(ion-content) {
-  --overflow: hidden;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.9rem;
+  background: var(--adams-success-soft);
+  border: 1px solid #bbf7d0;
+  color: #064e3b;
 }
 
 /* ── Sidebar ── */
 .fac-sidebar {
-  width: 300px;
-  min-width: 260px;
+  width: 230px;
+  min-width: 250px;
   height: 100vh;
   position: sticky;
   top: 0;
@@ -1161,8 +1153,20 @@ onMounted(() => {
   padding: 0.18rem 0.45rem;
 }
 
-.fac-areas-nav {
-  margin-top: 0.35rem;
+.fac-tasks-nav > .fac-nav-item .fac-nav-badge {
+  margin-left: 0.35rem;
+}
+
+.fac-areas-nav,
+.fac-tasks-nav {
+  margin-top: 0.15rem;
+}
+
+.fac-tasks-nav-children {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.1rem 0 0.2rem 0.55rem;
 }
 
 .fac-areas-caret {
@@ -1193,6 +1197,14 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+}
+
+.fac-area-role {
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .fac-area-progress {
@@ -2241,39 +2253,6 @@ onMounted(() => {
   background: #f1f5f9;
   color: #0f172a;
   border-color: #cbd5e1;
-}
-
-/* Program Context Header */
-.fac-accreditation-context {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 1rem;
-  margin: 1rem 1.5rem;
-  padding: 1.2rem;
-  background: linear-gradient(135deg, #f0f9ff 0%, #f5f3ff 100%);
-  border: 1px solid #e0e7ff;
-  border-radius: 0.75rem;
-  font-size: 0.85rem;
-}
-
-.fac-context-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.fac-context-label {
-  color: #64748b;
-  font-weight: 500;
-  text-transform: uppercase;
-  font-size: 0.7rem;
-  letter-spacing: 0.05em;
-}
-
-.fac-context-value {
-  color: #0f172a;
-  font-weight: 600;
-  font-size: 0.95rem;
 }
 
 /* Task Detail Modal */

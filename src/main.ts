@@ -51,6 +51,7 @@ addIcons({
 
 import './assets/styles.css'
 import './assets/superadmin.css'
+import './assets/adams-ui.css'
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/vue/css/core.css'
 import '@ionic/vue/css/normalize.css'

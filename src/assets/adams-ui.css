@@ -1,0 +1,482 @@
+/* ==========================================================================
+   ADAMS shared design system
+   Applied across every authenticated role so the product feels like one app.
+   ========================================================================== */
+
+.adams-app ion-content {
+  --background: var(--adams-bg);
+}
+
+/* ---------- Buttons ---------- */
+.adams-btn,
+.sa-btn,
+.fac-btn,
+.dean-btn,
+.pc-btn,
+.qa-btn,
+.vpaa-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 38px;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
+  background: var(--adams-surface);
+  color: var(--adams-ink);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 650;
+  line-height: 1.2;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background var(--transition-base), border-color var(--transition-base), color var(--transition-base), box-shadow var(--transition-base);
+}
+
+.adams-btn:focus-visible,
+.sa-btn:focus-visible,
+.fac-btn:focus-visible,
+.dean-btn:focus-visible,
+.pc-btn:focus-visible,
+.qa-btn:focus-visible,
+.vpaa-btn:focus-visible {
+  outline: 2px solid var(--adams-primary);
+  outline-offset: 2px;
+}
+
+.adams-btn:disabled,
+.sa-btn:disabled,
+.fac-btn:disabled,
+.dean-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.adams-btn-primary,
+.sa-btn-primary,
+.fac-btn-primary,
+.dean-btn-primary,
+.pc-btn-primary,
+.qa-btn-primary,
+.vpaa-btn.primary,
+.vpaa-btn-primary {
+  background: var(--adams-primary) !important;
+  border-color: var(--adams-primary) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+
+.adams-btn-primary:hover:not(:disabled),
+.sa-btn-primary:hover:not(:disabled),
+.fac-btn-primary:hover:not(:disabled),
+.dean-btn-primary:hover:not(:disabled),
+.pc-btn-primary:hover:not(:disabled),
+.qa-btn-primary:hover:not(:disabled) {
+  background: var(--adams-primary-hover) !important;
+}
+
+.adams-btn-secondary,
+.adams-btn-ghost,
+.sa-btn-ghost,
+.fac-btn-ghost,
+.dean-btn-ghost,
+.pc-btn-ghost,
+.qa-btn-ghost,
+.vpaa-btn.ghost,
+.vpaa-btn-ghost {
+  background: var(--adams-surface) !important;
+  border-color: var(--adams-border-strong) !important;
+  color: var(--adams-ink) !important;
+}
+
+.adams-btn-danger {
+  background: var(--adams-danger);
+  border-color: var(--adams-danger);
+  color: #fff;
+}
+
+.adams-btn-sm {
+  min-height: 32px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.75rem;
+}
+
+.adams-icon-btn {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--adams-surface);
+  color: var(--adams-ink-soft);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+
+.adams-icon-btn:hover {
+  background: var(--adams-surface-alt);
+}
+
+/* ---------- Cards / stats ---------- */
+.adams-card,
+.sa-card,
+.fac-card,
+.dean-card,
+.pc-card,
+.qa-card,
+.vpaa-card {
+  background: var(--adams-surface);
+  border: 0;
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--adams-shadow);
+}
+
+.adams-stat-strip,
+.sa-stat-strip,
+.fac-stat-row,
+.dean-stat-strip,
+.pc-stat-strip,
+.qa-stat-strip,
+.vpaa-stat-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+.adams-stat,
+.sa-stat,
+.fac-stat-card,
+.dean-stat,
+.pc-stat,
+.qa-stat,
+.vpaa-stat {
+  background: var(--adams-surface);
+  border: 0;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ---------- Forms ---------- */
+.adams-input,
+.sa-search,
+.sa-select,
+.sa-form input,
+.sa-form select,
+.sa-form textarea,
+.form-input {
+  min-height: 42px;
+  border: 1px solid var(--adams-border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--adams-surface);
+  color: var(--adams-ink);
+  font: inherit;
+}
+
+.adams-input:focus,
+.sa-search:focus,
+.sa-select:focus,
+.sa-form input:focus,
+.sa-form select:focus,
+.sa-form textarea:focus,
+.form-input:focus {
+  outline: none;
+  border-color: var(--adams-primary);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+}
+
+/* ---------- Badges ---------- */
+.adams-badge,
+.sa-chip,
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.18rem 0.55rem;
+  border-radius: var(--radius-full);
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.adams-badge-success { background: var(--adams-success-soft); color: var(--adams-success); }
+.adams-badge-warning { background: var(--adams-warning-soft); color: var(--adams-warning); }
+.adams-badge-danger { background: var(--adams-danger-soft); color: var(--adams-danger); }
+.adams-badge-info { background: var(--adams-info-soft); color: var(--adams-info); }
+.adams-badge-neutral { background: var(--adams-surface-alt); color: var(--adams-muted); }
+
+/* ---------- Nav (used inside AdamsAppShell slots) ---------- */
+.adams-nav-label {
+  margin: 1rem 0 0.35rem;
+  padding: 0 0.7rem;
+  color: #94a3b8;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.adams-nav-label:first-child {
+  margin-top: 0.15rem;
+}
+
+.adams-nav-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.12rem;
+  padding: 0.62rem 0.7rem;
+  border: 0;
+  border-radius: 0.75rem;
+  background: transparent;
+  color: #475569;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--transition-base), color var(--transition-base);
+}
+
+.adams-nav-item:hover {
+  background: var(--adams-primary-soft);
+  color: var(--adams-primary-hover);
+}
+
+.adams-nav-item.active {
+  background: var(--adams-primary-soft);
+  color: var(--adams-primary-hover);
+  font-weight: 700;
+}
+
+.adams-nav-item:focus-visible {
+  outline: 2px solid var(--adams-primary);
+  outline-offset: 2px;
+}
+
+.adams-nav-icon {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 0.5rem;
+  color: currentColor;
+}
+
+.adams-nav-item.active .adams-nav-icon {
+  background: var(--adams-primary-muted);
+}
+
+.adams-nav-badge {
+  margin-left: auto;
+  min-width: 1.25rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius-full);
+  background: var(--adams-primary);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.adams-nav-caret {
+  margin-left: auto;
+  color: var(--adams-muted);
+  font-size: 0.75rem;
+}
+
+.adams-nav-children {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.1rem 0 0.25rem 0.7rem;
+}
+
+.adams-nav-empty {
+  margin: 0.25rem 0.7rem;
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+
+/* ---------- Empty / loading / feedback ---------- */
+.adams-empty,
+.sa-empty,
+.dean-empty-state,
+.vpaa-empty-state {
+  display: grid;
+  place-items: center;
+  gap: 0.4rem;
+  min-height: 120px;
+  padding: 1.25rem;
+  border: 0;
+  border-radius: var(--radius-xl);
+  background: var(--adams-surface-alt);
+  color: var(--adams-muted);
+  text-align: center;
+}
+
+.adams-alert {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--adams-border);
+  font-size: 0.875rem;
+}
+
+.adams-alert-success { background: var(--adams-success-soft); border-color: #bbf7d0; color: var(--adams-success); }
+.adams-alert-warning { background: var(--adams-warning-soft); border-color: #fde68a; color: var(--adams-warning); }
+.adams-alert-error { background: var(--adams-danger-soft); border-color: #fecaca; color: var(--adams-danger); }
+.adams-alert-info { background: var(--adams-info-soft); border-color: #bae6fd; color: var(--adams-info); }
+
+.adams-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: #e2e8f0;
+  border-radius: var(--radius-md);
+}
+
+.adams-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.7), transparent);
+  animation: adams-shimmer 1.2s linear infinite;
+}
+
+@keyframes adams-shimmer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+/* ---------- Tables ---------- */
+.adams-table,
+.sa-table,
+.pc-doc-table,
+.vpaa-table {
+  width: 100%;
+}
+
+.adams-table-header,
+.sa-table-header,
+.pc-table-header,
+.vpaa-table-header {
+  color: var(--adams-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ---------- Page headers inside role content ---------- */
+.sa-page-header,
+.college-header,
+.college-detail-header,
+.vpaa-topbar,
+.qa-topbar {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.vpaa-page-title,
+.qa-page-title,
+.sa-page-title,
+.sa-page-header h1 {
+  color: var(--adams-ink) !important;
+  letter-spacing: -0.03em;
+}
+
+.vpaa-breadcrumb,
+.qa-breadcrumb,
+.sa-breadcrumb,
+.sa-eyebrow {
+  color: var(--adams-muted) !important;
+}
+
+/* VPAA indigo chrome → ADAMS green */
+.vpaa-page {
+  background: transparent;
+  min-height: 100%;
+}
+
+.vpaa-header-panel,
+.vpaa-content,
+.vpaa-monitor-wrap {
+  color: var(--adams-ink);
+}
+
+/* Hide duplicate chrome once AdamsAppShell owns profile / title */
+.adams-app .vpaa-topbar,
+.adams-app .qa-topbar {
+  display: none;
+}
+
+.adams-app .vpaa-user-chip {
+  display: none;
+}
+
+/* Soften leftover section separators inside the shared shell */
+.adams-app .pc-section-group,
+.adams-app .fac-section-group,
+.adams-app .dean-section-group,
+.adams-app .qa-section-group {
+  border-top: 0 !important;
+}
+
+.adams-app .pc-card-header,
+.adams-app .fac-card-header,
+.adams-app .qa-card-header,
+.adams-app .vpaa-card-header,
+.adams-app .dean-card-header,
+.adams-app .sa-card-header {
+  border-bottom: 0 !important;
+}
+
+/* Ionic danger logout buttons inside role shells are replaced by the shared footer */
+.adams-app .adams-sidebar ion-button {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .adams-stat-strip,
+  .sa-stat-strip,
+  .fac-stat-row,
+  .dean-stat-strip,
+  .pc-stat-strip,
+  .qa-stat-strip,
+  .vpaa-stat-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .adams-stat-strip,
+  .sa-stat-strip,
+  .fac-stat-row,
+  .dean-stat-strip,
+  .pc-stat-strip,
+  .qa-stat-strip,
+  .vpaa-stat-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .sa-page-header,
+  .college-header,
+  .college-detail-header,
+  .vpaa-topbar,
+  .qa-topbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

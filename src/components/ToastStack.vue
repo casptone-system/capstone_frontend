@@ -21,8 +21,8 @@ const dismiss = (id: string) => store.dismiss(id)
 .toast { min-width: 220px; padding: 0.6rem 0.8rem; border-radius: 8px; color: #fff; box-shadow: 0 6px 20px rgba(2,6,23,0.12); display:flex; align-items:center; justify-content:space-between; gap:0.5rem }
 .toast-message { flex:1; margin-right:0.5rem; font-size:0.95rem }
 .toast-close { background: transparent; border: none; color: rgba(255,255,255,0.9); cursor: pointer }
-.toast-info { background: #0ea5e9 }
-.toast-success { background: #10b981 }
-.toast-error { background: #ef4444 }
-.toast-warning { background: #f59e0b }
+.toast-info { background: var(--adams-info) }
+.toast-success { background: var(--adams-success) }
+.toast-error { background: var(--adams-danger) }
+.toast-warning { background: var(--adams-warning) }
 </style>

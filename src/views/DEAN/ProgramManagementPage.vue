@@ -1,6 +1,21 @@
 <template>
-  <ion-page>
-    <ion-content :fullscreen="true">
+  <AdamsAppShell
+    role-label="Dean"
+    :page-title="program?.name || 'Program details'"
+    page-description="Manage this program’s chair, faculty, and accreditation progress."
+  >
+    <template #nav>
+      <p class="adams-nav-label">College</p>
+      <button class="adams-nav-item" type="button" @click="goBack">
+        <span class="adams-nav-icon"><ion-icon :icon="arrowBackOutline" /></span>
+        <span>Back to dashboard</span>
+      </button>
+      <button class="adams-nav-item active" type="button">
+        <span class="adams-nav-icon"><ion-icon :icon="schoolOutline" /></span>
+        <span>Program details</span>
+      </button>
+    </template>
+
       <div class="program-management-shell">
         <header class="program-management-header">
           <button type="button" class="program-back-btn" @click="goBack">
@@ -186,12 +201,11 @@
           </div>
         </div>
       </div>
-    </ion-content>
-  </ion-page>
+  </AdamsAppShell>
 </template>
 
 <script setup lang="ts">
-import { IonPage, IonContent, IonIcon } from '@ionic/vue'
+import { IonIcon } from '@ionic/vue'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
@@ -212,6 +226,7 @@ import {
   personOutline,
   schoolOutline,
 } from 'ionicons/icons'
+import AdamsAppShell from '@/components/ui/AdamsAppShell.vue'
 
 const route = useRoute()
 const router = useRouter()

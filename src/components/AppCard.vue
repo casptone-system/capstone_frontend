@@ -31,11 +31,12 @@ export default {
 </script>
 <style scoped>
 .card {
-  background-color: var(--color-surface);
+  background-color: var(--adams-surface);
   border-radius: var(--radius-2xl);
   overflow: hidden;
   transition: all var(--transition-base);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--adams-border);
+  box-shadow: var(--adams-shadow);
 }
 
 .card.default {

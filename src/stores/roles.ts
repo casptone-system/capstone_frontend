@@ -35,19 +35,19 @@ export const roleLabels: Record<string, string> = {
 }
 
 export const roleHomePaths: Record<string, string> = {
-  dean: '/user/dashboard',
-  'program-chair': '/user/dashboard',
-  faculty: '/documents',
+  dean: '/user/dashboard/dean',
+  'program-chair': '/user/dashboard/program-chair',
+  faculty: '/user/dashboard/faculty',
   'new-user': '/new-user',
   'new-user-no-groups': '/new-user',
   'no-group': '/new-user',
   'no-groups': '/new-user',
   nogroups: '/new-user',
-  qa: '/qa-review',
-  vpaa: '/reports',
-  'vpaa-di': '/reports',
-  'super-admin': '/users',
-  admin: '/users',
+  qa: '/user/dashboard/qa',
+  vpaa: '/user/dashboard/vpaa',
+  'vpaa-di': '/user/dashboard/vpaa',
+  'super-admin': '/superadmin',
+  admin: '/superadmin',
   staff: '/documents',
-  'area-in-charge': '/documents',
+  'area-in-charge': '/user/dashboard/area-incharge',
 }

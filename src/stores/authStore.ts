@@ -115,7 +115,14 @@ export const useAuthStore = defineStore('auth', () => {
       }
     }
 
-    if (uniqueRoles.includes('program-chair')) views.push('program-chair')
+    if (uniqueRoles.includes('program-chair')) {
+      views.push('program-chair')
+      // Program chairs who assign themselves as Area Chair or member
+      // need the faculty/area-task workspace as well.
+      if (!uniqueRoles.includes('faculty')) {
+        views.push('faculty')
+      }
+    }
     if (uniqueRoles.includes('faculty')) views.push('faculty')
 
     return Array.from(new Set(views))

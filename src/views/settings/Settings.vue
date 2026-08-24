@@ -1,18 +1,22 @@
 <template>
-  <ion-page>
-    <ion-header :translucent="true">
-      <ion-toolbar>
-        <template #start>
-          <ion-buttons>
-            <ion-menu-button></ion-menu-button>
-          </ion-buttons>
-        </template>
-        <ion-title>Settings</ion-title>
-      </ion-toolbar>
-    </ion-header>
+  <AdamsAppShell
+    :role-label="currentRoleLabel"
+    page-title="Settings"
+    page-description="Manage your profile, security, and notification preferences."
+  >
+    <template #nav>
+      <p class="adams-nav-label">Account</p>
+      <button class="adams-nav-item" type="button" @click="goHome">
+        <span class="adams-nav-icon"><ion-icon :icon="gridOutline" /></span>
+        <span>Dashboard</span>
+      </button>
+      <button class="adams-nav-item active" type="button">
+        <span class="adams-nav-icon"><ion-icon :icon="settingsOutline" /></span>
+        <span>Settings</span>
+      </button>
+    </template>
 
-    <ion-content :fullscreen="true" class="p-4">
-      <div class="space-y-6 max-w-2xl">
+      <div class="adams-settings">
         <!-- Profile Settings -->
         <ion-card class="shadow-md">
           <ion-card-header>
@@ -116,24 +120,18 @@
         </ion-card>
 
         <!-- Messages -->
-        <div v-if="successMessage" class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+        <div v-if="successMessage" class="adams-alert adams-alert-success">
           {{ successMessage }}
         </div>
-        <div v-if="errorMessage" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        <div v-if="errorMessage" class="adams-alert adams-alert-error">
           {{ errorMessage }}
         </div>
       </div>
-    </ion-content>
-  </ion-page>
+  </AdamsAppShell>
 </template>
 
 <script setup lang="ts">
 import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
   IonCard,
   IonCardContent,
   IonCardHeader,
@@ -144,11 +142,19 @@ import {
   IonToggle,
   IonList,
   IonItem,
-  IonButtons,
-  IonMenuButton,
+  IonIcon,
 } from '@ionic/vue'
+import { gridOutline, settingsOutline } from 'ionicons/icons'
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import api from '@/lib/api'
+import AdamsAppShell from '@/components/ui/AdamsAppShell.vue'
+import { useRoleNavigation } from '@/lib/useRoleNavigation'
+
+const router = useRouter()
+const { currentRoleLabel, homePath } = useRoleNavigation()
+
+const goHome = () => router.push(homePath.value)
 
 const isSaving = ref(false)
 const successMessage = ref('')
@@ -233,4 +239,32 @@ const savePreferences = async () => {
 </script>
 
 <style scoped>
+.adams-settings {
+  display: grid;
+  gap: 1rem;
+  max-width: 720px;
+}
+
+.adams-settings :deep(ion-card) {
+  margin: 0;
+  border: 1px solid var(--adams-border);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--adams-shadow);
+}
+
+.role-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 0.85rem;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--adams-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
 </style>

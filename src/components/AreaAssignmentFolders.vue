@@ -128,6 +128,14 @@
               <span class="afa-user-copy"><strong>{{ selectedChair.name }}</strong><small>{{ selectedChair.email }} · Area Chair</small></span>
               <button class="afa-remove-x" title="Remove selected chair" @click="clearChair">✕</button>
             </div>
+            <button
+              v-else-if="currentUserOption"
+              type="button"
+              class="afa-self-btn"
+              @click="assignMyselfAsChair"
+            >
+              Assign myself as Area Chair
+            </button>
             <p v-if="!selectedChair && triedSave" class="afa-field-error">
               An Area Chair is required before saving.
             </p>
@@ -175,7 +183,15 @@
                 <button class="afa-tag-remove" @click="removeMember(m)"><ion-icon :icon="closeOutline" /></button>
               </span>
             </div>
-            <p v-else class="afa-muted">No members selected. Small programs may keep only the Area Chair.</p>
+            <button
+              v-if="currentUserOption && !isCurrentUserSelectedMember && !isCurrentUserSelectedChair"
+              type="button"
+              class="afa-self-btn"
+              @click="addMyselfAsMember"
+            >
+              Add myself as member
+            </button>
+            <p v-else-if="!selectedMembers.length" class="afa-muted">No members selected. Small programs may keep only the Area Chair.</p>
           </section>
 
           <p v-if="modalMessage" :class="['afa-message', modalMessageType]">{{ modalMessage }}</p>
@@ -233,6 +249,8 @@ import {
   setAreaDeadline,
 } from '@/lib/api'
 import { useToastStore } from '@/stores/toastStore'
+import { useAuthStore } from '@/stores/authStore'
+import { useFacultyDashboardStore } from '@/stores/facultyDashboardStore'
 
 interface UserOption {
   id: number | string
@@ -264,6 +282,8 @@ const props = defineProps<{
 }>()
 
 const toastStore = useToastStore()
+const authStore = useAuthStore()
+const facultyDashboard = useFacultyDashboardStore()
 
 // The 10 fixed AACCUP areas (static / predefined, not user-created).
 const fixedAreas = [
@@ -303,6 +323,44 @@ const modalMessage = ref('')
 const modalMessageType = ref<'success' | 'error'>('success')
 const reassignConfirmOpen = ref(false)
 const pendingReassignName = ref('')
+
+const currentUserOption = computed((): UserOption | null => {
+  const user = authStore.user as any
+  if (!user?.id) return null
+  return {
+    id: user.id,
+    name: user.name || currentUserNameFallback(user),
+    email: user.email || '',
+  }
+})
+
+const isCurrentUserSelectedChair = computed(() =>
+  Boolean(currentUserOption.value && selectedChair.value && String(selectedChair.value.id) === String(currentUserOption.value.id))
+)
+
+const isCurrentUserSelectedMember = computed(() =>
+  Boolean(currentUserOption.value && selectedMembers.value.some((member) => String(member.id) === String(currentUserOption.value?.id)))
+)
+
+const currentUserNameFallback = (user: any) =>
+  [user.first_name, user.last_name].filter(Boolean).join(' ') || 'Me'
+
+const assignMyselfAsChair = () => {
+  if (!currentUserOption.value) return
+  selectChair(currentUserOption.value)
+}
+
+const addMyselfAsMember = () => {
+  if (!currentUserOption.value) return
+  addMember(currentUserOption.value)
+}
+
+const prependCurrentUser = (results: UserOption[]) => {
+  const me = currentUserOption.value
+  if (!me) return results
+  if (results.some((person) => String(person.id) === String(me.id))) return results
+  return [me, ...results]
+}
 
 let chairTimer: ReturnType<typeof setTimeout> | null = null
 let memberTimer: ReturnType<typeof setTimeout> | null = null
@@ -446,7 +504,7 @@ const onChairSearch = () => {
       return
     }
     const results = await runSearch(q)
-    chairResults.value = results.filter(
+    chairResults.value = prependCurrentUser(results).filter(
       (u: any) => !selectedChair.value || String(u.id) !== String(selectedChair.value.id)
     )
   }, 300)
@@ -466,7 +524,7 @@ const onMemberSearch = () => {
         selectedChair.value ? [String(selectedChair.value.id)] : []
       )
     )
-    memberResults.value = results.filter((u: any) => !ids.has(String(u.id)))
+    memberResults.value = prependCurrentUser(results).filter((u: any) => !ids.has(String(u.id)))
   }, 300)
 }
 
@@ -534,6 +592,7 @@ const saveArea = async (confirmReassign = false) => {
     await setAreaMembers(area.id, selectedMembers.value.map((m) => m.id))
 
     await loadAreas()
+    await facultyDashboard.loadMyAreas()
     toastStore.show(`${activeFolder.value.codeLabel} saved successfully.`, 'success')
     reassignConfirmOpen.value = false
     isOpen.value = false
@@ -924,6 +983,22 @@ onUnmounted(() => {
   background: #eff6ff;
   border: 1px solid #bfdbfe;
   border-radius: 0.6rem;
+}
+.afa-self-btn {
+  appearance: none;
+  align-self: flex-start;
+  margin-top: 0.55rem;
+  border: 1px dashed #93c5fd;
+  background: #f8fbff;
+  color: #1d4ed8;
+  border-radius: 0.55rem;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.afa-self-btn:hover {
+  background: #eff6ff;
 }
 .afa-remove-x {
   border: none;

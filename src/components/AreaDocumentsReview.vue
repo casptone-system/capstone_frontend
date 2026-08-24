@@ -130,7 +130,7 @@
       <p v-else-if="filteredDocuments.length === 0" class="adr-muted">No documents match these filters.</p>
 
       <div v-else class="adr-docs">
-        <article v-for="doc in filteredDocuments" :key="doc.id" class="adr-doc">
+        <article v-for="doc in filteredDocuments" :key="fileKey(doc)" class="adr-doc">
           <div class="adr-doc-main">
             <span class="adr-file-icon">{{ fileIcon(doc) }}</span>
             <div>
@@ -156,12 +156,12 @@
               v-if="(doc.versions || []).length > 1"
               type="button"
               class="adr-btn ghost"
-              @click="toggleVersions(doc.id)"
+              @click="toggleVersions(fileKey(doc))"
             >
               Versions
             </button>
           </div>
-          <ul v-if="expandedVersions.has(doc.id)" class="adr-versions">
+          <ul v-if="expandedVersions.has(fileKey(doc))" class="adr-versions">
             <li v-for="version in (doc.versions || [])" :key="version.id">
               v{{ version.version }} · {{ version.originalName }} · {{ formatDate(version.createdAt) }}
               <button type="button" class="adr-link" @click="openPreview(doc, version)">Preview</button>
@@ -202,9 +202,11 @@ import {
 import {
   approveReview,
   downloadDocument,
-  getDocuments,
+  downloadWorkspaceEvidence,
   getProgramChairAreaDocuments,
+  getProgramChairAreaFiles,
   previewDocument,
+  previewWorkspaceEvidence,
   requestRevisionReview,
 } from '@/lib/api'
 import { openBlobInNewTab, previewKindFromMeta } from '@/lib/documentPreview'
@@ -264,7 +266,7 @@ const typeFilter = ref('')
 const uploaderFilter = ref('')
 const dateFrom = ref('')
 const dateTo = ref('')
-const expandedVersions = ref(new Set<number>())
+const expandedVersions = ref(new Set<string>())
 const revisionOpen = ref(false)
 const revisionComment = ref('')
 
@@ -376,6 +378,10 @@ const unwrapList = (payload: any): any[] => {
   return []
 }
 
+const fileKey = (doc: any) => `${doc.source || 'document'}-${doc.id}`
+
+const isWorkspaceEvidence = (doc: any) => doc?.source === 'criterion-evidence' && doc?.workspaceId
+
 const refreshSelected = (payload: { levels: LevelFolder[] }) => {
   if (selectedLevel.value) {
     selectedLevel.value = payload.levels.find((level) => level.level === selectedLevel.value?.level) || null
@@ -407,7 +413,7 @@ const loadTree = async () => {
 const loadAreaDocuments = async (area: AreaFolder) => {
   docsLoading.value = true
   try {
-    const payload = await getDocuments({ area_id: area.id, per_page: 100 })
+    const payload = await getProgramChairAreaFiles(area.id)
     documents.value = unwrapList(payload)
   } catch (err: any) {
     documents.value = []
@@ -440,7 +446,7 @@ const resetFilters = () => {
   dateTo.value = ''
 }
 
-const toggleVersions = (id: number) => {
+const toggleVersions = (id: string) => {
   if (expandedVersions.value.has(id)) expandedVersions.value.delete(id)
   else expandedVersions.value.add(id)
   expandedVersions.value = new Set(expandedVersions.value)
@@ -449,7 +455,9 @@ const toggleVersions = (id: number) => {
 const openPreview = async (doc: any, version?: any) => {
   try {
     const current = version || latestVersion(doc)
-    const blob = await previewDocument(doc.id, current?.version)
+    const blob = isWorkspaceEvidence(doc)
+      ? await previewWorkspaceEvidence(doc.workspaceId, doc.id)
+      : await previewDocument(doc.id, current?.version)
     const { mime, name } = fileMeta(doc, current)
     openBlobInNewTab(blob, name, mime || blob.type)
   } catch (err: any) {
@@ -460,11 +468,13 @@ const openPreview = async (doc: any, version?: any) => {
 const download = async (doc: any, version?: any) => {
   try {
     const current = version || latestVersion(doc)
-    const blob = await downloadDocument(doc.id, current?.version)
+    const blob = isWorkspaceEvidence(doc)
+      ? await downloadWorkspaceEvidence(doc.workspaceId, doc.id)
+      : await downloadDocument(doc.id, current?.version)
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = current?.originalName || doc.title || 'document'
+    link.download = current?.originalName || current?.original_name || doc.title || 'document'
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)

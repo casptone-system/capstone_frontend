@@ -152,7 +152,9 @@ import {
   getProgramFaculty,
   removeWorkspaceAreaMember,
 } from '@/lib/api'
+import { useAuthStore } from '@/stores/authStore'
 
+const authStore = useAuthStore()
 const levels = ['Level I', 'Level II', 'Level III', 'Level IV']
 const level = ref('Level I')
 const deadline = ref('')
@@ -200,6 +202,16 @@ const load = async () => {
       ...person,
       photo: person.photo || person.profilePhoto || person.profile_photo,
     }))
+    const me = authStore.user as any
+    if (me?.id && !faculty.value.some((person: any) => Number(person.id) === Number(me.id))) {
+      faculty.value.unshift({
+        id: me.id,
+        name: me.name,
+        email: me.email,
+        role: 'Program Chair',
+        photo: me.profilePhoto || me.avatar || null,
+      })
+    }
     workspaces.value.forEach((workspace: any) => {
       (workspace.areas || []).forEach((area: any) => {
         if (area.chair?.id) chairDraft.value[area.id] = String(area.chair.id)

@@ -1,79 +1,91 @@
 <template>
-  <ion-page>
-    <ion-content :fullscreen="true">
-      <div class="pc-shell">
-
-        <!-- Sidebar -->
-        <aside class="pc-sidebar">
-          <div class="pc-brand">
-            <div class="pc-brand-icon">A</div>
-            <span class="pc-brand-name">ADAMS</span>
+  <AdamsAppShell
+    role-label="Program Chair"
+    :page-title="sectionLabel"
+    :page-description="pageDescription"
+    :show-title="true"
+  >
+    <template #nav>
+      <p class="adams-nav-label">Overview</p>
+      <button class="adams-nav-item" :class="{ active: selectedSection === 'dashboard' }" type="button" @click="selectSection('dashboard')">
+        <span class="adams-nav-icon"><ion-icon :icon="gridOutline" /></span>
+        <span>Dashboard</span>
+      </button>
+      <div class="pc-tasks-nav">
+        <button
+          class="adams-nav-item"
+          :class="{ active: selectedSection === 'revisions' }"
+          type="button"
+          @click="toggleTasksAccordion"
+        >
+          <span class="adams-nav-icon"><ion-icon :icon="checkmarkDoneOutline" /></span>
+          <span>Tasks</span>
+          <span v-if="myAreas.length" class="adams-nav-badge">{{ myAreas.length }}</span>
+          <span class="adams-nav-caret">{{ tasksExpanded ? '▾' : '▸' }}</span>
+        </button>
+        <div v-if="tasksExpanded" class="adams-nav-children">
+          <button
+            class="adams-nav-item"
+            :class="{ active: selectedSection === 'areas' }"
+            type="button"
+            @click="toggleAreasAccordion"
+          >
+            <span class="adams-nav-icon"><ion-icon :icon="layersOutline" /></span>
+            <span>Areas</span>
+            <span class="adams-nav-caret">{{ areasExpanded ? '▾' : '▸' }}</span>
+          </button>
+          <div v-if="areasExpanded" class="pc-areas-list">
+            <p v-if="!myAreas.length" class="adams-nav-empty">No areas assigned</p>
+            <button
+              v-for="area in myAreas"
+              :key="area.id"
+              class="adams-nav-item pc-area-child"
+              :class="{ active: selectedSection === 'areas' && Number(selectedAreaId) === Number(area.id) }"
+              type="button"
+              @click="openAssignedArea(area)"
+            >
+              <span class="pc-area-child-copy">
+                <span>{{ area.displayLabel || area.label || area.name }}</span>
+                <span class="pc-area-progress">{{ Number(area.progressPercent || 0) }}%</span>
+              </span>
+              <span class="pc-area-role">{{ area.assignmentRole === 'chair' ? 'Area Chair' : 'Member' }}</span>
+            </button>
           </div>
+        </div>
+      </div>
+      <button class="adams-nav-item" :class="{ active: selectedSection === 'team' }" type="button" @click="selectSection('team')">
+        <span class="adams-nav-icon"><ion-icon :icon="peopleOutline" /></span>
+        <span>Team & Invitations</span>
+        <span class="adams-nav-badge">{{ recentCodes.length }}</span>
+      </button>
 
-          <nav class="pc-nav">
-            <p class="pc-nav-label">Overview</p>
-            <a class="pc-nav-item" :class="{ active: selectedSection === 'dashboard' }" href="#" @click.prevent="selectSection('dashboard')">
-              <ion-icon :icon="gridOutline" /> Dashboard
-            </a>
-            <a class="pc-nav-item" :class="{ active: selectedSection === 'team' }" href="#" @click.prevent="selectSection('team')">
-              <ion-icon :icon="peopleOutline" /> Team & Invitations
-              <span class="pc-nav-badge">{{ recentCodes.length }}</span>
-            </a>
+      <p class="adams-nav-label">Communication</p>
+      <button class="adams-nav-item" :class="{ active: selectedSection === 'notifications' }" type="button" @click="selectSection('notifications')">
+        <span class="adams-nav-icon"><ion-icon :icon="notificationsOutline" /></span>
+        <span>Notifications</span>
+        <span v-if="inboxUnreadCount > 0" class="adams-nav-badge">{{ inboxUnreadCount }}</span>
+      </button>
 
-            <p class="pc-nav-label">Communication</p>
-            <a class="pc-nav-item" :class="{ active: selectedSection === 'notifications' }" href="#" @click.prevent="selectSection('notifications')">
-              <ion-icon :icon="notificationsOutline" /> Notifications
-              <span class="pc-nav-badge">{{ activeNotificationCount }}</span>
-            </a>
+      <p class="adams-nav-label">Accreditation</p>
+      <button class="adams-nav-item" :class="{ active: selectedSection === 'faculty-areas' }" type="button" @click="selectSection('faculty-areas')">
+        <span class="adams-nav-icon"><ion-icon :icon="peopleOutline" /></span>
+        <span>Faculty Area Assignments</span>
+      </button>
+      <button class="adams-nav-item" :class="{ active: selectedSection === 'review' }" type="button" @click="selectSection('review')">
+        <span class="adams-nav-icon"><ion-icon :icon="documentTextOutline" /></span>
+        <span>Area Documents</span>
+      </button>
+    </template>
 
-            <p class="pc-nav-label">Accreditation</p>
-            <a class="pc-nav-item" :class="{ active: selectedSection === 'faculty-areas' }" href="#" @click.prevent="selectSection('faculty-areas')">
-              <ion-icon :icon="peopleOutline" /> Faculty Area Assignments
-            </a>
-            <a class="pc-nav-item" :class="{ active: selectedSection === 'review' }" href="#" @click.prevent="selectSection('review')">
-              <ion-icon :icon="documentTextOutline" /> Area Documents
-            </a>
-          </nav>
-           <ion-button color="danger" fill="solid" @click="handleLogout">
-          <ion-icon :icon="logOutOutline" />
-          Logout
-        </ion-button>
-        </aside>
-
-        <!-- Main -->
-        <main class="pc-main">
-
-          <!-- Topbar -->
-          <header class="pc-topbar">
-            <div class="pc-topbar-heading">
-              <p class="pc-breadcrumb">{{ assignedProgramName || 'No program assigned yet' }}</p>
-              <h1 class="pc-page-title">{{ sectionLabel }}</h1>
-              <span class="pc-program-context-chip">{{ assignedCollegeName || 'College not set' }}</span>
-            </div>
-
-            <div class="pc-topbar-search">
-              <ion-icon :icon="searchOutline" class="pc-search-icon" />
-              <input type="text" placeholder="Search users, docs, tasks..." />
-            </div>
-
-            <div class="pc-topbar-actions">
-              <NotificationBell />
-              <div class="pc-profile-chip" aria-label="User profile">
-                <img v-if="currentUserPhoto" :src="currentUserPhoto" alt="Profile photo" class="pc-user-avatar pc-user-avatar-image" />
-                <div v-else class="pc-user-avatar">{{ currentUserInitials }}</div>
-                <div class="pc-user-meta">
-                  <strong>{{ currentUserName }}</strong>
-                  <span>Program Chair</span>
-                </div>
-              </div>
-              <button v-if="authStore.canViewAs('faculty')" class="pc-btn pc-btn-ghost" @click.prevent="switchToFacultyView">
-                <ion-icon :icon="peopleOutline" /> Faculty View
-              </button>
-              <button v-if="authStore.canViewAs('dean')" class="pc-btn pc-btn-ghost" @click.prevent="switchToDeanView">
-                <ion-icon :icon="barChartOutline" /> Dean View
-              </button>
-            </div>
-          </header>
+    <template #header-actions>
+      <span class="pc-program-context-chip">{{ assignedCollegeName || 'College not set' }}</span>
+      <button v-if="authStore.canViewAs('faculty')" class="adams-btn adams-btn-ghost" type="button" @click.prevent="switchToFacultyView">
+        <ion-icon :icon="peopleOutline" /> Faculty
+      </button>
+      <button v-if="authStore.canViewAs('dean')" class="adams-btn adams-btn-ghost" type="button" @click.prevent="switchToDeanView">
+        <ion-icon :icon="barChartOutline" /> Dean
+      </button>
+    </template>
 
           <section v-if="selectedSection === 'dashboard'" class="pc-card">
             <AccreditationLevelStatus view="program-chair" title="Program accreditation by level" />
@@ -207,7 +219,7 @@
             </div>
 
             <!-- User Management Section -->
-            <div class="pc-section-group" style="margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 2rem;">
+            <div class="pc-section-group" style="margin-top: 2rem; padding-top: 0.5rem;">
               <h3 class="pc-section-title">User Management</h3>
             <div class="pc-card-header">
               <div class="pc-card-title-group">
@@ -291,12 +303,13 @@
                       <p class="pc-card-sub">Submitted by Area In-Charges — approve or return</p>
                     </div>
                   </div>
-                  <button class="pc-link-btn">All Submissions →</button>
+                  <button class="pc-link-btn" type="button" @click="selectSection('review')">All Submissions →</button>
                 </div>
                 <div class="pc-doc-table">
                   <div class="pc-table-header">
                     <span>Document</span><span>Area In-Charge</span><span>Submitted</span><span>Action</span>
                   </div>
+                  <p v-if="!documents.length" class="pc-muted" style="padding: 1rem;">No submitted files yet.</p>
                   <div class="pc-table-row" v-for="doc in documents" :key="doc.documentId || doc.title">
                     <span class="pc-doc-title-cell">
                       <ion-icon :icon="documentOutline" class="pc-doc-icon" />
@@ -453,14 +466,47 @@
                   <div class="pc-card-title-group">
                     <div class="pc-card-icon teal"><ion-icon :icon="notificationsOutline" /></div>
                     <div>
-                      <h2 class="pc-card-title">Task Notifications</h2>
-                      <p class="pc-card-sub">Tasks assigned by your dean and program updates</p>
+                      <h2 class="pc-card-title">Notifications</h2>
+                      <p class="pc-card-sub">Dean tasks, faculty submissions, and program updates</p>
                     </div>
                   </div>
                 </div>
-                <NotificationBell />
+                <NotificationInbox subtitle="Review assignments, submissions, and follow-up items." />
               </div>
 
+            </div>
+          </div>
+
+          <div v-if="selectedSection === 'revisions'" class="pc-full-width-section">
+            <div class="pc-card">
+              <div class="pc-card-header">
+                <div class="pc-card-title-group">
+                  <div class="pc-card-icon teal"><ion-icon :icon="checkmarkDoneOutline" /></div>
+                  <div>
+                    <h2 class="pc-card-title">My Area Tasks</h2>
+                    <p class="pc-card-sub">Work assigned areas as Area Chair or member. Open an area from Tasks → Areas.</p>
+                  </div>
+                </div>
+              </div>
+              <div v-if="myAreas.length" class="pc-assigned-area-grid">
+                <button
+                  v-for="area in myAreas"
+                  :key="area.id"
+                  type="button"
+                  class="pc-assigned-area-card"
+                  @click="openAssignedArea(area)"
+                >
+                  <strong>{{ area.displayLabel || area.label || area.name }}</strong>
+                  <span>{{ area.assignmentRole === 'chair' ? 'Area Chair' : 'Area Member' }} · {{ Number(area.progressPercent || 0) }}%</span>
+                </button>
+              </div>
+              <p v-else class="pc-empty-state">You are not assigned to an area yet. Use Faculty Area Assignments to assign yourself as Area Chair or member.</p>
+            </div>
+          </div>
+
+          <div v-if="selectedSection === 'areas'" class="pc-full-width-section">
+            <div class="pc-card">
+              <FacultyMyAreasPanel />
             </div>
           </div>
 
@@ -482,26 +528,25 @@
 
           <!-- Full-Width Area Documents Review Section -->
           <div v-if="selectedSection === 'review'" class="pc-full-width-section">
-            <AreaDocumentsReview />
+            <AreaDocumentsReview :program-id="currentProgram?.id" />
           </div>
-        </main>
-      </div>
-    </ion-content>
-  </ion-page>
+  </AdamsAppShell>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { IonPage, IonContent, IonIcon, IonButton } from '@ionic/vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { storeToRefs } from 'pinia'
+import { IonIcon } from '@ionic/vue'
 import {
   gridOutline, peopleOutline, keyOutline, folderOpenOutline,
   documentTextOutline, analyticsOutline, settingsOutline,
-  barChartOutline, notificationsOutline, searchOutline,
+  barChartOutline, notificationsOutline,
   documentOutline, copyOutline, mailOutline, refreshOutline,
-  checkmarkCircleOutline, hourglassOutline, logOutOutline, callOutline
+  checkmarkCircleOutline, hourglassOutline, callOutline,
+  checkmarkDoneOutline, layersOutline,
 } from 'ionicons/icons'
 
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { useUserCalls } from '@/lib/useUserCalls'
 import {
@@ -514,6 +559,8 @@ import {
   resendInvitation,
   revokeInvitation,
   getDocuments,
+  getProgramChairAreaDocuments,
+  getProgramChairAreaFiles,
   approveReview,
   requestRevisionReview,
   updateDocument,
@@ -521,24 +568,28 @@ import {
 import RoleStorageVault from '@/components/RoleStorageVault.vue'
 import AccreditationLevelStatus from '@/components/AccreditationLevelStatus.vue'
 import ProgramChairAccreditationSetup from './ProgramChairAccreditationSetup.vue'
-import NotificationBell from '@/components/NotificationBell.vue'
+import NotificationInbox from '@/components/NotificationInbox.vue'
+import AdamsAppShell from '@/components/ui/AdamsAppShell.vue'
 //import AreaAssignmentCard from '@/components/AreaAssignmentCard.vue'
 import AccreditationWorkspaceBoard from '@/components/AccreditationWorkspaceBoard.vue'
 import AreaDocumentsReview from '@/components/AreaDocumentsReview.vue'
 import AreaAssignmentFolders from '@/components/AreaAssignmentFolders.vue'
 import ProgramActiveLevelToggle from '@/components/ProgramActiveLevelToggle.vue'
+import FacultyMyAreasPanel from '@/components/FacultyMyAreasPanel.vue'
+import { useFacultyDashboardStore } from '@/stores/facultyDashboardStore'
+import { useNotificationStore } from '@/stores/notificationStore'
 
 const authStore = useAuthStore()
+const facultyDashboard = useFacultyDashboardStore()
+const notificationStore = useNotificationStore()
+const { myAreas, selectedAreaId } = storeToRefs(facultyDashboard)
 const router = useRouter()
+const route = useRoute()
 const { activeCall, callMessage, callUser, endCall } = useUserCalls()
-const currentUserName = computed(() => authStore.user?.name || 'Program Chair')
-const currentUserInitials = computed(() => {
-  const name = authStore.user?.name || 'Program Chair'
-  return name.split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase() || 'PC'
-})
-const currentUserPhoto = computed(() => (authStore.user as any)?.profilePhoto || (authStore.user as any)?.avatar || null)
 
-const selectedSection = ref<'accreditation' | 'dashboard' | 'team' | 'review' | 'faculty-areas' | 'notifications'>('dashboard')
+const selectedSection = ref<'accreditation' | 'dashboard' | 'team' | 'review' | 'faculty-areas' | 'notifications' | 'revisions' | 'areas'>('dashboard')
+const tasksExpanded = ref(false)
+const areasExpanded = ref(false)
 const currentProgram = ref<any>(null)
 const teams = ref<any[]>([])
 const activeCode = ref('')
@@ -553,7 +604,6 @@ const inviteError = ref('')
 const inviteSuccess = ref('')
 const invitations = ref<any[]>([])
 const inviteBusy = ref(false)
-const notifications = ref<any[]>([])
 const documents = ref<any[]>([])
 const areas = ref<any[]>([])
 // const programChairWorkflowPhase = computed(() => {
@@ -591,9 +641,25 @@ const sectionLabel = computed(() => {
     case 'team': return 'Team & Invitations'
     case 'accreditation': return 'Accreditation'
     case 'faculty-areas': return 'Faculty Area Assignments'
+    case 'revisions': return 'My Area Tasks'
+    case 'areas': return 'Assigned Area'
     case 'review': return 'Area Documents'
     case 'notifications': return 'Notifications'
     default: return 'Program Chair Dashboard'
+  }
+})
+
+const pageDescription = computed(() => {
+  switch (selectedSection.value) {
+    case 'team': return 'Invite faculty, manage membership, and coordinate program work.'
+    case 'faculty-areas': return 'Assign area chairs, members, and deadlines for AACCUP areas.'
+    case 'revisions': return 'Complete your assigned area tasks and follow-up items.'
+    case 'areas': return 'Work through the assigned accreditation area.'
+    case 'review': return 'Review submitted area documents and evidence.'
+    case 'notifications': return 'Stay current on program tasks and invitations.'
+    default: return assignedProgramName.value
+      ? `Program overview for ${assignedProgramName.value}.`
+      : 'Program overview, areas, documents, and compliance monitoring.'
   }
 })
 
@@ -700,7 +766,7 @@ const stats = computed(() => [
   { label: 'Reports Ready', value: String(invitations.value.length), icon: barChartOutline, color: '#db2777', bg: '#fce7f3' },
 ])
 
-const activeNotificationCount = computed(() => notifications.value.length)
+const inboxUnreadCount = computed(() => notificationStore.unreadCount)
 
 const switchToFacultyView = () => {
   authStore.setDashboardView('faculty')
@@ -712,15 +778,40 @@ const switchToDeanView = () => {
   router.push('/user/dashboard/dean')
 }
 
-const handleLogout = async () => {
-  await authStore.logout()
-  router.replace('/login')
+const selectSection = (section: typeof selectedSection.value) => {
+  selectedSection.value = section
 }
 
-const selectSection = (section: typeof selectedSection.value) => {
+watch(
+  () => route.query.section,
+  (section) => {
+    if (typeof section !== 'string' || !section) return
+    if (section === 'areas' || section === 'revisions') {
+      tasksExpanded.value = true
+      if (section === 'areas') areasExpanded.value = true
+    }
+    selectedSection.value = section as typeof selectedSection.value
+  },
+  { immediate: true },
+)
 
+const toggleTasksAccordion = () => {
+  tasksExpanded.value = !tasksExpanded.value
+  selectSection('revisions')
+  if (!tasksExpanded.value) {
+    areasExpanded.value = false
+  }
+}
 
-  selectedSection.value = section
+const toggleAreasAccordion = () => {
+  areasExpanded.value = !areasExpanded.value
+}
+
+const openAssignedArea = (area: { id: number }) => {
+  tasksExpanded.value = true
+  areasExpanded.value = true
+  facultyDashboard.openMyArea(Number(area.id))
+  selectedSection.value = 'areas'
 }
 
 const loadAssignedProgram = async () => {
@@ -735,12 +826,31 @@ const loadAssignedProgram = async () => {
   }
 
   const refreshedUser = authStore.user as any
-  const programId = refreshedUser?.programId || refreshedUser?.program_id || refreshedUser?.program?.id || null
+  let programId = refreshedUser?.programId || refreshedUser?.program_id || refreshedUser?.program?.id || null
 
   if (programId) {
     console.log('✓ Program Chair has program ID:', programId)
   } else {
     console.log('ℹ️ No direct program ID found for Program Chair; using session-scoped roster lookup.')
+    try {
+      const tree = await getProgramChairAreaDocuments()
+      if (tree?.programId) {
+        programId = tree.programId
+        currentProgram.value = {
+          id: tree.programId,
+          name: tree.programName || 'Program',
+          code: 'PROG',
+          faculty: [],
+          members: [],
+        }
+        if (user) {
+          user.programId = String(tree.programId)
+          user.program_id = String(tree.programId)
+        }
+      }
+    } catch {
+      // Keep going; faculty roster lookup may still resolve the program.
+    }
   }
 
   try {
@@ -1031,14 +1141,59 @@ const regenCode = async () => {
 }
 
 const loadProgramDocumentsForReview = async () => {
-  if (!authStore.user?.programId) {
-    documents.value = []
-    return
-  }
-
   try {
-    const response = await getDocuments({ program_id: authStore.user.programId })
-    const payload = Array.isArray(response?.data) ? response.data : Array.isArray(response) ? response : []
+    const tree = await getProgramChairAreaDocuments(currentProgram.value?.id || authStore.user?.programId)
+    const levels = Array.isArray(tree?.levels) ? tree.levels : []
+
+    if (tree?.programId && !currentProgram.value?.id) {
+      currentProgram.value = {
+        ...(currentProgram.value || {}),
+        id: tree.programId,
+        name: tree.programName || currentProgram.value?.name || 'Program',
+      }
+    }
+
+    const rows: any[] = []
+    for (const level of levels) {
+      for (const area of level.areas || []) {
+        if (!area?.id) continue
+        const files = await getProgramChairAreaFiles(area.id)
+        const list = Array.isArray(files) ? files : []
+        for (const doc of list) {
+          rows.push({
+            documentId: doc.source === 'criterion-evidence' ? null : doc.id,
+            source: doc.source || 'document',
+            workspaceId: doc.workspaceId || null,
+            reviewId: doc.review_id ?? doc.reviewId ?? null,
+            title: doc.title || 'Evidence Document',
+            incharge: doc.uploader?.name || area.chair?.name || 'Faculty member',
+            submitted: (doc.createdAt || doc.created_at)
+              ? new Date(doc.createdAt || doc.created_at).toLocaleDateString()
+              : 'Recently',
+          })
+        }
+      }
+    }
+
+    if (rows.length) {
+      documents.value = rows
+      return
+    }
+
+    const programId = currentProgram.value?.id || authStore.user?.programId || tree?.programId
+    if (!programId) {
+      documents.value = []
+      return
+    }
+
+    const response = await getDocuments({ program_id: programId, per_page: 100 })
+    const payload = Array.isArray(response?.data)
+      ? response.data
+      : Array.isArray(response?.data?.data)
+        ? response.data.data
+        : Array.isArray(response)
+          ? response
+          : []
 
     documents.value = payload
       .filter((doc: any) => doc && (doc.status === 'Active' || doc.status === 'Revision Requested' || !doc.status || doc.status === 'pending'))
@@ -1047,7 +1202,9 @@ const loadProgramDocumentsForReview = async () => {
         reviewId: doc.review_id ?? doc.reviewId ?? null,
         title: doc.title || 'Evidence Document',
         incharge: doc.uploader?.name || doc.uploaded_by_name || 'Faculty member',
-        submitted: doc.created_at ? new Date(doc.created_at).toLocaleDateString() : 'Recently',
+        submitted: (doc.createdAt || doc.created_at)
+          ? new Date(doc.createdAt || doc.created_at).toLocaleDateString()
+          : 'Recently',
       }))
   } catch (err) {
     console.warn('Unable to load program documents for review:', err)
@@ -1092,6 +1249,8 @@ onMounted(async () => {
   await fetchTeams()
   await fetchInvitations()
   await loadProgramDocumentsForReview()
+  await facultyDashboard.loadMyAreas()
+  await notificationStore.fetchNotifications()
 })
 </script>
 
@@ -1404,6 +1563,89 @@ onMounted(async () => {
 .pc-nav-badge {
   margin-left: auto; background: #ef4444; color: #fff;
   font-size: 0.65rem; font-weight: 700; padding: 0.1rem 0.4rem; border-radius: 999px;
+}
+
+.pc-nav-caret {
+  margin-left: auto;
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.pc-tasks-nav-children {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.1rem 0 0.25rem 0.55rem;
+}
+
+.pc-areas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.1rem 0 0.2rem 0.45rem;
+}
+
+.pc-nav-item.pc-area-child {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.2rem;
+  font-size: 0.8rem;
+  padding: 0.5rem 0.65rem;
+}
+
+.pc-area-child-copy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem;
+}
+
+.pc-area-progress {
+  color: #166534;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.pc-area-role {
+  color: #64748b;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pc-areas-empty {
+  margin: 0.2rem 0.7rem;
+  color: #94a3b8;
+  font-size: 0.78rem;
+}
+
+.pc-assigned-area-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+  padding: 0 1.1rem 1.1rem;
+}
+
+.pc-assigned-area-card {
+  appearance: none;
+  text-align: left;
+  border: 1px solid #dbe3ea;
+  background: #fff;
+  border-radius: 0.85rem;
+  padding: 0.9rem 1rem;
+  cursor: pointer;
+}
+
+.pc-assigned-area-card strong {
+  display: block;
+  color: #0f172a;
+}
+
+.pc-assigned-area-card span {
+  color: #166534;
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .pc-sidebar-footer {

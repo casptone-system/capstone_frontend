@@ -313,6 +313,11 @@ export const getProgramChairAreaDocuments = async (programId?: number | string) 
   return unwrap(response)
 }
 
+export const getProgramChairAreaFiles = async (areaId: number | string) => {
+  const response = await api.get(`/program-chair/areas/${areaId}/documents`)
+  return unwrap(response)
+}
+
 export const getProgramActiveLevel = async (programId: number | string) => {
   const response = await api.get(`/programs/${programId}/active-level`)
   return unwrap(response)
@@ -787,6 +792,22 @@ export const markWorkspaceCriterionDone = async (workspaceId: number | string, r
   return unwrap(response)
 }
 
+export const previewWorkspaceEvidence = async (workspaceId: number | string, evidenceId: number | string) => {
+  const response = await api.get(
+    `/accreditation-workspaces/${workspaceId}/evidence/${evidenceId}/preview`,
+    { responseType: 'blob' }
+  )
+  return response.data
+}
+
+export const downloadWorkspaceEvidence = async (workspaceId: number | string, evidenceId: number | string) => {
+  const response = await api.get(
+    `/accreditation-workspaces/${workspaceId}/evidence/${evidenceId}/download`,
+    { responseType: 'blob' }
+  )
+  return response.data
+}
+
 export const getWorkspaceProgress = async (id: number | string) => {
   const response = await api.get(`/accreditation-workspaces/${id}/progress`)
   return unwrap(response)
@@ -1048,8 +1069,16 @@ export const getDeanReviewQueue = async (
    NOTIFICATIONS
 =========================== */
 
-export const getNotifications = async () => {
-  const response = await api.get('/notifications')
+export const extractNotificationList = (payload: any): any[] => {
+  if (Array.isArray(payload)) return payload
+  if (Array.isArray(payload?.items)) return payload.items
+  if (Array.isArray(payload?.data)) return payload.data
+  if (Array.isArray(payload?.data?.data)) return payload.data.data
+  return []
+}
+
+export const getNotifications = async (params: Record<string, any> = {}) => {
+  const response = await api.get('/notifications', { params: { per_page: 50, ...params } })
   return response.data
 }
 
@@ -1057,8 +1086,8 @@ export const unreadCount = async () => {
   const response = await api.get(
     '/notifications/unread-count'
   )
-
-  return response.data
+  const body = response.data
+  return Number(body?.data?.unreadCount ?? body?.unreadCount ?? 0)
 }
 
 export const markAsRead = async (
@@ -1077,6 +1106,38 @@ export const markAllAsRead = async () => {
   )
 
   return response.data
+}
+
+const notificationRequestId = (id: number | string) =>
+  String(id).replace(/^(inbox|task):/i, '').trim()
+
+const isMissingNotification = (error: any) =>
+  [404, 410].includes(Number(error?.response?.status))
+
+export const deleteNotification = async (id: number | string) => {
+  const notificationId = notificationRequestId(id)
+  try {
+    const response = await api.post(`/notifications/${notificationId}/dismiss`)
+    return response.data
+  } catch (error: any) {
+    if (isMissingNotification(error)) {
+      return { success: true, message: 'Notification already dismissed.' }
+    }
+
+    if (Number(error?.response?.status) === 405) {
+      try {
+        const response = await api.delete(`/notifications/${notificationId}`)
+        return response.data
+      } catch (fallbackError: any) {
+        if (isMissingNotification(fallbackError)) {
+          return { success: true, message: 'Notification already dismissed.' }
+        }
+        throw fallbackError
+      }
+    }
+
+    throw error
+  }
 }
 
 export const downloadInstrumentFile = async (

@@ -209,6 +209,7 @@ import {
   getProgramFaculty,
   removeWorkspaceAreaMember,
 } from '@/lib/api'
+import { useAuthStore } from '@/stores/authStore'
 
 interface Area {
   id: number
@@ -230,6 +231,7 @@ interface Assignment {
   role: 'chair' | 'member'
 }
 
+const authStore = useAuthStore()
 const searchQuery = ref('')
 const filterArea = ref('')
 const areas = ref<Area[]>([])
@@ -297,7 +299,7 @@ watch([filterArea, lockedArea, isAddModalOpen], () => {
 
 // Roles that should NOT be assignable to accreditation areas.
 // Everyone else (faculty, area in-charge, coordinator, etc.) is eligible.
-const NON_ASSIGNABLE_ROLES = ['program-chair', 'program chair', 'dean', 'vpaa', 'admin', 'administrator']
+const NON_ASSIGNABLE_ROLES = ['dean', 'vpaa', 'admin', 'administrator']
 
 const hasFacultyRole = (person: any): boolean => {
   const rawRole =
@@ -407,6 +409,10 @@ const loadData = async () => {
     selectedWorkspaceId.value = current?.id || null
     applyWorkspace(current)
     faculty.value = (Array.isArray(facultyData) ? facultyData : []).filter(hasFacultyRole).map(mapFacultyPerson)
+    const me = authStore.user as any
+    if (me?.id && !faculty.value.some((person) => Number(person.id) === Number(me.id))) {
+      faculty.value = [mapFacultyPerson({ ...me, role: me.role || 'Program Chair' }), ...faculty.value]
+    }
   } catch (err) {
     areas.value = []
     faculty.value = []

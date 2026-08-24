@@ -1,98 +1,35 @@
 <template>
-  <ion-page>
-    <ion-content :fullscreen="true">
-      <div class="qa-shell">
+  <AdamsAppShell
+    role-label="Quality Assurance"
+    :page-title="pageTitle"
+    :page-description="pageDescription"
+    :show-title="true"
+  >
+    <template #nav>
+      <p class="adams-nav-label">Overview</p>
+      <button class="adams-nav-item" :class="{ active: qaSection === 'dashboard' }" type="button" @click="qaSection = 'dashboard'">
+        <span class="adams-nav-icon"><ion-icon :icon="gridOutline" /></span>
+        <span>Dashboard</span>
+      </button>
+      <button class="adams-nav-item" :class="{ active: qaSection === 'templates' }" type="button" @click="qaSection = 'templates'">
+        <span class="adams-nav-icon"><ion-icon :icon="documentTextOutline" /></span>
+        <span>Templates</span>
+      </button>
+      <button class="adams-nav-item" :class="{ active: qaSection === 'area-parameters' }" type="button" @click="qaSection = 'area-parameters'">
+        <span class="adams-nav-icon"><ion-icon :icon="layersOutline" /></span>
+        <span>Area Parameters</span>
+      </button>
+      <button class="adams-nav-item" :class="{ active: qaSection === 'monitor' }" type="button" @click="qaSection = 'monitor'">
+        <span class="adams-nav-icon"><ion-icon :icon="shieldCheckmarkOutline" /></span>
+        <span>Program Monitoring</span>
+      </button>
+    </template>
 
-        <!-- Sidebar -->
-        <aside class="qa-sidebar">
-          <div class="qa-brand">
-            <div class="qa-brand-icon">A</div>
-            <span class="qa-brand-name">ADAMS</span>
-          </div>
-
-          <nav class="qa-nav">
-            <p class="qa-nav-label">Overview</p>
-            <a class="qa-nav-item" :class="{ active: qaSection === 'dashboard' }" href="#" @click.prevent="qaSection = 'dashboard'">
-              <ion-icon :icon="gridOutline" /> Dashboard
-            </a>
-            <a class="qa-nav-item" :class="{ active: qaSection === 'templates' }" href="#" @click.prevent="qaSection = 'templates'">
-              <ion-icon :icon="documentTextOutline" /> Templates
-            </a>
-            <a class="qa-nav-item" :class="{ active: qaSection === 'area-parameters' }" href="#" @click.prevent="qaSection = 'area-parameters'">
-              <ion-icon :icon="layersOutline" /> Area Parameters
-            </a>
-            <a class="qa-nav-item" :class="{ active: qaSection === 'monitor' }" href="#" @click.prevent="qaSection = 'monitor'">
-              <ion-icon :icon="shieldCheckmarkOutline" /> Program Monitoring
-            </a>
-            <a class="qa-nav-item" href="#">
-              <ion-icon :icon="shieldCheckmarkOutline" /> Compliance Monitor
-            </a>
-            <a class="qa-nav-item" href="#">
-              <ion-icon :icon="documentTextOutline" /> Document Review
-              <span class="qa-nav-badge">9</span>
-            </a>
-
-            <p class="qa-nav-label">Tracking</p>
-            <a class="qa-nav-item" href="#">
-              <ion-icon :icon="alertCircleOutline" /> Missing Requirements
-            </a>
-            <a class="qa-nav-item" href="#">
-              <ion-icon :icon="timeOutline" /> Overdue Items
-              <span class="qa-nav-badge">4</span>
-            </a>
-            <a class="qa-nav-item" href="#">
-              <ion-icon :icon="checkmarkDoneOutline" /> Readiness Check
-            </a>
-
-            <p class="qa-nav-label">Coordination</p>
-            <a class="qa-nav-item" href="#">
-              <ion-icon :icon="barChartOutline" /> Compliance Reports
-            </a>
-            <a class="qa-nav-item" href="#">
-              <ion-icon :icon="notificationsOutline" /> Notifications
-              <span class="qa-nav-badge">5</span>
-            </a>
-          </nav>
-
-          <ion-button color="danger" fill="solid" @click="handleLogout">
-          <ion-icon :icon="logOutOutline" />
-          Logout
-        </ion-button>
-
-          <div class="qa-sidebar-footer">
-            <div class="qa-admin-chip">
-              <img v-if="currentUserPhoto" :src="currentUserPhoto" alt="Profile photo" class="qa-avatar qa-avatar-image" />
-              <div v-else class="qa-avatar">{{ currentUserInitials }}</div>
-              <div>
-                <p class="qa-admin-name">{{ currentUserName }}</p>
-                <p class="qa-admin-role">QA Officer</p>
-              </div>
-            </div>
-          </div>
-        </aside>
-
-        <!-- Main -->
-        <main class="qa-main">
-
-          <!-- Topbar -->
-          <header class="qa-topbar">
-            <div>
-              <p class="qa-breadcrumb">Quality Assurance Office</p>
-              <h1 class="qa-page-title">QA Officer Dashboard</h1>
-            </div>
-            <div class="qa-topbar-actions">
-              <button class="qa-icon-btn" title="Notifications">
-                <ion-icon :icon="notificationsOutline" />
-                <span class="qa-badge">5</span>
-              </button>
-              <button class="qa-btn qa-btn-primary">
-                <ion-icon :icon="barChartOutline" /> Generate Report
-              </button>
-              <button class="qa-btn qa-btn-ghost">
-                <ion-icon :icon="checkmarkDoneOutline" /> Verify Readiness
-              </button>
-            </div>
-          </header>
+    <template #header-actions>
+      <button class="adams-btn adams-btn-ghost" type="button" @click="qaSection = 'monitor'">
+        <ion-icon :icon="checkmarkDoneOutline" /> Verify Readiness
+      </button>
+    </template>
 
           <div v-if="callMessage" class="qa-call-banner">
             <div>{{ callMessage }}</div>
@@ -297,43 +234,49 @@
 
             </div>
           </div>
-        </main>
-      </div>
-    </ion-content>
-  </ion-page>
+  </AdamsAppShell>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { IonPage, IonContent, IonIcon, IonButton } from '@ionic/vue'
+import { IonIcon } from '@ionic/vue'
 
 import {
   gridOutline, shieldCheckmarkOutline, documentTextOutline, alertCircleOutline,
-  timeOutline, checkmarkDoneOutline, chatbubblesOutline, barChartOutline,
-  notificationsOutline, gitMergeOutline, checkmarkCircleOutline,
-  closeCircleOutline, logOutOutline, callOutline, layersOutline
+  checkmarkDoneOutline, chatbubblesOutline,
+  gitMergeOutline, checkmarkCircleOutline,
+  closeCircleOutline, callOutline, layersOutline
 } from 'ionicons/icons'
 
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/authStore'
 import { useUserCalls } from '@/lib/useUserCalls'
 import InstrumentTemplateEditor from '@/components/InstrumentTemplateEditor.vue'
 import AccreditationMonitorCard from '@/components/AccreditationMonitorCard.vue'
 import AccreditationLevelStatus from '@/components/AccreditationLevelStatus.vue'
 import AreaParameterContentEditor from '@/components/AreaParameterContentEditor.vue'
+import AdamsAppShell from '@/components/ui/AdamsAppShell.vue'
 import api from '@/lib/api'
 
 const qaSection = ref<'dashboard' | 'templates' | 'area-parameters' | 'monitor'>('dashboard')
 
-const authStore = useAuthStore()
-const router = useRouter()
-const { activeCall, callMessage, callUser, endCall } = useUserCalls()
-const currentUserName = computed(() => authStore.user?.name || 'QA Officer')
-const currentUserInitials = computed(() => {
-  const name = authStore.user?.name || 'QA Officer'
-  return name.split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase() || 'QA'
+const pageTitle = computed(() => {
+  switch (qaSection.value) {
+    case 'templates': return 'Templates'
+    case 'area-parameters': return 'Area Parameters'
+    case 'monitor': return 'Program Monitoring'
+    default: return 'QA Dashboard'
+  }
 })
-const currentUserPhoto = computed(() => (authStore.user as any)?.profilePhoto || (authStore.user as any)?.avatar || null)
+
+const pageDescription = computed(() => {
+  switch (qaSection.value) {
+    case 'templates': return 'Manage accreditation instruments and templates.'
+    case 'area-parameters': return 'Configure area parameters used in program reviews.'
+    case 'monitor': return 'Track program compliance, evidence, and readiness.'
+    default: return 'Monitor accreditation progress, reviews, and quality assurance activity.'
+  }
+})
+
+const { activeCall, callMessage, callUser, endCall } = useUserCalls()
 
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -341,11 +284,6 @@ const programs = ref<any[]>([])
 const metrics = ref({ active_programs: 0, at_risk_programs: 0, evidence_completion: 0, pending_reviews: 0 })
 const feedback = ref<string | null>(null)
 const feedbackType = ref<'success' | 'error'>('success')
-
-const handleLogout = async () => {
-  await authStore.logout()
-  router.replace('/login')
-}
 
 const stats = computed(() => [
   { label: 'Active Programs', value: String(metrics.value.active_programs), icon: shieldCheckmarkOutline, color: '#0d9488', bg: '#ccfbf1' },

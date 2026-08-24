@@ -27,8 +27,8 @@
 
     <!-- RIGHT: Form panel -->
     <div class="form-panel">
+      <img src="@/assets/Archiving_logo.png" alt="Archiving logo" class="login-logo" />
       <div class="form-wrap">
-        <img src="@/assets/Archiving_logo.png" alt="ADAMS Logo" class="login-logo" />
         <h2 class="form-title">Sign in to your account</h2>
         <p class="form-subtitle">Use your institutional credentials to continue.</p>
 
@@ -116,7 +116,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { useToastStore } from '@/stores/toastStore'
@@ -157,7 +157,7 @@ const getRedirectPath = () => {
   const redirect = route.query.redirect
   if (redirect && typeof redirect === 'string') return redirect
 
-  return getRoleRedirectPath(authStore.userRole, authStore.hasGroup)
+  return getRoleRedirectPath(authStore.userRole, authStore.hasGroup, authStore.user)
 }
 
 const handleLogin = async () => {
@@ -193,7 +193,7 @@ const handleLogin = async () => {
       : `Welcome back to ADAMS, ${welcomeName}!`
     toastStore.show(welcomeMessage, 'success')
 
-    // Fallback: if token issued directly, proceed as before
+    await nextTick()
     await router.replace(getRedirectPath())
   } catch (error: any) {
     loginError.value =
@@ -402,10 +402,14 @@ const cancel2FA = () => {
 
 /* ── LOGO ── */
 .login-logo {
+  position: absolute;
+  top: 1.15rem;
+  right: 1.15rem;
+  z-index: 2;
   display: block;
-  width: 130px;
+  width: 78px;
   height: auto;
-  margin: 0 auto 1.25rem;
+  margin: 0;
   filter: drop-shadow(1px 10px 28px rgba(19, 31, 53, 0.35));
   animation: stamp-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   animation-delay: 0.3s;
@@ -758,8 +762,10 @@ const cancel2FA = () => {
   }
 
   .login-logo {
-    width: 72px;
-    margin-bottom: 1rem;
+    width: 64px;
+    top: 0.85rem;
+    right: 0.85rem;
+    margin: 0;
   }
 }
 

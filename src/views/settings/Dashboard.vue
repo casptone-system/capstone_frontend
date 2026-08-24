@@ -1,23 +1,30 @@
 <template>
-  <ion-page>
-    <ion-content fullscreen>
-      <div class="page-header">
-        <div>
-          <h1>{{ pageTitle }}</h1>
-          <p>{{ pageDescription }}</p>
-        </div>
-        <ion-button color="danger" fill="solid" @click="handleLogout">
-          <ion-icon :icon="logOutOutline" />
-          Logout
-        </ion-button>
+  <AdamsAppShell
+    role-label="Area In-Charge"
+    page-title="Area Workspace"
+    page-description="Manage assigned accreditation area requirements, documents, and progress."
+  >
+    <template #nav>
+      <p class="adams-nav-label">Workspace</p>
+      <button class="adams-nav-item active" type="button">
+        <span class="adams-nav-icon"><ion-icon :icon="gridOutline" /></span>
+        <span>Dashboard</span>
+      </button>
+      <button class="adams-nav-item" type="button" @click="goTo('/documents')">
+        <span class="adams-nav-icon"><ion-icon :icon="documentTextOutline" /></span>
+        <span>Documents</span>
+      </button>
+      <button class="adams-nav-item" type="button" @click="goTo('/notifications')">
+        <span class="adams-nav-icon"><ion-icon :icon="hourglassOutline" /></span>
+        <span>Notifications</span>
+      </button>
+    </template>
+
+      <div v-if="dashboardStore.isLoading" class="adams-empty">
+        <AdamsSkeleton :rows="4" />
       </div>
 
-      <div v-if="dashboardStore.isLoading" class="loading">
-        <ion-skeleton-text animated style="height:30px"></ion-skeleton-text>
-        <ion-skeleton-text animated style="height:120px"></ion-skeleton-text>
-      </div>
-
-      <div v-else-if="dashboardStore.error" class="error-box">
+      <div v-else-if="dashboardStore.error" class="adams-alert adams-alert-error">
         {{ dashboardStore.error }}
       </div>
 
@@ -27,19 +34,17 @@
         </div>
 
         <div v-else>
-          <div class="role-banner">
-            <div>
-              <p class="eyebrow">Current role</p>
-              <h2>{{ roleSummary.title }}</h2>
-              <p>{{ roleSummary.description }}</p>
-            </div>
+          <div class="adams-card" style="padding: 1rem 1.1rem; margin-bottom: 1rem;">
+            <p class="eyebrow">Current role</p>
+            <h2>{{ roleSummary.title }}</h2>
+            <p>{{ roleSummary.description }}</p>
             <div class="role-actions">
-              <ion-button fill="outline" @click="goToRoleHome">Open role workspace</ion-button>
-              <ion-button v-if="isSuperAdmin" fill="clear" @click="goTo('/users')">Manage users</ion-button>
+              <button class="adams-btn adams-btn-primary" type="button" @click="goToRoleHome">Open role workspace</button>
+              <button v-if="isSuperAdmin" class="adams-btn adams-btn-ghost" type="button" @click="goTo('/superadmin/users')">Manage users</button>
             </div>
           </div>
 
-          <div class="stats-grid">
+          <div class="adams-stat-strip">
             <StatCard title="Programs" :value="dashboardStore.stats.totalPrograms" :icon="documentTextOutline" />
             <StatCard title="Areas" :value="dashboardStore.stats.totalAreas" :icon="folderOpenOutline" />
             <StatCard title="Compliance" :value="dashboardStore.stats.complianceScore + '%'" :icon="checkmarkDoneOutline" />
@@ -49,13 +54,12 @@
           <FacultyQuickActions />
         </div>
       </div>
-    </ion-content>
-  </ion-page>
+  </AdamsAppShell>
 </template>
 
 <script setup lang="ts">
-import { IonPage, IonContent, IonSkeletonText, IonButton, IonIcon } from '@ionic/vue'
-import { documentTextOutline, folderOpenOutline, checkmarkDoneOutline, hourglassOutline, logOutOutline } from 'ionicons/icons'
+import { IonIcon } from '@ionic/vue'
+import { documentTextOutline, folderOpenOutline, checkmarkDoneOutline, hourglassOutline, gridOutline } from 'ionicons/icons'
 import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import JoinTeam from '@/views/FACULTY/JoinTeam.vue'
@@ -64,6 +68,8 @@ import { useAuthStore } from '@/stores/authStore'
 import { getRoleRedirectPath } from '@/lib/roleRedirects'
 import FacultyQuickActions from '@/views/FACULTY/FacultyQuickActions.vue'
 import StatCard from '@/components/StatCard.vue'
+import AdamsAppShell from '@/components/ui/AdamsAppShell.vue'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 
 const dashboardStore = useDashboardStore()
 const authStore = useAuthStore()
@@ -91,21 +97,6 @@ const roleSummary = computed(() => {
   }
 })
 
-const pageTitle = computed(() => {
-  const role = String(authStore.userRole || '')
-  switch (role) {
-    case 'superadmin': return 'Super Administrator Dashboard'
-    case 'dean': return 'Dean Dashboard'
-    case 'program-chair': return 'Program Chair Dashboard'
-    case 'faculty': return 'Faculty Dashboard'
-    case 'qa': return 'QA Dashboard'
-    case 'vpaa':
-    case 'vpaa/di': return 'VPAA Dashboard'
-    default: return 'Dashboard'
-  }
-})
-
-const pageDescription = computed(() => 'Welcome back. Your dashboard is tailored to your access level.')
 const isSuperAdmin = computed(() => authStore.isSuperAdmin)
 
 onMounted(async () => {
@@ -123,29 +114,30 @@ const goToRoleHome = () => {
 }
 
 const goTo = (path: string) => router.push(path)
-
-const handleLogout = async () => {
-  await authStore.logout()
-  router.replace('/login')
-}
 </script>
 
 
 <style scoped>
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--spacing-lg);
-  color: rgb(243, 243, 243);
-  margin-bottom: 1rem;
+.role-banner h2,
+.adams-card h2 {
+  margin: 0.2rem 0 0.35rem;
+  color: var(--adams-ink);
 }
 
-.page-header h1 {
+.role-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 0.85rem;
+}
+
+.eyebrow {
   margin: 0;
-  font-size: var(--text-3xl);
-  font-weight: var(--font-weight-bold);
-  color: rgb(243, 243, 243);
+  color: var(--adams-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .role-banner {

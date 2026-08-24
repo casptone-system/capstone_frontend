@@ -21,8 +21,8 @@
     </div>
 
     <div class="form-panel">
+      <img src="@/assets/Archiving_logo.png" alt="Archiving logo" class="login-logo" />
       <div class="form-wrap">
-        <img src="@/assets/Archiving_logo.png" alt="ADAMS Logo" class="login-logo" />
         <div class="result-icon success" aria-hidden="true">
           <ion-icon :icon="checkmarkCircleOutline" />
         </div>
@@ -199,6 +199,7 @@ onMounted(() => {
 }
 
 .form-panel {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -221,8 +222,12 @@ onMounted(() => {
 }
 
 .login-logo {
-  width: 92px;
-  margin: 0 auto 1.2rem;
+  position: absolute;
+  top: 1.15rem;
+  right: 1.15rem;
+  z-index: 2;
+  width: 78px;
+  margin: 0;
   filter: drop-shadow(0 10px 18px rgba(10, 40, 28, 0.12));
 }
 
