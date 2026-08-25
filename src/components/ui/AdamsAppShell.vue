@@ -13,11 +13,7 @@
         <aside class="adams-sidebar" :class="{ 'is-open': mobileOpen }">
           <div class="adams-brand">
             <div class="adams-brand-lockup">
-              <img
-                src="@/assets/Archiving_logo.png"
-                alt="ADAMS"
-                class="adams-brand-logo"
-              />
+              <AppBrandLogo compact />
               <div class="adams-brand-copy">
                 <strong class="adams-brand-name">ADAMS</strong>
                 <span class="adams-brand-role">{{ roleLabel }}</span>
@@ -143,6 +139,7 @@ import {
 import { useAuthStore } from '@/stores/authStore'
 import { getUserDisplayName, getUserInitials, getUserPhotoUrl } from '@/lib/userDisplay'
 import NotificationBell from '@/components/NotificationBell.vue'
+import AppBrandLogo from '@/components/AppBrandLogo.vue'
 
 withDefaults(defineProps<{
   roleLabel?: string
@@ -265,14 +262,9 @@ export default {
   min-width: 0;
 }
 
-.adams-brand-logo {
-  width: 42px;
-  height: 42px;
-  flex: 0 0 42px;
-  object-fit: cover;
-  border-radius: 0.7rem;
-  background: #050505;
+.adams-brand-lockup :deep(.app-brand-logo) {
   box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
+  background: #050505;
 }
 
 .adams-brand-copy {

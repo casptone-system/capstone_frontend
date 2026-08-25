@@ -26,6 +26,11 @@
           <h3>System Settings</h3>
           <div class="sa-settings-grid">
             <div class="sa-setting-card">
+              <strong>Institution</strong>
+              <p>{{ settings.institution || 'Isabela State University' }} — {{ settings.campus || 'Echague Main Campus' }}</p>
+              <p>Current respondent: {{ settings.respondent_unit || 'Institute of Fisheries' }} ({{ settings.respondent_unit_code || 'IOF' }})</p>
+            </div>
+            <div class="sa-setting-card">
               <strong>Backup</strong>
               <p>Create and manage database backups.</p>
               <button class="sa-btn sa-btn-primary" @click="runBackup">Run Backup</button>
@@ -55,6 +60,10 @@ import { onMounted, reactive } from 'vue'
 import { getSystemSettings, runSystemBackup } from '@/lib/api'
 
 const settings = reactive({
+  institution: '',
+  campus: '',
+  respondent_unit: '',
+  respondent_unit_code: '',
   backup_enabled: false,
   email_configured: false,
   notifications_enabled: false,

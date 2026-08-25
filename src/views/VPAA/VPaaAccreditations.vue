@@ -115,12 +115,12 @@
 
               <div class="vpaa-card-dates">
                 <div v-if="accreditation.accreditation_date" class="vpaa-date">
-                  <small>Accreditation Date</small>
+                  <small>Scheduled visit</small>
                   <strong>{{ formatDate(accreditation.accreditation_date) }}</strong>
                 </div>
-                <div v-if="accreditation.deadline" class="vpaa-date">
-                  <small>Preparation Deadline</small>
-                  <strong>{{ formatDate(accreditation.deadline) }}</strong>
+                <div v-if="accreditation.valid_until || accreditation.deadline" class="vpaa-date">
+                  <small>Valid until</small>
+                  <strong>{{ formatDate(accreditation.valid_until || accreditation.deadline) }}</strong>
                 </div>
               </div>
             </div>
@@ -176,6 +176,16 @@ const filteredPrograms = computed(() => {
   return programs.value.filter((p: any) => String(p.college_id) === selectedCollege.value)
 })
 
+const uniqueByProgramId = (items: any[]) => {
+  const seen = new Set<string>()
+  return items.filter((item) => {
+    const key = String(item?.program_id ?? item?.programId ?? '')
+    if (!key || seen.has(key)) return !key
+    seen.add(key)
+    return true
+  })
+}
+
 const filteredAccreditations = computed(() => {
   return accreditations.value.filter((acc: any) => {
     const matchCollege = !selectedCollege.value || String(acc.college_id) === selectedCollege.value
@@ -225,8 +235,28 @@ const loadAccreditations = async () => {
   error.value = null
 
   try {
-    const data = await getAccreditationCycles()
-    accreditations.value = Array.isArray(data) ? data : data?.data ?? []
+    const data = await getAccreditationCycles({ per_page: 200 })
+    const rows = Array.isArray(data) ? data : data?.data ?? []
+    accreditations.value = uniqueByProgramId(rows.map((cycle: any) => {
+      const program = cycle.program
+      const programName = typeof program === 'string' ? program : program?.name || 'Unknown Program'
+      const collegeName =
+        typeof cycle.college === 'string'
+          ? cycle.college
+          : program?.college?.name || cycle.college?.name || 'Unknown College'
+      return {
+        ...cycle,
+        program: programName,
+        college: collegeName,
+        program_id: cycle.program_id ?? cycle.programId ?? program?.id,
+        college_id: cycle.college_id ?? cycle.collegeId ?? program?.college_id,
+        accreditation_date: cycle.scheduled_visit || cycle.scheduledVisit || cycle.accreditation_date,
+        valid_until: cycle.valid_until || cycle.validUntil,
+        deadline: cycle.valid_until || cycle.validUntil || cycle.deadline,
+        readiness: typeof cycle.readiness === 'number' ? cycle.readiness : 0,
+        status: cycle.display_status || cycle.displayStatus || cycle.status,
+      }
+    }))
   } catch (err: any) {
     error.value = err?.message || 'Failed to load accreditations'
   } finally {

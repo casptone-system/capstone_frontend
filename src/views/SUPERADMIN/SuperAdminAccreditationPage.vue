@@ -137,9 +137,9 @@ const compliance = [
 ]
 
 const submissions = [
-  { id: 1, title: 'Program self-study package', college: 'College of Engineering', status: 'Approved' },
-  { id: 2, title: 'Faculty evidence bundle', college: 'College of Business', status: 'Under review' },
-  { id: 3, title: 'Area in-charge checklist', college: 'College of Education', status: 'Pending' },
+  { id: 1, title: 'Program self-study package', college: 'Institute of Fisheries', status: 'Approved' },
+  { id: 2, title: 'Faculty evidence bundle', college: 'Institute of Fisheries', status: 'Under review' },
+  { id: 3, title: 'Area in-charge checklist', college: 'Institute of Fisheries', status: 'Pending' },
 ]
 
 const go = (path: string) => {

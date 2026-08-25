@@ -34,21 +34,21 @@
     <!-- File Upload Section -->
     <div class="submission-section">
       <h3>📁 Submit Evidence Files</h3>
-      <p class="section-subtitle">Upload all required documents and evidence for this accreditation area</p>
+      <p class="section-subtitle">Upload required PDF evidence for this accreditation area. PDF files only, 10 MB per file.</p>
 
       <div class="upload-container">
         <div class="upload-area" @click="triggerFileInput" @dragover.prevent="isDragging = true" @dragleave="isDragging = false" @drop.prevent="handleDrop" :class="{ 'is-dragging': isDragging }">
           <div class="upload-icon">📤</div>
           <div class="upload-text">
             <p class="upload-primary">Click to upload or drag and drop</p>
-            <p class="upload-secondary">PDF, DOC, DOCX, XLS, XLSX (Max 10MB per file)</p>
+            <p class="upload-secondary">PDF only. Max 10 MB per file.</p>
           </div>
           <input
             ref="fileInput"
             type="file"
             multiple
             @change="handleFileSelect"
-            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+            accept=".pdf,application/pdf"
             class="hidden-input"
           />
         </div>
@@ -218,6 +218,11 @@ const addFiles = (files: File[]) => {
   const maxSize = 10 * 1024 * 1024 // 10MB
   
   files.forEach((file) => {
+    const isPdf = (file.type || '').toLowerCase() === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+    if (!isPdf) {
+      toastStore.show(`${file.name} is not a PDF. Area documents must be PDF files only.`, 'error')
+      return
+    }
     if (file.size > maxSize) {
       toastStore.show(`File ${file.name} is too large (max 10MB)`, 'error')
       return

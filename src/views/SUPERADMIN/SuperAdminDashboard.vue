@@ -421,18 +421,19 @@
                 <label>
                   <span>Role</span>
                   <select v-model="form.role" required>
-                    <option value="Faculty">Faculty</option>
-                    <option value="Area In-Charge">Area In-Charge</option>
-                    <option value="Program Chair">Program Chair</option>
-                    <option value="Dean">Dean</option>
-                    <option value="QA">QA</option>
-                    <option value="VPAA">VPAA</option>
-                    <option value="Super Administrator">Super Administrator</option>
+                    <option value="faculty">Faculty</option>
+                    <option value="area-in-charge">Area In-Charge</option>
+                    <option value="program-chair">Program Chair</option>
+                    <option value="dean">Dean</option>
+                    <option value="qa">QA</option>
+                    <option value="vpaa">VPAA</option>
+                    <option value="superadmin">Super Administrator</option>
+                    <option value="accreditor">Accreditor</option>
                   </select>
                 </label>
 
                 <label>
-                  <span>College / Department {{ form.role === 'Dean' ? '(Required for Dean)' : '(Optional)' }}</span>
+                  <span>College {{ form.role === 'dean' ? '(Required for Dean)' : '(Optional)' }}</span>
                   <select v-model.number="form.college_id">
                     <option :value="null">Select a college...</option>
                     <option 
@@ -441,6 +442,20 @@
                       :value="dept.id"
                     >
                       {{ dept.name }}
+                    </option>
+                  </select>
+                </label>
+
+                <label>
+                  <span>Program {{ form.role === 'program-chair' ? '(Required for Program Chair)' : '(Optional)' }}</span>
+                  <select v-model.number="form.program_id">
+                    <option :value="null">Select a program...</option>
+                    <option
+                      v-for="program in programOptions"
+                      :key="program.id"
+                      :value="program.id"
+                    >
+                      {{ program.name }}{{ program.needsChairAssigned || program.needs_chair_assigned ? ' — needs a chair assigned' : '' }}
                     </option>
                   </select>
                 </label>
@@ -763,18 +778,31 @@ const form = reactive({
   first_name: '',
   last_name: '',
   email: '',
-  role: 'Faculty',
+  role: 'faculty',
   college_id: null as number | null,
+  program_id: null as number | null,
   password: '',
   password_confirmation: '',
+})
+
+const programOptions = computed(() => {
+  return departments.value.flatMap((college: any) => {
+    const programs = college.programs || college.data || []
+    return (Array.isArray(programs) ? programs : []).map((program: any) => ({
+      ...program,
+      name: `${college.name} — ${program.name}`,
+      needsChairAssigned: program.needsChairAssigned || program.needs_chair_assigned || !program.chairId && !program.chair_id,
+    }))
+  })
 })
 
 const resetForm = () => {
   form.first_name = ''
   form.last_name = ''
   form.email = ''
-  form.role = 'Faculty'
+  form.role = 'faculty'
   form.college_id = null
+  form.program_id = null
   form.password = ''
   form.password_confirmation = ''
   formError.value = ''
@@ -794,8 +822,9 @@ const openEditModal = (user: any) => {
     user.name?.split(/\s+/).slice(1).join(' ') ||
     ''
   form.email = user.email || ''
-  form.role = user.role || user.role_name || user.role_slug || 'Faculty'
+  form.role = user.role_slug || user.role || user.role_name || 'faculty'
   form.college_id = user.college_id || null
+  form.program_id = user.program_id || user.programId || null
   form.password = ''
   form.password_confirmation = ''
   formError.value = ''
@@ -829,6 +858,19 @@ const submitUserForm = async () => {
     // Add college_id only if selected (required for Dean role)
     if (form.college_id) {
       payload.college_id = form.college_id
+    }
+    if (form.program_id) {
+      payload.program_id = form.program_id
+    }
+    if (form.role === 'dean' && !form.college_id) {
+      formError.value = 'A dean must be assigned to a college.'
+      isSubmitting.value = false
+      return
+    }
+    if (form.role === 'program-chair' && !form.program_id) {
+      formError.value = 'A program must be selected for a Program Chair.'
+      isSubmitting.value = false
+      return
     }
 
     if (!editingUser.value) {

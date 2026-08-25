@@ -110,11 +110,11 @@
 
             <div class="dean-cycle-details">
               <div class="dean-detail-row">
-                <span class="dean-detail-label">Accreditation Date:</span>
+                <span class="dean-detail-label">Scheduled visit:</span>
                 <span class="dean-detail-value">{{ formatDate(cycle.scheduled_visit) }}</span>
               </div>
               <div class="dean-detail-row">
-                <span class="dean-detail-label">Preparation Deadline:</span>
+                <span class="dean-detail-label">Valid until:</span>
                 <span class="dean-detail-value">{{ formatDate(cycle.valid_until) }}</span>
               </div>
               <div class="dean-detail-row">

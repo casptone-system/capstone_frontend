@@ -4,14 +4,14 @@
     <div class="brand-panel">
       <div class="ledger-lines" aria-hidden="true"></div>
       <div class="brand-content">
-        <span class="eyebrow">Est. Registry &middot; Institutional Access</span>
+        <span class="eyebrow">Isabela State University · Echague Main Campus</span>
         <h1 class="brand-title">
           Accreditation<br />
           <em>Management</em> System
         </h1>
         <p class="brand-copy">
-          The system of record for institutional review, self-study
-          submissions, and site-visit documentation.
+          Records for the Institute of Fisheries (IOF), with room to add
+          other departments and programs as the campus expands.
         </p>
 
         <ul class="brand-facts" aria-hidden="true">
@@ -22,7 +22,7 @@
       </div>
 
 
-      <p class="brand-footer">ADAMS &copy; {{ new Date().getFullYear() }} &middot; Confidential institutional record</p>
+      <p class="brand-footer">ADAMS &copy; {{ new Date().getFullYear() }} &middot; ISU Echague Main Campus</p>
     </div>
 
     <!-- RIGHT: Form panel -->

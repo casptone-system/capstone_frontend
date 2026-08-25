@@ -5,24 +5,24 @@
       <div class="header-copy">
         <h1>Welcome to ADAMS</h1>
         <p>
-          Your account is ready. Enter the invitation code or token shared by your Program
+          Your account is ready. Enter the 6-character team code shared by your Program
           Chair or Dean to join your accreditation team.
         </p>
       </div>
 
       <form class="join-form" @submit.prevent="handleJoin">
-        <label class="field-label" for="invite-code">Invitation code or token</label>
+        <label class="field-label" for="invite-code">Team code</label>
         <input
           id="invite-code"
           v-model="inviteCode"
           type="text"
           autocomplete="one-time-code"
-          placeholder="Enter your invitation code or token"
+          placeholder="Enter your 6-character team code"
           class="invite-input"
         />
 
         <button class="join-button" type="submit" :disabled="isLoading">
-          {{ isLoading ? 'Accepting...' : 'Accept Invitation' }}
+          {{ isLoading ? 'Joining...' : 'Join Team' }}
         </button>
          <ion-button color="danger" fill="solid" @click="handleLogout">
           <ion-icon :icon="logOutOutline" />
@@ -32,7 +32,7 @@
 
       <p v-if="message" class="message" :class="messageType">{{ message }}</p>
       <p class="help-text">
-        Don’t have a token? Contact your Program Chair or Dean and ask them to generate your team invitation.
+        Don’t have a team code? Contact your Program Chair or Dean and ask them to generate one.
       </p>
     </div>
   </div>

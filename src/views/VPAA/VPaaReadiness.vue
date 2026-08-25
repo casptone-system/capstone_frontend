@@ -3,54 +3,49 @@
     <header class="vpaa-topbar">
       <div>
         <p class="vpaa-breadcrumb">Monitoring</p>
-        <h1 class="vpaa-page-title">Program Readiness</h1>
+        <h1 class="vpaa-page-title">Accreditation Preparation Status</h1>
+        <p class="vpaa-page-sub">Preparation, evidence completion, and validity for every program cycle.</p>
       </div>
     </header>
 
     <section class="vpaa-content">
-      <div class="vpaa-readiness-container">
+      <div v-if="vpaaStore.loading" class="vpaa-state">Loading preparation status…</div>
+      <div v-else-if="vpaaStore.error" class="vpaa-state error">{{ vpaaStore.error }}</div>
+      <div v-else-if="rows.length === 0" class="vpaa-state">No accreditation cycles to monitor yet.</div>
+
+      <div v-else class="vpaa-readiness-container">
         <div class="vpaa-readiness-table">
           <div class="vpaa-table-header">
             <span>Program</span>
             <span>Level</span>
-            <span>Phase</span>
+            <span>Preparation</span>
             <span>Evidence</span>
-            <span>Review</span>
-            <span>Validation</span>
-            <span>Overall</span>
+            <span>Validity</span>
+            <span>Valid until</span>
+            <span>Visit</span>
             <span>Status</span>
           </div>
 
-          <div v-for="program in readinessData" :key="program.id" class="vpaa-table-row">
-            <span class="vpaa-program-name">{{ program.name }}</span>
-            <span>{{ program.level }}</span>
-            <span>{{ program.phase }}</span>
+          <div v-for="program in rows" :key="program.id" class="vpaa-table-row">
+            <div>
+              <span class="vpaa-program-name">{{ program.program }}</span>
+              <small>{{ program.college }}</small>
+            </div>
+            <span>{{ program.level || 'Not set' }}</span>
+            <span>{{ program.preparation_status }}</span>
             <div class="vpaa-mini-progress">
               <div class="vpaa-progress-bar">
-                <div class="vpaa-progress-fill" :style="{ width: program.evidence + '%' }"></div>
+                <div class="vpaa-progress-fill" :style="{ width: program.evidence_completion + '%' }"></div>
               </div>
-              <span>{{ program.evidence }}%</span>
+              <span>{{ program.evidence_completion }}%</span>
             </div>
-            <div class="vpaa-mini-progress">
-              <div class="vpaa-progress-bar">
-                <div class="vpaa-progress-fill" :style="{ width: program.review + '%' }"></div>
-              </div>
-              <span>{{ program.review }}%</span>
-            </div>
-            <div class="vpaa-mini-progress">
-              <div class="vpaa-progress-bar">
-                <div class="vpaa-progress-fill" :style="{ width: program.validation + '%' }"></div>
-              </div>
-              <span>{{ program.validation }}%</span>
-            </div>
-            <div class="vpaa-mini-progress">
-              <div class="vpaa-progress-bar">
-                <div class="vpaa-progress-fill" :style="{ width: program.overall + '%' }"></div>
-              </div>
-              <span>{{ program.overall }}%</span>
-            </div>
-            <span :class="['vpaa-status-badge', program.status.toLowerCase()]">
-              {{ program.status }}
+            <span :class="['vpaa-status-badge', validityClass(program.validity_status)]">
+              {{ program.validity_status }}
+            </span>
+            <span>{{ formatDate(program.valid_until) }}</span>
+            <span>{{ formatDate(program.scheduled_visit) }}</span>
+            <span :class="['vpaa-status-badge', statusClass(program.display_status || program.status)]">
+              {{ program.display_status || program.status }}
             </span>
           </div>
         </div>
@@ -60,43 +55,38 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, onMounted } from 'vue'
+import { useVPAADashboardStore } from '@/stores/vpaaDashboardStore'
 
-const readinessData = ref([
-  {
-    id: 1,
-    name: 'BSIT',
-    level: 'Level III',
-    phase: 'Evidence Collection',
-    evidence: 94,
-    review: 88,
-    validation: 0,
-    overall: 82,
-    status: 'On Track',
-  },
-  {
-    id: 2,
-    name: 'BSBA',
-    level: 'Level II',
-    phase: 'Preparation',
-    evidence: 78,
-    review: 0,
-    validation: 0,
-    overall: 78,
-    status: 'At Risk',
-  },
-  {
-    id: 3,
-    name: 'BSHM',
-    level: 'Level I',
-    phase: 'Review',
-    evidence: 100,
-    review: 86,
-    validation: 0,
-    overall: 86,
-    status: 'On Track',
-  },
-])
+const vpaaStore = useVPAADashboardStore()
+
+const rows = computed(() => vpaaStore.accreditations)
+
+const formatDate = (date: string | null | undefined) => {
+  if (!date) return 'Not set'
+  try {
+    return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  } catch {
+    return date
+  }
+}
+
+const validityClass = (status: string) => {
+  if (status === 'Expired') return 'expired'
+  if (status === 'Valid') return 'valid'
+  return 'unset'
+}
+
+const statusClass = (status: string) => {
+  const value = (status || '').toLowerCase()
+  if (value.includes('ready') || value.includes('accredited') || value.includes('completed')) return 'valid'
+  if (value.includes('expired') || value.includes('risk')) return 'expired'
+  return 'unset'
+}
+
+onMounted(() => {
+  void vpaaStore.fetchDashboard()
+})
 </script>
 
 <style scoped>
@@ -106,9 +96,6 @@ const readinessData = ref([
 }
 
 .vpaa-topbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   padding: 24px 32px;
   background: white;
   border-bottom: 1px solid #e0e0e0;
@@ -130,8 +117,24 @@ const readinessData = ref([
   color: #1a237e;
 }
 
+.vpaa-page-sub {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
 .vpaa-content {
   padding: 24px 32px;
+}
+
+.vpaa-state {
+  padding: 48px 24px;
+  text-align: center;
+  color: #64748b;
+}
+
+.vpaa-state.error {
+  color: #b91c1c;
 }
 
 .vpaa-readiness-container {
@@ -146,11 +149,16 @@ const readinessData = ref([
   overflow-x: auto;
 }
 
-.vpaa-table-header {
+.vpaa-table-header,
+.vpaa-table-row {
   display: grid;
-  grid-template-columns: 150px 80px 120px 100px 100px 100px 100px 100px;
+  grid-template-columns: 1.4fr 0.7fr 1fr 0.9fr 0.8fr 0.9fr 0.9fr 0.9fr;
   gap: 12px;
   padding: 16px 12px;
+  align-items: center;
+}
+
+.vpaa-table-header {
   background: #f9f9f9;
   border-bottom: 1px solid #e0e0e0;
   font-size: 12px;
@@ -161,11 +169,6 @@ const readinessData = ref([
 }
 
 .vpaa-table-row {
-  display: grid;
-  grid-template-columns: 150px 80px 120px 100px 100px 100px 100px 100px;
-  gap: 12px;
-  align-items: center;
-  padding: 16px 12px;
   border-bottom: 1px solid #f5f5f5;
   font-size: 13px;
 }
@@ -175,8 +178,13 @@ const readinessData = ref([
 }
 
 .vpaa-program-name {
+  display: block;
   font-weight: 600;
   color: #1a1a1a;
+}
+
+.vpaa-table-row small {
+  color: #94a3b8;
 }
 
 .vpaa-mini-progress {
@@ -212,13 +220,25 @@ const readinessData = ref([
   text-transform: uppercase;
 }
 
-.vpaa-status-badge.on\ track {
+.vpaa-status-badge.valid {
   background: #e8f5e9;
   color: #2e7d32;
 }
 
-.vpaa-status-badge.at\ risk {
-  background: #fff3e0;
-  color: #e65100;
+.vpaa-status-badge.expired {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.vpaa-status-badge.unset {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+@media (max-width: 1100px) {
+  .vpaa-table-header,
+  .vpaa-table-row {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 </style>

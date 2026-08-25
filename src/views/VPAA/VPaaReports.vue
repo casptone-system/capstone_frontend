@@ -9,7 +9,7 @@
 
     <section class="vpaa-content">
       <div class="vpaa-reports-grid">
-        <div v-for="report in reports" :key="report.id" class="vpaa-report-card" @click="generateReport(report.id)">
+        <div v-for="report in reports" :key="report.id" class="vpaa-report-card" @click="generateReport(report)">
           <div class="vpaa-report-icon"><ion-icon :icon="report.icon" /></div>
           <h3>{{ report.name }}</h3>
           <p>{{ report.description }}</p>
@@ -24,6 +24,7 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
 import { IonIcon } from '@ionic/vue'
 import {
   barChartOutline,
@@ -32,39 +33,45 @@ import {
   trendingUpOutline,
 } from 'ionicons/icons'
 
+const router = useRouter()
+
 const reports = [
   {
-    id: 1,
+    id: 'status',
     name: 'Accreditation Status Report',
     description: 'Current status and progress of all accreditation cycles',
     type: 'Status',
     icon: barChartOutline,
+    to: { name: 'vpaa-accreditations' },
   },
   {
-    id: 2,
+    id: 'readiness',
     name: 'Readiness Report',
     description: 'Program preparation and evidence completion levels',
     type: 'Progress',
     icon: trendingUpOutline,
+    to: { name: 'vpaa-readiness' },
   },
   {
-    id: 3,
+    id: 'at-risk',
     name: 'At-Risk Report',
     description: 'Programs requiring institutional attention',
     type: 'Alert',
     icon: checkmarkDoneOutline,
+    to: { name: 'vpaa-at-risk' },
   },
   {
-    id: 4,
+    id: 'schedule',
     name: 'Accreditation Schedule',
-    description: 'Upcoming accreditation dates and deadlines',
+    description: 'Upcoming accreditation dates and validity windows',
     type: 'Calendar',
     icon: documentOutline,
+    to: { name: 'vpaa-schedule' },
   },
 ]
 
-const generateReport = (id: number) => {
-  console.log('Generate report', id)
+const generateReport = (report: (typeof reports)[number]) => {
+  router.push(report.to)
 }
 </script>
 

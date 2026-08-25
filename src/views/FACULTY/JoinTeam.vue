@@ -6,28 +6,28 @@
           <img src="@/assets/Archiving_logo.png" alt="ADAMS Logo" class="login-logo" />
           <h1>Welcome to ADAMS</h1>
           <p class="subtitle">
-            You’re almost ready. Enter the invitation code or token shared by your Program Chair to join your team and unlock your workspace.
+            You’re almost ready. Enter the 6-character team code shared by your Program Chair to join your team and unlock your workspace.
           </p>
 
           <form class="join-form" @submit.prevent="handleJoin">
-            <label class="field-label" for="invite-code">Invitation code or token</label>
+            <label class="field-label" for="invite-code">Team code</label>
             <input
               id="invite-code"
               v-model="inviteCode"
               type="text"
               autocomplete="one-time-code"
-              placeholder="Enter your invitation code or token"
+              placeholder="Enter your 6-character team code"
               class="invite-input"
             />
 
-            <button class="join-button" type="submit">Accept Invitation</button>
+            <button class="join-button" type="submit">Join Team</button>
             <button class="fac-nav-icon" type="button" @click="handleLogout">
               Logout
             </button>
           </form>
 
           <p v-if="message" class="message" :class="messageType">{{ message }}</p>
-          <p class="help-text">Don’t have a token? Contact your Program Chair or Dean for an invitation.</p>
+          <p class="help-text">Don’t have a team code? Contact your Program Chair or Dean.</p>
         </div>
       </div>
     </ion-content>

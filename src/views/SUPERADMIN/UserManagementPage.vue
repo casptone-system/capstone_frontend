@@ -31,9 +31,9 @@
           <input v-model="search" class="sa-search" placeholder="Search by name or email" />
           <select v-model="filter" class="sa-select">
             <option value="all">All roles</option>
-            <option value="super administrator">Super Administrator</option>
+            <option value="superadmin">Super Administrator</option>
             <option value="dean">Dean</option>
-            <option value="program chair">Program Chair</option>
+            <option value="program-chair">Program Chair</option>
             <option value="faculty">Faculty</option>
           </select>
         </div>
@@ -119,9 +119,9 @@ const showForm = ref(false)
 const showRoleModal = ref(false)
 const editingUser = ref<any | null>(null)
 const selectedUser = ref<any | null>(null)
-const selectedRole = ref('Faculty')
+const selectedRole = ref('faculty')
 const availableRoles = ref<string[]>([])
-const form = reactive({ first_name: '', last_name: '', email: '', role: 'Faculty', department: '', password: '', password_confirmation: '' })
+const form = reactive({ first_name: '', last_name: '', email: '', role: 'faculty', department: '', password: '', password_confirmation: '' })
 
 const filteredUsers = computed(() => {
   const term = search.value.toLowerCase()
@@ -138,7 +138,7 @@ const resetForm = () => {
   form.first_name = ''
   form.last_name = ''
   form.email = ''
-  form.role = 'Faculty'
+  form.role = 'faculty'
   form.password = ''
   form.password_confirmation = ''
 }
@@ -154,7 +154,7 @@ const openEditModal = (user: any) => {
   form.first_name = user.name?.split(' ')[0] || ''
   form.last_name = user.name?.split(' ').slice(1).join(' ') || ''
   form.email = user.email || ''
-  form.role = user.role || 'Faculty'
+  form.role = user.role || 'faculty'
   form.department = user.department || ''
   form.password = ''
   form.password_confirmation = ''
@@ -222,7 +222,7 @@ const loadRoles = async () => {
 
 const openRoleModal = async (user: any) => {
   selectedUser.value = user
-  selectedRole.value = user.role || 'Faculty'
+  selectedRole.value = user.role || 'faculty'
   await loadRoles()
   showRoleModal.value = true
 }
@@ -230,7 +230,7 @@ const openRoleModal = async (user: any) => {
 const closeRoleModal = () => {
   showRoleModal.value = false
   selectedUser.value = null
-  selectedRole.value = 'Faculty'
+  selectedRole.value = 'faculty'
 }
 
 const submitRoleAssignment = async () => {

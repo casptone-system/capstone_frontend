@@ -291,7 +291,7 @@ export const useFacultyDashboardStore = defineStore('facultyDashboard', () => {
 
     try {
       const data = await getDashboard(params)
-      const payload = data?.data || data || {}
+      const payload = data?.data?.summary || data?.data || data || {}
 
       dashboardSummary.value = {
         totalPrograms: payload.totalPrograms ?? payload.total_programs ?? 0,

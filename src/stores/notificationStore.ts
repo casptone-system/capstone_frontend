@@ -258,7 +258,7 @@ export const useNotificationStore = defineStore('notifications', () => {
       if (role === 'dean' && parsed.path.includes('/faculty')) {
         return { path: '/user/dashboard/dean', section: parsed.section || 'notifications' }
       }
-      if (role === 'vpaa/di' && parsed.path.includes('/faculty')) {
+      if (role === 'vpaa' && parsed.path.includes('/faculty')) {
         return { path: '/user/dashboard/vpaa', section: undefined }
       }
       return parsed
@@ -267,7 +267,7 @@ export const useNotificationStore = defineStore('notifications', () => {
     if (item.source === 'task') {
       if (role === 'program-chair') return { path: '/user/dashboard/program-chair', section: 'notifications' }
       if (role === 'dean') return { path: '/user/dashboard/dean', section: 'notifications' }
-      if (role === 'faculty' || role === 'area-incharge') {
+      if (role === 'faculty' || role === 'area-in-charge') {
         return { path: '/user/dashboard/faculty', section: 'notifications' }
       }
     }

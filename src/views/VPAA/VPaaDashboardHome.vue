@@ -47,7 +47,51 @@
     </section>
 
     <section class="vpaa-monitor-wrap">
-      <AccreditationLevelStatus view="vpaa" title="Institutional accreditation by level" />
+      <AccreditationLevelStatus view="vpaa" title="Accreditation level, preparation, and validity" />
+    </section>
+
+    <section v-if="!vpaaStore.loading && !vpaaStore.error" class="vpaa-monitor-wrap">
+      <div class="vpaa-card">
+        <div class="vpaa-card-header">
+          <div class="vpaa-card-title-group">
+            <div class="vpaa-card-icon teal"><ion-icon :icon="shieldCheckmarkOutline" /></div>
+            <div>
+              <h2 class="vpaa-card-title">Programs at a glance</h2>
+              <p class="vpaa-card-sub">Level, preparation status, and validity for each accreditation cycle.</p>
+            </div>
+          </div>
+        </div>
+        <div v-if="programMonitor.length > 0" class="vpaa-table">
+          <div class="vpaa-table-header vpaa-monitor-header">
+            <span>Program</span>
+            <span>Level</span>
+            <span>Preparation</span>
+            <span>Validity</span>
+            <span>Visit</span>
+          </div>
+          <router-link
+            v-for="item in programMonitor"
+            :key="item.id"
+            :to="{ name: 'vpaa-accreditation-detail', params: { id: item.id } }"
+            custom
+            v-slot="{ href, navigate }"
+          >
+            <div class="vpaa-table-row vpaa-monitor-row" :href="href" @click="navigate" style="cursor: pointer">
+              <span>
+                <strong>{{ item.program }}</strong>
+                <small>{{ item.college }}</small>
+              </span>
+              <span>{{ item.level || 'Not set' }}</span>
+              <span>{{ item.preparation_status }}</span>
+              <span>{{ item.validity_status }}{{ item.valid_until ? ` · ${item.valid_until}` : '' }}</span>
+              <span>{{ item.scheduled_visit || 'Not scheduled' }}</span>
+            </div>
+          </router-link>
+        </div>
+        <div v-else class="vpaa-empty-state">
+          <p>No accreditation cycles to monitor yet.</p>
+        </div>
+      </div>
     </section>
 
     <section class="vpaa-monitor-wrap">
@@ -236,17 +280,26 @@ const stats = computed(() => [
     color: '#991b1b',
     icon: alertCircleOutline,
   },
+  {
+    label: 'Expired validity',
+    value: String(vpaaStore.summary.expired_validity),
+    bg: '#fff7ed',
+    color: '#9a3412',
+    icon: timeOutline,
+  },
 ])
 
 const pipeline = computed(() => [
-  { step: '1', name: 'Cycle creation', meta: 'VPAA assigns college and program', status: 'done' },
+  { step: '1', name: 'Cycle, schedule, instruments', meta: 'VPAA creates the cycle and sets visit date, validity, and instruments', status: 'done' },
   { step: '2', name: 'Dean notice', meta: 'Dean acknowledges and forwards to chair', status: 'done' },
-  { step: '3', name: 'Chair requirements', meta: 'Program chair sets requirements', status: 'active' },
+  { step: '3', name: 'Chair requirements', meta: 'Program chair sets level, phase, and area work', status: 'active' },
   { step: '4', name: 'Faculty evidence', meta: 'Faculty prepares and submits evidence', status: 'pending' },
   { step: '5', name: 'Chair review', meta: 'Program chair reviews submissions', status: 'pending' },
-  { step: '6', name: 'Dean validation', meta: 'Institutional validation and approval', status: 'pending' },
-  { step: '7', name: 'VPAA monitoring', meta: 'Accreditation readiness status', status: 'pending' },
+  { step: '6', name: 'Dean validation', meta: 'College validation and approval', status: 'pending' },
+  { step: '7', name: 'VPAA monitoring', meta: 'Level, preparation status, and validity per program', status: 'pending' },
 ])
+
+const programMonitor = computed(() => vpaaStore.accreditations.slice(0, 8))
 
 const finalReviewQueue = computed(() => {
   return vpaaStore.accreditations
@@ -488,6 +541,17 @@ onMounted(async () => {
   margin: 4px 0 0;
   font-size: 12px;
   color: #999;
+}
+
+.vpaa-monitor-header,
+.vpaa-monitor-row {
+  grid-template-columns: 1.6fr 0.8fr 1fr 1.3fr 1fr;
+}
+
+.vpaa-monitor-row small {
+  display: block;
+  color: #94a3b8;
+  font-size: 12px;
 }
 
 .vpaa-content-grid {

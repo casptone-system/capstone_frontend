@@ -6,7 +6,6 @@
         <tr>
           <th class="apr-col-content">Content</th>
           <th v-if="showUpload" class="apr-col-upload">Upload</th>
-          <th class="apr-col-done">Mark as Done</th>
         </tr>
       </thead>
       <tbody>
@@ -28,86 +27,125 @@
             <p v-else class="apr-content">{{ row.content }}</p>
             <div v-if="editable" class="apr-edit-actions">
               <template v-if="editingId === row.id">
-                <button type="button" class="apr-link" @click="saveContent(row)">Save</button>
-                <button type="button" class="apr-link muted" @click="cancelEdit">Cancel</button>
+                <button type="button" class="apr-icon-btn" title="Save" aria-label="Save" @click="saveContent(row)">
+                  <ion-icon :icon="checkmarkOutline" />
+                  <span class="apr-tooltip">Save</span>
+                </button>
+                <button type="button" class="apr-icon-btn muted" title="Cancel" aria-label="Cancel" @click="cancelEdit">
+                  <ion-icon :icon="closeOutline" />
+                  <span class="apr-tooltip">Cancel</span>
+                </button>
               </template>
               <template v-else>
-                <button type="button" class="apr-link" @click="startEdit(row)">Edit</button>
-                <button type="button" class="apr-link danger" @click="removeRow(row)">Remove</button>
+                <button type="button" class="apr-icon-btn" title="Edit" aria-label="Edit" @click="startEdit(row)">
+                  <ion-icon :icon="createOutline" />
+                  <span class="apr-tooltip">Edit</span>
+                </button>
+                <button type="button" class="apr-icon-btn danger" title="Remove" aria-label="Remove" @click="removeRow(row)">
+                  <ion-icon :icon="trashOutline" />
+                  <span class="apr-tooltip">Remove</span>
+                </button>
               </template>
             </div>
           </td>
-          <template v-if="!isSectionHeading(row)">
-            <td v-if="showUpload" class="apr-upload-cell">
-              <div v-if="row.document || row.hasFile" class="apr-file">
-                <strong>{{ fileName(row) }}</strong>
-                <div class="apr-edit-actions">
-                  <button type="button" class="apr-link" @click="openPreview(row)">Preview</button>
-                  <label v-if="canUpload" class="apr-link">
-                    Replace
-                    <input
-                      class="apr-file-input"
-                      type="file"
-                      :disabled="pendingId === row.id"
-                      @change="onFileSelected(row, $event)"
-                    />
-                  </label>
-                </div>
-              </div>
-              <label v-else-if="canUpload" class="apr-upload-btn">
-                {{ pendingId === row.id ? 'Uploading…' : 'Upload file' }}
-                <input
-                  class="apr-file-input"
-                  type="file"
-                  :disabled="pendingId === row.id"
-                  @change="onFileSelected(row, $event)"
-                />
-              </label>
-              <span v-else class="apr-muted">No file yet</span>
-            </td>
-            <td class="apr-done-cell">
-              <label class="apr-check">
-                <input
-                  type="checkbox"
-                  :checked="row.isDone"
-                  :disabled="!canToggle || pendingId === row.id"
-                  @change="toggleDone(row, ($event.target as HTMLInputElement).checked)"
-                />
-                <span>{{ row.isDone ? 'Done' : 'Not done' }}</span>
-              </label>
-            </td>
-          </template>
+          <td v-if="showUpload && !isSectionHeading(row)" class="apr-upload-cell">
+            <div v-if="rowFiles(row).length" class="apr-files">
+              <AreaFileThumbnail
+                v-for="doc in rowFiles(row)"
+                :key="doc.id"
+                :doc="doc"
+                :can-remove="canUpload"
+                :removing="pendingDocId === doc.id || pendingId === row.id"
+                @remove="removeFile(row, doc)"
+                @error="error = $event"
+              />
+            </div>
+            <span v-else class="apr-muted">No files yet</span>
+
+            <div v-if="canUpload" class="apr-row-actions">
+              <button
+                type="button"
+                class="apr-icon-btn"
+                :disabled="pendingId === row.id"
+                title="Edit"
+                aria-label="Edit"
+                @click="openUploader(row)"
+              >
+                <ion-icon :icon="createOutline" />
+                <span class="apr-tooltip">Edit</span>
+              </button>
+              <button
+                type="button"
+                class="apr-icon-btn danger"
+                :disabled="pendingId === row.id || !rowFiles(row).length"
+                title="Remove"
+                aria-label="Remove"
+                @click="removeFiles(row)"
+              >
+                <ion-icon :icon="trashOutline" />
+                <span class="apr-tooltip">Remove</span>
+              </button>
+              <button
+                type="button"
+                class="apr-icon-btn primary"
+                :disabled="pendingId === row.id || !canSubmit"
+                title="Submit"
+                aria-label="Submit"
+                @click="submitArea(row)"
+              >
+                <ion-icon :icon="sendOutline" />
+                <span class="apr-tooltip">Submit</span>
+              </button>
+            </div>
+          </td>
         </tr>
       </tbody>
     </table>
+
+    <AreaRowUploadModal
+      :open="uploaderOpen"
+      :row-id="uploaderRow?.id || null"
+      :row-label="uploaderRow?.content || 'Content row'"
+      :existing-count="uploaderRow ? rowFiles(uploaderRow).length : 0"
+      :program-id="programId"
+      :area-id="areaId"
+      @close="uploaderOpen = false"
+      @uploaded="onUploaded"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { IonIcon } from '@ionic/vue'
+import { checkmarkOutline, closeOutline, createOutline, sendOutline, trashOutline } from 'ionicons/icons'
 import {
+  deleteDocument,
   deleteParameterRow,
+  deleteParameterRowDocuments,
   patchParameterRowContent,
-  patchParameterRowStatus,
-  previewDocument,
-  replaceDocument,
-  uploadDocument,
+  submitAreaReview,
 } from '@/lib/api'
-import { openBlobInNewTab } from '@/lib/documentPreview'
+import AreaFileThumbnail from '@/components/AreaFileThumbnail.vue'
+import AreaRowUploadModal from '@/components/AreaRowUploadModal.vue'
+
+type RowDocument = {
+  id: number
+  title?: string
+  latestVersion?: { originalName?: string; mimeType?: string; version?: number } | null
+  versions?: { originalName?: string; mimeType?: string; version?: number }[]
+}
 
 type ParameterRow = {
   id: number
   content: string
-  isDone: boolean
+  isDone?: boolean
   hasFile?: boolean
+  fileCount?: number
   doneAt?: string | null
   doneBy?: { id: number; name?: string } | null
-  document?: {
-    id: number
-    title?: string
-    latestVersion?: { originalName?: string; mimeType?: string; version?: number } | null
-    versions?: { originalName?: string; mimeType?: string; version?: number }[]
-  } | null
+  document?: RowDocument | null
+  documents?: RowDocument[]
 }
 
 const props = defineProps<{
@@ -116,6 +154,7 @@ const props = defineProps<{
   canToggle?: boolean
   showUpload?: boolean
   canUpload?: boolean
+  canSubmit?: boolean
   programId?: number | string | null
   areaId?: number | string | null
 }>()
@@ -123,14 +162,19 @@ const props = defineProps<{
 const emit = defineEmits<{
   (event: 'updated', row: ParameterRow): void
   (event: 'removed', row: ParameterRow): void
+  (event: 'submitted'): void
+  (event: 'files-changed'): void
 }>()
 
 const editingId = ref<number | null>(null)
 const draftContent = ref('')
 const pendingId = ref<number | null>(null)
+const pendingDocId = ref<number | null>(null)
 const error = ref('')
+const uploaderOpen = ref(false)
+const uploaderRow = ref<ParameterRow | null>(null)
 
-const columnCount = computed(() => (props.showUpload ? 3 : 2))
+const columnCount = computed(() => (props.showUpload ? 2 : 1))
 
 const normalizeHeading = (content: string) =>
   String(content || '')
@@ -150,6 +194,11 @@ const isSectionHeading = (row: ParameterRow) => {
   )
 }
 
+const rowFiles = (row: ParameterRow): RowDocument[] => {
+  if (Array.isArray(row.documents) && row.documents.length) return row.documents
+  return row.document ? [row.document] : []
+}
+
 const startEdit = (row: ParameterRow) => {
   editingId.value = row.id
   draftContent.value = row.content
@@ -160,11 +209,11 @@ const cancelEdit = () => {
   draftContent.value = ''
 }
 
-const fileName = (row: ParameterRow) =>
-  row.document?.latestVersion?.originalName
-  || row.document?.versions?.[0]?.originalName
-  || row.document?.title
-  || 'Uploaded file'
+const fileName = (doc: RowDocument) =>
+  doc.latestVersion?.originalName
+  || doc.versions?.[0]?.originalName
+  || doc.title
+  || 'Uploaded PDF'
 
 const saveContent = async (row: ParameterRow) => {
   const content = draftContent.value.trim()
@@ -192,72 +241,76 @@ const removeRow = async (row: ParameterRow) => {
   }
 }
 
-const toggleDone = async (row: ParameterRow, isDone: boolean) => {
+const openUploader = (row: ParameterRow) => {
+  uploaderRow.value = row
+  uploaderOpen.value = true
+}
+
+const onUploaded = () => {
+  emit('files-changed')
+}
+
+const removeFile = async (row: ParameterRow, doc: RowDocument) => {
+  if (!window.confirm(`Remove ${fileName(doc)} from this row?`)) return
+
+  pendingDocId.value = doc.id
+  try {
+    error.value = ''
+    await deleteDocument(doc.id)
+    const remaining = rowFiles(row).filter((item) => item.id !== doc.id)
+    emit('updated', {
+      ...row,
+      hasFile: remaining.length > 0,
+      fileCount: remaining.length,
+      document: remaining[0] || null,
+      documents: remaining,
+    })
+    emit('files-changed')
+  } catch (err: any) {
+    error.value = err?.response?.data?.message || 'Unable to remove this file.'
+  } finally {
+    pendingDocId.value = null
+  }
+}
+
+const removeFiles = async (row: ParameterRow) => {
+  if (!window.confirm('Remove all PDFs attached to this row?')) return
+
   pendingId.value = row.id
   try {
     error.value = ''
-    const updated = await patchParameterRowStatus(row.id, isDone)
-    emit('updated', { ...row, ...updated, isDone })
+    const updated = await deleteParameterRowDocuments(row.id)
+    emit('updated', {
+      ...row,
+      ...(updated || {}),
+      hasFile: false,
+      fileCount: 0,
+      document: null,
+      documents: [],
+    })
   } catch (err: any) {
-    error.value = err?.response?.data?.message || 'Unable to update status.'
+    error.value = err?.response?.data?.message || 'Unable to remove files for this row.'
   } finally {
     pendingId.value = null
   }
 }
 
-const onFileSelected = async (row: ParameterRow, event: Event) => {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  input.value = ''
-  if (!file || !props.canUpload || !props.programId) return
+const submitArea = async (row: ParameterRow) => {
+  if (!props.areaId) return
+  if (!window.confirm('This submits the whole area for review, not just this row. Continue?')) return
 
   pendingId.value = row.id
   try {
     error.value = ''
-    let updated: any
-    if (row.document?.id) {
-      const formData = new FormData()
-      formData.append('file', file)
-      updated = await replaceDocument(row.document.id, formData)
-      updated = updated?.data || updated
-      emit('updated', {
-        ...row,
-        hasFile: true,
-        document: updated,
-      })
-    } else {
-      updated = await uploadDocument(file, {
-        program_id: props.programId,
-        area_id: props.areaId,
-        content_row_id: row.id,
-        title: file.name,
-      })
-      updated = updated?.data || updated
-      emit('updated', {
-        ...row,
-        hasFile: true,
-        document: updated,
-      })
-    }
+    await submitAreaReview(props.areaId)
+    emit('submitted')
   } catch (err: any) {
-    error.value = err?.response?.data?.message || 'Unable to upload this file.'
+    error.value = err?.response?.data?.message || 'Unable to submit this area.'
   } finally {
     pendingId.value = null
   }
 }
 
-const openPreview = async (row: ParameterRow) => {
-  if (!row.document?.id) return
-
-  try {
-    error.value = ''
-    const current = row.document.latestVersion || row.document.versions?.[0]
-    const blob = await previewDocument(row.document.id, current?.version)
-    openBlobInNewTab(blob, fileName(row), current?.mimeType)
-  } catch (err: any) {
-    error.value = err?.response?.data?.message || err?.message || 'Preview is not available for this file.'
-  }
-}
 </script>
 
 <style scoped>
@@ -287,9 +340,8 @@ const openPreview = async (row: ParameterRow) => {
   text-transform: uppercase;
 }
 
-.apr-col-content { width: 58%; }
-.apr-col-upload { width: 24%; }
-.apr-col-done { width: 18%; }
+.apr-col-content { width: 62%; }
+.apr-col-upload { width: 38%; }
 
 .apr-section-row td {
   background: #edf7f2;
@@ -318,61 +370,101 @@ const openPreview = async (row: ParameterRow) => {
   color: #0f172a;
 }
 
-.apr-edit-actions {
+.apr-edit-actions,
+.apr-row-actions {
   display: flex;
-  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
   margin-top: 0.55rem;
 }
 
-.apr-link {
-  appearance: none;
-  border: none;
-  background: none;
-  padding: 0;
-  color: #0e7a5f;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.apr-link.muted { color: #64748b; }
-.apr-link.danger { color: #b91c1c; }
-
-.apr-done-cell,
-.apr-upload-cell {
-  text-align: center;
-}
-
-.apr-check {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  color: #334155;
-  font-weight: 600;
-}
-
-.apr-file strong,
-.apr-muted {
-  display: block;
-  color: #334155;
-}
-
-.apr-muted { color: #94a3b8; }
-
-.apr-upload-btn {
+.apr-icon-btn {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px dashed #0e7a5f;
-  color: #0c5c4e;
-  border-radius: 0.65rem;
-  padding: 0.45rem 0.7rem;
-  font-weight: 700;
+  width: 2.1rem;
+  height: 2.1rem;
+  appearance: none;
+  border: 1px solid #0e7a5f;
+  border-radius: 0.55rem;
+  background: #fff;
+  color: #0e7a5f;
   cursor: pointer;
 }
 
-.apr-file-input {
-  display: none;
+.apr-icon-btn ion-icon {
+  font-size: 1.05rem;
 }
+
+.apr-icon-btn.muted {
+  border-color: #94a3b8;
+  color: #64748b;
+}
+
+.apr-icon-btn.danger {
+  border-color: #fecaca;
+  color: #b91c1c;
+  background: #fff7f7;
+}
+
+.apr-icon-btn.primary {
+  background: #0e7a5f;
+  border-color: #0e7a5f;
+  color: #fff;
+}
+
+.apr-icon-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.apr-tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 0.4rem);
+  transform: translateX(-50%);
+  padding: 0.28rem 0.5rem;
+  border-radius: 0.35rem;
+  background: #0f172a;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+  z-index: 2;
+}
+
+.apr-icon-btn:hover .apr-tooltip,
+.apr-icon-btn:focus-visible .apr-tooltip {
+  opacity: 1;
+}
+
+.apr-icon-btn:disabled:hover .apr-tooltip {
+  opacity: 0;
+}
+
+.apr-upload-cell {
+  text-align: left;
+}
+
+.apr-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.apr-muted {
+  display: block;
+  color: #94a3b8;
+}
+
+.apr-muted { color: #94a3b8; }
 
 .apr-empty,
 .apr-error {

@@ -4,7 +4,7 @@
       <div>
         <p class="tpl-kicker">Accreditation templates</p>
         <h2>Level folders used by Program Chairs</h2>
-        <p>QA/VPAA edit the master instrument for Levels I–IV. They do not set a program’s Level or Phase — the Program Chair does that.</p>
+        <p>VPAA/DI edit the master instrument for Levels I–IV. They do not set a program’s Level or Phase — the Program Chair does that. QA monitors institution-wide progress and does not edit templates.</p>
       </div>
       <select v-model="selectedLevel" class="tpl-select" @change="loadSelected">
         <option v-for="level in levels" :key="level" :value="level">{{ level }}</option>

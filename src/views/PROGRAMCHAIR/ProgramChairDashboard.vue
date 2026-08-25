@@ -186,7 +186,7 @@
                 <input class="pc-input" v-model="inviteEmail" placeholder="faculty@example.com" />
                 <select class="pc-input" v-model="inviteRole">
                   <option value="faculty">Faculty</option>
-                  <option value="area-incharge">Area In-Charge</option>
+                  <option value="area-in-charge">Area In-Charge</option>
                   <option value="program-chair">Program Chair</option>
                 </select>
                 <button class="pc-btn pc-btn-primary" :disabled="inviteBusy" @click.prevent="submitInvitation">
@@ -211,8 +211,8 @@
                   <span class="pc-recent-code">{{ invitation.email || invitation.token }}</span>
                   <span class="pc-recent-used">{{ invitation.status }}</span>
                   <div class="pc-code-actions">
-                    <button class="pc-code-btn copy" @click.prevent="resendInvitationAction(invitation.token)">Resend</button>
-                    <button class="pc-code-btn regen" @click.prevent="revokeInvitationAction(invitation.token)">Revoke</button>
+                    <button class="pc-code-btn copy" @click.prevent="showTeamCodeShareHint">Resend</button>
+                    <button class="pc-code-btn regen" @click.prevent="clearLegacyInvitationList">Revoke</button>
                   </div>
                 </div>
               </div>
@@ -254,19 +254,6 @@
 
             <p v-else class="pc-empty-state">No faculty members have been assigned to this program yet.</p>
             </div>
-          </section>
-
-          <section v-if="selectedSection === 'dashboard'" class="pc-documents-section">
-            <div class="pc-card-header">
-              <div class="pc-card-title-group">
-                <div class="pc-card-icon blue"><ion-icon :icon="folderOpenOutline" /></div>
-                <div>
-                  <h2 class="pc-card-title">Program Documents</h2>
-                  <p class="pc-card-sub">Evidence and program files for the assigned program</p>
-                </div>
-              </div>
-            </div>
-            <RoleStorageVault owner="program-chair" title="Program Documents" />
           </section>
 
           <div v-if="callMessage" class="pc-call-banner">
@@ -375,7 +362,7 @@
                   <input class="pc-input" v-model="inviteEmail" placeholder="faculty@example.com" />
                   <select class="pc-input" v-model="inviteRole">
                     <option value="faculty">Faculty</option>
-                    <option value="area-incharge">Area In-Charge</option>
+                    <option value="area-in-charge">Area In-Charge</option>
                     <option value="program-chair">Program Chair</option>
                   </select>
                   <button class="pc-btn pc-btn-primary" :disabled="inviteBusy" @click.prevent="submitInvitation">
@@ -400,8 +387,8 @@
                     <span class="pc-recent-code">{{ invitation.email || invitation.token }}</span>
                     <span class="pc-recent-used">{{ invitation.status }}</span>
                     <div class="pc-code-actions">
-                      <button class="pc-code-btn copy" @click.prevent="resendInvitationAction(invitation.token)">Resend</button>
-                      <button class="pc-code-btn regen" @click.prevent="revokeInvitationAction(invitation.token)">Revoke</button>
+                      <button class="pc-code-btn copy" @click.prevent="showTeamCodeShareHint">Resend</button>
+                      <button class="pc-code-btn regen" @click.prevent="clearLegacyInvitationList">Revoke</button>
                     </div>
                   </div>
                 </div>
@@ -552,12 +539,8 @@ import { useUserCalls } from '@/lib/useUserCalls'
 import {
   createTeam,
   getTeams,
-  createProgramInvitation,
-  getProgramInvitations,
   getProgram,
   getProgramFaculty,
-  resendInvitation,
-  revokeInvitation,
   getDocuments,
   getProgramChairAreaDocuments,
   getProgramChairAreaFiles,
@@ -565,7 +548,6 @@ import {
   requestRevisionReview,
   updateDocument,
 } from '@/lib/api'
-import RoleStorageVault from '@/components/RoleStorageVault.vue'
 import AccreditationLevelStatus from '@/components/AccreditationLevelStatus.vue'
 import ProgramChairAccreditationSetup from './ProgramChairAccreditationSetup.vue'
 import NotificationInbox from '@/components/NotificationInbox.vue'
@@ -994,16 +976,7 @@ const copyCode = async () => {
 }
 
 const fetchInvitations = async () => {
-  const programId = (authStore.user as any)?.programId || (authStore.user as any)?.program_id
-  if (!programId) return
-
-  try {
-    const response = await getProgramInvitations(programId)
-    invitations.value = Array.isArray(response?.data) ? response.data : []
-  } catch (err: any) {
-    console.warn('Failed to load invitations:', err)
-    invitations.value = []
-  }
+  invitations.value = []
 }
 
 const submitInvitation = async () => {
@@ -1016,104 +989,35 @@ const submitInvitation = async () => {
     return
   }
 
-  const programId =
-    (authStore.user as any)?.programId ||
-    (authStore.user as any)?.program_id
-
-  if (!programId) {
-    inviteError.value = 'Program ID unavailable.'
+  const token = activeCode.value
+  if (!token) {
+    inviteError.value = 'Generate a team code first, then share it with the faculty member.'
     return
   }
 
   inviteBusy.value = true
 
   try {
-    const response = await createProgramInvitation(programId, {
-      email,
-      role: inviteRole.value,
-    })
-
-    const invitation = response?.data || response
-    invitations.value = [invitation, ...invitations.value]
-
-    const token = invitation?.token || activeCode.value || ''
-    if (token) {
-      activeCode.value = token
-      codeMessage.value = 'Invitation token ready to send to the member.'
-      sendInvite(token, email)
-    }
-
+    sendInvite(token, email)
     inviteEmail.value = ''
     inviteRole.value = 'faculty'
-    inviteSuccess.value = `Invitation created and sent to ${email}.`
+    inviteSuccess.value = `Team code sent to ${email}. They can join from the Join Team page.`
   } catch (err: any) {
-    const message =
-      err?.response?.data?.message ||
-      err?.message ||
-      'Unable to create invitation.'
-
-    inviteError.value = message
-
-    try {
-      const { useToastStore } = await import('@/stores/toastStore')
-      useToastStore().show(message, 'error')
-    } catch {
-      // Toast is optional; preserve the main error state.
-    }
+    inviteError.value = err?.message || 'Unable to share the team code.'
   } finally {
     inviteBusy.value = false
   }
 }
 
-const resendInvitationAction = async (token: string) => {
+const showTeamCodeShareHint = () => {
   inviteError.value = ''
-  inviteSuccess.value = ''
-
-  try {
-    await resendInvitation(token)
-    inviteSuccess.value = 'Invitation resent.'
-  } catch (err: any) {
-    const message =
-      err?.response?.data?.message ||
-      err?.message ||
-      'Unable to resend invitation.'
-
-    inviteError.value = message
-
-    try {
-      const { useToastStore } = await import('@/stores/toastStore')
-      useToastStore().show(message, 'error')
-    } catch {
-      // Toast is optional.
-    }
-  }
+  inviteSuccess.value = 'Share the 6-character team code instead. Invitation tokens are no longer used.'
 }
 
-const revokeInvitationAction = async (token: string) => {
+const clearLegacyInvitationList = () => {
   inviteError.value = ''
-  inviteSuccess.value = ''
-
-  try {
-    await revokeInvitation(token)
-    invitations.value = invitations.value.filter(
-      (invitation) => invitation.token !== token,
-    )
-    inviteSuccess.value = 'Invitation revoked.'
-  } catch (err: any) {
-    const message =
-      err?.response?.data?.message ||
-      err?.message ||
-      'Unable to revoke invitation.'
-
-    inviteError.value = message
-
-    try {
-      const { useToastStore } = await import('@/stores/toastStore')
-      useToastStore().show(message, 'error')
-    } catch {
-      // Toast is optional.
-    }
-  }
+  invitations.value = []
+  inviteSuccess.value = 'Invitation tokens are no longer used. Faculty join with the team code.'
 }
 
 const sendInvite = (tokenOverride?: string, targetEmail?: string) => {
@@ -1125,7 +1029,7 @@ const sendInvite = (tokenOverride?: string, targetEmail?: string) => {
     return
   }
 
-  const mailBody = `You have been invited to join the accreditation team.\n\nUse this exact invitation code/token to join: ${token}\n\nSign in to ADAMS and enter it on the Join Team page.\n\nImportant: paste the exact value shown below, without changing or shortening it.`
+  const mailBody = `You have been invited to join the accreditation team.\n\nUse this 6-character team code to join: ${token}\n\nSign in to ADAMS and enter it on the Join Team page.`
 
   const mailTo = recipient
     ? `mailto:${encodeURIComponent(recipient)}?subject=${encodeURIComponent('ADAMS Program Invitation')}&body=${encodeURIComponent(mailBody)}`

@@ -81,7 +81,7 @@
         <div class="table-row" v-for="program in programs" :key="program.id">
           <span>{{ program.name }}</span>
           <span>{{ program.code || '—' }}</span>
-          <span>{{ program.chairUser?.name || program.chair || '—' }}</span>
+          <span>{{ program.chairUser?.name || (program.needsChairAssigned || program.needs_chair_assigned ? 'Needs a chair assigned' : (program.chair || '—')) }}</span>
         </div>
       </div>
       <div v-else class="sa-empty">No programs found for this college.</div>
@@ -102,7 +102,7 @@
             <h3>{{ program.name }}</h3>
             <span class="program-code">{{ program.code }}</span>
           </div>
-          <p class="program-chair">Chair: {{ program.chairUser?.name || program.chair || 'Unassigned' }}</p>
+          <p class="program-chair">Chair: {{ program.chairUser?.name || (program.needsChairAssigned || program.needs_chair_assigned ? 'Needs a chair assigned' : (program.chair || 'Unassigned')) }}</p>
           <div class="program-actions">
             <button class="sa-btn sa-btn-ghost" @click="editProgram(program)">Edit</button>
             <button class="sa-btn sa-btn-ghost" @click="assignProgramChair(program)">Assign Chair</button>
@@ -175,15 +175,19 @@
         <div class="form-grid">
           <label>
             <span>College name</span>
-            <input v-model="editForm.name" placeholder="College of Engineering" />
+            <input v-model="editForm.name" placeholder="Institute of Fisheries" />
           </label>
           <label>
             <span>Code</span>
-            <input v-model="editForm.code" placeholder="ENG" />
+            <input v-model="editForm.code" placeholder="IOF" />
+          </label>
+          <label>
+            <span>Campus</span>
+            <input v-model="editForm.campus" placeholder="Echague Main Campus" />
           </label>
           <label class="full">
             <span>Description</span>
-            <textarea v-model="editForm.description" rows="4" placeholder="Describe the college."></textarea>
+            <textarea v-model="editForm.description" rows="4" placeholder="Describe the college or institute."></textarea>
           </label>
         </div>
 
@@ -211,9 +215,9 @@
             <span>Role</span>
             <select v-model="roleForm.role" @change="roleForm.user_id = ''">
               <option value="">Select a role...</option>
-              <option value="Dean">Dean</option>
-              <option value="Program Chair">Program Chair</option>
-              <option value="Faculty">Faculty</option>
+              <option value="dean">Dean</option>
+              <option value="program-chair">Program Chair</option>
+              <option value="faculty">Faculty</option>
             </select>
           </label>
 
@@ -500,9 +504,9 @@
             <span>New Role</span>
             <select v-model="changeRoleForm.role" required>
               <option value="">Choose a role...</option>
-              <option value="Dean">Dean</option>
-              <option value="Program Chair">Program Chair</option>
-              <option value="Faculty">Faculty</option>
+              <option value="dean">Dean</option>
+              <option value="program-chair">Program Chair</option>
+              <option value="faculty">Faculty</option>
             </select>
           </label>
         </div>
@@ -560,7 +564,7 @@ const isAssigningChair = ref(false)
 const isChangingRole = ref(false)
 
 // Forms
-const editForm = ref({ name: '', code: '', description: '' })
+const editForm = ref({ name: '', code: '', campus: '', description: '' })
 const roleForm = ref({ role: '', user_id: '' })
 const programForm = ref({ name: '', code: '', chair_id: '' })
 const changeDeanForm = ref({ user_id: '' })
@@ -599,23 +603,21 @@ const programs = computed(() => Array.isArray(college.value.programs) ? college.
 const roleCandidates = computed(() => {
   const role = roleForm.value.role
   if (!role) return []
-  return users.value.filter((user) => 
-    String(user.role).toLowerCase().includes(role.toLowerCase()) && 
+  return users.value.filter((user) =>
+    String(user.role || user.role_slug || '').toLowerCase().replace(/\s+/g, '-') === role.toLowerCase().replace(/\s+/g, '-') &&
     user.college_id !== Number(collegeId)
   )
 })
-const programChairCandidates = computed(() => 
-  users.value.filter((user) => String(user.role).toLowerCase().includes('program chair'))
+const programChairCandidates = computed(() =>
+  users.value.filter((user) => String(user.role || user.role_slug || '').toLowerCase().includes('program-chair'))
 )
-const chairCandidates = computed(() => 
-  users.value.filter((user) => String(user.role).toLowerCase().includes('program chair'))
+const chairCandidates = computed(() =>
+  users.value.filter((user) => String(user.role || user.role_slug || '').toLowerCase().includes('program-chair'))
 )
-const deanCandidates = computed(() => 
+const deanCandidates = computed(() =>
   users.value.filter((user) => {
-    const userRole = String(user.role).toLowerCase()
-    // Allow Dean, Program Chair, and Faculty to be assigned as dean
-    const isEligible = userRole.includes('dean') || userRole.includes('program chair') || userRole.includes('faculty')
-    // Exclude users already in this college
+    const userRole = String(user.role || user.role_slug || '').toLowerCase()
+    const isEligible = userRole.includes('dean') || userRole.includes('program-chair') || userRole.includes('faculty')
     const notInCollege = user.college_id !== Number(collegeId)
     return isEligible && notInCollege
   })
@@ -667,6 +669,7 @@ const editCollege = () => {
   editForm.value = {
     name: college.value.name || '',
     code: college.value.code || '',
+    campus: college.value.campus || 'Echague Main Campus',
     description: college.value.description || '',
   }
   showEditModal.value = true
@@ -683,6 +686,7 @@ const saveEdit = async () => {
     await updateCollege(college.value.id, {
       name: editForm.value.name,
       code: editForm.value.code,
+      campus: editForm.value.campus,
       description: editForm.value.description,
     })
     await loadCollege()

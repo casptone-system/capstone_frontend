@@ -164,18 +164,6 @@ const VPaaActivity = () =>
     '@/views/VPAA/VPaaActivity.vue'
   )
 
-const DashboardAreaIncharge = () =>
-  import(
-    /* webpackChunkName: "dashboard-area-incharge" */
-    '@/views/settings/Dashboard.vue'
-  )
-
-// ============================================================
-// SUPER ADMIN
-//
-// /superadmin is the canonical SuperAdmin dashboard.
-// ============================================================
-
 const SuperAdminDashboard = () =>
   import(
     /* webpackChunkName: "dashboard-superadmin", webpackPrefetch: true */
@@ -523,7 +511,7 @@ const routes = [
   {
     path: '/user/dashboard/area-incharge',
     name: 'dashboard-area-incharge',
-    component: DashboardAreaIncharge,
+    component: DashboardFaculty,
     meta: {
       requiresAuth: true,
     },

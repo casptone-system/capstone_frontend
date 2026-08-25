@@ -4,7 +4,7 @@
       <div>
         <p class="als-kicker">Accreditation status</p>
         <h2 class="als-title">{{ title }}</h2>
-        <p class="als-sub">Level I–IV status for each program in your scope.</p>
+        <p class="als-sub">{{ subtitle }}</p>
       </div>
     </header>
 
@@ -22,6 +22,12 @@
           <div v-for="level in program.levels" :key="level.level" class="als-level">
             <span class="als-level-name">{{ level.level }}</span>
             <span class="als-badge" :class="statusClass(level.displayStatus)">{{ level.displayStatus }}</span>
+            <small v-if="showDetails" class="als-level-meta">
+              <span v-if="level.preparationStatus">Prep: {{ level.preparationStatus }}</span>
+              <span v-if="level.validUntil">Valid until {{ formatDate(level.validUntil) }}</span>
+              <span v-else-if="level.validityStatus && level.validityStatus !== 'Not set'">{{ level.validityStatus }}</span>
+              <span v-else>Validity not set</span>
+            </small>
           </div>
         </div>
       </article>
@@ -36,7 +42,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { getAccreditationLevelStatus } from '@/lib/api'
 
 export type AccreditationDashboardView =
@@ -52,8 +58,10 @@ type LevelStatus = {
   level: string
   cycleId: number | null
   cycleStatus: string | null
+  preparationStatus?: string | null
   displayStatus: 'Accredited' | 'In Progress' | 'Not Started' | 'Expired' | string
   validUntil: string | null
+  validityStatus?: string | null
   scheduledVisit: string | null
 }
 
@@ -72,6 +80,23 @@ const props = withDefaults(defineProps<{
 }>(), {
   title: 'Program accreditation by level',
 })
+
+const showDetails = computed(() => props.view === 'vpaa' || props.view === 'qa')
+const subtitle = computed(() => {
+  if (props.view === 'vpaa') {
+    return 'Level, preparation status, and validity for each program.'
+  }
+  return 'Level I–IV status for each program in your scope.'
+})
+
+const formatDate = (date: string | null | undefined) => {
+  if (!date) return 'Not set'
+  try {
+    return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  } catch {
+    return date
+  }
+}
 
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -206,6 +231,15 @@ watch(() => props.view, () => {
   font-size: 0.72rem;
   font-weight: 700;
   color: #475569;
+}
+
+.als-level-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  color: #64748b;
+  font-size: 0.68rem;
+  line-height: 1.3;
 }
 
 .als-badge {

@@ -4,7 +4,7 @@ import {
   createUser as createAdminUser,
   updateUser as updateAdminUser,
   deleteUser as deleteAdminUser,
-  getDashboard,
+  getAdminDashboard,
   getUsers,
   getAuditLogs,
   getLoginHistory,
@@ -88,7 +88,7 @@ export const useSuperAdminStore = defineStore('super-admin', () => {
     error.value = null
 
     try {
-      const dashboardResponse = await getDashboard()
+      const dashboardResponse = await getAdminDashboard()
       const dashboard = dashboardResponse?.data?.summary || dashboardResponse?.summary || dashboardResponse?.data || dashboardResponse
       const usersResponse = await getUsers()
       const auditResponse = await getAuditLogs({ per_page: 8 })

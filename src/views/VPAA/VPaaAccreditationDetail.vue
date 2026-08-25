@@ -44,8 +44,12 @@
                 </span>
               </div>
               <div class="vpaa-info-card">
-                <label>Readiness</label>
-                <span>{{ accreditation.readiness }}%</span>
+                <label>Preparation status</label>
+                <span>{{ accreditation.preparation_status || accreditation.status }}</span>
+              </div>
+              <div class="vpaa-info-card">
+                <label>Validity</label>
+                <span>{{ accreditation.validity_status || 'Not set' }}</span>
               </div>
             </div>
           </section>
@@ -124,21 +128,16 @@
 
           <!-- Key Dates -->
           <section class="vpaa-section">
-            <h2 class="vpaa-section-title">Key Dates</h2>
+            <h2 class="vpaa-section-title">Schedule and validity</h2>
+            <p class="vpaa-placeholder">VPAA/DI sets the visit date and validity window for this program.</p>
             <div class="vpaa-dates-grid">
               <div class="vpaa-date-card">
-                <label>Accreditation Date</label>
-                <span v-if="accreditation.accreditation_date">
-                  {{ formatDate(accreditation.accreditation_date) }}
-                </span>
-                <span v-else class="vpaa-placeholder">Not scheduled</span>
+                <label>Scheduled visit</label>
+                <input v-model="scheduleForm.scheduled_visit" type="date" class="vpaa-date-input" />
               </div>
               <div class="vpaa-date-card">
-                <label>Preparation Deadline</label>
-                <span v-if="accreditation.deadline">
-                  {{ formatDate(accreditation.deadline) }}
-                </span>
-                <span v-else class="vpaa-placeholder">Not set</span>
+                <label>Valid until</label>
+                <input v-model="scheduleForm.valid_until" type="date" class="vpaa-date-input" />
               </div>
               <div class="vpaa-date-card">
                 <label>Created</label>
@@ -148,6 +147,12 @@
                 <label>Last Updated</label>
                 <span>{{ formatDate(accreditation.updated_at) }}</span>
               </div>
+            </div>
+            <div class="vpaa-schedule-actions">
+              <button type="button" class="vpaa-action-btn" :disabled="savingSchedule" @click="saveSchedule">
+                {{ savingSchedule ? 'Saving…' : 'Save schedule' }}
+              </button>
+              <p v-if="scheduleMessage" class="vpaa-placeholder">{{ scheduleMessage }}</p>
             </div>
           </section>
         </main>
@@ -212,15 +217,22 @@ import {
   personOutline,
   timeOutline,
 } from 'ionicons/icons'
-import { useRoute } from 'vue-router'
-import { getAccreditationCycle } from '@/lib/api'
+import { useRoute, useRouter } from 'vue-router'
+import { getAccreditationCycle, setAccreditationSchedule } from '@/lib/api'
 
 const route = useRoute()
+const router = useRouter()
 
 const loading = ref(false)
 const error = ref<string | null>(null)
 const accreditation = ref<any>(null)
 const areas = ref<any[]>([])
+const savingSchedule = ref(false)
+const scheduleMessage = ref('')
+const scheduleForm = ref({
+  scheduled_visit: '',
+  valid_until: '',
+})
 
 const chairReviewProgress = computed(() => {
   // This would come from real data
@@ -264,7 +276,22 @@ const loadAccreditation = async () => {
   try {
     const id = route.params.id
     const data = await getAccreditationCycle(id)
-    accreditation.value = data
+    const program = data?.program
+    accreditation.value = {
+      ...data,
+      program: typeof program === 'string' ? program : program?.name || 'Unknown Program',
+      college: data?.college || program?.college?.name || 'Unknown College',
+      accreditation_date: data?.scheduled_visit || data?.scheduledVisit || data?.accreditation_date,
+      valid_until: data?.valid_until || data?.validUntil,
+      deadline: data?.valid_until || data?.validUntil,
+      preparation_status: data?.preparation_status || data?.preparationStatus || data?.readiness,
+      validity_status: data?.validity_status || data?.validityStatus,
+      readiness: typeof data?.readiness === 'number' ? data.readiness : 0,
+    }
+    scheduleForm.value = {
+      scheduled_visit: accreditation.value.accreditation_date || '',
+      valid_until: accreditation.value.valid_until || '',
+    }
   } catch (err: any) {
     error.value = err?.message || 'Failed to load accreditation details'
   } finally {
@@ -272,24 +299,38 @@ const loadAccreditation = async () => {
   }
 }
 
-const viewDean = () => {
-  // Navigate to dean profile
-  console.log('View dean')
-}
-
-const viewChair = () => {
-  // Navigate to program chair profile
-  console.log('View program chair')
-}
-
-const sendNotification = () => {
-  // Open notification modal
-  console.log('Send notification')
+const saveSchedule = async () => {
+  if (!accreditation.value?.id) return
+  savingSchedule.value = true
+  scheduleMessage.value = ''
+  try {
+    await setAccreditationSchedule(accreditation.value.id, {
+      scheduled_visit: scheduleForm.value.scheduled_visit || null,
+      valid_until: scheduleForm.value.valid_until || null,
+    })
+    scheduleMessage.value = 'Schedule and validity saved.'
+    await loadAccreditation()
+  } catch (err: any) {
+    scheduleMessage.value = err?.response?.data?.message || err?.message || 'Unable to save schedule.'
+  } finally {
+    savingSchedule.value = false
+  }
 }
 
 const editAccreditation = () => {
-  // Navigate to edit page
-  console.log('Edit accreditation')
+  router.push({ name: 'vpaa-schedule' })
+}
+
+const viewDean = () => {
+  router.push({ name: 'vpaa-notifications' })
+}
+
+const viewChair = () => {
+  router.push({ name: 'vpaa-notifications' })
+}
+
+const sendNotification = () => {
+  router.push({ name: 'vpaa-notifications' })
 }
 
 onMounted(async () => {
@@ -602,6 +643,20 @@ onMounted(async () => {
   font-size: 14px;
   color: #1a1a1a;
   font-weight: 500;
+}
+
+.vpaa-date-input {
+  padding: 8px 10px;
+  border: 1px solid #dbe3ef;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.vpaa-schedule-actions {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .vpaa-placeholder {

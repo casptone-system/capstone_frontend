@@ -145,40 +145,60 @@ export const deleteProgram = async (id: number | string) => {
 }
 
 /* ===========================
-   PROGRAM INVITATIONS
+   PROGRAM JOIN CODES
+   Invitation tokens were retired. Faculty join with the program's 6-character
+   team code from POST /teams/join.
 =========================== */
 
-export const getProgramInvitations = async (programId: number | string) => {
-  const response = await api.get(`/programs/${programId}/invitations`)
-  return unwrap(response)
+export const getProgramInvitations = async () => {
+  return { data: [] }
 }
 
 export const createProgramInvitation = async (
   programId: number | string,
   data: { email?: string; role?: string; expires_in_hours?: number }
 ) => {
-  const response = await api.post(`/programs/${programId}/invitations`, data)
-  return unwrap(response)
+  const email = (data?.email || '').trim()
+  if (!email) {
+    throw new Error('Please enter an email address.')
+  }
+
+  const response = await api.get('/teams', { params: { program_id: programId } })
+  const list = Array.isArray(response.data?.data)
+    ? response.data.data
+    : Array.isArray(response.data)
+      ? response.data
+      : []
+  const code = list[0]?.code
+  if (!code) {
+    throw new Error('No team code exists for this program yet. Generate one from the Program Chair dashboard.')
+  }
+
+  const mailBody = `You have been invited to join the accreditation team.\n\nUse this 6-character team code to join: ${code}\n\nSign in to ADAMS and enter it on the Join Team page.`
+  if (typeof window !== 'undefined') {
+    window.open(
+      `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent('ADAMS team join code')}&body=${encodeURIComponent(mailBody)}`,
+      '_blank',
+    )
+  }
+
+  return { success: true, data: { code, email } }
 }
 
-export const resendInvitation = async (token: string) => {
-  const response = await api.post(`/invitations/${token}/resend`)
-  return response.data
+export const resendInvitation = async () => {
+  throw new Error('Invitation tokens are no longer used. Share the 6-character team code instead.')
 }
 
-export const revokeInvitation = async (token: string) => {
-  const response = await api.post(`/invitations/${token}/revoke`)
-  return response.data
+export const revokeInvitation = async () => {
+  throw new Error('Invitation tokens are no longer used. Share the 6-character team code instead.')
 }
 
-export const acceptInvitationToken = async (token: string) => {
-  const response = await api.post(`/invitations/${token}/accept`)
-  return response.data
+export const acceptInvitationToken = async () => {
+  throw new Error('Invitation tokens are no longer used. Join with the 6-character team code on the Join Team page.')
 }
 
-export const approveInvitationToken = async (token: string) => {
-  const response = await api.post(`/invitations/${token}/approve`)
-  return response.data
+export const approveInvitationToken = async () => {
+  throw new Error('Invitation tokens are no longer used. Faculty join with the 6-character team code.')
 }
 
 /* ===========================
@@ -198,7 +218,9 @@ export const getAccreditationArea = async (
 }
 
 export const getAccreditationCycles = async (params: Record<string, any> = {}) => {
-  const response = await api.get('/accreditation-cycles', { params })
+  const response = await api.get('/accreditation-cycles', {
+    params: { active_only: 1, ...params },
+  })
   return unwrap(response)
 }
 
@@ -254,6 +276,14 @@ export const getAccreditationLevelStatus = async (params: Record<string, any> = 
 
 export const getVPAADashboard = async () => {
   const response = await api.get('/vpaa/dashboard')
+  return unwrap(response)
+}
+
+export const setAccreditationSchedule = async (
+  id: number | string,
+  data: { scheduled_visit?: string | null; valid_until?: string | null }
+) => {
+  const response = await api.post(`/accreditation-cycles/${id}/set-schedule`, data)
   return unwrap(response)
 }
 
@@ -364,8 +394,40 @@ export const getMyAreas = async () => {
   return unwrap(response)
 }
 
-export const getQaAreas = async () => {
-  const response = await api.get('/qa/areas')
+export const getQaAreas = async (params: Record<string, unknown> = {}) => {
+  const response = await api.get('/qa/areas', { params })
+  return unwrap(response)
+}
+
+export const getQaDashboard = async () => {
+  const response = await api.get('/qa/dashboard')
+  return unwrap(response)
+}
+
+export const getQaProgramReadiness = async () => {
+  const response = await api.get('/qa/reports/program-readiness')
+  return unwrap(response)
+}
+
+export const getQaCollegeComparison = async () => {
+  const response = await api.get('/qa/reports/college-comparison')
+  return unwrap(response)
+}
+
+export const getQaAtRiskPrograms = async (threshold?: number) => {
+  const response = await api.get('/qa/reports/at-risk-programs', {
+    params: threshold ? { threshold } : undefined,
+  })
+  return unwrap(response)
+}
+
+export const getQaAccreditations = async (params: Record<string, unknown> = {}) => {
+  const response = await api.get('/qa/accreditations', { params })
+  return unwrap(response)
+}
+
+export const getQaAccreditationDetail = async (cycleId: number | string) => {
+  const response = await api.get(`/qa/accreditations/${cycleId}`)
   return unwrap(response)
 }
 
@@ -392,6 +454,16 @@ export const patchParameterRowContent = async (
   content: string
 ) => {
   const response = await api.patch(`/parameter-rows/${rowId}/content`, { content })
+  return unwrap(response)
+}
+
+export const deleteParameterRowDocuments = async (rowId: number | string) => {
+  const response = await api.delete(`/parameter-rows/${rowId}/documents`)
+  return unwrap(response)
+}
+
+export const submitAreaReview = async (areaId: number | string) => {
+  const response = await api.post(`/accreditation-areas/${areaId}/submit-review`)
   return unwrap(response)
 }
 
@@ -672,7 +744,8 @@ export const createTeam = async (data: any) => {
 
 export const uploadDocument = async (
   file: File,
-  metadata: Record<string, any> = {}
+  metadata: Record<string, any> = {},
+  onProgress?: (percent: number) => void
 ) => {
   const formData = new FormData()
 
@@ -687,6 +760,10 @@ export const uploadDocument = async (
   const response = await api.post('/documents', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
+    },
+    onUploadProgress: (event) => {
+      if (!onProgress || !event.total) return
+      onProgress(Math.round((event.loaded / event.total) * 100))
     },
   })
 
@@ -1011,6 +1088,17 @@ export const downloadRoleStorageFile = async (fileId: number | string, filename?
 =========================== */
 
 export const getDashboard = async (
+  params: Record<string, any> = {}
+) => {
+  const response = await api.get(
+    '/dashboard',
+    { params }
+  )
+
+  return response.data
+}
+
+export const getAdminDashboard = async (
   params: Record<string, any> = {}
 ) => {
   const response = await api.get(

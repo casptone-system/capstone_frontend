@@ -77,6 +77,14 @@
               <span class="status-label">Latest Status:</span>
               <span class="status-value">{{ cycle?.workflow_status || 'Initial Notice' }}</span>
             </div>
+            <div class="status-item">
+              <span class="status-label">Scheduled visit:</span>
+              <span class="status-value">{{ cycle?.scheduled_visit || 'Set by VPAA' }}</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Valid until:</span>
+              <span class="status-value">{{ cycle?.valid_until || 'Set by VPAA' }}</span>
+            </div>
           </div>
         </div>
 
@@ -170,23 +178,17 @@ const changeHistory = ref<any[]>([])
 const formData = ref({
   level: '',
   phase: '',
-  scheduled_visit: '',
-  valid_until: '',
 })
 
 const initialFormData = ref({
   level: '',
   phase: '',
-  scheduled_visit: '',
-  valid_until: '',
 })
 
 const hasChanges = computed(() => {
   return (
     formData.value.level !== initialFormData.value.level ||
-    formData.value.phase !== initialFormData.value.phase ||
-    formData.value.scheduled_visit !== initialFormData.value.scheduled_visit ||
-    formData.value.valid_until !== initialFormData.value.valid_until
+    formData.value.phase !== initialFormData.value.phase
   )
 })
 
@@ -224,8 +226,6 @@ const loadAccreditationData = async () => {
       // Pre-fill form with current values
       formData.value.level = data.level || ''
       formData.value.phase = data.phase || ''
-      formData.value.scheduled_visit = data.scheduled_visit || ''
-      formData.value.valid_until = data.valid_until || ''
       
       // Save initial values for change detection
       initialFormData.value = { ...formData.value }
@@ -259,8 +259,6 @@ const loadAccreditationData = async () => {
       // Initialize empty form for chair to fill in
       formData.value.level = ''
       formData.value.phase = ''
-      formData.value.scheduled_visit = ''
-      formData.value.valid_until = ''
       initialFormData.value = { ...formData.value }
       
       error.value = null
@@ -314,8 +312,6 @@ const saveSetup = async () => {
     const payload = {
       level: formData.value.level,
       phase: formData.value.phase,
-      scheduled_visit: formData.value.scheduled_visit || null,
-      valid_until: formData.value.valid_until || null,
     }
 
     let response
@@ -335,8 +331,6 @@ const saveSetup = async () => {
         response = await api.put(`/programs/${user.programId}`, {
           accreditation_level: payload.level,
           accreditation_phase: payload.phase,
-          scheduled_visit: payload.scheduled_visit,
-          valid_until: payload.valid_until,
         })
         console.log('✓ Program accreditation setup saved')
         apiSucceeded = response.data.success || response.status === 200

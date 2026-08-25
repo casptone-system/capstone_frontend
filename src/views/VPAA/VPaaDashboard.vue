@@ -4,8 +4,7 @@
       <div class="vpaa-shell">
         <aside class="vpaa-sidebar">
           <div class="vpaa-brand">
-            <div class="vpaa-brand-icon">A</div>
-            <span class="vpaa-brand-name">ADAMS</span>
+            <AppBrandLogo />
           </div>
 
           <nav class="vpaa-nav" aria-label="VPAA navigation">
@@ -206,6 +205,7 @@ import {
   timeOutline,
 } from 'ionicons/icons'
 import { useAuthStore } from '@/stores/authStore'
+import AppBrandLogo from '@/components/AppBrandLogo.vue'
 import { useVPAADashboardStore } from '@/stores/vpaaDashboardStore'
 import { useRouter } from 'vue-router'
 
@@ -815,7 +815,9 @@ onMounted(() => {
 }
 
 .vpaa-brand {
-  display: flex; align-items: center; gap: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
   padding: 1rem 0.5rem 1.1rem;
   border-bottom: 1px solid #dfe7eb;
   margin-bottom: 0.75rem;

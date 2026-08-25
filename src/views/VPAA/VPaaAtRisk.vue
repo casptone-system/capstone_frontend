@@ -4,24 +4,38 @@
       <div>
         <p class="vpaa-breadcrumb">Monitoring</p>
         <h1 class="vpaa-page-title">At-Risk Programs</h1>
+        <p class="vpaa-page-sub">Programs with expired validity, overdue visits, or incomplete preparation.</p>
       </div>
     </header>
 
     <section class="vpaa-content">
-      <div v-if="atRiskPrograms.length > 0" class="vpaa-at-risk-grid">
+      <div v-if="vpaaStore.loading" class="vpaa-empty-state">Loading at-risk programs…</div>
+      <div v-else-if="vpaaStore.error" class="vpaa-empty-state error">{{ vpaaStore.error }}</div>
+      <div v-else-if="atRiskPrograms.length > 0" class="vpaa-at-risk-grid">
         <div v-for="program in atRiskPrograms" :key="program.id" class="vpaa-at-risk-card">
           <div class="vpaa-card-header">
-            <h3>{{ program.name }}</h3>
+            <div>
+              <h3>{{ program.program }}</h3>
+              <p>{{ program.college }} · {{ program.level || 'Level not set' }}</p>
+            </div>
             <span class="vpaa-risk-level" :class="program.riskLevel">{{ program.riskLevel }}</span>
           </div>
 
           <div class="vpaa-card-metrics">
             <div class="vpaa-metric">
-              <span class="vpaa-metric-label">Readiness</span>
+              <span class="vpaa-metric-label">Preparation</span>
+              <span class="vpaa-metric-value">{{ program.preparation_status }}</span>
+            </div>
+            <div class="vpaa-metric">
+              <span class="vpaa-metric-label">Validity</span>
+              <span class="vpaa-metric-value">{{ program.validity_status }}</span>
+            </div>
+            <div class="vpaa-metric">
+              <span class="vpaa-metric-label">Evidence</span>
               <span class="vpaa-metric-value">{{ program.readiness }}%</span>
             </div>
             <div class="vpaa-metric">
-              <span class="vpaa-metric-label">Days until accreditation</span>
+              <span class="vpaa-metric-label">Days until visit</span>
               <span class="vpaa-metric-value">{{ program.daysLeft }}</span>
             </div>
           </div>
@@ -37,7 +51,7 @@
 
           <div class="vpaa-card-actions">
             <button type="button" class="vpaa-btn small" @click="viewProgram(program.id)">View Program</button>
-            <button type="button" class="vpaa-btn small secondary" @click="contactDean(program.id)">Contact Dean</button>
+            <button type="button" class="vpaa-btn small secondary" @click="contactDean">Notify college</button>
           </div>
         </div>
       </div>
@@ -49,44 +63,45 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useVPAADashboardStore } from '@/stores/vpaaDashboardStore'
 
-const atRiskPrograms = ref([
-  {
-    id: 1,
-    name: 'BSBA',
-    readiness: 72,
-    daysLeft: 21,
-    riskLevel: 'HIGH',
-    issues: [
-      '14 requirements incomplete',
-      '5 evidence submissions returned',
-      'Dean validation pending',
-      'Evidence deadline approaching',
-    ],
-  },
-  {
-    id: 2,
-    name: 'BSCS',
-    readiness: 65,
-    daysLeft: 14,
-    riskLevel: 'CRITICAL',
-    issues: [
-      '22 requirements incomplete',
-      'Chair review not started',
-      'Faculty engagement low',
-      'Accreditation in 2 weeks',
-    ],
-  },
-])
+const router = useRouter()
+const vpaaStore = useVPAADashboardStore()
+
+const atRiskPrograms = computed(() => {
+  return (vpaaStore.atRisk || []).map((cycle: any) => {
+    const expired = cycle.validity_status === 'Expired'
+    const overdue = typeof cycle.days_until_visit === 'number' && cycle.days_until_visit < 0
+    return {
+      id: cycle.id,
+      program: cycle.program,
+      college: cycle.college,
+      level: cycle.level,
+      readiness: cycle.readiness ?? 0,
+      preparation_status: cycle.preparation_status || cycle.status,
+      validity_status: cycle.validity_status || 'Not set',
+      daysLeft: typeof cycle.days_until_visit === 'number' ? cycle.days_until_visit : 'Not set',
+      riskLevel: expired || overdue ? 'CRITICAL' : 'HIGH',
+      issues: Array.isArray(cycle.risk_reasons) && cycle.risk_reasons.length
+        ? cycle.risk_reasons
+        : [cycle.risk || 'Requires VPAA attention'],
+    }
+  })
+})
 
 const viewProgram = (id: number) => {
-  console.log('View program', id)
+  router.push({ name: 'vpaa-accreditation-detail', params: { id } })
 }
 
-const contactDean = (id: number) => {
-  console.log('Contact dean for program', id)
+const contactDean = () => {
+  router.push({ name: 'vpaa-notifications' })
 }
+
+onMounted(() => {
+  void vpaaStore.fetchDashboard()
+})
 </script>
 
 <style scoped>
@@ -96,9 +111,6 @@ const contactDean = (id: number) => {
 }
 
 .vpaa-topbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   padding: 24px 32px;
   background: white;
   border-bottom: 1px solid #e0e0e0;
@@ -118,6 +130,12 @@ const contactDean = (id: number) => {
   font-size: 28px;
   font-weight: 700;
   color: #1a237e;
+}
+
+.vpaa-page-sub {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 14px;
 }
 
 .vpaa-content {
@@ -153,6 +171,12 @@ const contactDean = (id: number) => {
   font-size: 16px;
   font-weight: 600;
   color: #1a1a1a;
+}
+
+.vpaa-card-header p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #64748b;
 }
 
 .vpaa-risk-level {
@@ -245,11 +269,8 @@ const contactDean = (id: number) => {
   font-weight: 600;
   cursor: pointer;
   flex: 1;
-  transition: all 0.2s;
-}
-
-.vpaa-btn.small {
-  padding: 8px 12px;
+  background: #1a237e;
+  color: white;
 }
 
 .vpaa-btn.small.secondary {
@@ -261,5 +282,9 @@ const contactDean = (id: number) => {
   padding: 64px 32px;
   text-align: center;
   color: #999;
+}
+
+.vpaa-empty-state.error {
+  color: #b91c1c;
 }
 </style>

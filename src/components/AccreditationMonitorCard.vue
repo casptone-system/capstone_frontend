@@ -6,13 +6,13 @@
     <article v-for="item in items" :key="item.id" class="acc-monitor-card">
       <header>
         <h3>{{ item.program?.name || item.name }}</h3>
-        <p>Level and phase are set by the Program Chair. This card is view only.</p>
+        <p>Level and phase are set by the Program Chair. Schedule and validity are set by VPAA.</p>
       </header>
       <dl>
         <div><dt>Level</dt><dd>{{ item.level || 'Not set' }}</dd></div>
         <div><dt>Phase</dt><dd>{{ item.phase || 'Not set' }}</dd></div>
         <div><dt>Status</dt><dd>{{ item.workflowStatus || item.status || 'In progress' }}</dd></div>
-        <div><dt>Deadline</dt><dd>{{ item.deadline || 'Not set' }}</dd></div>
+        <div><dt>Valid until</dt><dd>{{ item.validUntil || item.valid_until || item.deadline || 'Not set' }}</dd></div>
       </dl>
       <div class="acc-monitor-bar">
         <span>Progress {{ item.overallProgress || 0 }}%</span>

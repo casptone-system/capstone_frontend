@@ -258,10 +258,17 @@ const programCollegeName = computed(() => {
 })
 
 const programChairName = computed(() => {
-  if (program.value?.chairUser?.name) return program.value.chairUser.name
-  if (program.value?.chair) return program.value.chair
-  if (program.value?.chair_name) return program.value.chair_name
-  return 'Unassigned'
+  const current = program.value
+  if (current?.chairUser?.name) {
+    return current.chairUser.name
+  }
+  if (current?.needsChairAssigned || current?.needs_chair_assigned) {
+    return 'Needs a chair assigned'
+  }
+  if (current?.chairId || current?.chair_id) {
+    return current.chair || current.chair_name || 'Assigned chair'
+  }
+  return 'Needs a chair assigned'
 })
 
 const programCompliance = computed(() => Number(program.value?.complianceScore ?? program.value?.compliance_score ?? 0))
@@ -279,7 +286,7 @@ const chairOptions = computed(() => {
     const role = String(user.role || user.roles?.[0] || '').toLowerCase()
     const userCollegeId = Number(user.college_id ?? user.collegeId ?? user.college?.id ?? 0)
 
-    return (role.includes('program chair') || role.includes('faculty')) && (!targetCollegeId || userCollegeId === targetCollegeId)
+    return (role.includes('program-chair') || role.includes('program chair') || role.includes('faculty')) && (!targetCollegeId || userCollegeId === targetCollegeId)
   })
 })
 

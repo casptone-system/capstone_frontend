@@ -1,6 +1,6 @@
 <template>
   <AdamsAppShell
-    role-label="Faculty"
+    :role-label="workspaceRoleLabel"
     :page-title="pageTitle"
     :page-description="pageDescription"
     :show-title="true"
@@ -542,6 +542,9 @@ const currentUserInitials = computed(() => {
     .join('') || 'U'
 })
 const currentUserName = computed(() => authUser.value?.name || 'Faculty User')
+const workspaceRoleLabel = computed(() =>
+  authStore.userRole === 'area-in-charge' ? 'Area In-Charge' : 'Faculty',
+)
 
 const pageTitle = computed(() => {
   switch (selectedSection.value) {

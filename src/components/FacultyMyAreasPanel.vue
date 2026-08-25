@@ -10,8 +10,11 @@
         <p v-if="selectedArea?.assignmentRole" class="fma-role">
           Working as {{ selectedArea.assignmentRole === 'chair' ? 'Area Chair' : 'Area Member' }}
         </p>
+        <p v-if="deadlineReminder" class="fma-deadline" :class="deadlineReminder.tone">
+          {{ deadlineReminder.text }}
+        </p>
         <p v-if="!selectedParameter">
-          Open a parameter to review its content and mark items done for the area team.
+          Open a parameter to review its content and upload PDF evidence for this area.
         </p>
       </div>
       <button
@@ -32,13 +35,15 @@
       <AreaParameterRowsTable
         :rows="rows"
         :editable="canEditContent && editMode"
-        :can-toggle="true"
         :show-upload="true"
         :can-upload="!!selectedArea?.canUpload"
+        :can-submit="!!selectedArea?.canSubmit"
         :program-id="selectedArea?.programId"
         :area-id="selectedArea?.id"
         @updated="onRowUpdated"
         @removed="onRowRemoved"
+        @submitted="onSubmitted"
+        @files-changed="reloadSelectedRows"
       />
       <div v-if="canEditContent && editMode && selectedParameter" class="fma-add-row">
         <button type="button" class="fma-edit" @click="addRow">Add row</button>
@@ -73,7 +78,7 @@ import AreaParameterRowsTable from '@/components/AreaParameterRowsTable.vue'
 const facultyDashboard = useFacultyDashboardStore()
 const authStore = useAuthStore()
 const { myAreas, selectedAreaId } = storeToRefs(facultyDashboard)
-const canEditContent = computed(() => authStore.isQA || authStore.isVPAA || authStore.isSuperAdmin)
+const canEditContent = computed(() => authStore.isVPAA || authStore.isSuperAdmin)
 const editMode = ref(false)
 
 const selectedArea = computed(() => myAreas.value.find((area) => Number(area.id) === Number(selectedAreaId.value)) || null)
@@ -82,6 +87,41 @@ const selectedParameter = ref<any | null>(null)
 const rows = ref<any[]>([])
 const loading = ref(false)
 const error = ref('')
+
+const startOfLocalDay = (value: Date) => {
+  const next = new Date(value)
+  next.setHours(0, 0, 0, 0)
+  return next
+}
+
+const deadlineReminder = computed(() => {
+  const raw = selectedArea.value?.deadline
+  if (!raw) return null
+
+  const due = new Date(raw)
+  if (Number.isNaN(due.getTime())) return null
+
+  const days = Math.round(
+    (startOfLocalDay(due).getTime() - startOfLocalDay(new Date()).getTime()) / 86400000,
+  )
+  const name = selectedArea.value?.name || 'This area'
+  const dueLabel = due.toLocaleDateString()
+
+  if (days < 0) {
+    return { tone: 'overdue', text: `${name} is past its deadline (${dueLabel}) and still needs evidence.` }
+  }
+  if (days === 0) {
+    return { tone: 'urgent', text: `${name} is due today (${dueLabel}).` }
+  }
+  if (days === 1) {
+    return { tone: 'urgent', text: `${name} is due tomorrow (${dueLabel}).` }
+  }
+  if (days <= 7) {
+    return { tone: 'soon', text: `${name} is due in ${days} days (${dueLabel}).` }
+  }
+
+  return { tone: 'set', text: `Submission deadline: ${dueLabel}` }
+})
 
 const loadParameters = async () => {
   if (!selectedAreaId.value) {
@@ -131,6 +171,21 @@ const onRowUpdated = (updated: any) => {
 const onRowRemoved = (removed: any) => {
   rows.value = rows.value.filter((row) => Number(row.id) !== Number(removed.id))
   void facultyDashboard.loadMyAreas()
+}
+
+const reloadSelectedRows = async () => {
+  if (!selectedParameter.value) return
+  try {
+    const data = await getParameterRows(selectedParameter.value.id)
+    rows.value = Array.isArray(data) ? data : []
+  } catch (err: any) {
+    error.value = err?.response?.data?.message || 'Unable to refresh parameter content.'
+  }
+  void facultyDashboard.loadMyAreas()
+}
+
+const onSubmitted = async () => {
+  await reloadSelectedRows()
 }
 
 const addRow = async () => {
@@ -200,6 +255,30 @@ watch(selectedAreaId, () => {
   color: #0c5c4e;
   font-size: 0.8rem;
   font-weight: 700;
+}
+
+.fma-deadline {
+  margin: 0.45rem 0 0;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.7rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.fma-deadline.set {
+  background: #edf7f2;
+  color: #0c5c4e;
+}
+
+.fma-deadline.soon {
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.fma-deadline.urgent,
+.fma-deadline.overdue {
+  background: #fef2f2;
+  color: #b91c1c;
 }
 
 .fma-header h2 {

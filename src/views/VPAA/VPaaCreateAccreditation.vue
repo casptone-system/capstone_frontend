@@ -48,11 +48,11 @@
 
             <div class="vpaa-form-section-divider">
               <h3>Accreditation Details</h3>
-              <p class="vpaa-card-sub">Program Chair sets Level and Phase after receiving this notice. VPAA/DI only initiates the cycle and monitors progress.</p>
+              <p class="vpaa-card-sub">Program Chair sets Level and Phase after receiving this notice. VPAA/DI sets the visit date, validity, and instruments.</p>
 
               <div class="vpaa-form-row">
                 <div class="vpaa-form-group">
-                  <label for="accreditation_date">Accreditation Date</label>
+                  <label for="accreditation_date">Scheduled visit</label>
                   <input
                     v-model="form.scheduled_visit"
                     type="date"
@@ -63,7 +63,7 @@
                 </div>
 
                 <div class="vpaa-form-group">
-                  <label for="deadline">Preparation Deadline</label>
+                  <label for="deadline">Valid until</label>
                   <input
                     v-model="form.valid_until"
                     type="date"
@@ -143,7 +143,7 @@
                 <div class="vpaa-step-number">1</div>
                 <div>
                   <strong>You create cycle</strong>
-                  <small>Establish accreditation requirements</small>
+                  <small>Set visit date, validity, and instruments</small>
                 </div>
               </div>
               <div class="vpaa-workflow-step">

@@ -444,7 +444,14 @@ const loadData = async () => {
     // Load accreditation areas
     try {
       const areasResponse = await api.get('/accreditation-areas')
-      areas.value = areasResponse.data.data || areasResponse.data || []
+      const list = areasResponse.data.data || areasResponse.data || []
+      const seen = new Set<string>()
+      areas.value = (Array.isArray(list) ? list : []).filter((area: any) => {
+        const key = String(area.code ?? area.id)
+        if (!key || seen.has(key)) return !area.code ? true : false
+        seen.add(key)
+        return true
+      })
       console.log('✓ Loaded areas:', areas.value.length)
     } catch (err: any) {
       console.error('Failed to load areas:', err.message)

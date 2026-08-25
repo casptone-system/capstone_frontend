@@ -4,8 +4,7 @@
       <div :class="['dashboard-layout', roleClass]">
         <aside class="dashboard-sidebar">
           <div class="dashboard-brand">
-            <div class="dashboard-brand-mark">D</div>
-            <span>Donezo</span>
+            <AppBrandLogo />
           </div>
 
           <nav class="dashboard-nav" aria-label="Main navigation">
@@ -123,6 +122,7 @@ import {
   notificationsOutline,
 } from 'ionicons/icons'
 import { useAuthStore } from '@/stores/authStore'
+import AppBrandLogo from '@/components/AppBrandLogo.vue'
 import { computed } from 'vue'
 
 const props = defineProps({
@@ -224,24 +224,7 @@ export default {
 .dashboard-brand {
   display: flex;
   align-items: center;
-  gap: 0.7rem;
   padding: 0.7rem 0.5rem 0.95rem;
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.dashboard-brand-mark {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #0f766e, #0f172a);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  font-weight: 800;
 }
 
 .dashboard-nav {

@@ -110,13 +110,13 @@
               ref="fileInput"
               class="file-input-hidden"
               @change="handleFileSelect"
-              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.png,.jpg,.jpeg"
+              accept=".pdf,application/pdf"
               required
             />
             <div class="file-upload-content">
               <div class="upload-icon">📁</div>
               <p class="upload-text">Drop files here or <button type="button" class="upload-link" @click="$refs.fileInput?.click()">click to browse</button></p>
-              <p class="upload-hint">Supports PDF, Word, Excel, PowerPoint, Images up to 50MB</p>
+              <p class="upload-hint">PDF only. Max 10 MB per file. A content row can hold up to 5 PDFs.</p>
             </div>
           </div>
           <div v-if="selectedFile" class="file-preview">
@@ -307,16 +307,39 @@ const getStatusClass = (status: string) => {
   return classes[status] || 'status-pending'
 }
 
+const isPdfFile = (file: File) =>
+  (file.type || '').toLowerCase() === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+
 const handleFileSelect = (event: Event) => {
   const input = event.target as HTMLInputElement
   if (input.files && input.files[0]) {
-    selectedFile.value = input.files[0]
+    const file = input.files[0]
+    if (!isPdfFile(file)) {
+      window.alert('Area documents must be PDF files only.')
+      input.value = ''
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      window.alert('Each PDF must be 10 MB or smaller.')
+      input.value = ''
+      return
+    }
+    selectedFile.value = file
   }
 }
 
 const handleFileDrop = (event: DragEvent) => {
   if (event.dataTransfer?.files && event.dataTransfer.files[0]) {
-    selectedFile.value = event.dataTransfer.files[0]
+    const file = event.dataTransfer.files[0]
+    if (!isPdfFile(file)) {
+      window.alert('Area documents must be PDF files only.')
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      window.alert('Each PDF must be 10 MB or smaller.')
+      return
+    }
+    selectedFile.value = file
   }
 }
 

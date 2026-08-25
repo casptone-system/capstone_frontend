@@ -290,7 +290,7 @@
                         </div>
 
                         <p class="dean-folder-code">Code: {{ selectedProgram.code || '—' }}</p>
-                        <p class="dean-folder-chair">Chair: {{ selectedProgram.chair }}</p>
+                        <p class="dean-folder-chair">Chair: {{ selectedProgram.chair || (selectedProgram.needsChairAssigned ? 'Needs a chair assigned' : 'Unassigned') }}</p>
                         <p class="dean-folder-accreditation-level">
                           <span class="accred-label">Accreditation Level:</span>
                           <span class="accred-value">{{ selectedProgram.accreditationLevel || 'Not Set' }}</span>
@@ -315,6 +315,8 @@
                             ></div>
                           </div>
                         </div>
+
+                        <DeanAreaProgressList :areas="selectedProgram.areaProgress || []" />
 
                         <div class="dean-folder-actions">
                           <button 
@@ -447,7 +449,7 @@
                           <h3>{{ prog.name }}</h3>
                         </div>
 
-                        <p class="dean-folder-chair">Chair: {{ prog.chair }}</p>
+                        <p class="dean-folder-chair">Chair: {{ prog.chair || (prog.needsChairAssigned ? 'Needs a chair assigned' : 'Unassigned') }}</p>
                         <!-- <p class="dean-folder-accreditation-level-compact">
                           <span class="accred-label">Level:</span>
                           <span class="accred-value">{{ prog.accreditationLevel || 'Not Set' }}</span>
@@ -472,6 +474,8 @@
                             ></div>
                           </div>
                         </div>
+
+                        <DeanAreaProgressList :areas="prog.areaProgress || []" />
                       </div>
                     </div>
                   </div>
@@ -658,7 +662,7 @@
                     <div class="dean-compliance-row" v-for="prog in programs" :key="prog.id || prog.name">
                       <div class="dean-prog-info">
                         <p class="dean-prog-name">{{ prog.name }}</p>
-                        <p class="dean-prog-chair">Chair: {{ prog.chair }}</p>
+                        <p class="dean-prog-chair">Chair: {{ prog.chair || (prog.needsChairAssigned ? 'Needs a chair assigned' : 'Unassigned') }}</p>
                       </div>
                       <div class="dean-prog-bar-wrap">
                         <div class="dean-prog-bar-track">
@@ -801,7 +805,7 @@
                     <div class="dean-report-row" v-for="prog in programs" :key="prog.id || prog.name">
                       <div>
                         <p class="dean-report-name">{{ prog.name }}</p>
-                        <p class="dean-muted">Chair: {{ prog.chair }}</p>
+                        <p class="dean-muted">Chair: {{ prog.chair || (prog.needsChairAssigned ? 'Needs a chair assigned' : 'Unassigned') }}</p>
                       </div>
                       <span>{{ prog.pct ?? prog.complianceScore ?? 0 }}%</span>
                     </div>
@@ -876,6 +880,7 @@ import {
 } from '@/lib/api'
 import DeanCreateProgramModal from '@/components/DeanCreateProgramModal.vue'
 import DeanNotifyProgramChairModal from '@/components/DeanNotifyProgramChairModal.vue'
+import DeanAreaProgressList from '@/components/DeanAreaProgressList.vue'
 import RoleStorageVault from '@/components/RoleStorageVault.vue'
 import AccreditationLevelStatus from '@/components/AccreditationLevelStatus.vue'
 import DeanAccreditationSection from '@/views/DEAN/DeanAccreditationSection.vue'
@@ -1259,7 +1264,7 @@ const loadProgramManagementDetail = async (programId: number | string | null) =>
     chairOptions.value = allUsers.filter((user: any) => {
       const role = String(user.role || user.roles?.[0] || '').toLowerCase()
       const userCollegeId = Number(user.college_id ?? user.collegeId ?? user.college?.id ?? 0)
-      return (role.includes('program chair') || role.includes('faculty')) && (!targetCollegeId || userCollegeId === targetCollegeId)
+      return (role.includes('program-chair') || role.includes('program chair') || role.includes('faculty')) && (!targetCollegeId || userCollegeId === targetCollegeId)
     })
 
     invitedFacultyForProgram.value = invitationList.filter((invite: any) => {
@@ -1682,6 +1687,7 @@ const loadDashboard = async () => {
         accreditationStatus: program.accreditationStatus || 'pending',
         accreditationLevel: accreditationLevel,
         documentCount: program.documentCount || 0,
+        areaProgress: Array.isArray(program.areaProgress) ? program.areaProgress : [],
         pct,
         status,
         statusClass,

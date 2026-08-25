@@ -2,12 +2,23 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { getVPAADashboard } from '@/lib/api'
 
+const uniqueByProgram = (items: any[]) => {
+  const seen = new Set<string>()
+  return items.filter((item) => {
+    const key = String(item?.program_id ?? item?.programId ?? item?.program?.id ?? item?.program ?? item?.id ?? '')
+    if (!key || seen.has(key)) return !key
+    seen.add(key)
+    return true
+  })
+}
+
 export const useVPAADashboardStore = defineStore('vpaaDashboard', () => {
   const summary = ref({
     active_accreditations: 0,
     upcoming_accreditations: 0,
     ready_programs: 0,
     at_risk_programs: 0,
+    expired_validity: 0,
     overall_readiness: 0,
   })
 
@@ -33,16 +44,17 @@ export const useVPAADashboardStore = defineStore('vpaaDashboard', () => {
         upcoming_accreditations: Number(payload.summary?.upcoming_accreditations ?? payload.upcoming_accreditations ?? 0),
         ready_programs: Number(payload.summary?.ready_programs ?? payload.ready_programs ?? 0),
         at_risk_programs: Number(payload.summary?.at_risk_programs ?? payload.at_risk_programs ?? 0),
+        expired_validity: Number(payload.summary?.expired_validity ?? 0),
         overall_readiness: Number(payload.summary?.overall_readiness ?? payload.overall_readiness ?? 0),
       }
 
-      accreditations.value = Array.isArray(payload.accreditations) ? payload.accreditations : []
-      upcoming.value = Array.isArray(payload.upcoming) ? payload.upcoming : []
-      atRisk.value = Array.isArray(payload.at_risk) ? payload.at_risk : []
+      accreditations.value = uniqueByProgram(Array.isArray(payload.accreditations) ? payload.accreditations : [])
+      upcoming.value = uniqueByProgram(Array.isArray(payload.upcoming) ? payload.upcoming : [])
+      atRisk.value = uniqueByProgram(Array.isArray(payload.at_risk) ? payload.at_risk : [])
       readiness.value = payload.readiness && typeof payload.readiness === 'object'
         ? {
             overall: Number(payload.readiness.overall ?? summary.value.overall_readiness ?? 0),
-            programs: Array.isArray(payload.readiness.programs) ? payload.readiness.programs : [],
+            programs: uniqueByProgram(Array.isArray(payload.readiness.programs) ? payload.readiness.programs : []),
           }
         : { overall: summary.value.overall_readiness, programs: [] }
       notifications.value = Array.isArray(payload.notifications) ? payload.notifications : []
@@ -54,6 +66,7 @@ export const useVPAADashboardStore = defineStore('vpaaDashboard', () => {
         upcoming_accreditations: 0,
         ready_programs: 0,
         at_risk_programs: 0,
+        expired_validity: 0,
         overall_readiness: 0,
       }
       accreditations.value = []

@@ -67,13 +67,13 @@ export const useDashboardStore = defineStore('dashboard', () => {
     error.value = null
     try {
       const dashboard = await getDashboard()
-      const apiStats = dashboard?.data || dashboard
+      const apiStats = dashboard?.data?.summary || dashboard?.data || dashboard
       stats.value = {
         ...stats.value,
         totalPrograms: apiStats.totalPrograms ?? apiStats.total_programs ?? 0,
         totalAreas: apiStats.totalAreas ?? apiStats.total_areas ?? 0,
-        complianceScore: apiStats.complianceScore ?? apiStats.compliance_score ?? 0,
-        pendingSubmissions: apiStats.pendingSubmissions ?? apiStats.pending_submissions ?? 0,
+        complianceScore: apiStats.complianceScore ?? apiStats.compliance_score ?? apiStats.compliancePercent ?? apiStats.compliance_percent ?? 0,
+        pendingSubmissions: apiStats.pendingSubmissions ?? apiStats.pending_submissions ?? apiStats.pendingReviews ?? apiStats.pending_reviews ?? 0,
         assignmentCompletion: apiStats.assignmentCompletion ?? apiStats.assignment_completion ?? 0,
         performanceTrend: apiStats.performanceTrend ?? apiStats.performance_trend ?? 0,
         securityStatus: 'protected',

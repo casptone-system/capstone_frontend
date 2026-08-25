@@ -3,12 +3,13 @@ import type { User } from '@/types'
 export type AppRole =
   | 'superadmin'
   | 'admin'
-  | 'vpaa/di'
+  | 'vpaa'
   | 'qa'
   | 'dean'
   | 'program-chair'
-  | 'area-incharge'
+  | 'area-in-charge'
   | 'faculty'
+  | 'accreditor'
   | ''
 
 const normalizeRoleValue = (value: unknown): AppRole => {
@@ -19,37 +20,23 @@ const normalizeRoleValue = (value: unknown): AppRole => {
     .replace(/\s+/g, '-')
 
   const aliases: Record<string, AppRole> = {
-    // Super Admin
     'super-admin': 'superadmin',
     'super-administrator': 'superadmin',
     superadministrator: 'superadmin',
     superadmin: 'superadmin',
-
-    // Admin
     admin: 'admin',
-
-    // VPAA
-    vpaa: 'vpaa/di',
-    'vpaa-di': 'vpaa/di',
-    'vpaa/di': 'vpaa/di',
-
-    // QA
+    vpaa: 'vpaa',
+    'vpaa-di': 'vpaa',
+    'vpaa/di': 'vpaa',
     qa: 'qa',
-
-    // Dean
     dean: 'dean',
-
-    // Program Chair
     'program-chair': 'program-chair',
     programchair: 'program-chair',
-
-    // Area In-Charge
-    'area-incharge': 'area-incharge',
-    'area-in-charge': 'area-incharge',
-    areaincharge: 'area-incharge',
-
-    // Faculty
+    'area-incharge': 'area-in-charge',
+    'area-in-charge': 'area-in-charge',
+    areaincharge: 'area-in-charge',
     faculty: 'faculty',
+    accreditor: 'accreditor',
   }
 
   return aliases[role] ?? ''
@@ -95,10 +82,10 @@ const roleFromUser = (
   const preferredOrder: AppRole[] = [
     'dean',
     'program-chair',
-    'area-incharge',
+    'area-in-charge',
     'faculty',
     'qa',
-    'vpaa/di',
+    'vpaa',
     'superadmin',
     'admin',
   ]
@@ -127,7 +114,7 @@ export const getRoleRedirectPath = (
     case 'program-chair':
       return '/user/dashboard/program-chair'
 
-    case 'area-incharge':
+    case 'area-in-charge':
       return '/user/dashboard/area-incharge'
 
     case 'faculty':
@@ -138,7 +125,7 @@ export const getRoleRedirectPath = (
     case 'qa':
       return '/user/dashboard/qa'
 
-    case 'vpaa/di':
+    case 'vpaa':
       return '/user/dashboard/vpaa'
 
     default:

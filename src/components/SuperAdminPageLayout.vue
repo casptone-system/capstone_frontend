@@ -81,7 +81,7 @@ const pageTitle = computed(() => {
 
 const pageDescription = computed(() => {
   if (route.path === '/superadmin') return 'Monitor users, colleges, accreditation activity, and system health.'
-  if (route.path.startsWith('/superadmin/colleges')) return 'Manage colleges, dean assignments, and programs.'
+  if (route.path.startsWith('/superadmin/colleges')) return 'Manage colleges and institutes on Echague Main Campus. IOF is the current respondent unit.'
   if (route.path.startsWith('/superadmin/users')) return 'Manage accounts, roles, access, and user status.'
   if (route.path.startsWith('/superadmin/roles')) return 'Configure roles, permissions, and access policies.'
   if (route.path.startsWith('/superadmin/activity')) return 'Review audit history and important system activity.'

@@ -195,11 +195,17 @@ const loadAccreditationData = async () => {
 
   try {
     const user = authStore.user as any
-    let programId = user?.programId || user?.program_id
+    let programId = user?.programId || user?.program_id || user?.chaired_program_id
 
     // If user has direct program assignment
     if (!programId && user?.program?.id) {
       programId = user.program.id
+    }
+
+    if (!programId && (authStore.isQA || authStore.isVPAA || authStore.isSuperAdmin)) {
+      const programsResponse = await api.get('/programs', { params: { per_page: 1 } })
+      const programs = programsResponse.data?.data || []
+      programId = programs[0]?.id
     }
 
     if (!programId) {

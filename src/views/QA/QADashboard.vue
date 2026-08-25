@@ -6,39 +6,41 @@
     :show-title="true"
   >
     <template #nav>
-      <p class="adams-nav-label">Overview</p>
+      <p class="adams-nav-label">Institution</p>
       <button class="adams-nav-item" :class="{ active: qaSection === 'dashboard' }" type="button" @click="qaSection = 'dashboard'">
         <span class="adams-nav-icon"><ion-icon :icon="gridOutline" /></span>
         <span>Dashboard</span>
       </button>
-      <button class="adams-nav-item" :class="{ active: qaSection === 'templates' }" type="button" @click="qaSection = 'templates'">
+      <button class="adams-nav-item" :class="{ active: qaSection === 'colleges' }" type="button" @click="openSection('colleges')">
+        <span class="adams-nav-icon"><ion-icon :icon="businessOutline" /></span>
+        <span>Colleges</span>
+      </button>
+      <button class="adams-nav-item" :class="{ active: qaSection === 'programs' }" type="button" @click="openSection('programs')">
+        <span class="adams-nav-icon"><ion-icon :icon="schoolOutline" /></span>
+        <span>Programs</span>
+      </button>
+      <button class="adams-nav-item" :class="{ active: qaSection === 'at-risk' }" type="button" @click="openSection('at-risk')">
+        <span class="adams-nav-icon"><ion-icon :icon="alertCircleOutline" /></span>
+        <span>At Risk</span>
+      </button>
+      <button class="adams-nav-item" :class="{ active: qaSection === 'accreditations' }" type="button" @click="openSection('accreditations')">
         <span class="adams-nav-icon"><ion-icon :icon="documentTextOutline" /></span>
-        <span>Templates</span>
+        <span>Accreditations</span>
       </button>
-      <button class="adams-nav-item" :class="{ active: qaSection === 'area-parameters' }" type="button" @click="qaSection = 'area-parameters'">
+      <button class="adams-nav-item" :class="{ active: qaSection === 'progress' }" type="button" @click="openSection('progress')">
         <span class="adams-nav-icon"><ion-icon :icon="layersOutline" /></span>
-        <span>Area Parameters</span>
-      </button>
-      <button class="adams-nav-item" :class="{ active: qaSection === 'monitor' }" type="button" @click="qaSection = 'monitor'">
-        <span class="adams-nav-icon"><ion-icon :icon="shieldCheckmarkOutline" /></span>
-        <span>Program Monitoring</span>
+        <span>Area Progress</span>
       </button>
     </template>
 
     <template #header-actions>
-      <button class="adams-btn adams-btn-ghost" type="button" @click="qaSection = 'monitor'">
-        <ion-icon :icon="checkmarkDoneOutline" /> Verify Readiness
+      <button class="adams-btn adams-btn-ghost" type="button" @click="openSection('programs')">
+        <ion-icon :icon="checkmarkDoneOutline" /> Program Readiness
       </button>
     </template>
 
-          <div v-if="callMessage" class="qa-call-banner">
-            <div>{{ callMessage }}</div>
-            <button class="qa-btn qa-btn-ghost" v-if="activeCall" @click="endCall">End Call</button>
-          </div>
+          <div v-if="error" class="qa-feedback-banner error">{{ error }}</div>
 
-          <div v-if="feedback" :class="['qa-feedback-banner', feedbackType]">{{ feedback }}</div>
-
-          <!-- Stat Strip -->
           <section class="qa-stat-strip">
             <div class="qa-stat" v-for="stat in stats" :key="stat.label">
               <div class="qa-stat-icon" :style="{ background: stat.bg, color: stat.color }">
@@ -51,28 +53,137 @@
             </div>
           </section>
 
-          <section v-if="qaSection === 'templates'" class="qa-card" style="margin: 1rem 1.5rem;">
+          <section v-if="qaSection === 'colleges'" class="qa-card" style="margin: 1rem 1.5rem;">
             <div class="qa-card-header">
               <div>
-                <h2 class="qa-card-title">Accreditation templates</h2>
-                <p>QA edits the master instrument. Program Level and Phase are view-only and come from the Program Chair.</p>
+                <h2 class="qa-card-title">College comparison</h2>
+                <p>Readiness across every college in the university.</p>
               </div>
             </div>
-            <InstrumentTemplateEditor />
+            <p v-if="reportsLoading">Loading college comparison…</p>
+            <div v-else class="qa-doc-table">
+              <div class="qa-table-header qa-table-header-colleges">
+                <span>College</span><span>Programs</span><span>Completed</span><span>Readiness</span>
+              </div>
+              <div v-if="!colleges.length" class="qa-table-row">No colleges found.</div>
+              <div class="qa-table-row qa-table-header-colleges" v-for="college in colleges" :key="college.college_id">
+                <span class="qa-prog-tag">{{ college.college_name }}</span>
+                <span class="qa-muted">{{ college.program_count }}</span>
+                <span class="qa-muted">{{ college.completed_requirements }} / {{ college.total_requirements }}</span>
+                <span class="qa-readiness">{{ college.readiness_percent }}%</span>
+              </div>
+            </div>
           </section>
-          <section v-else-if="qaSection === 'area-parameters'" class="qa-card" style="margin: 1rem 1.5rem;">
+
+          <section v-else-if="qaSection === 'programs'" class="qa-card" style="margin: 1rem 1.5rem;">
             <div class="qa-card-header">
               <div>
-                <h2 class="qa-card-title">Area parameter content</h2>
-                <p>Edit the first-column statements faculty see in My Areas. Mark as Done stays on the faculty view.</p>
+                <h2 class="qa-card-title">Program readiness</h2>
+                <p>Every program in the university, with evidence completion.</p>
               </div>
             </div>
-            <AreaParameterContentEditor />
+            <p v-if="reportsLoading">Loading program readiness…</p>
+            <div v-else class="qa-doc-table">
+              <div class="qa-table-header">
+                <span>Program</span><span>College</span><span>Level</span><span>Phase</span><span>Readiness</span>
+              </div>
+              <div v-if="!readinessPrograms.length" class="qa-table-row">No programs found.</div>
+              <div class="qa-table-row" v-for="program in readinessPrograms" :key="program.program_id">
+                <span class="qa-prog-tag">{{ program.program_name }}</span>
+                <span class="qa-muted">{{ program.college_name }}</span>
+                <span class="qa-muted">{{ program.level || 'Not set' }}</span>
+                <span class="qa-muted">{{ program.phase || 'Not started' }}</span>
+                <span class="qa-readiness">{{ program.readiness_percent }}%</span>
+              </div>
+            </div>
           </section>
-          <section v-else-if="qaSection === 'monitor'" class="qa-card" style="margin: 1rem 1.5rem;">
+
+          <section v-else-if="qaSection === 'at-risk'" class="qa-card" style="margin: 1rem 1.5rem;">
+            <div class="qa-card-header">
+              <div>
+                <h2 class="qa-card-title">At-risk programs</h2>
+                <p>University-wide programs below the readiness threshold.</p>
+              </div>
+            </div>
+            <p v-if="reportsLoading">Loading at-risk programs…</p>
+            <div v-else class="qa-doc-table">
+              <div class="qa-table-header">
+                <span>Program</span><span>College</span><span>Risk</span><span>Pending</span><span>Readiness</span>
+              </div>
+              <div v-if="!atRiskPrograms.length" class="qa-table-row">No programs are currently below the threshold.</div>
+              <div class="qa-table-row" v-for="program in atRiskPrograms" :key="program.program_id">
+                <span class="qa-prog-tag">{{ program.program_name }}</span>
+                <span class="qa-muted">{{ program.college_name }}</span>
+                <span class="qa-status-badge risk">{{ program.risk_level }}</span>
+                <span class="qa-muted">{{ program.pending }} / {{ program.total }}</span>
+                <span class="qa-readiness">{{ program.readiness_percent }}%</span>
+              </div>
+            </div>
+          </section>
+
+          <section v-else-if="qaSection === 'accreditations'" class="qa-card" style="margin: 1rem 1.5rem;">
+            <div class="qa-card-header">
+              <div>
+                <h2 class="qa-card-title">Accreditation cycles</h2>
+                <p>All cycles across every college and program. View only.</p>
+              </div>
+            </div>
+            <p v-if="reportsLoading">Loading accreditations…</p>
+            <div v-else class="qa-doc-table">
+              <div class="qa-table-header">
+                <span>Program</span><span>College</span><span>Level</span><span>Status</span><span>Updated</span>
+              </div>
+              <div v-if="!accreditations.length" class="qa-table-row">No accreditation cycles found.</div>
+              <button
+                class="qa-table-row qa-table-row-btn"
+                v-for="cycle in accreditations"
+                :key="cycle.id"
+                type="button"
+                @click="openAccreditation(cycle.id)"
+              >
+                <span class="qa-prog-tag">{{ cycle.program?.name || cycle.program_name }}</span>
+                <span class="qa-muted">{{ cycle.program?.college?.name || cycle.college_name }}</span>
+                <span class="qa-muted">{{ cycle.level }}</span>
+                <span class="qa-muted">{{ cycle.status }}</span>
+                <span class="qa-muted">{{ cycle.updated_at }}</span>
+              </button>
+            </div>
+            <div v-if="accreditationDetail" class="qa-detail">
+              <h3>{{ accreditationDetail.program?.name }} · {{ accreditationDetail.accreditation_cycle?.level }}</h3>
+              <p>{{ accreditationDetail.college?.name }} · {{ accreditationDetail.accreditation_cycle?.status }}</p>
+              <p>{{ accreditationDetail.areas_with_evidence }} of {{ accreditationDetail.total_areas }} areas have evidence.</p>
+              <ul>
+                <li v-for="area in accreditationDetail.areas || []" :key="area.id">
+                  {{ area.area_name }} · {{ area.documents_count }} files
+                </li>
+              </ul>
+            </div>
+          </section>
+
+          <section v-else-if="qaSection === 'progress'" class="qa-card" style="margin: 1rem 1.5rem;">
+            <div class="qa-card-header">
+              <div>
+                <h2 class="qa-card-title">Area progress</h2>
+                <p>Institution-wide area folders and workspace progress. View only.</p>
+              </div>
+            </div>
             <AccreditationMonitorCard />
+            <div class="qa-doc-table" style="margin-top: 1rem;">
+              <div class="qa-table-header qa-table-header-areas">
+                <span>Area</span><span>Program</span><span>Role</span><span>Progress</span>
+              </div>
+              <div v-if="!institutionAreas.length" class="qa-table-row">No accreditation areas found.</div>
+              <div class="qa-table-row qa-table-header-areas" v-for="area in institutionAreas" :key="area.id">
+                <span class="qa-prog-tag">{{ area.label || area.name }}</span>
+                <span class="qa-muted">{{ area.cycle?.program?.name || area.programId }}</span>
+                <span class="qa-muted">{{ area.assignmentRole || 'monitor' }}</span>
+                <span class="qa-readiness">{{ area.progressPercent || 0 }}%</span>
+              </div>
+            </div>
           </section>
-          <section v-else style="margin: 1rem 1.5rem;">
+
+          <template v-else>
+          <section style="margin: 1rem 1.5rem;">
             <AccreditationLevelStatus view="qa" title="Institutional accreditation by level" />
           </section>
 
@@ -92,7 +203,7 @@
                       <p class="qa-card-sub">Accreditation compliance per college and program</p>
                     </div>
                   </div>
-                  <button class="qa-link-btn">Full Report →</button>
+                  <button class="qa-link-btn" type="button" @click="openSection('colleges')">Full Report →</button>
                 </div>
                 <div class="qa-compliance-list">
                   <div class="qa-compliance-row" v-for="item in compliance" :key="item.program">
@@ -122,7 +233,7 @@
                       <p class="qa-card-sub">Evidence submitted by programs — QA monitoring</p>
                     </div>
                   </div>
-                  <button class="qa-link-btn">All Documents →</button>
+                  <button class="qa-link-btn" type="button" @click="openSection('programs')">All Programs →</button>
                 </div>
                 <div class="qa-doc-table">
                   <div class="qa-table-header">
@@ -224,9 +335,6 @@
                     <div class="qa-coord-right">
                       <span class="qa-coord-flag">{{ c.flag }}</span>
                       <p class="qa-coord-time">{{ c.time }}</p>
-                      <button class="qa-call-button" @click="callUser({ name: c.name, role: c.role })">
-                        <ion-icon :icon="callOutline" />
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -234,56 +342,63 @@
 
             </div>
           </div>
+          </template>
   </AdamsAppShell>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { IonIcon } from '@ionic/vue'
 
 import {
   gridOutline, shieldCheckmarkOutline, documentTextOutline, alertCircleOutline,
   checkmarkDoneOutline, chatbubblesOutline,
   gitMergeOutline, checkmarkCircleOutline,
-  closeCircleOutline, callOutline, layersOutline
+  closeCircleOutline, layersOutline, businessOutline, schoolOutline
 } from 'ionicons/icons'
 
-import { useUserCalls } from '@/lib/useUserCalls'
-import InstrumentTemplateEditor from '@/components/InstrumentTemplateEditor.vue'
 import AccreditationMonitorCard from '@/components/AccreditationMonitorCard.vue'
 import AccreditationLevelStatus from '@/components/AccreditationLevelStatus.vue'
-import AreaParameterContentEditor from '@/components/AreaParameterContentEditor.vue'
 import AdamsAppShell from '@/components/ui/AdamsAppShell.vue'
 import api from '@/lib/api'
 
-const qaSection = ref<'dashboard' | 'templates' | 'area-parameters' | 'monitor'>('dashboard')
+type QaSection = 'dashboard' | 'colleges' | 'programs' | 'at-risk' | 'accreditations' | 'progress'
+
+const qaSection = ref<QaSection>('dashboard')
 
 const pageTitle = computed(() => {
   switch (qaSection.value) {
-    case 'templates': return 'Templates'
-    case 'area-parameters': return 'Area Parameters'
-    case 'monitor': return 'Program Monitoring'
+    case 'colleges': return 'Colleges'
+    case 'programs': return 'Programs'
+    case 'at-risk': return 'At-Risk Programs'
+    case 'accreditations': return 'Accreditations'
+    case 'progress': return 'Area Progress'
     default: return 'QA Dashboard'
   }
 })
 
 const pageDescription = computed(() => {
   switch (qaSection.value) {
-    case 'templates': return 'Manage accreditation instruments and templates.'
-    case 'area-parameters': return 'Configure area parameters used in program reviews.'
-    case 'monitor': return 'Track program compliance, evidence, and readiness.'
-    default: return 'Monitor accreditation progress, reviews, and quality assurance activity.'
+    case 'colleges': return 'Compare accreditation readiness across every college.'
+    case 'programs': return 'University-wide program readiness and evidence completion.'
+    case 'at-risk': return 'Programs below the institutional readiness threshold.'
+    case 'accreditations': return 'Every accreditation cycle in the university. View only.'
+    case 'progress': return 'Area-level progress across all departments.'
+    default: return 'Overall monitoring of all colleges and programs at university level.'
   }
 })
 
-const { activeCall, callMessage, callUser, endCall } = useUserCalls()
-
 const loading = ref(false)
+const reportsLoading = ref(false)
 const error = ref<string | null>(null)
 const programs = ref<any[]>([])
 const metrics = ref({ active_programs: 0, at_risk_programs: 0, evidence_completion: 0, pending_reviews: 0 })
-const feedback = ref<string | null>(null)
-const feedbackType = ref<'success' | 'error'>('success')
+const colleges = ref<any[]>([])
+const readinessPrograms = ref<any[]>([])
+const atRiskPrograms = ref<any[]>([])
+const accreditations = ref<any[]>([])
+const accreditationDetail = ref<any | null>(null)
+const institutionAreas = ref<any[]>([])
 
 const stats = computed(() => [
   { label: 'Active Programs', value: String(metrics.value.active_programs), icon: shieldCheckmarkOutline, color: '#0d9488', bg: '#ccfbf1' },
@@ -329,7 +444,7 @@ const pipeline = [
   { label: 'Area In-Charge Review', sub: 'Documents reviewed per area', done: true, active: false },
   { label: 'Program Chair Review', sub: 'Approved and forwarded', done: true, active: false },
   { label: 'Dean Validation', sub: 'Dean monitors progress', done: true, active: false },
-  { label: 'QA Officer Review', sub: 'Monitor and verify compliance', done: false, active: true },
+  { label: 'QA Monitoring', sub: 'University-wide compliance check', done: false, active: true },
   { label: 'VPAA Monitoring', sub: 'VPAA tracks institutional readiness', done: false, active: false },
 ]
 
@@ -343,15 +458,25 @@ const coordination = computed(() => programs.value.slice(0, 4).map((program) => 
   color: '#2563eb',
 })))
 
-const loadData = async () => {
+const unwrapList = (payload: any): any[] => {
+  if (Array.isArray(payload)) return payload
+  if (Array.isArray(payload?.data)) return payload.data
+  if (Array.isArray(payload?.programs)) return payload.programs
+  if (Array.isArray(payload?.colleges)) return payload.colleges
+  return []
+}
+
+const openSection = (section: QaSection) => {
+  qaSection.value = section
+}
+
+const loadDashboard = async () => {
   loading.value = true
   error.value = null
-  feedback.value = null
 
   try {
     const response = await api.get('/qa/dashboard')
     const data = response.data.data
-
     metrics.value = data.metrics || {}
     programs.value = data.programs || []
   } catch (err: any) {
@@ -361,8 +486,50 @@ const loadData = async () => {
   }
 }
 
+const loadSectionData = async (section: QaSection) => {
+  if (section === 'dashboard') return
+
+  reportsLoading.value = true
+  error.value = null
+  try {
+    if (section === 'colleges') {
+      const response = await api.get('/qa/reports/college-comparison')
+      colleges.value = unwrapList(response.data.data)
+    } else if (section === 'programs') {
+      const response = await api.get('/qa/reports/program-readiness')
+      readinessPrograms.value = unwrapList(response.data.data)
+    } else if (section === 'at-risk') {
+      const response = await api.get('/qa/reports/at-risk-programs')
+      atRiskPrograms.value = unwrapList(response.data.data?.programs ?? response.data.data)
+    } else if (section === 'accreditations') {
+      const response = await api.get('/qa/accreditations', { params: { per_page: 50 } })
+      accreditations.value = unwrapList(response.data.data)
+    } else if (section === 'progress') {
+      const response = await api.get('/qa/areas')
+      institutionAreas.value = unwrapList(response.data.data)
+    }
+  } catch (err: any) {
+    error.value = err.response?.data?.message || 'Unable to load monitoring data.'
+  } finally {
+    reportsLoading.value = false
+  }
+}
+
+const openAccreditation = async (cycleId: number) => {
+  try {
+    const response = await api.get(`/qa/accreditations/${cycleId}`)
+    accreditationDetail.value = response.data.data
+  } catch (err: any) {
+    error.value = err.response?.data?.message || 'Unable to load accreditation detail.'
+  }
+}
+
+watch(qaSection, (section) => {
+  void loadSectionData(section)
+})
+
 onMounted(() => {
-  void loadData()
+  void loadDashboard()
 })
 </script>
 
@@ -757,4 +924,24 @@ onMounted(() => {
 }
 
 .qa-coord-time { margin: 0; font-size: 0.68rem; color: #94a3b8; }
+
+.qa-table-header-colleges { grid-template-columns: 2fr 0.8fr 1.2fr 0.9fr; }
+.qa-table-header-areas { grid-template-columns: 1.6fr 1.4fr 0.8fr 0.8fr; }
+.qa-table-row-btn {
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+.qa-table-row-btn:hover { background: #f8fafc; }
+.qa-detail {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f1f5f9;
+}
+.qa-detail h3 { margin: 0 0 0.35rem; color: #0f172a; }
+.qa-detail p, .qa-detail li { color: #64748b; font-size: 0.85rem; }
 </style>

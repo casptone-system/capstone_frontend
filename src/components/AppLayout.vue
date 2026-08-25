@@ -4,8 +4,7 @@
     <header class="app-header">
       <div class="header-content">
         <div class="logo-section">
-          <div class="logo">ADAMS</div>
-          <span class="logo-text">Accreditation Management</span>
+          <AppBrandLogo />
         </div>
 
         <nav class="header-nav" v-if="isAuthenticated">
@@ -102,6 +101,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { normalizeRole } from '@/lib/roleRedirects'
 import { IonIcon } from '@ionic/vue'
+import AppBrandLogo from '@/components/AppBrandLogo.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -158,12 +158,12 @@ const adminNavItems = computed(() => {
   const role = currentRole.value
   const items: Array<{ path: string; label: string; icon: string }> = []
 
-  if (role === 'dean' || role === 'vpaa/di' || role === 'program-chair') {
+  if (role === 'dean' || role === 'vpaa' || role === 'program-chair') {
     items.push({ path: '/areas', label: 'Areas', icon: 'layers-outline' })
     items.push({ path: '/deadlines', label: 'Deadlines', icon: 'calendar-outline' })
   }
 
-  if (role === 'vpaa/di' || role === 'superadmin' || role === 'admin') {
+  if (role === 'vpaa' || role === 'superadmin' || role === 'admin') {
     items.push({ path: '/audit', label: 'Audit Logs', icon: 'list-outline' })
   }
 
@@ -217,27 +217,7 @@ const handleLogout = () => {
 .logo-section {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  min-width: 220px;
-}
-
-.logo {
-  font-size: 1.4rem;
-  font-weight: 800;
-  color: #09491c;
-  letter-spacing: -0.5px;
-}
-
-.logo-text {
-  font-size: 0.95rem;
-  color: rgba(15, 23, 42, 0.65);
-  display: none;
-}
-
-@media (min-width: 768px) {
-  .logo-text {
-    display: inline;
-  }
+  min-width: 0;
 }
 
 .header-nav {

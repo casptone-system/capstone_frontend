@@ -8,11 +8,11 @@
         <div>
           <p class="eyebrow">Colleges</p>
 
-          <h1>Manage institutional colleges</h1>
+          <h1>Manage colleges and institutes</h1>
 
           <p class="subtext">
-            Review college ownership, dean assignments, program counts,
-            and status in a single workspace.
+            Current campus: Isabela State University — Echague Main Campus.
+            IOF is the respondent unit today; additional departments can be added later.
           </p>
         </div>
 
@@ -105,6 +105,7 @@
           >
             <span class="college-name">
               {{ college.name }}
+              <small v-if="college.code || college.campus">{{ [college.code, college.campus].filter(Boolean).join(' · ') }}</small>
             </span>
 
             <span>
@@ -212,7 +213,7 @@
               <input
                 v-model="form.name"
                 type="text"
-                placeholder="College of Engineering"
+                placeholder="Institute of Fisheries"
                 autocomplete="organization"
               />
             </label>
@@ -227,7 +228,18 @@
               <input
                 v-model="form.code"
                 type="text"
-                placeholder="ENG"
+                placeholder="IOF"
+                autocomplete="off"
+              />
+            </label>
+
+
+            <label>
+              <span>Campus</span>
+              <input
+                v-model="form.campus"
+                type="text"
+                placeholder="Echague Main Campus"
                 autocomplete="off"
               />
             </label>
@@ -468,6 +480,7 @@ const isDeleting = ref(false)
 const createEmptyForm = () => ({
   name: '',
   code: '',
+  campus: 'Echague Main Campus',
   description: '',
   dean_name: '',
   dean_email: '',
@@ -620,6 +633,7 @@ const prepareEdit = (college: any) => {
   form.value = {
     name: college.name || '',
     code: college.code || '',
+    campus: college.campus || 'Echague Main Campus',
     description: college.description || '',
     dean_name: college.dean_name || '',
     dean_email: college.dean_email || '',
@@ -655,6 +669,7 @@ const submitForm = async () => {
         {
           name,
           code,
+          campus: form.value.campus.trim() || 'Echague Main Campus',
           description:
             form.value.description.trim(),
         },
@@ -671,6 +686,7 @@ const submitForm = async () => {
       const payload: any = {
         name,
         code,
+        campus: form.value.campus.trim() || 'Echague Main Campus',
         description:
           form.value.description.trim(),
       }
@@ -1105,6 +1121,14 @@ onMounted(() => {
 .college-name {
   color: #0f172a;
   font-weight: 700;
+}
+
+.college-name small {
+  display: block;
+  margin-top: 0.15rem;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 0.75rem;
 }
 
 

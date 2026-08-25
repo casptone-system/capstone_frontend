@@ -37,7 +37,7 @@
         <div class="apc-main-head">
           <div>
             <h3>{{ selectedParameter?.label || 'Parameter content' }}</h3>
-            <p>Edit column 1 only. Faculty still mark rows done from their own Areas view.</p>
+            <p>Edit column 1 only. Area Chairs upload PDF evidence from their Areas view.</p>
           </div>
           <button v-if="selectedParameter" type="button" class="apc-add" @click="addRow">Add row</button>
         </div>
@@ -45,7 +45,6 @@
           v-if="selectedParameter"
           :rows="rows"
           :editable="true"
-          :can-toggle="false"
           @updated="onRowUpdated"
           @removed="onRowRemoved"
         />
@@ -73,10 +72,27 @@ const selectedParameter = ref<any | null>(null)
 const selectedParameterId = ref<number | null>(null)
 const error = ref('')
 
+const uniqueByCode = (items: any[]) => {
+  const seen = new Set<string>()
+  return items.filter((item) => {
+    const key = String(item?.code ?? item?.id ?? '')
+    if (!key || seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
+const areaSortNumber = (area: any) => {
+  const match = String(area?.code || '').match(/area-(\d+)/i)
+  return match ? Number(match[1]) : 999
+}
+
 const loadAreas = async () => {
   try {
-    const data = await getQaAreas()
-    areas.value = Array.isArray(data) ? data : []
+    const data = await getQaAreas({ catalog: 1 })
+    areas.value = uniqueByCode(Array.isArray(data) ? data : [])
+      .slice()
+      .sort((a, b) => areaSortNumber(a) - areaSortNumber(b))
   } catch (err: any) {
     error.value = err?.response?.data?.message || 'Unable to load areas.'
   }
@@ -90,7 +106,7 @@ const selectArea = async (area: any) => {
 
   try {
     const data = await getAreaParameters(area.id)
-    parameters.value = Array.isArray(data) ? data : []
+    parameters.value = uniqueByCode(Array.isArray(data) ? data : [])
   } catch (err: any) {
     error.value = err?.response?.data?.message || 'Unable to load parameters.'
     parameters.value = []

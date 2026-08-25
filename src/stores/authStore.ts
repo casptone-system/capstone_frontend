@@ -150,10 +150,10 @@ export const useAuthStore = defineStore('auth', () => {
     const preferredOrder: AppRole[] = [
       'dean',
       'program-chair',
-      'area-incharge',
+      'area-in-charge',
       'faculty',
       'qa',
-      'vpaa/di',
+      'vpaa',
       'superadmin',
       'admin',
     ]
@@ -166,10 +166,10 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isSuperAdmin = computed(() => userRole.value === 'superadmin' || userRole.value === 'admin')
   const isQA = computed(() => userRole.value === 'qa')
-  const isVPAA = computed(() => userRole.value === 'vpaa/di')
+  const isVPAA = computed(() => userRole.value === 'vpaa')
   const isDean = computed(() => userRole.value === 'dean')
   const isFaculty = computed(() => userRole.value === 'faculty')
-  const isAreaIncharge = computed(() => userRole.value === 'area-incharge')
+  const isAreaIncharge = computed(() => userRole.value === 'area-in-charge')
   const isProgramChair = computed(() => userRole.value === 'program-chair')
   const availableDashboardViews = computed(() => getAvailableDashboardViews())
   const canViewAs = (view: AppRole) => availableDashboardViews.value.includes(view)
@@ -201,9 +201,9 @@ export const useAuthStore = defineStore('auth', () => {
       return
     }
 
-    if (available.includes('area-incharge')) {
-      dashboardView.value = 'area-incharge'
-      window.localStorage.setItem('role_dashboard_view', 'area-incharge')
+    if (available.includes('area-in-charge')) {
+      dashboardView.value = 'area-in-charge'
+      window.localStorage.setItem('role_dashboard_view', 'area-in-charge')
       return
     }
 
@@ -213,9 +213,9 @@ export const useAuthStore = defineStore('auth', () => {
       return
     }
 
-    if (available.includes('vpaa/di')) {
-      dashboardView.value = 'vpaa/di'
-      window.localStorage.setItem('role_dashboard_view', 'vpaa/di')
+    if (available.includes('vpaa')) {
+      dashboardView.value = 'vpaa'
+      window.localStorage.setItem('role_dashboard_view', 'vpaa')
       return
     }
   }
@@ -233,6 +233,7 @@ export const useAuthStore = defineStore('auth', () => {
     const programId =
       userData.programId ??
       userData.program_id ??
+      userData.chaired_program_id ??
       userData.program?.id ??
       userData.program?.program_id ??
       null
@@ -476,7 +477,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // Accept a program invitation token or a 6-character team/program code
+  // Join a team using the 6-character team code
   const acceptInvitation = async (value: string) => {
     isLoading.value = true
     error.value = null
@@ -485,21 +486,18 @@ export const useAuthStore = defineStore('auth', () => {
       const input = value.trim()
 
       if (!input) {
-        throw new Error('Invitation code is required.')
+        throw new Error('Team code is required.')
       }
 
-      // Team/program join codes are 6 characters long; invitation tokens are longer.
-      if (/^[A-Z0-9]{6}$/i.test(input)) {
-        const response = await api.post('/teams/join', { code: input.toUpperCase() })
-        await restoreSession()
-        return response.data
+      if (!/^[A-Z0-9]{6}$/i.test(input)) {
+        throw new Error('Enter the 6-character team code from your Program Chair.')
       }
 
-      const response = await api.post(`/invitations/${encodeURIComponent(input)}/accept`)
+      const response = await api.post('/teams/join', { code: input.toUpperCase() })
       await restoreSession()
       return response.data
     } catch (err: any) {
-      error.value = err.response?.data?.message || err.message || 'Failed to accept invitation.'
+      error.value = err.response?.data?.message || err.message || 'Failed to join team.'
       throw err
     } finally {
       isLoading.value = false
