@@ -105,6 +105,7 @@ const programs = ref<ProgramStatus[]>([])
 const statusClass = (status: string) => {
   switch (status) {
     case 'Accredited':
+    case 'Reached':
       return 'is-accredited'
     case 'In Progress':
       return 'is-progress'
@@ -141,11 +142,11 @@ watch(() => props.view, () => {
 
 <style scoped>
 .als-card {
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: var(--adams-canvas-panel);
+  border: 1px solid var(--adams-gridline);
   border-radius: 1rem;
   padding: 1.1rem 1.15rem;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+  box-shadow: var(--adams-shadow);
 }
 
 .als-header {
@@ -157,32 +158,32 @@ watch(() => props.view, () => {
   font-size: 0.68rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #64748b;
+  color: var(--adams-text-muted);
   font-weight: 700;
 }
 
 .als-title {
   margin: 0.2rem 0 0;
   font-size: 1.15rem;
-  color: #0f172a;
+  color: var(--adams-text-primary);
   letter-spacing: -0.03em;
 }
 
 .als-sub {
   margin: 0.25rem 0 0;
-  color: #64748b;
+  color: var(--adams-text-muted);
   font-size: 0.85rem;
 }
 
 .als-empty,
 .als-error {
   margin: 0;
-  color: #64748b;
+  color: var(--adams-text-muted);
   font-size: 0.9rem;
 }
 
 .als-error {
-  color: #b91c1c;
+  color: var(--adams-accent-urgent);
 }
 
 .als-list {
@@ -194,9 +195,9 @@ watch(() => props.view, () => {
   display: grid;
   gap: 0.7rem;
   padding: 0.85rem 0.9rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--adams-gridline);
   border-radius: 0.85rem;
-  background: #fff;
+  background: var(--adams-canvas);
 }
 
 .als-program-meta {
@@ -206,11 +207,11 @@ watch(() => props.view, () => {
 }
 
 .als-program-meta strong {
-  color: #0f172a;
+  color: var(--adams-text-primary);
 }
 
 .als-program-meta span {
-  color: #64748b;
+  color: var(--adams-text-muted);
   font-size: 0.8rem;
 }
 
@@ -230,14 +231,14 @@ watch(() => props.view, () => {
 .als-level-name {
   font-size: 0.72rem;
   font-weight: 700;
-  color: #475569;
+  color: var(--adams-structure-primary);
 }
 
 .als-level-meta {
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
-  color: #64748b;
+  color: var(--adams-text-muted);
   font-size: 0.68rem;
   line-height: 1.3;
 }
@@ -256,23 +257,23 @@ watch(() => props.view, () => {
 }
 
 .als-badge.is-accredited {
-  background: #dcfce7;
-  color: #166534;
+  background: var(--adams-success-soft);
+  color: var(--color-success-dark);
 }
 
 .als-badge.is-progress {
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: var(--adams-warning-soft);
+  color: var(--adams-text-primary);
 }
 
 .als-badge.is-not-started {
-  background: #f1f5f9;
-  color: #475569;
+  background: var(--adams-gridline);
+  color: var(--adams-text-muted);
 }
 
 .als-badge.is-expired {
-  background: #fee2e2;
-  color: #b91c1c;
+  background: var(--adams-danger-soft);
+  color: var(--color-danger-dark);
 }
 
 @media (max-width: 900px) {

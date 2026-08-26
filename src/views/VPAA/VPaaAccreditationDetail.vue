@@ -352,7 +352,7 @@ onMounted(async () => {
 }
 
 .vpaa-error {
-  color: #d32f2f;
+  color: var(--adams-accent-urgent);
 }
 
 .vpaa-topbar {
@@ -367,7 +367,7 @@ onMounted(async () => {
 .vpaa-back-btn {
   background: none;
   border: none;
-  color: #1a237e;
+  color: var(--adams-structure-primary);
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
@@ -388,7 +388,7 @@ onMounted(async () => {
   margin: 8px 0 0;
   font-size: 28px;
   font-weight: 700;
-  color: #1a237e;
+  color: var(--adams-structure-primary);
 }
 
 .vpaa-detail-grid {
@@ -506,7 +506,7 @@ onMounted(async () => {
 
 .vpaa-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #42a5f5 0%, #2196f3 100%);
+  background: var(--adams-accent-pending);
   transition: width 0.3s ease;
 }
 
@@ -686,7 +686,7 @@ onMounted(async () => {
   margin: 0 0 16px;
   font-size: 13px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--adams-structure-primary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -731,7 +731,7 @@ onMounted(async () => {
 .vpaa-timeline-dot {
   width: 8px;
   height: 8px;
-  background: #1a237e;
+  background: var(--adams-structure-primary);
   border-radius: 50%;
   margin-top: 5px;
   flex-shrink: 0;

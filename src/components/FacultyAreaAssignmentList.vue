@@ -520,13 +520,13 @@ onMounted(() => {
 .fal-search-input {
   width: 100%;
   padding: 0.75rem 0.75rem 0.75rem 2.5rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--adams-gridline);
   border-radius: 0.5rem;
   font-size: 0.875rem;
 
   &:focus {
     outline: none;
-    border-color: #3b82f6;
+    border-color: var(--adams-accent-info);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
   }
 }
@@ -538,14 +538,14 @@ onMounted(() => {
 
 .fal-filter-select {
   padding: 0.75rem 0.75rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--adams-gridline);
   border-radius: 0.5rem;
   font-size: 0.875rem;
   background: white;
 
   &:focus {
     outline: none;
-    border-color: #3b82f6;
+    border-color: var(--adams-accent-info);
   }
 }
 
@@ -562,11 +562,11 @@ onMounted(() => {
   transition: all 0.2s;
 
   &.fal-btn-primary {
-    background: #3b82f6;
-    color: white;
+    background: var(--adams-cta);
+    color: var(--adams-cta-fg);
 
     &:hover:not(:disabled) {
-      background: #2563eb;
+      background: var(--adams-cta-hover);
     }
 
     &:disabled {
@@ -576,11 +576,11 @@ onMounted(() => {
   }
 
   &.fal-btn-ghost {
-    background: #f3f4f6;
-    color: #374151;
+    background: var(--adams-canvas);
+    color: var(--adams-text-primary);
 
     &:hover {
-      background: #e5e7eb;
+      background: var(--adams-gridline);
     }
   }
 
@@ -601,13 +601,13 @@ onMounted(() => {
 }
 
 .fal-faculty-card {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--adams-gridline);
   border-radius: 0.75rem;
   overflow: hidden;
   transition: all 0.2s;
 
   &:hover {
-    border-color: #d1d5db;
+    border-color: var(--adams-border-strong);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
 }
@@ -617,11 +617,11 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  background: #f9fafb;
+  background: var(--adams-canvas);
   cursor: pointer;
 
   &:hover {
-    background: #f3f4f6;
+    background: var(--adams-canvas);
   }
 }
 
@@ -653,7 +653,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--adams-structure-primary) 0%, var(--adams-structure-secondary) 100%);
   color: white;
   font-weight: 600;
   font-size: 0.875rem;
@@ -667,7 +667,7 @@ onMounted(() => {
 
 .fal-faculty-name {
   font-size: 0.95rem;
-  color: #111;
+  color: var(--adams-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -708,7 +708,7 @@ onMounted(() => {
 /* Card Body */
 .fal-card-body {
   padding: 1rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--adams-gridline);
   background: white;
 }
 
@@ -721,7 +721,7 @@ onMounted(() => {
 .fal-section-title {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--adams-text-primary);
   margin: 0;
   text-transform: uppercase;
 }
@@ -737,11 +737,11 @@ onMounted(() => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
-  background: #dbeafe;
-  border: 1px solid #93c5fd;
+  background: var(--adams-info-soft);
+  border: 1px solid var(--adams-info-soft);
   border-radius: 0.375rem;
   font-size: 0.8rem;
-  color: #0c4a6e;
+  color: var(--adams-accent-info);
 }
 
 .fal-area-name {
@@ -760,8 +760,8 @@ onMounted(() => {
   padding: 0;
   border: none;
   border-radius: 999px;
-  background: #16a34a;
-  color: #fff;
+  background: var(--adams-accent-success);
+  color: var(--adams-canvas-panel);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -806,7 +806,7 @@ onMounted(() => {
 .fal-add-section {
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--adams-gridline);
 }
 
 .fal-add-form {
@@ -819,18 +819,18 @@ onMounted(() => {
   flex: 1;
   min-width: 150px;
   padding: 0.5rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--adams-gridline);
   border-radius: 0.375rem;
   font-size: 0.8rem;
   background: white;
 
   &:focus {
     outline: none;
-    border-color: #3b82f6;
+    border-color: var(--adams-accent-info);
   }
 
   &:disabled {
-    background: #f3f4f6;
+    background: var(--adams-canvas);
     cursor: not-allowed;
   }
 }
@@ -849,8 +849,8 @@ onMounted(() => {
 .fal-success {
   margin: 0;
   font-size: 0.8rem;
-  color: #059669;
-  background: #d1fae5;
+  color: var(--adams-structure-primary);
+  background: var(--adams-success-soft);
   padding: 0.5rem 0.75rem;
   border-radius: 0.375rem;
 }
@@ -858,8 +858,8 @@ onMounted(() => {
 .fal-error {
   margin: 0;
   font-size: 0.8rem;
-  color: #dc2626;
-  background: #fee2e2;
+  color: var(--adams-accent-urgent);
+  background: var(--adams-danger-soft);
   padding: 0.5rem 0.75rem;
   border-radius: 0.375rem;
 }
@@ -903,12 +903,12 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--adams-gridline);
 
   h3 {
     margin: 0;
     font-size: 1.1rem;
-    color: #111;
+    color: var(--adams-text-primary);
   }
 }
 
@@ -925,8 +925,8 @@ onMounted(() => {
   justify-content: center;
 
   &:hover {
-    background: #f3f4f6;
-    color: #111;
+    background: var(--adams-canvas);
+    color: var(--adams-text-primary);
   }
 
   ion-icon {
@@ -945,18 +945,18 @@ onMounted(() => {
   display: flex;
   gap: 0.6rem;
   align-items: center;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--adams-gridline);
   border-radius: 0.6rem;
   padding: 0.5rem 0.65rem;
   cursor: pointer;
 }
 .fal-faculty-option.selected {
-  border-color: #16a34a;
-  background: #f0fdf4;
+  border-color: var(--adams-accent-success);
+  background: var(--adams-success-soft);
 }
 .fal-faculty-option small {
   display: block;
-  color: #6b7280;
+  color: var(--adams-text-muted);
 }
 
 .fal-modal-body {
@@ -970,7 +970,7 @@ onMounted(() => {
   display: block;
   font-size: 0.85rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--adams-text-primary);
   margin-bottom: 0.25rem;
 }
 
@@ -979,19 +979,19 @@ onMounted(() => {
 .fal-input-textarea {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--adams-gridline);
   border-radius: 0.5rem;
   font-size: 0.875rem;
   font-family: inherit;
 
   &:focus {
     outline: none;
-    border-color: #3b82f6;
+    border-color: var(--adams-accent-info);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
   }
 
   &:disabled {
-    background: #f3f4f6;
+    background: var(--adams-canvas);
     cursor: not-allowed;
   }
 }
@@ -1004,9 +1004,9 @@ onMounted(() => {
 .fal-task-workflow {
   margin-top: 0.25rem;
   padding: 1rem;
-  border: 1px solid #dbeafe;
+  border: 1px solid var(--adams-info-soft);
   border-radius: 0.75rem;
-  background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
+  background: linear-gradient(135deg, var(--adams-info-soft) 0%, var(--adams-canvas) 100%);
 }
 
 .fal-workflow-title {
@@ -1015,7 +1015,7 @@ onMounted(() => {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #1d4ed8;
+  color: var(--adams-accent-info);
 }
 
 .fal-workflow-steps {
@@ -1032,21 +1032,21 @@ onMounted(() => {
   justify-content: center;
   padding: 0.42rem 0.7rem;
   border-radius: 999px;
-  border: 1px solid #bfdbfe;
-  background: #fff;
+  border: 1px solid var(--adams-info-soft);
+  background: var(--adams-canvas-panel);
   font-size: 0.72rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--adams-text-primary);
 }
 
 .fal-workflow-step.active {
-  background: #dbeafe;
-  border-color: #93c5fd;
+  background: var(--adams-info-soft);
+  border-color: var(--adams-info-soft);
   color: #1e3a8a;
 }
 
 .fal-workflow-separator {
-  color: #64748b;
+  color: var(--adams-text-muted);
   font-weight: 700;
 }
 
@@ -1054,7 +1054,7 @@ onMounted(() => {
   margin: 0;
   font-size: 0.8rem;
   line-height: 1.5;
-  color: #475569;
+  color: var(--adams-text-muted);
 }
 
 .fal-modal-message {
@@ -1063,19 +1063,19 @@ onMounted(() => {
   font-size: 0.85rem;
 
   &.success {
-    background: #d1fae5;
-    color: #059669;
+    background: var(--adams-success-soft);
+    color: var(--adams-structure-primary);
   }
 
   &.error {
-    background: #fee2e2;
-    color: #dc2626;
+    background: var(--adams-danger-soft);
+    color: var(--adams-accent-urgent);
   }
 }
 
 .fal-modal-footer {
   padding: 1rem 1.5rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--adams-gridline);
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;

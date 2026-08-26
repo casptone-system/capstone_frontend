@@ -4,8 +4,12 @@
     <p v-if="!areas.length" class="dap-empty">No area assignments for this program yet.</p>
     <div v-for="area in areas" :key="area.id || area.code" class="dap-row">
       <span class="dap-name">{{ labelFor(area) }}</span>
-      <div class="dap-track">
-        <div class="dap-fill" :style="{ width: `${Number(area.progressPercent || 0)}%` }" />
+      <div class="dap-track adams-progress-track">
+        <div
+          class="dap-fill adams-progress-fill"
+          :class="{ 'is-complete': Number(area.progressPercent || 0) >= 100 }"
+          :style="{ width: `${Number(area.progressPercent || 0)}%` }"
+        />
       </div>
       <strong>{{ Number(area.progressPercent || 0) }}%</strong>
     </div>
@@ -41,7 +45,7 @@ const labelFor = (area: AreaProgress) => {
 
 .dap-label {
   margin: 0;
-  color: #0c5c4e;
+  color: var(--adams-structure-primary);
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.06em;
@@ -50,7 +54,7 @@ const labelFor = (area: AreaProgress) => {
 
 .dap-empty {
   margin: 0;
-  color: #94a3b8;
+  color: var(--adams-text-muted);
   font-size: 0.8rem;
 }
 
@@ -62,26 +66,31 @@ const labelFor = (area: AreaProgress) => {
 }
 
 .dap-name {
-  color: #334155;
+  color: var(--adams-text-primary);
   font-size: 0.78rem;
   font-weight: 700;
 }
 
 .dap-track {
   height: 7px;
-  background: #e2e8f0;
+  background: var(--adams-gridline);
   border-radius: 999px;
   overflow: hidden;
 }
 
 .dap-fill {
   height: 100%;
-  background: #0e7a5f;
+  background: var(--adams-accent-pending);
+  transition: width 240ms ease, background 400ms ease;
+}
+
+.dap-fill.is-complete {
+  background: var(--adams-accent-success);
 }
 
 .dap-row strong {
   text-align: right;
-  color: #0f172a;
+  color: var(--adams-text-primary);
   font-size: 0.78rem;
 }
 </style>

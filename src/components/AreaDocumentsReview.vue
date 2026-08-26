@@ -25,7 +25,7 @@
         :key="level.level"
         type="button"
         class="adr-card"
-        :class="{ disabled: !level.cycleId }"
+        :class="{ disabled: !isLevelOpen(level), reached: isLevelReached(level) }"
         @click="openLevel(level)"
       >
         <div class="adr-card-head">
@@ -34,11 +34,12 @@
         </div>
         <strong>
           {{ level.level }}
-          <span v-if="level.cycleId && level.cycleId === tree?.activeCycleId" class="adr-chip">Active</span>
+          <span v-if="level.cycleId && level.cycleId === tree?.activeCycleId" class="adr-chip">Current</span>
         </strong>
-        <span v-if="level.cycleId" class="adr-chip">{{ level.documentCount }} document{{ level.documentCount === 1 ? '' : 's' }}</span>
+        <span v-if="isLevelReached(level)" class="adr-chip">Successfully reached</span>
+        <span v-else-if="level.cycleId" class="adr-chip">{{ level.documentCount }} document{{ level.documentCount === 1 ? '' : 's' }}</span>
         <span v-else class="adr-muted">No cycle yet</span>
-        <span class="adr-action">{{ level.cycleId ? 'Open areas' : 'Unavailable' }} <ion-icon :icon="chevronForwardOutline" /></span>
+        <span class="adr-action">{{ levelActionLabel(level) }} <ion-icon v-if="isLevelOpen(level)" :icon="chevronForwardOutline" /></span>
       </button>
     </div>
 
@@ -237,6 +238,8 @@ type LevelFolder = {
   cycleId: number | null
   cycleStatus: string | null
   displayStatus: string
+  access?: 'reached' | 'open'
+  isOpen?: boolean
   documentCount: number
   areas: AreaFolder[]
 }
@@ -284,7 +287,7 @@ const headerSub = computed(() => {
   }
   if (selectedLevel.value) return 'Open an area to view its Area In-Charge and uploaded documents.'
   const program = tree.value?.programName ? ` for ${tree.value.programName}` : ''
-  return `Open a level to browse accreditation documents${program}.`
+  return `Open a current or higher level to browse documents${program}. Lower levels are marked as reached.`
 })
 
 const uploaderOptions = computed(() => {
@@ -308,6 +311,7 @@ const filteredDocuments = computed(() => {
 const statusClass = (status: string) => {
   switch (status) {
     case 'Accredited':
+    case 'Reached':
       return 'is-accredited'
     case 'In Progress':
       return 'is-progress'
@@ -316,6 +320,18 @@ const statusClass = (status: string) => {
     default:
       return 'is-not-started'
   }
+}
+
+const isLevelReached = (level: LevelFolder) =>
+  level.access === 'reached' || level.displayStatus === 'Reached'
+
+const isLevelOpen = (level: LevelFolder) =>
+  !isLevelReached(level) && (level.isOpen !== false) && Boolean(level.cycleId)
+
+const levelActionLabel = (level: LevelFolder) => {
+  if (isLevelReached(level)) return 'Reached'
+  if (isLevelOpen(level)) return 'Open areas'
+  return 'Unavailable'
 }
 
 const areaCodeLabel = (code: string) => String(code || '').replace('area-', 'Area ')
@@ -385,6 +401,10 @@ const isWorkspaceEvidence = (doc: any) => doc?.source === 'criterion-evidence' &
 const refreshSelected = (payload: { levels: LevelFolder[] }) => {
   if (selectedLevel.value) {
     selectedLevel.value = payload.levels.find((level) => level.level === selectedLevel.value?.level) || null
+    if (selectedLevel.value && !isLevelOpen(selectedLevel.value)) {
+      selectedLevel.value = null
+      selectedArea.value = null
+    }
   }
   if (selectedArea.value && selectedLevel.value) {
     selectedArea.value = selectedLevel.value.areas.find((area) => area.id === selectedArea.value?.id) || null
@@ -424,7 +444,11 @@ const loadAreaDocuments = async (area: AreaFolder) => {
 }
 
 const openLevel = (level: LevelFolder) => {
-  if (!level.cycleId) {
+  if (isLevelReached(level)) {
+    toastStore.show(`${level.level} was already reached for this program.`, 'success')
+    return
+  }
+  if (!isLevelOpen(level)) {
     toastStore.show('No accreditation cycle exists for this level yet.', 'error')
     return
   }
@@ -526,70 +550,72 @@ onMounted(() => {
 .adr-back {
   display: inline-flex; align-items: center; gap: 0.2rem;
   margin: 0 0 0.35rem; padding: 0; border: none; background: transparent;
-  color: #2563eb; font-size: 0.8rem; font-weight: 600; cursor: pointer;
+  color: var(--adams-accent-info); font-size: 0.8rem; font-weight: 600; cursor: pointer;
 }
-.adr-title { margin: 0; font-size: 1.15rem; font-weight: 700; color: #111; }
-.adr-sub, .adr-muted { margin: 0.25rem 0 0; font-size: 0.85rem; color: #6b7280; }
-.adr-error { margin: 0; color: #b91c1c; }
+.adr-title { margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--adams-text-primary); }
+.adr-sub, .adr-muted { margin: 0.25rem 0 0; font-size: 0.85rem; color: var(--adams-text-muted); }
+.adr-error { margin: 0; color: var(--adams-accent-urgent); }
 .adr-btn {
   display: inline-flex; align-items: center; gap: 0.35rem;
   padding: 0.55rem 0.8rem; border: none; border-radius: 0.5rem;
   font-size: 0.85rem; font-weight: 600; cursor: pointer;
 }
-.adr-btn.ghost { background: #f3f4f6; color: #374151; }
-.adr-btn.primary { background: #2563eb; color: #fff; }
+.adr-btn.ghost { background: var(--adams-canvas); color: var(--adams-text-primary); }
+.adr-btn.primary { background: var(--adams-cta); color: var(--adams-cta-fg); }
 .adr-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 .adr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
 .adr-card {
   display: flex; flex-direction: column; align-items: flex-start; gap: 0.45rem;
-  padding: 1rem; border: 1px solid #e5e7eb; border-radius: 0.9rem; background: #fff;
+  padding: 1rem; border: 1px solid var(--adams-gridline); border-radius: 0.9rem; background: var(--adams-canvas-panel);
   text-align: left; cursor: pointer;
 }
-.adr-card:hover { border-color: #2563eb; box-shadow: 0 6px 18px rgba(37, 99, 235, 0.12); }
-.adr-card.disabled { opacity: 0.7; }
-.adr-card.disabled:hover { border-color: #e5e7eb; box-shadow: none; }
+.adr-card:hover { border-color: var(--adams-accent-info); box-shadow: 0 6px 18px rgba(37, 99, 235, 0.12); }
+.adr-card.disabled { opacity: 0.72; cursor: not-allowed; }
+.adr-card.disabled:hover { border-color: var(--adams-gridline); box-shadow: none; }
+.adr-card.reached { opacity: 1; border-color: color-mix(in srgb, var(--adams-accent-success) 35%, var(--adams-gridline)); }
 .adr-card-head { display: flex; width: 100%; justify-content: space-between; align-items: center; }
 .adr-icon {
   width: 2.4rem; height: 2.4rem; display: flex; align-items: center; justify-content: center;
-  border-radius: 0.7rem; background: #eff6ff; color: #1d4ed8; font-size: 1.35rem;
+  border-radius: 0.7rem; background: var(--adams-info-soft); color: var(--adams-accent-info); font-size: 1.35rem;
 }
 .adr-code, .adr-chip, .adr-badge {
-  font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 999px; background: #f1f5f9; color: #475569;
+  font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 999px; background: var(--adams-canvas); color: var(--adams-text-muted);
 }
-.adr-chip.review { background: #dbeafe; color: #1d4ed8; }
-.adr-badge.is-accredited { background: #d1fae5; color: #047857; }
-.adr-badge.is-progress { background: #dbeafe; color: #1d4ed8; }
-.adr-badge.is-expired { background: #fee2e2; color: #b91c1c; }
+.adr-chip.review { background: var(--adams-info-soft); color: var(--adams-accent-info); }
+.adr-badge.is-accredited { background: var(--adams-success-soft); color: var(--color-success-dark); }
+.adr-badge.is-progress { background: var(--adams-warning-soft); color: var(--adams-text-primary); }
+.adr-badge.is-expired { background: var(--adams-danger-soft); color: var(--color-danger-dark); }
+.adr-badge.is-not-started { background: var(--adams-gridline); color: var(--adams-text-muted); }
 .adr-meta { display: flex; flex-wrap: wrap; gap: 0.35rem; }
-.adr-action { display: inline-flex; align-items: center; gap: 0.2rem; color: #2563eb; font-size: 0.8rem; font-weight: 600; }
+.adr-action { display: inline-flex; align-items: center; gap: 0.2rem; color: var(--adams-accent-info); font-size: 0.8rem; font-weight: 600; }
 .adr-panel {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;
-  padding: 1rem; border: 1px solid #e5e7eb; border-radius: 0.85rem; background: #f8fafc;
+  padding: 1rem; border: 1px solid var(--adams-gridline); border-radius: 0.85rem; background: var(--adams-canvas);
 }
-.adr-kicker { margin: 0 0 0.25rem; font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: #64748b; font-weight: 700; }
+.adr-kicker { margin: 0 0 0.25rem; font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--adams-text-muted); font-weight: 700; }
 .adr-review-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: end; }
 .adr-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.6rem; }
 .adr-input, .adr-textarea {
-  width: 100%; padding: 0.6rem 0.7rem; border: 1px solid #e5e7eb; border-radius: 0.55rem;
+  width: 100%; padding: 0.6rem 0.7rem; border: 1px solid var(--adams-gridline); border-radius: 0.55rem;
   font: inherit; box-sizing: border-box;
 }
 .adr-docs { display: flex; flex-direction: column; gap: 0.75rem; }
-.adr-doc { padding: 0.9rem; border: 1px solid #e5e7eb; border-radius: 0.75rem; background: #fff; }
+.adr-doc { padding: 0.9rem; border: 1px solid var(--adams-gridline); border-radius: 0.75rem; background: var(--adams-canvas-panel); }
 .adr-doc-main { display: flex; gap: 0.7rem; align-items: flex-start; }
 .adr-file-icon { font-size: 1.35rem; }
 .adr-doc-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.7rem; }
-.adr-versions { margin: 0.7rem 0 0; padding-left: 1.2rem; color: #475569; font-size: 0.82rem; }
-.adr-link { border: none; background: transparent; color: #2563eb; cursor: pointer; font-weight: 600; }
+.adr-versions { margin: 0.7rem 0 0; padding-left: 1.2rem; color: var(--adams-text-muted); font-size: 0.82rem; }
+.adr-link { border: none; background: transparent; color: var(--adams-accent-info); cursor: pointer; font-weight: 600; }
 .adr-overlay {
   position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5);
   display: flex; align-items: center; justify-content: center; padding: 1.25rem; z-index: 1100;
 }
-.adr-modal { background: #fff; border-radius: 1rem; width: min(520px, 100%); overflow: hidden; }
+.adr-modal { background: var(--adams-canvas-panel); border-radius: 1rem; width: min(520px, 100%); overflow: hidden; }
 .adr-modal.wide { width: min(920px, 100%); }
-.adr-modal-head { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.2rem; border-bottom: 1px solid #e5e7eb; }
+.adr-modal-head { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.2rem; border-bottom: 1px solid var(--adams-gridline); }
 .adr-modal-head h3 { margin: 0; font-size: 1rem; }
 .adr-close { border: none; background: transparent; cursor: pointer; font-size: 1.1rem; }
-.adr-preview-body { min-height: 420px; background: #0f172a; display: flex; align-items: center; justify-content: center; }
+.adr-preview-body { min-height: 420px; background: var(--adams-text-primary); display: flex; align-items: center; justify-content: center; }
 .adr-preview-body iframe, .adr-preview-body img, .adr-preview-body video { width: 100%; max-height: 70vh; border: 0; }
 .adr-preview-body audio { width: 90%; }
 .adr-modal-foot { display: flex; justify-content: flex-end; gap: 0.6rem; padding: 0.9rem 1.2rem; }

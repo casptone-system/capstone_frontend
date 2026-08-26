@@ -255,29 +255,29 @@ const stats = computed(() => [
   {
     label: 'Active cycles',
     value: String(vpaaStore.summary.active_accreditations),
-    bg: '#e0f2fe',
-    color: '#075985',
+    bg: 'var(--adams-info-soft)',
+    color: 'var(--adams-accent-info)',
     icon: shieldCheckmarkOutline,
   },
   {
     label: 'Programs ready',
     value: String(vpaaStore.summary.ready_programs),
-    bg: '#dcfce7',
-    color: '#166534',
+    bg: 'var(--adams-success-soft)',
+    color: 'var(--color-success-dark)',
     icon: checkmarkDoneOutline,
   },
   {
     label: 'Upcoming visits',
     value: String(vpaaStore.summary.upcoming_accreditations),
-    bg: '#fef3c7',
-    color: '#92400e',
+    bg: 'var(--adams-warning-soft)',
+    color: 'var(--adams-text-primary)',
     icon: timeOutline,
   },
   {
     label: 'At risk',
     value: String(vpaaStore.summary.at_risk_programs),
-    bg: '#fee2e2',
-    color: '#991b1b',
+    bg: 'var(--adams-danger-soft)',
+    color: 'var(--color-danger-dark)',
     icon: alertCircleOutline,
   },
   {
@@ -371,7 +371,7 @@ onMounted(async () => {
   margin: 8px 0 0;
   font-size: 28px;
   font-weight: 700;
-  color: #1a237e;
+  color: var(--adams-structure-primary);
 }
 
 .vpaa-topbar-actions {
@@ -394,14 +394,14 @@ onMounted(async () => {
 }
 
 .vpaa-icon-btn:hover {
-  color: #1a237e;
+  color: var(--adams-structure-primary);
 }
 
 .vpaa-badge {
   position: absolute;
   top: 0;
   right: 0;
-  background: #ef5350;
+  background: var(--adams-accent-urgent);
   color: white;
   font-size: 10px;
   width: 18px;
@@ -424,7 +424,7 @@ onMounted(async () => {
 .vpaa-user-avatar {
   width: 32px;
   height: 32px;
-  background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+  background: linear-gradient(135deg, var(--adams-structure-primary) 0%, var(--adams-structure-primary) 100%);
   color: white;
   border-radius: 50%;
   display: flex;
@@ -484,8 +484,8 @@ onMounted(async () => {
 }
 
 .vpaa-btn.primary {
-  background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
-  color: white;
+  background: var(--adams-cta);
+  color: var(--adams-cta-fg);
 }
 
 .vpaa-btn.primary:hover {
@@ -500,7 +500,7 @@ onMounted(async () => {
 }
 
 .vpaa-error {
-  color: #d32f2f;
+  color: var(--adams-accent-urgent);
 }
 
 .vpaa-stat-strip {
@@ -550,7 +550,7 @@ onMounted(async () => {
 
 .vpaa-monitor-row small {
   display: block;
-  color: #94a3b8;
+  color: var(--adams-text-muted);
   font-size: 12px;
 }
 
@@ -748,7 +748,7 @@ onMounted(async () => {
 .vpaa-link-btn {
   background: none;
   border: none;
-  color: #1a237e;
+  color: var(--adams-structure-primary);
   cursor: pointer;
   font-size: 12px;
   font-weight: 600;
@@ -758,7 +758,7 @@ onMounted(async () => {
 }
 
 .vpaa-link-btn:hover {
-  color: #0d1b5e;
+  color: var(--adams-structure-primary);
 }
 
 .vpaa-empty-state {
@@ -811,7 +811,7 @@ onMounted(async () => {
 .vpaa-report-item span {
   font-size: 14px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--adams-structure-primary);
 }
 
 @media (max-width: 1024px) {

@@ -54,6 +54,7 @@
   cursor: not-allowed;
 }
 
+/* 10% Accent — Gold CTA. Charcoal text: white-on-gold fails WCAG AA. */
 .adams-btn-primary,
 .sa-btn-primary,
 .fac-btn-primary,
@@ -62,9 +63,9 @@
 .qa-btn-primary,
 .vpaa-btn.primary,
 .vpaa-btn-primary {
-  background: var(--adams-primary) !important;
-  border-color: var(--adams-primary) !important;
-  color: #fff !important;
+  background: var(--adams-cta) !important;
+  border-color: var(--adams-cta) !important;
+  color: var(--adams-cta-fg) !important;
   box-shadow: none !important;
 }
 
@@ -74,7 +75,8 @@
 .dean-btn-primary:hover:not(:disabled),
 .pc-btn-primary:hover:not(:disabled),
 .qa-btn-primary:hover:not(:disabled) {
-  background: var(--adams-primary-hover) !important;
+  background: var(--adams-cta-hover) !important;
+  border-color: var(--adams-cta-hover) !important;
 }
 
 .adams-btn-secondary,
@@ -91,10 +93,28 @@
   color: var(--adams-ink) !important;
 }
 
+/* 30% Structure — Edit / secondary action (not a completion CTA) */
+.adams-btn-outline,
+.adams-btn-edit {
+  background: transparent !important;
+  border-color: var(--adams-structure-primary) !important;
+  color: var(--adams-structure-primary) !important;
+}
+
+.adams-btn-outline:hover:not(:disabled),
+.adams-btn-edit:hover:not(:disabled) {
+  background: var(--adams-primary-soft) !important;
+}
+
+/* 10% Accent — Remove is destructive but outlined so it does not read as overdue */
 .adams-btn-danger {
-  background: var(--adams-danger);
-  border-color: var(--adams-danger);
-  color: #fff;
+  background: transparent;
+  border-color: var(--adams-accent-urgent);
+  color: var(--adams-accent-urgent);
+}
+
+.adams-btn-danger:hover:not(:disabled) {
+  background: var(--adams-danger-soft);
 }
 
 .adams-btn-sm {
@@ -183,8 +203,8 @@
 .sa-form textarea:focus,
 .form-input:focus {
   outline: none;
-  border-color: var(--adams-primary);
-  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+  border-color: var(--adams-structure-primary);
+  box-shadow: 0 0 0 3px rgba(27, 94, 32, 0.16);
 }
 
 /* ---------- Badges ---------- */
@@ -201,17 +221,31 @@
   line-height: 1.2;
 }
 
-.adams-badge-success { background: var(--adams-success-soft); color: var(--adams-success); }
-.adams-badge-warning { background: var(--adams-warning-soft); color: var(--adams-warning); }
-.adams-badge-danger { background: var(--adams-danger-soft); color: var(--adams-danger); }
-.adams-badge-info { background: var(--adams-info-soft); color: var(--adams-info); }
-.adams-badge-neutral { background: var(--adams-surface-alt); color: var(--adams-muted); }
+.adams-badge-success,
+.adams-badge-accredited,
+.adams-badge-ready { background: var(--adams-success-soft); color: var(--color-success-dark); }
+.adams-badge-warning,
+.adams-badge-pending,
+.adams-badge-in-progress,
+.adams-badge-submitted,
+.adams-badge-area-approved,
+.adams-badge-revision { background: var(--adams-warning-soft); color: var(--adams-text-primary); }
+.adams-badge-danger,
+.adams-badge-expired,
+.adams-badge-rejected,
+.adams-badge-overdue { background: var(--adams-danger-soft); color: var(--color-danger-dark); }
+.adams-badge-info { background: var(--adams-info-soft); color: var(--adams-accent-info); }
+.adams-badge-neutral,
+.adams-badge-not-started,
+.adams-badge-draft { background: var(--adams-gridline); color: var(--adams-text-muted); }
 
-/* ---------- Nav (used inside AdamsAppShell slots) ---------- */
+/* ---------- Nav (used inside AdamsAppShell slots) ----------
+   60% Canvas sidebar. 30% Structure on the active pill only (Forest Green).
+   Gold is never used for nav state. */
 .adams-nav-label {
   margin: 1rem 0 0.35rem;
   padding: 0 0.7rem;
-  color: #94a3b8;
+  color: var(--adams-text-muted);
   font-size: 0.62rem;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -223,16 +257,17 @@
 }
 
 .adams-nav-item {
+  position: relative;
   width: 100%;
   display: flex;
   align-items: center;
   gap: 0.65rem;
   margin-bottom: 0.12rem;
-  padding: 0.62rem 0.7rem;
+  padding: 0.62rem 0.7rem 0.62rem 0.85rem;
   border: 0;
   border-radius: 0.75rem;
   background: transparent;
-  color: #475569;
+  color: var(--adams-text-primary);
   font: inherit;
   font-size: 0.84rem;
   font-weight: 600;
@@ -243,18 +278,29 @@
 }
 
 .adams-nav-item:hover {
-  background: var(--adams-primary-soft);
-  color: var(--adams-primary-hover);
+  background: var(--adams-canvas);
+  color: var(--adams-text-primary);
 }
 
 .adams-nav-item.active {
-  background: var(--adams-primary-soft);
-  color: var(--adams-primary-hover);
+  background: var(--adams-structure-primary);
+  color: var(--adams-canvas);
   font-weight: 700;
 }
 
+.adams-nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.45rem;
+  bottom: 0.45rem;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--ion-color-primary-tint);
+}
+
 .adams-nav-item:focus-visible {
-  outline: 2px solid var(--adams-primary);
+  outline: 2px solid var(--adams-structure-primary);
   outline-offset: 2px;
 }
 
@@ -265,11 +311,17 @@
   display: grid;
   place-items: center;
   border-radius: 0.5rem;
-  color: currentColor;
+  color: var(--adams-text-muted);
+  font-size: 1.15rem;
+}
+
+.adams-nav-item:hover .adams-nav-icon {
+  color: var(--adams-text-primary);
 }
 
 .adams-nav-item.active .adams-nav-icon {
-  background: var(--adams-primary-muted);
+  background: transparent;
+  color: var(--adams-canvas);
 }
 
 .adams-nav-badge {
@@ -277,17 +329,31 @@
   min-width: 1.25rem;
   padding: 0.1rem 0.4rem;
   border-radius: var(--radius-full);
-  background: var(--adams-primary);
-  color: #fff;
+  background: var(--adams-structure-primary);
+  color: var(--adams-canvas);
   font-size: 0.65rem;
   font-weight: 800;
   text-align: center;
 }
 
+.adams-nav-item.active .adams-nav-badge {
+  background: rgba(250, 249, 246, 0.2);
+  color: var(--adams-canvas);
+}
+
+.adams-nav-badge.is-urgent {
+  background: var(--adams-accent-urgent);
+  color: var(--adams-canvas);
+}
+
 .adams-nav-caret {
   margin-left: auto;
-  color: var(--adams-muted);
+  color: var(--adams-text-muted);
   font-size: 0.75rem;
+}
+
+.adams-nav-item.active .adams-nav-caret {
+  color: var(--adams-canvas);
 }
 
 .adams-nav-children {
@@ -299,8 +365,19 @@
 
 .adams-nav-empty {
   margin: 0.25rem 0.7rem;
-  color: #94a3b8;
+  color: var(--adams-text-muted);
   font-size: 0.8rem;
+}
+
+.adams-nav-item.active .fac-area-role,
+.adams-nav-item.active .fac-area-progress,
+.adams-nav-item.active .pc-area-role,
+.adams-nav-item.active .pc-area-progress {
+  color: var(--adams-canvas);
+}
+
+.adams-nav-item.active .fac-area-progress-track {
+  background: rgba(250, 249, 246, 0.22);
 }
 
 /* ---------- Empty / loading / feedback ---------- */
@@ -331,15 +408,41 @@
   font-size: 0.875rem;
 }
 
-.adams-alert-success { background: var(--adams-success-soft); border-color: #bbf7d0; color: var(--adams-success); }
-.adams-alert-warning { background: var(--adams-warning-soft); border-color: #fde68a; color: var(--adams-warning); }
-.adams-alert-error { background: var(--adams-danger-soft); border-color: #fecaca; color: var(--adams-danger); }
-.adams-alert-info { background: var(--adams-info-soft); border-color: #bae6fd; color: var(--adams-info); }
+.adams-alert-success { background: var(--adams-success-soft); border-color: var(--adams-accent-success); color: var(--adams-accent-success); }
+.adams-alert-warning { background: var(--adams-warning-soft); border-color: var(--adams-accent-pending); color: var(--adams-text-primary); }
+.adams-alert-error { background: var(--adams-danger-soft); border-color: var(--adams-accent-urgent); color: var(--adams-accent-urgent); }
+.adams-alert-info { background: var(--adams-info-soft); border-color: var(--adams-accent-info); color: var(--adams-accent-info); }
+
+/* 10% Accent — area progress. Gold is not used here. */
+.adams-progress-track {
+  height: 7px;
+  background: var(--adams-gridline);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.adams-progress-fill {
+  height: 100%;
+  background: var(--adams-accent-pending);
+  border-radius: inherit;
+  transition: width 240ms ease, background 400ms ease;
+}
+
+.adams-progress-fill.is-complete {
+  background: var(--adams-accent-success);
+  animation: adams-complete-flash 0.7s ease;
+}
+
+@keyframes adams-complete-flash {
+  0% { background: var(--adams-accent-pending); }
+  35% { background: var(--adams-accent-success); }
+  100% { background: var(--adams-accent-success); }
+}
 
 .adams-skeleton {
   position: relative;
   overflow: hidden;
-  background: #e2e8f0;
+  background: var(--adams-gridline);
   border-radius: var(--radius-md);
 }
 
@@ -347,7 +450,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.7), transparent);
+  background: linear-gradient(90deg, transparent, rgba(250, 249, 246, 0.7), transparent);
   animation: adams-shimmer 1.2s linear infinite;
 }
 

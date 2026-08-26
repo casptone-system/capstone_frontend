@@ -117,7 +117,7 @@ const activities = ref([
   margin: 8px 0 0;
   font-size: 28px;
   font-weight: 700;
-  color: #1a237e;
+  color: var(--adams-structure-primary);
 }
 
 .vpaa-content {
@@ -141,7 +141,7 @@ const activities = ref([
   margin: 0;
   font-size: 14px;
   font-weight: 700;
-  color: #1a237e;
+  color: var(--adams-structure-primary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -197,7 +197,7 @@ const activities = ref([
 }
 
 .vpaa-activity-action strong {
-  color: #1a237e;
+  color: var(--adams-structure-primary);
   font-weight: 600;
 }
 

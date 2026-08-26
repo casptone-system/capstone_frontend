@@ -1,0 +1,141 @@
+/* ==========================================================================
+   ADAMS Ionic color map — ISU 60-30-10
+   Imported AFTER @ionic/vue CSS so these override Ionic defaults.
+   Canonical hex values live in styles.css (--adams-*). This file only
+   maps Ionic's --ion-color-* contract onto those tokens.
+
+   Layer map:
+     60% Canvas     --ion-background-color, --ion-card-background, --ion-color-light
+     30% Structure  --ion-color-primary (Forest Green), --ion-color-secondary (Deep Brown),
+                    --ion-color-dark (Charcoal), --ion-toolbar-*
+     10% Accent     --ion-color-success / warning / danger / tertiary / gold
+   ========================================================================== */
+
+:root {
+  /* 30% Structure — Forest Green. Used by ion-button color="primary",
+     ion-toolbar, ion-menu. Not a page/panel fill. */
+  --ion-color-primary: var(--adams-structure-primary);
+  --ion-color-primary-rgb: 27, 94, 32;
+  --ion-color-primary-contrast: var(--adams-canvas);
+  --ion-color-primary-contrast-rgb: 250, 249, 246;
+  --ion-color-primary-shade: #18531c;
+  --ion-color-primary-tint: #336e36;
+
+  /* 30% Structure — Deep Brown. Footer / secondary nav states. */
+  --ion-color-secondary: var(--adams-structure-secondary);
+  --ion-color-secondary-rgb: 93, 64, 55;
+  --ion-color-secondary-contrast: var(--adams-canvas);
+  --ion-color-secondary-contrast-rgb: 250, 249, 246;
+  --ion-color-secondary-shade: #523830;
+  --ion-color-secondary-tint: #6d534b;
+
+  /* 10% Accent — Info Blue (notifications, system messages). */
+  --ion-color-tertiary: var(--adams-accent-info);
+  --ion-color-tertiary-rgb: 21, 101, 192;
+  --ion-color-tertiary-contrast: var(--adams-canvas);
+  --ion-color-tertiary-contrast-rgb: 250, 249, 246;
+  --ion-color-tertiary-shade: #1259a9;
+  --ion-color-tertiary-tint: #2c74c6;
+
+  /* 10% Accent — Task Complete Green. */
+  --ion-color-success: var(--adams-accent-success);
+  --ion-color-success-rgb: 46, 125, 50;
+  --ion-color-success-contrast: var(--adams-canvas);
+  --ion-color-success-contrast-rgb: 250, 249, 246;
+  --ion-color-success-shade: #286e2c;
+  --ion-color-success-tint: #438a47;
+
+  /* 10% Accent — Amber (in-progress / pending). Charcoal contrast:
+     white-on-amber fails WCAG AA (~1.7:1). */
+  --ion-color-warning: var(--adams-accent-pending);
+  --ion-color-warning-rgb: 251, 192, 45;
+  --ion-color-warning-contrast: var(--adams-text-primary);
+  --ion-color-warning-contrast-rgb: 43, 43, 40;
+  --ion-color-warning-shade: #dda928;
+  --ion-color-warning-tint: #fcc642;
+
+  /* 10% Accent — Crimson (overdue / destructive). */
+  --ion-color-danger: var(--adams-accent-urgent);
+  --ion-color-danger-rgb: 198, 40, 40;
+  --ion-color-danger-contrast: var(--adams-canvas);
+  --ion-color-danger-contrast-rgb: 250, 249, 246;
+  --ion-color-danger-shade: #ae2323;
+  --ion-color-danger-tint: #cb3d3d;
+
+  /* 30% Structure — Charcoal text. */
+  --ion-color-dark: var(--adams-text-primary);
+  --ion-color-dark-rgb: 43, 43, 40;
+  --ion-color-dark-contrast: var(--adams-canvas);
+  --ion-color-dark-contrast-rgb: 250, 249, 246;
+  --ion-color-dark-shade: #262623;
+  --ion-color-dark-tint: #40403d;
+
+  /* 30% Structure — muted meta text. */
+  --ion-color-medium: var(--adams-text-muted);
+  --ion-color-medium-rgb: 117, 117, 112;
+  --ion-color-medium-contrast: var(--adams-canvas);
+  --ion-color-medium-contrast-rgb: 250, 249, 246;
+  --ion-color-medium-shade: #676763;
+  --ion-color-medium-tint: #83837e;
+
+  /* 60% Canvas — Light Sand (cards / panels). Never pure white. */
+  --ion-color-light: var(--adams-canvas-panel);
+  --ion-color-light-rgb: 239, 235, 227;
+  --ion-color-light-contrast: var(--adams-text-primary);
+  --ion-color-light-contrast-rgb: 43, 43, 40;
+  --ion-color-light-shade: #d2cec8;
+  --ion-color-light-tint: #f1eee8;
+
+  /* 10% Accent — ISU Gold CTA. Custom Ionic color: color="gold".
+     Charcoal-on-gold ~7.2:1; white-on-gold ~2.0:1 (fails AA). */
+  --ion-color-gold: var(--adams-accent-gold);
+  --ion-color-gold-rgb: 249, 168, 37;
+  --ion-color-gold-contrast: var(--adams-text-primary);
+  --ion-color-gold-contrast-rgb: 43, 43, 40;
+  --ion-color-gold-shade: var(--adams-accent-gold-hover);
+  --ion-color-gold-tint: #fab03b;
+
+  /* 60% Canvas — page / content surfaces */
+  --ion-background-color: var(--adams-canvas);
+  --ion-background-color-rgb: 250, 249, 246;
+  --ion-text-color: var(--adams-text-primary);
+  --ion-text-color-rgb: 43, 43, 40;
+  --ion-border-color: var(--adams-gridline);
+  --ion-item-background: var(--adams-canvas);
+  --ion-item-color: var(--adams-text-primary);
+  --ion-card-background: var(--adams-canvas-panel);
+  --ion-card-color: var(--adams-text-primary);
+
+  /* 30% Structure — Ionic top nav */
+  --ion-toolbar-background: var(--adams-structure-primary);
+  --ion-toolbar-color: var(--adams-canvas);
+  --ion-toolbar-border-color: var(--adams-structure-secondary);
+}
+
+/* Custom color class required for <ion-button color="gold"> */
+.ion-color-gold {
+  --ion-color-base: var(--ion-color-gold);
+  --ion-color-base-rgb: var(--ion-color-gold-rgb);
+  --ion-color-contrast: var(--ion-color-gold-contrast);
+  --ion-color-contrast-rgb: var(--ion-color-gold-contrast-rgb);
+  --ion-color-shade: var(--ion-color-gold-shade);
+  --ion-color-tint: var(--ion-color-gold-tint);
+}
+
+/* 30% Structure — Deep Brown footer (not Forest Green; footer is secondary). */
+ion-footer ion-toolbar {
+  --background: var(--adams-structure-secondary);
+  --color: var(--adams-canvas);
+  --border-color: var(--adams-structure-secondary);
+}
+
+/* 30% Structure — Ionic side menu inherits Forest Green chrome. */
+ion-menu {
+  --ion-background-color: var(--adams-structure-primary);
+  --ion-text-color: var(--adams-canvas);
+  --ion-toolbar-background: var(--adams-structure-primary);
+  --ion-toolbar-color: var(--adams-canvas);
+  --ion-item-background: var(--adams-structure-primary);
+  --ion-item-color: var(--adams-canvas);
+  --ion-item-border-color: rgba(250, 249, 246, 0.16);
+}

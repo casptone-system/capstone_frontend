@@ -8,7 +8,7 @@
       @click="togglePanel"
     >
       <ion-icon :icon="notificationsOutline" class="bell-icon" />
-      <span v-if="badgeCount > 0" class="badge">
+      <span v-if="badgeCount > 0" class="badge" :class="{ 'is-urgent': hasUrgentUnread }">
         {{ badgeCount > 99 ? '99+' : badgeCount }}
       </span>
     </button>
@@ -40,7 +40,7 @@
             v-for="item in items"
             :key="item.id"
             class="notification-item"
-            :class="{ unread: !item.read }"
+            :class="{ unread: !item.read, urgent: isUrgentItem(item) }"
           >
             <button class="notification-content" type="button" @click="openItem(item)">
               <h4>{{ item.title }}</h4>
@@ -128,6 +128,15 @@ const availableFaculty = ref<any[]>([])
 const badgeCount = computed(() => store.unreadCount)
 const items = computed(() => store.items)
 const loading = computed(() => store.isLoading)
+
+const isUrgentItem = (item: InboxItem) => {
+  const hay = `${item.type} ${item.title} ${item.message} ${item.status || ''}`.toLowerCase()
+  return /overdue|rejected|revision/.test(hay)
+}
+
+const hasUrgentUnread = computed(() =>
+  items.value.some((item) => !item.read && isUrgentItem(item)),
+)
 
 let pollingInterval: ReturnType<typeof setInterval> | null = null
 
@@ -264,8 +273,8 @@ onBeforeUnmount(() => {
 }
 
 .bell-button:hover {
-  background: #fff;
-  box-shadow: var(--shadow-sm, 0 1px 2px rgba(15, 23, 42, 0.08));
+  background: var(--adams-canvas);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(43, 43, 40, 0.08));
 }
 
 .bell-icon {
@@ -280,14 +289,18 @@ onBeforeUnmount(() => {
   min-width: 18px;
   height: 18px;
   padding: 0 4px;
-  background: #ef4444;
-  color: white;
+  background: var(--adams-accent-info);
+  color: var(--adams-canvas);
   border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 11px;
   font-weight: 800;
+}
+
+.badge.is-urgent {
+  background: var(--adams-accent-urgent);
 }
 
 .notification-overlay {
@@ -308,7 +321,7 @@ onBeforeUnmount(() => {
   background: var(--adams-surface, #fff);
   border: 1px solid var(--adams-border, #e5e7eb);
   border-radius: 0.9rem;
-  box-shadow: var(--shadow-lg, 0 18px 40px rgba(15, 23, 42, 0.16));
+  box-shadow: var(--shadow-lg, 0 18px 40px rgba(43, 43, 40, 0.16));
 }
 
 @media (max-width: 480px) {
@@ -385,12 +398,17 @@ onBeforeUnmount(() => {
   margin-bottom: 8px;
   border: 1px solid var(--adams-border, #e5e7eb);
   border-radius: 8px;
-  background: #f8fafc;
+  background: var(--adams-canvas);
 }
 
 .notification-item.unread {
-  border-left: 4px solid var(--adams-primary, #16a34a);
-  background: #f0fdf4;
+  border-left: 4px solid var(--adams-accent-info);
+  background: var(--adams-info-soft);
+}
+
+.notification-item.unread.urgent {
+  border-left-color: var(--adams-accent-urgent);
+  background: var(--adams-danger-soft);
 }
 
 .notification-content {
@@ -414,7 +432,7 @@ onBeforeUnmount(() => {
 .description {
   margin: 0 0 6px;
   font-size: 13px;
-  color: #64748b;
+  color: var(--adams-text-muted);
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -440,28 +458,28 @@ onBeforeUnmount(() => {
 }
 
 .type-badge {
-  background: #dbeafe;
-  color: #1e40af;
+  background: var(--adams-info-soft);
+  color: var(--adams-accent-info);
 }
 
 .welcome-badge {
-  background: #dcfce7;
-  color: #166534;
+  background: var(--adams-success-soft);
+  color: var(--adams-accent-success);
 }
 
 .files-badge {
-  background: #fef3c7;
-  color: #b45309;
+  background: var(--adams-warning-soft);
+  color: var(--adams-text-primary);
 }
 
 .time {
-  color: #94a3b8;
+  color: var(--adams-text-muted);
 }
 
 .notification-files {
   margin-top: 8px;
   padding-top: 8px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--adams-gridline);
 }
 
 .files-label {
@@ -477,8 +495,8 @@ onBeforeUnmount(() => {
   gap: 6px;
   padding: 6px;
   margin-bottom: 4px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--adams-canvas);
+  border: 1px solid var(--adams-gridline);
   border-radius: 4px;
   font-size: 12px;
 }
@@ -503,21 +521,21 @@ onBeforeUnmount(() => {
 .btn-mark-viewed,
 .btn-dismiss {
   padding: 5px 8px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--adams-border-strong);
   border-radius: 4px;
-  background: white;
+  background: var(--adams-canvas);
   font-size: 12px;
   cursor: pointer;
 }
 
 .btn-mark-viewed {
-  background: var(--adams-primary, #16a34a);
-  color: white;
-  border-color: var(--adams-primary, #16a34a);
+  background: transparent;
+  color: var(--adams-structure-primary);
+  border-color: var(--adams-structure-primary);
 }
 
 .btn-dismiss {
-  background: #f3f4f6;
-  color: #6b7280;
+  background: transparent;
+  color: var(--adams-text-muted);
 }
 </style>

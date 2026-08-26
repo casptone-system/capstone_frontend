@@ -316,7 +316,7 @@ onMounted(async () => {
   margin: 8px 0 0;
   font-size: 28px;
   font-weight: 700;
-  color: #1a237e;
+  color: var(--adams-structure-primary);
 }
 
 .vpaa-btn {
@@ -334,7 +334,7 @@ onMounted(async () => {
 }
 
 .vpaa-btn.primary {
-  background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+  background: linear-gradient(135deg, var(--adams-structure-primary) 0%, var(--adams-structure-primary) 100%);
   color: white;
 }
 
@@ -391,7 +391,7 @@ onMounted(async () => {
 .vpaa-filter-select:focus,
 .vpaa-filter-input:focus {
   outline: none;
-  border-color: #1a237e;
+  border-color: var(--adams-structure-primary);
   box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.1);
 }
 
@@ -409,7 +409,7 @@ onMounted(async () => {
 }
 
 .vpaa-error {
-  color: #d32f2f;
+  color: var(--adams-accent-urgent);
 }
 
 .vpaa-accreditations-grid {
@@ -466,7 +466,7 @@ onMounted(async () => {
 
 .vpaa-card-badge.level-iii {
   background: #e8eaf6;
-  color: #283593;
+  color: var(--adams-structure-primary);
 }
 
 .vpaa-card-body {
@@ -557,7 +557,7 @@ onMounted(async () => {
 
 .vpaa-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #42a5f5 0%, #2196f3 100%);
+  background: var(--adams-accent-pending);
   transition: width 0.3s ease;
 }
 
@@ -618,14 +618,14 @@ onMounted(async () => {
 }
 
 .vpaa-page-btn:hover {
-  border-color: #1a237e;
-  color: #1a237e;
+  border-color: var(--adams-structure-primary);
+  color: var(--adams-structure-primary);
 }
 
 .vpaa-page-btn.active {
-  background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+  background: linear-gradient(135deg, var(--adams-structure-primary) 0%, var(--adams-structure-primary) 100%);
   color: white;
-  border-color: #1a237e;
+  border-color: var(--adams-structure-primary);
 }
 
 @media (max-width: 1024px) {

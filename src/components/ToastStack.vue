@@ -17,12 +17,48 @@ const dismiss = (id: string) => store.dismiss(id)
 </script>
 
 <style scoped>
-.toast-stack { position: fixed; right: 1rem; bottom: 1rem; display:flex; flex-direction:column; gap:0.5rem; z-index:9999 }
-.toast { min-width: 220px; padding: 0.6rem 0.8rem; border-radius: 8px; color: #fff; box-shadow: 0 6px 20px rgba(2,6,23,0.12); display:flex; align-items:center; justify-content:space-between; gap:0.5rem }
-.toast-message { flex:1; margin-right:0.5rem; font-size:0.95rem }
-.toast-close { background: transparent; border: none; color: rgba(255,255,255,0.9); cursor: pointer }
-.toast-info { background: var(--adams-info) }
-.toast-success { background: var(--adams-success) }
-.toast-error { background: var(--adams-danger) }
-.toast-warning { background: var(--adams-warning) }
+.toast-stack {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 9999;
+}
+
+.toast {
+  min-width: 220px;
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  color: var(--adams-canvas);
+  box-shadow: 0 6px 20px rgba(43, 43, 40, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.toast-message {
+  flex: 1;
+  margin-right: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.toast-close {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+/* 10% Accent — one status color per toast */
+.toast-info { background: var(--adams-accent-info); }
+.toast-success { background: var(--adams-accent-success); }
+.toast-error { background: var(--adams-accent-urgent); }
+.toast-warning {
+  background: var(--adams-accent-pending);
+  color: var(--adams-text-primary);
+}
 </style>

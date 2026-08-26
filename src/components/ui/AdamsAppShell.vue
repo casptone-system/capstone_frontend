@@ -1,6 +1,6 @@
 <template>
   <ion-page class="adams-page">
-    <ion-content :fullscreen="true" class="adams-content">
+    <ion-content :fullscreen="true" :scroll-y="false" class="adams-content">
       <div class="adams-app">
         <button
           v-if="mobileOpen"
@@ -222,12 +222,22 @@ export default {
 .adams-page,
 .adams-content {
   --background: var(--adams-bg);
+  --overflow: hidden;
   background: var(--adams-bg);
+  height: 100%;
+}
+
+.adams-content::part(scroll) {
+  height: 100%;
+  overflow: hidden;
 }
 
 .adams-app {
-  min-height: 100%;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
   display: flex;
+  overflow: hidden;
   background: var(--adams-bg);
   color: var(--adams-ink);
   font-family: var(--font-body);
@@ -236,14 +246,17 @@ export default {
 .adams-sidebar {
   width: var(--adams-sidebar-width);
   min-width: var(--adams-sidebar-width);
-  min-height: 100vh;
+  height: 100%;
+  max-height: 100%;
   display: flex;
   flex-direction: column;
-  position: sticky;
-  top: 0;
+  flex-shrink: 0;
+  position: relative;
   z-index: 100;
-  background: var(--adams-surface);
-  box-shadow: 8px 0 24px rgba(15, 23, 42, 0.03);
+  overflow: hidden;
+  background: var(--adams-canvas-panel);
+  color: var(--adams-text-primary);
+  border-right: 1px solid var(--adams-gridline);
 }
 
 .adams-brand {
@@ -263,8 +276,8 @@ export default {
 }
 
 .adams-brand-lockup :deep(.app-brand-logo) {
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
-  background: #050505;
+  box-shadow: 0 6px 16px rgba(43, 43, 40, 0.18);
+  background: var(--adams-structure-secondary);
 }
 
 .adams-brand-copy {
@@ -274,7 +287,7 @@ export default {
 }
 
 .adams-brand-name {
-  color: var(--adams-ink);
+  color: var(--adams-text-primary);
   font-size: 0.94rem;
   font-weight: 800;
   letter-spacing: 0.18em;
@@ -288,12 +301,12 @@ export default {
   height: 2px;
   margin-top: 0.22rem;
   border-radius: 999px;
-  background: var(--adams-primary);
+  background: var(--adams-structure-primary);
 }
 
 .adams-brand-role {
   margin-top: 0.18rem;
-  color: var(--adams-primary);
+  color: var(--adams-structure-primary);
   font-size: 0.64rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -305,28 +318,33 @@ export default {
 
 .adams-sidebar-scroll {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 0.85rem 0.7rem;
 }
 
 .adams-sidebar-footer {
   padding: 0.7rem;
+  border-top: 1px solid var(--adams-gridline);
+  background: transparent;
 }
 
 .adams-logout {
-  color: var(--adams-muted);
+  color: var(--adams-text-muted);
 }
 
 .adams-main {
   min-width: 0;
+  min-height: 0;
   flex: 1;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .adams-topbar {
-  position: sticky;
-  top: 0;
+  position: relative;
+  flex-shrink: 0;
   z-index: 80;
   min-height: var(--adams-topbar-height);
   display: flex;
@@ -421,7 +439,7 @@ export default {
 }
 
 .adams-profile-chip:hover {
-  background: #fff;
+  background: var(--adams-canvas);
   box-shadow: var(--shadow-md);
 }
 
@@ -504,10 +522,12 @@ export default {
 .adams-page-content {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 1.15rem;
   padding: 0.75rem 1.5rem 1.75rem;
+  overflow-y: auto;
 }
 
 .adams-menu-button,
@@ -528,9 +548,11 @@ export default {
     left: 0;
     top: 0;
     bottom: 0;
+    height: 100%;
+    max-height: 100%;
     transform: translateX(-105%);
     transition: transform 0.2s ease;
-    box-shadow: 18px 0 50px rgba(15, 23, 42, 0.16);
+    box-shadow: 18px 0 50px rgba(43, 43, 40, 0.28);
   }
 
   .adams-sidebar.is-open {
@@ -543,7 +565,7 @@ export default {
     z-index: 90;
     display: block;
     border: 0;
-    background: rgba(15, 23, 42, 0.35);
+    background: rgba(43, 43, 40, 0.4);
     cursor: pointer;
   }
 
@@ -562,6 +584,9 @@ export default {
 
   .adams-mobile-close {
     margin-left: auto;
+    background: var(--adams-canvas);
+    border-color: var(--adams-gridline);
+    color: var(--adams-text-primary);
   }
 
   .adams-page-content {

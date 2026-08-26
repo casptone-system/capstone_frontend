@@ -311,7 +311,7 @@
                           <div class="dean-prog-bar-track">
                             <div
                               class="dean-prog-bar-fill"
-                              :style="{ width: (selectedProgram.pct ?? selectedProgram.complianceScore ?? 0) + '%', background: selectedProgram.color ?? '#2563eb' }"
+                              :style="{ width: (selectedProgram.pct ?? selectedProgram.complianceScore ?? 0) + '%', background: progressFill(selectedProgram.pct ?? selectedProgram.complianceScore) }"
                             ></div>
                           </div>
                         </div>
@@ -470,7 +470,7 @@
                           <div class="dean-prog-bar-track">
                             <div
                               class="dean-prog-bar-fill"
-                              :style="{ width: (prog.pct ?? prog.complianceScore ?? 0) + '%', background: prog.color ?? '#2563eb' }"
+                              :style="{ width: (prog.pct ?? prog.complianceScore ?? 0) + '%', background: progressFill(prog.pct ?? prog.complianceScore) }"
                             ></div>
                           </div>
                         </div>
@@ -666,9 +666,9 @@
                       </div>
                       <div class="dean-prog-bar-wrap">
                         <div class="dean-prog-bar-track">
-                          <div class="dean-prog-bar-fill" :style="{ width: (prog.pct ?? prog.complianceScore ?? 0) + '%', background: prog.color ?? '#2563eb' }"></div>
+                          <div class="dean-prog-bar-fill" :style="{ width: (prog.pct ?? prog.complianceScore ?? 0) + '%', background: progressFill(prog.pct ?? prog.complianceScore) }"></div>
                         </div>
-                        <span class="dean-prog-pct" :style="{ color: prog.color ?? '#2563eb' }">{{ prog.pct ?? prog.complianceScore ?? 0 }}%</span>
+                        <span class="dean-prog-pct" :style="{ color: prog.color ?? 'var(--adams-text-primary)' }">{{ prog.pct ?? prog.complianceScore ?? 0 }}%</span>
                       </div>
                       <span :class="['dean-prog-status', prog.statusClass]">{{ prog.status ?? 'Pending' }}</span>
                     </div>
@@ -1004,10 +1004,10 @@ const collegeProfileSummary = computed(() => [
   { label: 'Dean Oversight', value: `${deanWorkflowStats.value.documents} document${deanWorkflowStats.value.documents === 1 ? '' : 's'} pending review` },
 ])
 const collegeStats = computed(() => [
-  { label: 'Programs', value: String(deanWorkflowStats.value.programs), icon: schoolOutline, color: '#0f766e', bg: '#ccfbf1' },
-  { label: 'Areas', value: String(Math.max(1, Math.min(12, deanWorkflowStats.value.programs + 4))), icon: analyticsOutline, color: '#2563eb', bg: '#dbeafe' },
-  { label: 'Compliance', value: `${deanWorkflowStats.value.compliance}%`, icon: checkmarkDoneOutline, color: '#7c3aed', bg: '#ede9fe' },
-  { label: 'Pending Docs', value: String(deanWorkflowStats.value.documents), icon: documentTextOutline, color: '#d97706', bg: '#fef3c7' },
+  { label: 'Programs', value: String(deanWorkflowStats.value.programs), icon: schoolOutline, color: 'var(--adams-structure-primary)', bg: 'var(--adams-primary-soft)' },
+  { label: 'Areas', value: String(Math.max(1, Math.min(12, deanWorkflowStats.value.programs + 4))), icon: analyticsOutline, color: 'var(--adams-text-primary)', bg: 'var(--adams-canvas)' },
+  { label: 'Compliance', value: `${deanWorkflowStats.value.compliance}%`, icon: checkmarkDoneOutline, color: deanWorkflowStats.value.compliance >= 80 ? 'var(--adams-accent-success)' : 'var(--adams-accent-pending)', bg: deanWorkflowStats.value.compliance >= 80 ? 'var(--adams-success-soft)' : 'var(--adams-warning-soft)' },
+  { label: 'Pending Docs', value: String(deanWorkflowStats.value.documents), icon: documentTextOutline, color: 'var(--adams-accent-pending)', bg: 'var(--adams-warning-soft)' },
 ])
 const deanIssues = computed(() => {
   const programsNeedingAttention = programs.value.filter((program) => Number(program.pct ?? program.complianceScore ?? 0) < 70)
@@ -1017,7 +1017,7 @@ const deanIssues = computed(() => {
     detail: document.program ? `${document.program} submission requires dean review.` : 'Submission requires dean review.',
     assignee: document.submittedBy || 'Faculty member',
     deadline: 'Awaiting action',
-    color: '#ef4444',
+    color: '#C62828',
   }))
 
   const issueList = [
@@ -1027,13 +1027,13 @@ const deanIssues = computed(() => {
       detail: `Current compliance is ${program.pct ?? program.complianceScore ?? 0}%. Action required to improve compliance readiness.`,
       assignee: program.chair || 'Program chair',
       deadline: 'Due soon',
-      color: program.pct >= 40 ? '#d97706' : '#2563eb',
+      color: program.pct >= 40 ? '#FBC02D' : '#C62828',
     })),
     ...documentIssues,
   ]
 
   return issueList.length ? issueList : [
-    { id: 'default-issue', title: 'No active dean action required', detail: 'All monitored programs and documents are currently within acceptable review thresholds.', assignee: 'Dean office', deadline: 'On track', color: '#16a34a' },
+    { id: 'default-issue', title: 'No active dean action required', detail: 'All monitored programs and documents are currently within acceptable review thresholds.', assignee: 'Dean office', deadline: 'On track', color: '#2E7D32' },
   ]
 })
 const activityFeed = computed(() => [
@@ -1511,6 +1511,11 @@ const selectSection = (section: string) => {
 }
 const isSectionActive = (section: string) => selectedSection.value === section
 
+const progressFill = (pct: number | string | undefined) => {
+  const value = Number(pct) || 0
+  return value >= 100 ? 'var(--adams-accent-success)' : 'var(--adams-accent-pending)'
+}
+
 watch(
   () => route.query.section,
   (section) => {
@@ -1666,15 +1671,15 @@ const loadDashboard = async () => {
       label: item.label,
       value: item.value,
       icon: statIcons[item.type] || barChartOutline,
-      color: item.type === 'compliance' ? '#0f766e' : item.type === 'pending' ? '#7c3aed' : '#2563eb',
-      bg: item.type === 'compliance' ? '#ccfbf1' : item.type === 'pending' ? '#ede9fe' : '#dbeafe',
+      color: item.type === 'compliance' ? 'var(--adams-accent-success)' : item.type === 'pending' ? 'var(--adams-accent-pending)' : 'var(--adams-structure-primary)',
+      bg: item.type === 'compliance' ? 'var(--adams-success-soft)' : item.type === 'pending' ? 'var(--adams-warning-soft)' : 'var(--adams-primary-soft)',
     }))
 
     programs.value = (payload.programs || []).map((program: any) => {
       const pct = Number(program.complianceScore || 0)
       const status = pct >= 80 ? 'On Track' : pct >= 60 ? 'In Progress' : pct >= 40 ? 'Needs Attention' : 'At Risk'
       const statusClass = pct >= 80 ? 'on-track' : pct >= 60 ? 'in-progress' : pct >= 40 ? 'needs-attention' : 'at-risk'
-      const color = pct >= 80 ? '#16a34a' : pct >= 60 ? '#2563eb' : pct >= 40 ? '#d97706' : '#dc2626'
+      const color = pct >= 80 ? '#2E7D32' : pct >= 40 ? '#FBC02D' : '#C62828'
       const accreditationLevel = program.accreditationLevel || program.level || 'Not Set'
 
       return {
@@ -1707,7 +1712,7 @@ const loadDashboard = async () => {
       msg: alert.message || alert.body || alert.title || 'Dean alert',
       time: alert.createdAt || alert.created_at || 'Recently',
       icon: alert.type === 'warning' ? alertCircleOutline : notificationsOutline,
-      color: alert.type === 'warning' ? '#d97706' : '#2563eb',
+      color: alert.type === 'warning' ? '#FBC02D' : '#1565C0',
       urgency: alert.type === 'warning' ? 'warning' : 'info',
     }))
 
@@ -1717,14 +1722,14 @@ const loadDashboard = async () => {
         msg: `${program.name} is below the compliance threshold.`,
         time: 'Action required',
         icon: alarmOutline,
-        color: '#dc2626',
+        color: '#C62828',
         urgency: 'urgent',
       }))),
       ...(documents.value.length ? [{
         msg: `${documents.value.length} document${documents.value.length > 1 ? 's' : ''} awaiting Dean review.`,
         time: 'Pending review',
         icon: documentTextOutline,
-        color: '#2563eb',
+        color: '#FBC02D',
         urgency: 'warning',
       }] : []),
     ]
@@ -1804,8 +1809,8 @@ const handleProgramCreated = async () => {
   width: 100%;
   height: 100vh;
   min-height: 100vh;
-  background: #e3e5e4;
-  color: #0f172a;
+  background: var(--adams-canvas);
+  color: var(--adams-text-primary);
   font-family: 'Inter', system-ui, sans-serif;
   overflow: hidden;
   position: relative;
@@ -1825,11 +1830,11 @@ const handleProgramCreated = async () => {
 }
 
 .dean-readiness-overview {
-  background: linear-gradient(135deg, rgba(15, 118, 110, 0.08), rgba(59, 130, 246, 0.04));
-  border: 1px solid rgba(15, 118, 110, 0.12);
+  background: var(--adams-canvas-panel);
+  border: 1px solid var(--adams-gridline);
   border-radius: 1rem;
   padding: 1rem 1.15rem;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+  box-shadow: var(--adams-shadow);
 }
 
 .dean-readiness-header {
@@ -1844,14 +1849,14 @@ const handleProgramCreated = async () => {
   font-size: 0.7rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #0f766e;
+  color: var(--adams-structure-primary);
   font-weight: 700;
 }
 
 .dean-readiness-header h2 {
   margin: 0;
   font-size: clamp(1.4rem, 2vw, 2rem);
-  color: #0f172a;
+  color: var(--adams-text-primary);
   letter-spacing: -0.04em;
 }
 
@@ -1863,7 +1868,7 @@ const handleProgramCreated = async () => {
   padding: 0.55rem 0.8rem;
   border-radius: 999px;
   background: rgba(15, 118, 110, 0.08);
-  color: #0f766e;
+  color: var(--adams-structure-primary);
   font-size: 1.2rem;
   font-weight: 800;
 }
@@ -1872,7 +1877,7 @@ const handleProgramCreated = async () => {
   margin-top: 1rem;
   height: 12px;
   border-radius: 999px;
-  background: rgba(148, 163, 184, 0.2);
+  background: var(--adams-gridline);
   overflow: hidden;
 }
 
@@ -1880,7 +1885,7 @@ const handleProgramCreated = async () => {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #0f766e 0%, #34d399 100%);
+  background: var(--adams-accent-pending);
 }
 
 .dean-readiness-metrics {
@@ -1904,26 +1909,26 @@ const handleProgramCreated = async () => {
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #64748b;
+  color: var(--adams-text-muted);
 }
 
 .dean-readiness-metric strong {
   font-size: 1.15rem;
-  color: #0f172a;
+  color: var(--adams-text-primary);
 }
 
 .dean-empty-state {
   margin: 1rem 0;
   padding: 1rem 1.25rem;
   border-radius: 0.9rem;
-  background: #fff;
-  color: #334155;
+  background: var(--adams-canvas-panel);
+  color: var(--adams-text-primary);
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
 }
 
 .dean-empty-state.error {
-  color: #b91c1c;
-  background: #fef2f2;
+  color: var(--adams-accent-urgent);
+  background: var(--adams-danger-soft);
 }
 
 .dean-sidebar {
@@ -1969,7 +1974,7 @@ const handleProgramCreated = async () => {
   text-align: left;
   padding: 0.66rem 0.8rem;
   border-radius: 0.7rem;
-  color: #1f2937;
+  color: var(--adams-text-primary);
   background: transparent;
   border: none;
   font-size: 0.85rem;
@@ -1979,7 +1984,7 @@ const handleProgramCreated = async () => {
   position: relative;
 }
 
-.dean-nav-item:hover { background: #eef4f6; color: #0f172a; }
+.dean-nav-item:hover { background: #eef4f6; color: var(--adams-text-primary); }
 .dean-nav-item.active {
   background: rgba(120, 221, 204, 0.24);
   color: #0d7a72;
@@ -2002,7 +2007,7 @@ const handleProgramCreated = async () => {
   font-size: 0.63rem;
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  color: #64748b;
+  color: var(--adams-text-muted);
   padding: 0.9rem 0.45rem 0.35rem;
   margin: 0;
   font-weight: 700;
@@ -2010,8 +2015,8 @@ const handleProgramCreated = async () => {
 
 .dean-nav-badge {
   margin-left: auto;
-  background: #ef4444;
-  color: #fff;
+  background: var(--adams-accent-urgent);
+  color: var(--adams-canvas-panel);
   font-size: 0.65rem;
   font-weight: 700;
   padding: 0.1rem 0.4rem;
@@ -2019,7 +2024,7 @@ const handleProgramCreated = async () => {
 }
 
 .dean-sidebar-footer {
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--adams-gridline);
   padding-top: 0.75rem;
   margin-top: 0.5rem;
 }
@@ -2030,8 +2035,8 @@ const handleProgramCreated = async () => {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: #0f766e;
-  color: #fff;
+  background: var(--adams-structure-primary);
+  color: var(--adams-canvas-panel);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2049,8 +2054,8 @@ const handleProgramCreated = async () => {
   object-fit: cover;
 }
 
-.dean-admin-name  { margin: 0; font-size: 0.8rem; color: #0f172a; font-weight: 600; }
-.dean-admin-role  { margin: 0; font-size: 0.68rem; color: #64748b; }
+.dean-admin-name  { margin: 0; font-size: 0.8rem; color: var(--adams-text-primary); font-weight: 600; }
+.dean-admin-role  { margin: 0; font-size: 0.68rem; color: var(--adams-text-muted); }
 
 .dean-main {
   flex: 1;
@@ -2073,7 +2078,7 @@ const handleProgramCreated = async () => {
 
 .dean-panel-description {
   margin: 0.5rem 0 0;
-  color: #64748b;
+  color: var(--adams-text-muted);
   max-width: 760px;
 }
 
@@ -2118,12 +2123,12 @@ const handleProgramCreated = async () => {
   border: 1px solid rgba(15, 23, 42, 0.04);
 }
 
-.dean-responsibility-icon.teal { background: #dffaf2; color: #0f766e; }
-.dean-responsibility-icon.blue { background: #e0edff; color: #2563eb; }
-.dean-responsibility-icon.amber { background: #fef2d7; color: #b45309; }
-.dean-responsibility-icon.violet { background: #efe8ff; color: #6d28d9; }
-.dean-responsibility-icon.rose { background: #ffe7ee; color: #be185d; }
-.dean-responsibility-icon.green { background: #e1f8e5; color: #15803d; }
+.dean-responsibility-icon.teal { background: var(--adams-primary-soft); color: var(--adams-structure-primary); }
+.dean-responsibility-icon.blue { background: var(--adams-info-soft); color: var(--adams-accent-info); }
+.dean-responsibility-icon.amber { background: var(--adams-warning-soft); color: var(--adams-text-primary); }
+.dean-responsibility-icon.violet { background: var(--adams-primary-soft); color: var(--adams-structure-primary); }
+.dean-responsibility-icon.rose { background: var(--adams-canvas); color: var(--adams-structure-secondary); }
+.dean-responsibility-icon.green { background: var(--adams-success-soft); color: var(--adams-accent-success); }
 
 .dean-responsibility-content {
   display: flex;
@@ -2136,13 +2141,13 @@ const handleProgramCreated = async () => {
   margin: 0;
   font-size: 0.95rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--adams-text-primary);
   line-height: 1.3;
 }
 
 .dean-responsibility-content p {
   margin: 0;
-  color: #64748b;
+  color: var(--adams-text-muted);
   font-size: 0.72rem;
   line-height: 1.45;
 }
@@ -2166,19 +2171,19 @@ const handleProgramCreated = async () => {
   font-size: 0.7rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #64748b;
+  color: var(--adams-text-muted);
   font-weight: 700;
 }
 
 .dean-program-folder-header h2 {
   margin: 0;
   font-size: 1.6rem;
-  color: #0f172a;
+  color: var(--adams-text-primary);
 }
 
 .dean-folder-count {
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: var(--adams-info-soft);
+  color: var(--adams-accent-info);
   border-radius: 999px;
   padding: 0.45rem 0.75rem;
   font-size: 0.75rem;
@@ -2199,7 +2204,7 @@ const handleProgramCreated = async () => {
 .dean-program-back-btn {
   border: 1px solid rgba(148, 163, 184, 0.3);
   background: rgba(255, 255, 255, 0.8);
-  color: #1e293b;
+  color: var(--adams-text-primary);
   border-radius: 0.75rem;
   padding: 0.6rem 0.9rem;
   font-weight: 700;
@@ -2248,8 +2253,8 @@ const handleProgramCreated = async () => {
   border-radius: 0.9rem;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
-  color: #1d4ed8;
+  background: linear-gradient(135deg, var(--adams-info-soft), var(--adams-info-soft));
+  color: var(--adams-accent-info);
   font-size: 1.2rem;
   font-weight: 800;
   letter-spacing: 0.04em;
@@ -2266,7 +2271,7 @@ const handleProgramCreated = async () => {
 .dean-folder-button {
   border: none;
   background: transparent;
-  color: #2563eb;
+  color: var(--adams-accent-info);
   font-weight: 700;
   cursor: pointer;
   padding: 0;
@@ -2288,12 +2293,12 @@ const handleProgramCreated = async () => {
 .dean-folder-title-row h3 {
   margin: 0;
   font-size: 1.15rem;
-  color: #0f172a;
+  color: var(--adams-text-primary);
 }
 
 .dean-folder-code {
   margin: 0;
-  color: #1d4ed8;
+  color: var(--adams-accent-info);
   font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -2322,12 +2327,12 @@ const handleProgramCreated = async () => {
 
 .dean-folder-metrics small {
   display: block;
-  color: #64748b;
+  color: var(--adams-text-muted);
   margin-bottom: 0.2rem;
 }
 
 .dean-folder-metrics strong {
-  color: #0f172a;
+  color: var(--adams-text-primary);
   font-size: 1rem;
 }
 
@@ -2362,14 +2367,14 @@ const handleProgramCreated = async () => {
   font-size: 0.68rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #64748b;
+  color: var(--adams-text-muted);
   font-weight: 700;
 }
 
 .dean-program-panel-header h4 {
   margin: 0;
   font-size: 1.08rem;
-  color: #0f172a;
+  color: var(--adams-text-primary);
 }
 
 .dean-program-panel-body {
@@ -2396,7 +2401,7 @@ const handleProgramCreated = async () => {
 }
 
 .dean-program-share-copy span {
-  color: #64748b;
+  color: var(--adams-text-muted);
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -2404,7 +2409,7 @@ const handleProgramCreated = async () => {
 }
 
 .dean-program-share-copy strong {
-  color: #0f172a;
+  color: var(--adams-text-primary);
   font-size: 1rem;
   font-weight: 800;
 }
@@ -2412,7 +2417,7 @@ const handleProgramCreated = async () => {
 .dean-program-copy-btn {
   border: 1px solid rgba(37, 99, 235, 0.18);
   background: rgba(37, 99, 235, 0.08);
-  color: #1d4ed8;
+  color: var(--adams-accent-info);
   border-radius: 0.75rem;
   padding: 0.55rem 0.8rem;
   font-weight: 700;
@@ -2433,7 +2438,7 @@ const handleProgramCreated = async () => {
 }
 
 .dean-inline-field span {
-  color: #475569;
+  color: var(--adams-text-muted);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -2445,8 +2450,8 @@ const handleProgramCreated = async () => {
   width: 100%;
   border: 1px solid rgba(148, 163, 184, 0.3);
   border-radius: 0.75rem;
-  background: #ffffff;
-  color: #0f172a;
+  background: var(--adams-canvas-panel);
+  color: var(--adams-text-primary);
   padding: 0.7rem 0.8rem;
   font-size: 0.9rem;
   outline: none;
@@ -2462,8 +2467,8 @@ const handleProgramCreated = async () => {
 .dean-primary-btn {
   border: none;
   border-radius: 0.8rem;
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  color: #fff;
+  background: linear-gradient(135deg, var(--adams-accent-info), var(--adams-accent-info));
+  color: var(--adams-canvas-panel);
   font-weight: 700;
   padding: 0.72rem 1rem;
   min-height: 44px;
@@ -2488,7 +2493,7 @@ const handleProgramCreated = async () => {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #64748b;
+  color: var(--adams-text-muted);
 }
 
 .dean-program-faculty-list {
@@ -2503,7 +2508,7 @@ const handleProgramCreated = async () => {
   padding: 0.34rem 0.7rem;
   border-radius: 999px;
   background: rgba(37, 99, 235, 0.08);
-  color: #1d4ed8;
+  color: var(--adams-accent-info);
   border: 1px solid rgba(37, 99, 235, 0.15);
   font-size: 0.76rem;
   font-weight: 600;
@@ -2520,7 +2525,7 @@ const handleProgramCreated = async () => {
   font-size: 0.68rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #64748b;
+  color: var(--adams-text-muted);
   font-weight: 700;
 }
 
@@ -2531,7 +2536,7 @@ const handleProgramCreated = async () => {
   padding: 0.35rem 0.7rem;
   border-radius: 999px;
   background: rgba(14, 165, 233, 0.08);
-  color: #0f766e;
+  color: var(--adams-structure-primary);
   border: 1px solid rgba(14, 165, 233, 0.2);
   font-size: 0.76rem;
   font-weight: 600;
@@ -2549,7 +2554,7 @@ const handleProgramCreated = async () => {
 }
 
 .dean-program-approval-row span {
-  color: #334155;
+  color: var(--adams-text-primary);
   font-size: 0.82rem;
   font-weight: 600;
 }
@@ -2600,8 +2605,8 @@ const handleProgramCreated = async () => {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
-  color: #1d4ed8;
+  background: linear-gradient(135deg, var(--adams-info-soft), var(--adams-info-soft));
+  color: var(--adams-accent-info);
   font-weight: 700;
   font-size: 0.7rem;
 }
@@ -2621,7 +2626,7 @@ const handleProgramCreated = async () => {
 }
 
 .dean-program-member-copy strong {
-  color: #0f172a;
+  color: var(--adams-text-primary);
   font-size: 0.85rem;
 }
 
@@ -2631,7 +2636,7 @@ const handleProgramCreated = async () => {
   padding: 0.2rem 0.5rem;
   border-radius: 999px;
   background: rgba(16, 185, 129, 0.12);
-  color: #047857;
+  color: var(--adams-accent-success);
   font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -2639,7 +2644,7 @@ const handleProgramCreated = async () => {
 }
 
 .dean-program-member-copy small {
-  color: #64748b;
+  color: var(--adams-text-muted);
   font-size: 0.72rem;
 }
 
@@ -2647,7 +2652,7 @@ const handleProgramCreated = async () => {
   border: none;
   border-radius: 0.7rem;
   background: rgba(239, 68, 68, 0.08);
-  color: #b91c1c;
+  color: var(--adams-accent-urgent);
   font-weight: 700;
   padding: 0.5rem 0.7rem;
   cursor: pointer;
@@ -2662,19 +2667,19 @@ const handleProgramCreated = async () => {
   padding: 0.8rem 0.9rem;
   border-radius: 0.8rem;
   background: rgba(248, 250, 252, 0.8);
-  color: #475569;
+  color: var(--adams-text-muted);
   font-size: 0.82rem;
 }
 
 .dean-program-panel-empty.error {
-  color: #b91c1c;
+  color: var(--adams-accent-urgent);
   background: rgba(254, 226, 226, 0.6);
 }
 
 .dean-empty-faculty-list {
   margin: 0;
   font-size: 0.8rem;
-  color: #64748b;
+  color: var(--adams-text-muted);
 }
 
 .dean-summary-list,
@@ -2688,23 +2693,23 @@ const handleProgramCreated = async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #f8fafc;
+  background: var(--adams-canvas);
   padding: 0.95rem 1rem;
   border-radius: 0.9rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--adams-gridline);
 }
 
 .dean-summary-row p,
 .dean-report-row p {
   margin: 0;
-  color: #334155;
+  color: var(--adams-text-primary);
   font-size: 0.82rem;
   font-weight: 600;
 }
 
 .dean-summary-row span,
 .dean-report-row span {
-  color: #0f172a;
+  color: var(--adams-text-primary);
   font-size: 0.8rem;
   font-weight: 700;
 }
@@ -2728,7 +2733,7 @@ const handleProgramCreated = async () => {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   font-weight: 700;
-  color: #0f766e;
+  color: var(--adams-structure-primary);
 }
 
 .dean-profile-header-copy h2 {
@@ -2736,7 +2741,7 @@ const handleProgramCreated = async () => {
   font-size: clamp(1.6rem, 2vw, 2.2rem);
   line-height: 1.1;
   letter-spacing: -0.04em;
-  color: #0f172a;
+  color: var(--adams-text-primary);
 }
 
 .dean-topbar {
@@ -2762,7 +2767,7 @@ const handleProgramCreated = async () => {
 .dean-breadcrumb {
   margin: 0;
   font-size: 0.74rem;
-  color: #64748b;
+  color: var(--adams-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.12em;
   white-space: nowrap;
@@ -2776,7 +2781,7 @@ const handleProgramCreated = async () => {
   font-size: clamp(2.3rem, 2.8vw, 3.4rem);
   line-height: 1;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--adams-text-primary);
   letter-spacing: -0.05em;
   white-space: nowrap;
   overflow: hidden;
@@ -2807,7 +2812,7 @@ const handleProgramCreated = async () => {
 }
 
 .dean-search-icon {
-  color: #64748b;
+  color: var(--adams-text-muted);
   font-size: 1rem;
 }
 
@@ -2817,12 +2822,12 @@ const handleProgramCreated = async () => {
   border: none;
   background: transparent;
   font-size: 0.96rem;
-  color: #0f172a;
+  color: var(--adams-text-primary);
   outline: none;
 }
 
 .dean-search-input::placeholder {
-  color: #94a3b8;
+  color: var(--adams-text-muted);
 }
 
 .dean-icon-circle {
@@ -2834,7 +2839,7 @@ const handleProgramCreated = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #334155;
+  color: var(--adams-text-primary);
   cursor: pointer;
 }
 
@@ -2842,8 +2847,8 @@ const handleProgramCreated = async () => {
   display: flex;
   align-items: center;
   gap: 0.7rem;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-  border: 1px solid #e2e8f0;
+  background: linear-gradient(180deg, var(--adams-canvas-panel) 0%, var(--adams-canvas) 100%);
+  border: 1px solid var(--adams-gridline);
   border-radius: 0.9rem;
   padding: 0.35rem 0.75rem 0.35rem 0.35rem;
   box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
@@ -2854,9 +2859,9 @@ const handleProgramCreated = async () => {
   align-items: center;
   gap: 0.7rem;
   padding: 0.45rem 0.55rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--adams-gridline);
   border-radius: 0.9rem;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  background: linear-gradient(180deg, var(--adams-canvas-panel) 0%, var(--adams-canvas) 100%);
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
 }
 
@@ -2867,14 +2872,14 @@ const handleProgramCreated = async () => {
 }
 
 .dean-profile-copy strong {
-  color: #0f172a;
+  color: var(--adams-text-primary);
   font-size: 0.82rem;
   line-height: 1.2;
 }
 
 .dean-profile-copy span {
   margin-top: 0.08rem;
-  color: #64748b;
+  color: var(--adams-text-muted);
   font-size: 0.66rem;
 }
 
@@ -2910,12 +2915,12 @@ const handleProgramCreated = async () => {
 
 .dean-user-meta strong {
   font-size: 0.82rem;
-  color: #0f172a;
+  color: var(--adams-text-primary);
 }
 
 .dean-user-meta small {
   font-size: 0.66rem;
-  color: #64748b;
+  color: var(--adams-text-muted);
 }
 
 .dean-icon-btn {
@@ -2923,13 +2928,13 @@ const handleProgramCreated = async () => {
   width: 36px;
   height: 36px;
   border-radius: 0.5rem;
-  background: #fff;
-  border: 1px solid #e2e8f0;
+  background: var(--adams-canvas-panel);
+  border: 1px solid var(--adams-gridline);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: #475569;
+  color: var(--adams-text-muted);
   font-size: 1.1rem;
 }
 
@@ -2940,8 +2945,8 @@ const handleProgramCreated = async () => {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #ef4444;
-  color: #fff;
+  background: var(--adams-accent-urgent);
+  color: var(--adams-canvas-panel);
   font-size: 0.6rem;
   font-weight: 700;
   display: flex;
@@ -2965,12 +2970,12 @@ const handleProgramCreated = async () => {
 
 .dean-btn-primary {
   background: linear-gradient(180deg, #0f7f6d 0%, #0d756b 100%);
-  color: #fff;
+  color: var(--adams-canvas-panel);
   border-color: rgba(15, 118, 110, 0.25);
 }
 .dean-btn-primary:hover { background: linear-gradient(180deg, #0d736a 0%, #0b675d 100%); }
-.dean-btn-ghost   { background: #fff; color: #0f172a; border: 1px solid #dfe7eb; }
-.dean-btn-ghost:hover { background: #f8fafc; }
+.dean-btn-ghost   { background: var(--adams-canvas-panel); color: var(--adams-text-primary); border: 1px solid #dfe7eb; }
+.dean-btn-ghost:hover { background: var(--adams-canvas); }
 
 .dean-btn,
 .dean-nav-item,
@@ -2995,8 +3000,8 @@ const handleProgramCreated = async () => {
   display: flex;
   align-items: center;
   gap: 0.7rem;
-  background: #fff;
-  border: 1px solid #e2e8f0;
+  background: var(--adams-canvas-panel);
+  border: 1px solid var(--adams-gridline);
   border-radius: 0.75rem;
   padding: 0.85rem;
   box-shadow: 0 1px 4px rgba(15,23,42,0.04);
@@ -3013,8 +3018,8 @@ const handleProgramCreated = async () => {
   flex-shrink: 0;
 }
 
-.dean-stat-value { margin: 0; font-size: 1.1rem; font-weight: 700; color: #0f172a; }
-.dean-stat-label { margin: 0; font-size: 0.7rem; color: #64748b; }
+.dean-stat-value { margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--adams-text-primary); }
+.dean-stat-label { margin: 0; font-size: 0.7rem; color: var(--adams-text-muted); }
 
 .dean-content-grid {
   display: grid;
@@ -3039,14 +3044,14 @@ const handleProgramCreated = async () => {
   margin: 0;
   font-size: clamp(2.1rem, 2.6vw, 3rem);
   line-height: 1.1;
-  color: #1e293b;
+  color: var(--adams-text-primary);
   letter-spacing: -0.05em;
   font-weight: 800;
 }
 
 .dean-workspace-subtitle {
   margin: 0.35rem 0 0;
-  color: #64748b;
+  color: var(--adams-text-muted);
   font-size: 0.98rem;
 }
 
@@ -3060,7 +3065,7 @@ const handleProgramCreated = async () => {
 
 .dean-card {
   background: rgba(255, 255, 255, 0.88);
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--adams-gridline);
   border-radius: 1rem;
   padding: 1.1rem;
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
@@ -3089,9 +3094,9 @@ const handleProgramCreated = async () => {
   align-items: center;
   gap: 0.7rem;
   padding: 0.7rem 0.8rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--adams-gridline);
   border-radius: 0.8rem;
-  background: #f8fafc;
+  background: var(--adams-canvas);
 }
 
 .dean-todo-status {
@@ -3101,9 +3106,9 @@ const handleProgramCreated = async () => {
   display: inline-block;
 }
 
-.dean-todo-status.dean-todo-urgent { background: #ef4444; }
-.dean-todo-status.dean-todo-warn { background: #f59e0b; }
-.dean-todo-status.dean-todo-ok { background: #22c55e; }
+.dean-todo-status.dean-todo-urgent { background: var(--adams-accent-urgent); }
+.dean-todo-status.dean-todo-warn { background: var(--adams-accent-pending); }
+.dean-todo-status.dean-todo-ok { background: var(--adams-accent-success); }
 
 .dean-todo-copy {
   display: flex;
@@ -3113,25 +3118,25 @@ const handleProgramCreated = async () => {
 
 .dean-todo-copy strong {
   font-size: 0.82rem;
-  color: #0f172a;
+  color: var(--adams-text-primary);
   line-height: 1.3;
 }
 
 .dean-todo-copy span {
   margin-top: 0.12rem;
-  color: #64748b;
+  color: var(--adams-text-muted);
   font-size: 0.72rem;
 }
 
 .dean-todo-item small {
-  color: #64748b;
+  color: var(--adams-text-muted);
   font-size: 0.7rem;
 }
 
 .dean-notification-badge {
-  background: #eff6ff;
-  color: #1d4ed8;
-  border: 1px solid #bfdbfe;
+  background: var(--adams-info-soft);
+  color: var(--adams-accent-info);
+  border: 1px solid var(--adams-info-soft);
   border-radius: 999px;
   padding: 0.2rem 0.6rem;
   font-size: 0.68rem;
@@ -3155,14 +3160,14 @@ const handleProgramCreated = async () => {
   font-size: 1rem;
   flex-shrink: 0;
 }
-.dean-card-icon.teal   { background: #ccfbf1; color: #0f766e; }
-.dean-card-icon.blue   { background: #dbeafe; color: #2563eb; }
-.dean-card-icon.violet { background: #ede9fe; color: #7c3aed; }
-.dean-card-icon.amber  { background: #fef3c7; color: #d97706; }
-.dean-card-icon.rose   { background: #ffe4e6; color: #e11d48; }
+.dean-card-icon.teal   { background: var(--adams-primary-soft); color: var(--adams-structure-primary); }
+.dean-card-icon.blue   { background: var(--adams-info-soft); color: var(--adams-accent-info); }
+.dean-card-icon.violet { background: var(--adams-warning-soft); color: var(--adams-text-primary); }
+.dean-card-icon.amber  { background: var(--adams-warning-soft); color: var(--adams-accent-pending); }
+.dean-card-icon.rose   { background: var(--adams-danger-soft); color: var(--adams-accent-urgent); }
 
-.dean-card-title { margin: 0; font-size: 0.95rem; font-weight: 700; color: #0f172a; }
-.dean-card-sub   { margin: 0.1rem 0 0; font-size: 0.78rem; color: #64748b; }
+.dean-card-title { margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--adams-text-primary); }
+.dean-card-sub   { margin: 0.1rem 0 0; font-size: 0.78rem; color: var(--adams-text-muted); }
 
 .dean-card:hover {
   box-shadow: 0 12px 26px rgba(15, 23, 42, 0.06);
@@ -3177,21 +3182,21 @@ const handleProgramCreated = async () => {
   gap: 0.75rem;
 }
 
-.dean-prog-name   { margin: 0; font-size: 0.82rem; font-weight: 600; color: #0f172a; }
-.dean-prog-chair  { margin: 0; font-size: 0.7rem; color: #94a3b8; }
+.dean-prog-name   { margin: 0; font-size: 0.82rem; font-weight: 600; color: var(--adams-text-primary); }
+.dean-prog-chair  { margin: 0; font-size: 0.7rem; color: var(--adams-text-muted); }
 
 .dean-prog-bar-wrap { display: flex; align-items: center; gap: 0.5rem; }
 
 .dean-prog-info { display: flex; flex-direction: column; gap: 0.2rem; }
 
-.dean-report-name { margin: 0; font-size: 0.92rem; font-weight: 700; color: #0f172a; }
+.dean-report-name { margin: 0; font-size: 0.92rem; font-weight: 700; color: var(--adams-text-primary); }
 
 .dean-alert-body { display: flex; flex-direction: column; gap: 0.15rem; }
 
 .dean-prog-bar-track {
   flex: 1;
   height: 7px;
-  background: #f1f5f9;
+  background: var(--adams-canvas);
   border-radius: 999px;
   overflow: hidden;
 }
@@ -3205,12 +3210,12 @@ const handleProgramCreated = async () => {
 .dean-prog-pct { font-size: 0.78rem; font-weight: 700; min-width: 34px; text-align: right; }
 
 .dean-prog-status { font-size: 0.7rem; font-weight: 600; padding: 0.2rem 0.55rem; border-radius: 999px; white-space: nowrap; }
-.dean-prog-status.on-track        { background: #dcfce7; color: #16a34a; }
-.dean-prog-status.in-progress     { background: #dbeafe; color: #2563eb; }
-.dean-prog-status.needs-attention { background: #fef3c7; color: #d97706; }
-.dean-prog-status.at-risk         { background: #fee2e2; color: #dc2626; }
+.dean-prog-status.on-track        { background: var(--adams-success-soft); color: var(--adams-accent-success); }
+.dean-prog-status.in-progress     { background: var(--adams-info-soft); color: var(--adams-accent-info); }
+.dean-prog-status.needs-attention { background: var(--adams-warning-soft); color: var(--adams-accent-pending); }
+.dean-prog-status.at-risk         { background: var(--adams-danger-soft); color: var(--adams-accent-urgent); }
 
-.dean-doc-table { border-top: 1px solid #f1f5f9; }
+.dean-doc-table { border-top: 1px solid var(--adams-canvas); }
 
 .dean-table-header {
   display: grid;
@@ -3218,9 +3223,9 @@ const handleProgramCreated = async () => {
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #94a3b8;
+  color: var(--adams-text-muted);
   padding: 0.55rem 0;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--adams-canvas);
 }
 
 .dean-table-row {
@@ -3228,24 +3233,24 @@ const handleProgramCreated = async () => {
   grid-template-columns: 2.2fr 1fr 1fr 1.2fr;
   align-items: center;
   padding: 0.65rem 0;
-  border-bottom: 1px solid #f8fafc;
+  border-bottom: 1px solid var(--adams-canvas);
   font-size: 0.82rem;
-  color: #334155;
+  color: var(--adams-text-primary);
 }
 
 .dean-doc-title-cell { display: flex; align-items: center; gap: 0.4rem; font-weight: 600; }
-.dean-doc-icon { color: #94a3b8; flex-shrink: 0; }
+.dean-doc-icon { color: var(--adams-text-muted); flex-shrink: 0; }
 
 .dean-role-tag {
   font-size: 0.7rem;
-  background: #ede9fe;
-  color: #7c3aed;
+  background: var(--adams-warning-soft);
+  color: var(--adams-accent-pending);
   padding: 0.2rem 0.5rem;
   border-radius: 999px;
   display: inline-block;
 }
 
-.dean-muted { color: #94a3b8; font-size: 0.75rem; }
+.dean-muted { color: var(--adams-text-muted); font-size: 0.75rem; }
 
 .dean-action-btns { display: flex; gap: 0.35rem; }
 
@@ -3258,8 +3263,8 @@ const handleProgramCreated = async () => {
   border: none;
 }
 
-.dean-approve-btn { background: #dcfce7; color: #16a34a; }
-.dean-return-btn  { background: #fee2e2; color: #dc2626; }
+.dean-approve-btn { background: var(--adams-cta); color: var(--adams-cta-fg); }
+.dean-return-btn  { background: transparent; color: var(--adams-accent-urgent); border: 1px solid var(--adams-accent-urgent); }
 
 .dean-pipeline { display: flex; flex-direction: column; gap: 0; }
 
@@ -3278,7 +3283,7 @@ const handleProgramCreated = async () => {
   top: 36px;
   width: 2px;
   height: calc(100% - 12px);
-  background: #e2e8f0;
+  background: var(--adams-gridline);
 }
 
 .dean-pipeline-step.done::after { background: #4f46e5; }
@@ -3293,32 +3298,32 @@ const handleProgramCreated = async () => {
   font-size: 0.75rem;
   font-weight: 700;
   flex-shrink: 0;
-  background: #f1f5f9;
-  color: #94a3b8;
-  border: 2px solid #e2e8f0;
+  background: var(--adams-canvas);
+  color: var(--adams-text-muted);
+  border: 2px solid var(--adams-gridline);
   z-index: 1;
 }
 
 .dean-pipeline-step.done .dean-step-dot {
   background: #4f46e5;
-  color: #fff;
+  color: var(--adams-canvas-panel);
   border-color: #4f46e5;
   font-size: 1rem;
 }
 
 .dean-pipeline-step.active .dean-step-dot {
-  background: #fff;
+  background: var(--adams-canvas-panel);
   color: #4f46e5;
   border-color: #4f46e5;
   box-shadow: 0 0 0 3px rgba(79,70,229,0.15);
 }
 
-.dean-step-label { margin: 0; font-size: 0.82rem; font-weight: 600; color: #0f172a; }
+.dean-step-label { margin: 0; font-size: 0.82rem; font-weight: 600; color: var(--adams-text-primary); }
 .dean-pipeline-step.active .dean-step-label { color: #4f46e5; }
-.dean-pipeline-step:not(.done):not(.active) .dean-step-label { color: #94a3b8; }
+.dean-pipeline-step:not(.done):not(.active) .dean-step-label { color: var(--adams-text-muted); }
 
-.dean-step-sub   { margin: 0; font-size: 0.72rem; color: #94a3b8; }
-.dean-pipeline-step.active .dean-step-sub { color: #64748b; }
+.dean-step-sub   { margin: 0; font-size: 0.72rem; color: var(--adams-text-muted); }
+.dean-pipeline-step.active .dean-step-sub { color: var(--adams-text-muted); }
 
 .dean-faculty-list { display: flex; flex-direction: column; gap: 0.1rem; }
 
@@ -3336,10 +3341,10 @@ const handleProgramCreated = async () => {
   flex: 1;
   min-width: 0;
   padding: 0.55rem 0.7rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--adams-gridline);
   border-radius: 0.55rem;
-  background: #fff;
-  color: #64748b;
+  background: var(--adams-canvas-panel);
+  color: var(--adams-text-muted);
 }
 
 .dean-faculty-search input {
@@ -3347,7 +3352,7 @@ const handleProgramCreated = async () => {
   min-width: 0;
   border: 0;
   outline: 0;
-  color: #0f172a;
+  color: var(--adams-text-primary);
   background: transparent;
   font-size: 0.78rem;
 }
@@ -3355,10 +3360,10 @@ const handleProgramCreated = async () => {
 .dean-faculty-toolbar select {
   min-width: 150px;
   padding: 0.58rem 0.65rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--adams-gridline);
   border-radius: 0.55rem;
-  background: #fff;
-  color: #334155;
+  background: var(--adams-canvas-panel);
+  color: var(--adams-text-primary);
   font-size: 0.76rem;
 }
 
@@ -3368,7 +3373,7 @@ const handleProgramCreated = async () => {
   align-items: center;
   gap: 0.7rem;
   padding: 0.7rem 0;
-  border-bottom: 1px solid #f8fafc;
+  border-bottom: 1px solid var(--adams-canvas);
 }
 
 .dean-faculty-avatar {
@@ -3400,17 +3405,17 @@ const handleProgramCreated = async () => {
 }
 
 .dean-faculty-info { min-width: 0; }
-.dean-faculty-name { margin: 0; font-size: 0.82rem; font-weight: 600; color: #0f172a; }
-.dean-faculty-role { margin: 0.15rem 0 0; font-size: 0.7rem; color: #64748b; }
+.dean-faculty-name { margin: 0; font-size: 0.82rem; font-weight: 600; color: var(--adams-text-primary); }
+.dean-faculty-role { margin: 0.15rem 0 0; font-size: 0.7rem; color: var(--adams-text-muted); }
 
 .dean-faculty-program { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
-.dean-faculty-program-label { color: #94a3b8; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
-.dean-faculty-program strong { overflow: hidden; color: #0f766e; font-size: 0.75rem; text-overflow: ellipsis; white-space: nowrap; }
+.dean-faculty-program-label { color: var(--adams-text-muted); font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.dean-faculty-program strong { overflow: hidden; color: var(--adams-structure-primary); font-size: 0.75rem; text-overflow: ellipsis; white-space: nowrap; }
 
 .dean-fac-status { font-size: 0.68rem; font-weight: 600; padding: 0.15rem 0.45rem; border-radius: 999px; }
-.dean-fac-status.fac-active   { background: #dcfce7; color: #16a34a; }
-.dean-fac-status.fac-behind   { background: #fef3c7; color: #d97706; }
-.dean-fac-status.fac-inactive { background: #fee2e2; color: #dc2626; }
+.dean-fac-status.fac-active   { background: var(--adams-success-soft); color: var(--adams-accent-success); }
+.dean-fac-status.fac-behind   { background: var(--adams-warning-soft); color: var(--adams-accent-pending); }
+.dean-fac-status.fac-inactive { background: var(--adams-danger-soft); color: var(--adams-accent-urgent); }
 
 .dean-alert-list { display: flex; flex-direction: column; gap: 0.5rem; }
 
@@ -3424,12 +3429,12 @@ const handleProgramCreated = async () => {
 }
 
 .dean-alert-item.urgent  { background: #fff1f2; border-color: #fecdd3; }
-.dean-alert-item.warning { background: #fffbeb; border-color: #fde68a; }
+.dean-alert-item.warning { background: #fffbeb; border-color: var(--adams-warning-soft); }
 .dean-alert-item.info    { background: #f0f9ff; border-color: #bae6fd; }
 
 .dean-alert-item ion-icon { font-size: 1rem; flex-shrink: 0; margin-top: 2px; }
-.dean-alert-msg  { margin: 0; font-size: 0.8rem; font-weight: 600; color: #0f172a; }
-.dean-alert-time { margin: 0; font-size: 0.7rem; color: #94a3b8; }
+.dean-alert-msg  { margin: 0; font-size: 0.8rem; font-weight: 600; color: var(--adams-text-primary); }
+.dean-alert-time { margin: 0; font-size: 0.7rem; color: var(--adams-text-muted); }
 
 .dean-mobile-sidebar-toggle {
   display: none;
@@ -3455,7 +3460,7 @@ const handleProgramCreated = async () => {
     width: min(82vw, 290px);
     transform: translateX(-108%);
     transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
-    border-right: 1px solid #e2e8f0;
+    border-right: 1px solid var(--adams-gridline);
     box-shadow: 0 18px 44px rgba(15, 23, 42, 0.18);
     padding: 0.7rem 0.55rem;
   }
@@ -3480,9 +3485,9 @@ const handleProgramCreated = async () => {
     width: 34px;
     height: 34px;
     border-radius: 0.6rem;
-    border: 1px solid #e2e8f0;
-    background: #fff;
-    color: #0f172a;
+    border: 1px solid var(--adams-gridline);
+    background: var(--adams-canvas-panel);
+    color: var(--adams-text-primary);
     position: fixed;
     top: 0.7rem;
     left: 0.7rem;
@@ -3664,14 +3669,14 @@ const handleProgramCreated = async () => {
 
 .dean-btn-ghost {
   background: transparent;
-  color: #64748b;
-  border: 1px solid #e2e8f0;
+  color: var(--adams-text-muted);
+  border: 1px solid var(--adams-gridline);
 }
 
 .dean-btn-ghost:hover {
-  background: #f1f5f9;
-  color: #0f172a;
-  border-color: #cbd5e1;
+  background: var(--adams-canvas);
+  color: var(--adams-text-primary);
+  border-color: var(--adams-border-strong);
 }
 
 /* Accreditation Level Styles */
@@ -3682,7 +3687,7 @@ const handleProgramCreated = async () => {
   padding: 0.8rem;
   background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.08));
   border-radius: 0.6rem;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid var(--adams-structure-primary);
   margin: 0.4rem 0;
 }
 
@@ -3694,7 +3699,7 @@ const handleProgramCreated = async () => {
 
 .accred-value {
   font-weight: 700;
-  color: #667eea;
+  color: var(--adams-structure-primary);
   font-size: 0.95rem;
   background: white;
   padding: 0.35rem 0.7rem;
@@ -3707,7 +3712,7 @@ const handleProgramCreated = async () => {
   align-items: center;
   gap: 0.4rem;
   font-size: 0.8rem;
-  color: #64748b;
+  color: var(--adams-text-muted);
   margin: 0.3rem 0;
 }
 
@@ -3736,7 +3741,7 @@ const handleProgramCreated = async () => {
 }
 
 .dean-action-notify {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--adams-structure-primary) 0%, var(--adams-structure-secondary) 100%);
   color: white;
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }

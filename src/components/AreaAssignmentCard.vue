@@ -953,20 +953,20 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
 .assignments-header h3 {
   margin: 0 0 8px 0;
   font-size: 18px;
-  color: #1f2937;
+  color: var(--adams-text-primary);
 }
 
 .subtitle {
   margin: 0;
   font-size: 13px;
-  color: #6b7280;
+  color: var(--adams-text-muted);
 }
 
 .loading-state,
 .empty-state {
   padding: 40px 20px;
   text-align: center;
-  color: #9ca3af;
+  color: var(--adams-text-muted);
   font-size: 14px;
 }
 
@@ -977,7 +977,7 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
 }
 
 .area-card {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--adams-gridline);
   border-radius: 8px;
   background: white;
   overflow: hidden;
@@ -988,25 +988,25 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
   justify-content: space-between;
   align-items: center;
   padding: 16px;
-  background: #f9fafb;
+  background: var(--adams-canvas);
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .area-header:hover {
-  background: #f3f4f6;
+  background: var(--adams-canvas);
 }
 
 .area-info h4 {
   margin: 0;
   font-size: 15px;
-  color: #1f2937;
+  color: var(--adams-text-primary);
 }
 
 .area-code {
   margin: 4px 0 0 0;
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--adams-text-muted);
 }
 
 .btn-expand {
@@ -1014,7 +1014,7 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
   border: none;
   font-size: 20px;
   cursor: pointer;
-  color: #6b7280;
+  color: var(--adams-text-muted);
   padding: 0;
   width: 32px;
   height: 32px;
@@ -1025,7 +1025,7 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
 
 .area-details {
   padding: 16px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--adams-gridline);
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -1036,7 +1036,7 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
   margin: 0 0 12px 0;
   font-size: 13px;
   font-weight: 600;
-  color: #374151;
+  color: var(--adams-text-primary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -1052,8 +1052,8 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
   justify-content: space-between;
   align-items: flex-start;
   padding: 12px;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
+  background: var(--adams-success-soft);
+  border: 1px solid var(--adams-success-soft);
   border-radius: 6px;
   gap: 12px;
 }
@@ -1067,27 +1067,27 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
   margin: 0;
   font-size: 13px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--adams-text-primary);
 }
 
 .member-email {
   margin: 2px 0 0 0;
   font-size: 12px;
-  color: #6b7280;
+  color: var(--adams-text-muted);
 }
 
 .member-instruments {
   margin: 4px 0 0 0;
   font-size: 12px;
-  color: #059669;
+  color: var(--adams-structure-primary);
 }
 
 .btn-remove {
   flex-shrink: 0;
-  background: #fecaca;
-  border: none;
+  background: transparent;
+  border: 1px solid var(--adams-accent-urgent);
   border-radius: 4px;
-  color: #b91c1c;
+  color: var(--adams-accent-urgent);
   cursor: pointer;
   width: 28px;
   height: 28px;
@@ -1102,7 +1102,7 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
 .add-assignment-section {
   padding: 12px;
   background: #f0f9ff;
-  border: 1px solid #bfdbfe;
+  border: 1px solid var(--adams-info-soft);
   border-radius: 6px;
 }
 
@@ -1120,14 +1120,14 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
 .label {
   font-size: 12px;
   font-weight: 600;
-  color: #374151;
+  color: var(--adams-text-primary);
   margin: 0;
 }
 
 .input-select,
 .input-text {
   padding: 8px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--adams-border-strong);
   border-radius: 6px;
   font-size: 13px;
   font-family: inherit;
@@ -1137,14 +1137,14 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
 .input-select:focus,
 .input-text:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--adams-accent-info);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .btn-assign {
   width: 100%;
   padding: 8px 12px;
-  background: #3b82f6;
+  background: var(--adams-accent-info);
   color: white;
   border: none;
   border-radius: 6px;
@@ -1156,7 +1156,7 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
 }
 
 .btn-assign:hover:not(:disabled) {
-  background: #2563eb;
+  background: var(--adams-accent-info);
 }
 
 .btn-assign:disabled {
@@ -1167,13 +1167,13 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
 .error-text {
   margin: 8px 0 0 0;
   font-size: 12px;
-  color: #dc2626;
+  color: var(--adams-accent-urgent);
 }
 
 .success-text {
   margin: 8px 0 0 0;
   font-size: 12px;
-  color: #059669;
+  color: var(--adams-structure-primary);
 }
 
 /* View Tabs */
@@ -1181,7 +1181,7 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
   display: flex;
   gap: 8px;
   margin-bottom: 20px;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 2px solid var(--adams-gridline);
 }
 
 .tab-button {
@@ -1192,18 +1192,18 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--adams-text-muted);
   transition: all 0.2s;
   margin-bottom: -2px;
 }
 
 .tab-button:hover {
-  color: #1f2937;
+  color: var(--adams-text-primary);
 }
 
 .tab-button.active {
-  color: #3b82f6;
-  border-bottom-color: #3b82f6;
+  color: var(--adams-accent-info);
+  border-bottom-color: var(--adams-accent-info);
 }
 
 /* Faculty Assignments View */
@@ -1214,7 +1214,7 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
 }
 
 .faculty-card {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--adams-gridline);
   border-radius: 8px;
   background: white;
   overflow: hidden;
@@ -1225,31 +1225,31 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
   justify-content: space-between;
   align-items: center;
   padding: 16px;
-  background: #fef3c7;
+  background: var(--adams-warning-soft);
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .faculty-header:hover {
-  background: #fde68a;
+  background: var(--adams-warning-soft);
 }
 
 .faculty-info h4 {
   margin: 0;
   font-size: 15px;
-  color: #1f2937;
+  color: var(--adams-text-primary);
   font-weight: 600;
 }
 
 .faculty-email {
   margin: 4px 0 0 0;
   font-size: 12px;
-  color: #6b7280;
+  color: var(--adams-text-muted);
 }
 
 .faculty-details {
   padding: 16px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--adams-gridline);
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -1260,7 +1260,7 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
   margin: 0 0 12px 0;
   font-size: 13px;
   font-weight: 600;
-  color: #374151;
+  color: var(--adams-text-primary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -1276,8 +1276,8 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  background: #dbeafe;
-  border: 1px solid #93c5fd;
+  background: var(--adams-info-soft);
+  border: 1px solid var(--adams-info-soft);
   border-radius: 6px;
   gap: 8px;
 }
@@ -1285,7 +1285,7 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
 .area-name {
   font-size: 12px;
   font-weight: 600;
-  color: #1e40af;
+  color: var(--adams-accent-info);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1297,7 +1297,7 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
   background: #fca5a5;
   border: none;
   border-radius: 3px;
-  color: #b91c1c;
+  color: var(--adams-accent-urgent);
   cursor: pointer;
   width: 20px;
   height: 20px;
@@ -1315,7 +1315,7 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
 
 .no-assignments {
   padding: 16px;
-  background: #f3f4f6;
+  background: var(--adams-canvas);
   border-radius: 6px;
   text-align: center;
 }
@@ -1323,19 +1323,19 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
 .no-assignments p {
   margin: 0;
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--adams-text-muted);
 }
 
 .add-area-section {
   padding: 12px;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
+  background: var(--adams-success-soft);
+  border: 1px solid var(--adams-success-soft);
   border-radius: 6px;
 }
 
 .input-textarea {
   padding: 8px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--adams-border-strong);
   border-radius: 6px;
   font-size: 13px;
   font-family: inherit;
@@ -1345,7 +1345,7 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
 
 .input-textarea:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--adams-accent-info);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
@@ -1353,9 +1353,9 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
 .bulk-assignment-toggle {
   margin-bottom: 1.5rem;
   padding: 1rem;
-  background: #eff6ff;
+  background: var(--adams-info-soft);
   border-radius: 0.5rem;
-  border-left: 4px solid #3b82f6;
+  border-left: 4px solid var(--adams-accent-info);
 }
 
 .checkbox-label {
@@ -1363,7 +1363,7 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
   align-items: center;
   cursor: pointer;
   font-weight: 500;
-  color: #1f2937;
+  color: var(--adams-text-primary);
   gap: 0.5rem;
 }
 
@@ -1374,7 +1374,7 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
 }
 
 .bulk-assignment-panel {
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  background: linear-gradient(135deg, var(--adams-warning-soft) 0%, var(--adams-warning-soft) 100%);
   border: 2px solid #fcd34d;
   border-radius: 0.75rem;
   padding: 1.5rem;
@@ -1383,14 +1383,14 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
 
 .bulk-assignment-panel h4 {
   margin: 0 0 0.5rem 0;
-  color: #92400e;
+  color: var(--adams-text-primary);
   font-size: 1.1rem;
 }
 
 .bulk-subtitle {
   margin: 0 0 1rem 0;
   font-size: 0.9rem;
-  color: #b45309;
+  color: var(--adams-text-primary);
 }
 
 .template-select-group {
@@ -1417,7 +1417,7 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
 }
 
 .btn-apply-template:hover {
-  background: #059669;
+  background: var(--adams-structure-primary);
 }
 
 .form-row {
@@ -1433,7 +1433,7 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
 }
 
 .selected-areas-bulk {
-  background: #f3f4f6;
+  background: var(--adams-canvas);
   padding: 1rem;
   border-radius: 0.5rem;
   margin-top: 1rem;
@@ -1447,12 +1447,12 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
   margin: 0;
   font-size: 0.95rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--adams-text-primary);
 }
 
 .btn-assign-bulk {
   padding: 0.65rem 1rem;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, var(--adams-accent-info) 0%, var(--adams-accent-info) 100%);
   color: white;
   border: none;
   border-radius: 0.5rem;
@@ -1496,25 +1496,25 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
 .history-section {
   margin-top: 2rem;
   padding-top: 2rem;
-  border-top: 2px solid #e5e7eb;
+  border-top: 2px solid var(--adams-gridline);
 }
 
 .btn-history-toggle {
   padding: 0.75rem 1rem;
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
+  background: var(--adams-canvas);
+  border: 1px solid var(--adams-border-strong);
   border-radius: 0.5rem;
   cursor: pointer;
   font-weight: 600;
-  color: #374151;
+  color: var(--adams-text-primary);
   width: 100%;
   text-align: left;
   transition: all 0.2s;
 }
 
 .btn-history-toggle:hover {
-  background: #e5e7eb;
-  border-color: #9ca3af;
+  background: var(--adams-gridline);
+  border-color: var(--adams-text-muted);
 }
 
 .history-content {
@@ -1536,8 +1536,8 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
 .empty-history {
   padding: 2rem;
   text-align: center;
-  color: #9ca3af;
-  background: #f9fafb;
+  color: var(--adams-text-muted);
+  background: var(--adams-canvas);
   border-radius: 0.5rem;
 }
 
@@ -1553,16 +1553,16 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
 
 .history-item {
   padding: 1rem;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-left: 4px solid #3b82f6;
+  background: var(--adams-canvas);
+  border: 1px solid var(--adams-gridline);
+  border-left: 4px solid var(--adams-accent-info);
   border-radius: 0.5rem;
   transition: all 0.2s;
 }
 
 .history-item:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  border-left-color: #2563eb;
+  border-left-color: var(--adams-accent-info);
 }
 
 .history-main {
@@ -1574,22 +1574,22 @@ Role: ${instruments}${deadline ? `\nDeadline: ${new Date(deadline).toLocaleDateS
 .history-text {
   margin: 0;
   font-weight: 500;
-  color: #1f2937;
+  color: var(--adams-text-primary);
   font-size: 0.95rem;
 }
 
 .history-meta {
   margin: 0;
   font-size: 0.85rem;
-  color: #6b7280;
+  color: var(--adams-text-muted);
 }
 
 .deadline-badge {
   display: inline-block;
   margin-left: 0.5rem;
   padding: 0.25rem 0.5rem;
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--adams-warning-soft);
+  color: var(--adams-text-primary);
   border-radius: 0.25rem;
   font-weight: 500;
 }

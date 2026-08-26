@@ -37,12 +37,12 @@
         :editable="canEditContent && editMode"
         :show-upload="true"
         :can-upload="!!selectedArea?.canUpload"
-        :can-submit="!!selectedArea?.canSubmit"
+        :can-submit="!!selectedArea?.canUpload"
         :program-id="selectedArea?.programId"
         :area-id="selectedArea?.id"
         @updated="onRowUpdated"
         @removed="onRowRemoved"
-        @submitted="onSubmitted"
+        @submitted="onRowUpdated"
         @files-changed="reloadSelectedRows"
       />
       <div v-if="canEditContent && editMode && selectedParameter" class="fma-add-row">
@@ -184,10 +184,6 @@ const reloadSelectedRows = async () => {
   void facultyDashboard.loadMyAreas()
 }
 
-const onSubmitted = async () => {
-  await reloadSelectedRows()
-}
-
 const addRow = async () => {
   if (!selectedParameter.value) return
   const content = window.prompt('New row content')
@@ -224,8 +220,8 @@ watch(selectedAreaId, () => {
   appearance: none;
   align-self: flex-start;
   border: none;
-  background: #0e7a5f;
-  color: #fff;
+  background: var(--adams-structure-primary);
+  color: var(--adams-canvas-panel);
   border-radius: 999px;
   padding: 0.4rem 0.9rem;
   font-weight: 700;
@@ -243,7 +239,7 @@ watch(selectedAreaId, () => {
 
 .fma-kicker {
   margin: 0;
-  color: #0e7a5f;
+  color: var(--adams-structure-primary);
   font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -277,18 +273,18 @@ watch(selectedAreaId, () => {
 
 .fma-deadline.urgent,
 .fma-deadline.overdue {
-  background: #fef2f2;
-  color: #b91c1c;
+  background: var(--adams-danger-soft);
+  color: var(--adams-accent-urgent);
 }
 
 .fma-header h2 {
   margin: 0.15rem 0 0.25rem;
-  color: #0f172a;
+  color: var(--adams-text-primary);
 }
 
 .fma-header p {
   margin: 0;
-  color: #64748b;
+  color: var(--adams-text-muted);
 }
 
 .fma-back {
@@ -313,7 +309,7 @@ watch(selectedAreaId, () => {
   width: 100%;
   text-align: left;
   border: 1px solid #dbe3ea;
-  background: #fff;
+  background: var(--adams-canvas-panel);
   border-radius: 0.9rem;
   padding: 1rem 1.1rem;
   cursor: pointer;
@@ -321,17 +317,17 @@ watch(selectedAreaId, () => {
 
 .fma-param-card strong {
   display: block;
-  color: #0f172a;
+  color: var(--adams-text-primary);
 }
 
 .fma-param-card span {
-  color: #0e7a5f;
+  color: var(--adams-structure-primary);
   font-size: 0.82rem;
   font-weight: 700;
 }
 
 .fma-table-card {
-  background: #fff;
+  background: var(--adams-canvas-panel);
   border: 1px solid #dbe3ea;
   border-radius: 0.9rem;
   overflow: hidden;
@@ -340,6 +336,6 @@ watch(selectedAreaId, () => {
 .fma-empty {
   padding: 2.5rem 1rem;
   text-align: center;
-  color: #94a3b8;
+  color: var(--adams-text-muted);
 }
 </style>

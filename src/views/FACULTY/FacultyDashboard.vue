@@ -18,13 +18,13 @@
       <div class="fac-tasks-nav">
         <button
           class="adams-nav-item"
-          :class="{ active: selectedSection === 'revisions' }"
+          :class="{ active: tasksExpanded || selectedSection === 'areas' }"
           type="button"
           @click="toggleTasksAccordion"
         >
           <span class="adams-nav-icon"><ion-icon :icon="checkmarkDoneOutline" /></span>
           <span>Tasks</span>
-          <span class="adams-nav-badge">{{ revisionCount }}</span>
+          <span v-if="taskStats.pendingReviews > 0" class="adams-nav-badge">{{ taskStats.pendingReviews }}</span>
           <span class="adams-nav-caret">{{ tasksExpanded ? '▾' : '▸' }}</span>
         </button>
         <div v-if="tasksExpanded" class="adams-nav-children">
@@ -54,7 +54,11 @@
               </span>
               <span class="fac-area-role">{{ area.assignmentRole === 'chair' ? 'Area Chair' : 'Member' }}</span>
               <span class="fac-area-progress-track" aria-hidden="true">
-                <span class="fac-area-progress-fill" :style="{ width: `${Number(area.progressPercent || 0)}%` }" />
+                <span
+                  class="fac-area-progress-fill"
+                  :class="{ 'is-complete': Number(area.progressPercent || 0) >= 100 }"
+                  :style="{ width: `${Number(area.progressPercent || 0)}%` }"
+                />
               </span>
             </button>
           </div>
@@ -87,72 +91,13 @@
             <button class="fac-btn fac-btn-ghost" v-if="activeCall" @click="endCall">End Call</button>
           </div>
 
-          <!-- Task Detail Modal -->
-          <div v-if="facultyDashboard.showTaskDetail" class="fac-modal-overlay" @click.self="facultyDashboard.closeTaskDetail()">
-            <div class="fac-modal-content">
-              <div class="fac-modal-header">
-                <h2>{{ facultyDashboard.selectedTask?.area }} — {{ facultyDashboard.selectedTask?.title || 'Requirement' }}</h2>
-                <button type="button" class="fac-modal-close" @click="facultyDashboard.closeTaskDetail()">✕</button>
-              </div>
-              <div class="fac-modal-body">
-                <section class="fac-modal-section">
-                  <h3>Requirement</h3>
-                  <p>{{ facultyDashboard.selectedTask?.title }}</p>
-                </section>
-
-                <section class="fac-modal-section">
-                  <h3>Description</h3>
-                  <p>{{ facultyDashboard.selectedTask?.description || 'No description provided' }}</p>
-                </section>
-
-                <section class="fac-modal-section">
-                  <h3>Required Evidence</h3>
-                  <ul v-if="facultyDashboard.selectedTask?.requirements" class="fac-requirements-list">
-                    <li v-for="(req, idx) in facultyDashboard.selectedTask.requirements" :key="idx">{{ req }}</li>
-                  </ul>
-                  <p v-else class="fac-text-muted">No specific requirements listed</p>
-                </section>
-
-                <section class="fac-modal-section">
-                  <h3>Details</h3>
-                  <div class="fac-details-grid">
-                    <div class="fac-detail-item">
-                      <span class="fac-detail-label">Deadline:</span>
-                      <span class="fac-detail-value">{{ formatDate(facultyDashboard.selectedTask?.deadline) }}</span>
-                    </div>
-                    <div class="fac-detail-item">
-                      <span class="fac-detail-label">Assigned by:</span>
-                      <span class="fac-detail-value">{{ facultyDashboard.dashboardTeamLead }}</span>
-                    </div>
-                    <div class="fac-detail-item">
-                      <span class="fac-detail-label">Status:</span>
-                      <span class="fac-detail-value" :class="`fac-status-${(facultyDashboard.selectedTask?.status || 'pending').toLowerCase()}`">
-                        {{ (facultyDashboard.selectedTask?.status || 'PENDING').toUpperCase() }}
-                      </span>
-                    </div>
-                    <div class="fac-detail-item">
-                      <span class="fac-detail-label">Program:</span>
-                      <span class="fac-detail-value">{{ facultyDashboard.dashboardProgram }}</span>
-                    </div>
-                  </div>
-                </section>
-
-                <!-- Return/Feedback Section (if returned) -->
-                <section v-if="facultyDashboard.selectedTask?.status === 'returned'" class="fac-modal-section fac-return-feedback">
-                  <h3>⚠ Evidence Returned</h3>
-                  <div class="fac-feedback-reason">
-                    <p><strong>Reason for Return:</strong></p>
-                    <p>{{ facultyDashboard.selectedTask?.returnReason || 'Please revise and resubmit your evidence.' }}</p>
-                  </div>
-                  <button type="button" class="fac-btn fac-btn-primary" @click="facultyDashboard.closeTaskDetail()">Revise Evidence</button>
-                </section>
-              </div>
-              <div class="fac-modal-footer">
-                <button type="button" class="fac-btn fac-btn-ghost" @click="facultyDashboard.closeTaskDetail()">Close</button>
-                <button type="button" class="fac-btn fac-btn-primary" @click="facultyDashboard.closeTaskDetail()">Prepare Evidence</button>
-              </div>
-            </div>
-          </div>
+          <input
+            id="faculty-upload-input"
+            type="file"
+            accept="application/pdf,.pdf"
+            style="display: none"
+            @change="onFileSelected"
+          />
 
           <div v-if="selectedSection === 'documents'" class="fac-documents-shell">
             <div class="fac-documents-header">
@@ -163,34 +108,20 @@
               <div class="fac-documents-actions">
                 <div class="fac-doc-search">
                   <ion-icon :icon="searchOutline" />
-                  <input v-model="documentSearch" type="search" placeholder="Search files..." />
+                  <input v-model="documentSearch" type="search" placeholder="Search PDF files..." />
                 </div>
-                <select v-model="documentTypeFilter" class="fac-doc-select">
-                  <option value="All">All Types</option>
-                  <option value="Document">Documents</option>
-                  <option value="Image">Images</option>
-                  <option value="Video">Videos</option>
-                  <option value="Audio">Audio</option>
-                </select>
                 <button class="fac-btn fac-btn-primary" @click="openUploadDialog">
-                  <ion-icon :icon="cloudUploadOutline" /> Upload
+                  <ion-icon :icon="cloudUploadOutline" /> Upload PDF
                 </button>
               </div>
             </div>
 
             <div class="fac-doc-layout">
               <div class="fac-doc-main">
-                <div class="fac-folder-strip" aria-label="Faculty folders">
-                  <button v-for="folder in documentFolders" :key="folder.name" class="fac-folder-pill" type="button">
-                    <strong>{{ folder.name }}</strong>
-                    <small>{{ folder.count }} files</small>
-                  </button>
-                </div>
-
                 <div class="fac-doc-section">
                   <div class="fac-doc-section-header">
                     <h3>My Files</h3>
-                    <span class="fac-tag">{{ filteredDocuments.length }} files</span>
+                    <span class="fac-tag">{{ filteredDocuments.length }} PDFs</span>
                   </div>
                   <div v-if="filteredDocuments.length" class="fac-doc-list">
                     <article v-for="file in filteredDocuments" :key="file.id" class="fac-doc-card">
@@ -199,10 +130,10 @@
                         <span v-if="file.favorite" class="fac-doc-star">★</span>
                       </div>
                       <h4>{{ file.name }}</h4>
-                      <p>{{ file.type }} · {{ file.size }} · {{ file.modified }}</p>
+                      <p>PDF · {{ file.size }} · {{ file.modified }}</p>
                       <div class="fac-doc-meta">
                         <span>ID #{{ file.id }}</span>
-                        <span>Owner {{ authUser?.id || '27' }}</span>
+                        <span>Owner {{ authUser?.id || '—' }}</span>
                         <span>Folder {{ file.folder }}</span>
                       </div>
                       <div class="fac-doc-actions">
@@ -214,7 +145,7 @@
                       </div>
                     </article>
                   </div>
-                  <div v-else class="fac-empty-state">No personal files match your search.</div>
+                  <div v-else class="fac-empty-state">No PDF files match your search.</div>
                 </div>
 
                 <div class="fac-doc-separator" />
@@ -231,7 +162,7 @@
                         <span class="fac-doc-star">✓</span>
                       </div>
                       <h4>{{ file.name }}</h4>
-                      <p>{{ file.type }} · {{ file.size }} · {{ file.modified }}</p>
+                      <p>PDF · {{ file.size }} · {{ file.modified }}</p>
                       <div class="fac-doc-meta">
                         <span>ID #{{ file.id }}</span>
                         <span>Evidence</span>
@@ -254,81 +185,32 @@
                   <span>Used of {{ storageLimitGb }} GB</span>
                 </div>
                 <div class="fac-storage-meter"><span :style="{ width: `${storageUsage.percent}%` }" /></div>
-                <p class="fac-limit-note">Faculty document storage is limited to {{ storageLimitGb }} GB per faculty account.</p>
+                <p class="fac-limit-note">Faculty document storage is limited to {{ storageLimitGb }} GB per faculty account. This view accepts PDF files only.</p>
                 <ul class="fac-storage-metrics">
-                  <li>{{ storageUsage.totalDocuments }} Documents</li>
-                  <li>{{ storageUsage.totalVideos }} Videos</li>
                   <li>{{ storageUsage.totalPdfs }} PDFs</li>
-                  <li>{{ storageUsage.totalImages }} Images</li>
                 </ul>
               </aside>
             </div>
           </div>
 
-          <!-- Tasks/Revisions Section -->
-          <div v-else-if="selectedSection === 'revisions'" class="fac-tasks-shell">
-            <div class="fac-tasks-header">
-              <h2>My Tasks</h2>
-              <p>Open the Level + area + deadline folder assigned by your Program Chair.</p>
-            </div>
-            <FacultyAccreditationFolder />
-            <div v-if="facultyDashboard.tasks.length" class="fac-tasks-list">
-              <div v-for="task in facultyDashboard.tasks" :key="task.id" class="fac-task-card" @click="facultyDashboard.openTaskDetail(task)">
-                <div class="fac-task-header">
-                  <div class="fac-task-title-group">
-                    <h3>{{ task.area }} — {{ task.title }}</h3>
-                    <span class="fac-task-status" :class="`fac-status-${(task.status || 'pending').toLowerCase()}`">
-                      {{ (task.status || 'PENDING').toUpperCase() }}
-                    </span>
-                  </div>
-                </div>
-                <p class="fac-task-description">{{ task.description }}</p>
-                <div class="fac-task-meta">
-                  <span v-if="task.deadline" class="fac-task-deadline">
-                    📅 Due: {{ formatDate(task.deadline) }}
-                  </span>
-                  <span v-if="task.returnReason" class="fac-task-return">
-                    ⚠ Returned: {{ task.returnReason.substring(0, 50) }}...
-                  </span>
-                </div>
-                <button type="button" class="fac-task-action">View Details →</button>
-              </div>
-            </div>
-            <div v-else-if="facultyDashboard.tasks.length === 0" class="fac-empty-state">
-            </div>
-          </div>
-
-          <!-- Team Section -->
           <div v-else-if="selectedSection === 'team'" class="fac-team-shell">
             <div class="fac-team-header">
-              <h2>Team Collaboration</h2>
-              <p>Connect with your program team</p>
+              <h2>Team</h2>
+              <p>People assigned to the areas you chair or belong to</p>
             </div>
             <div class="fac-team-content">
-              <article class="fac-team-card">
-                <div class="fac-team-lead">
-                  <div class="fac-team-avatar lead">PC</div>
-                  <div class="fac-team-info">
-                    <h3>{{ facultyDashboard.dashboardTeamLead }}</h3>
-                    <p>Program Chair</p>
-                    <p class="fac-role-note">Manages accreditation requirements and reviews your evidence</p>
-                  </div>
-                  <button type="button" class="fac-btn fac-btn-ghost">Message</button>
-                </div>
-              </article>
               <div class="fac-team-members">
-                <h4>Team Members</h4>
+                <h4>Assigned members</h4>
                 <div v-if="teamMembers.length" class="fac-members-list">
-                  <div v-for="member in teamMembers" :key="member.name" class="fac-member-item">
+                  <div v-for="member in teamMembers" :key="member.id || member.name" class="fac-member-item">
                     <div class="fac-member-avatar">{{ member.initials }}</div>
                     <div class="fac-member-details">
                       <strong>{{ member.name }}</strong>
-                      <small>{{ member.focus }}</small>
+                      <small>{{ member.role }}{{ member.focus ? ` · ${member.focus}` : '' }}</small>
                     </div>
-                    <span class="fac-member-status" :class="member.statusClass">{{ member.status }}</span>
                   </div>
                 </div>
-                <p v-else class="fac-text-muted">No other team members assigned</p>
+                <p v-else class="fac-text-muted">No assigned members found for your areas.</p>
               </div>
             </div>
           </div>
@@ -346,56 +228,46 @@
           </div>
 
           <div v-else class="fac-dashboard-content">
-            <input id="faculty-upload-input" type="file" style="display: none" @change="onFileSelected" />
-
             <div class="fac-page-header">
               <div>
                 <h1>Dashboard</h1>
                 <p>Plan, prioritize, and accomplish your tasks with ease.</p>
-              </div>
-              <div class="fac-header-cta">
-                <button class="fac-btn fac-btn-primary" @click="openUploadDialog">+ Add Project</button>
-                <button class="fac-btn fac-btn-ghost" type="button">Import Data</button>
               </div>
             </div>
 
             <AccreditationLevelStatus view="faculty" title="Program accreditation by level" class="fac-level-status" />
 
             <section class="fac-stat-row">
-              <article class="fac-stat-card fac-stat-card-primary">
+              <article class="fac-stat-card">
                 <div class="fac-stat-header">
                   <span>Total Tasks</span>
-                  <button class="fac-arrow-btn" type="button">↗</button>
                 </div>
-                <div class="fac-stat-value">{{ dashboardSummaryData.totalProjects }}</div>
-                <div class="fac-stat-meta"><span class="fac-positive">⬢</span> Your assigned accreditation workload</div>
+                <div class="fac-stat-value">{{ taskStats.total }}</div>
+                <div class="fac-stat-meta"><span class="fac-positive">⬢</span> Content rows across your assigned areas</div>
               </article>
 
               <article class="fac-stat-card">
                 <div class="fac-stat-header">
                   <span>Completed</span>
-                  <button class="fac-arrow-btn muted" type="button">↗</button>
                 </div>
-                <div class="fac-stat-value">{{ taskStatusBreakdown.completed }}</div>
-                <div class="fac-stat-meta"><span class="fac-positive">⬢</span> Tasks completed</div>
+                <div class="fac-stat-value is-success">{{ taskStats.completed }}</div>
+                <div class="fac-stat-meta"><span class="fac-positive">⬢</span> Done, uploaded, and approved</div>
               </article>
 
               <article class="fac-stat-card">
                 <div class="fac-stat-header">
                   <span>In Progress</span>
-                  <button class="fac-arrow-btn muted" type="button">↗</button>
                 </div>
-                <div class="fac-stat-value">{{ taskStatusBreakdown.inProgress }}</div>
-                <div class="fac-stat-meta"><span class="fac-positive">⬢</span> Active evidence work</div>
+                <div class="fac-stat-value is-pending">{{ taskStats.inProgress }}</div>
+                <div class="fac-stat-meta"><span class="fac-positive">⬢</span> Done or uploaded, but not both</div>
               </article>
 
               <article class="fac-stat-card">
                 <div class="fac-stat-header">
                   <span>Pending</span>
-                  <button class="fac-arrow-btn muted" type="button">↗</button>
                 </div>
-                <div class="fac-stat-value">{{ taskStatusBreakdown.pending }}</div>
-                <div class="fac-stat-meta">{{ dashboardSummaryData.pendingReviews }} review items</div>
+                <div class="fac-stat-value">{{ taskStats.pendingReviews }}</div>
+                <div class="fac-stat-meta">Done and uploaded, waiting for Program Chair approval</div>
               </article>
             </section>
 
@@ -412,75 +284,27 @@
                     </div>
                   </div>
                 </article>
-
-                <article class="fac-card fac-team-card">
-                  <div class="fac-panel-header">
-                    <h3>Team Collaboration</h3>
-                    <button class="fac-btn fac-btn-light" type="button">{{ teamMembers.length }} Members</button>
-                  </div>
-                  <ul class="fac-team-list">
-                    <li v-for="member in teamMembers" :key="member.name + member.role">
-                      <div class="fac-member-avatar" :class="member.avatarClass">{{ member.initials }}</div>
-                      <div class="fac-member-copy">
-                        <strong>{{ member.name }}</strong>
-                        <span>Working on <em>{{ member.focus }}</em></span>
-                      </div>
-                      <span class="fac-member-status" :class="member.statusClass">{{ member.status }}</span>
-                    </li>
-                  </ul>
-                </article>
               </div>
 
               <div class="fac-col-right">
-                <article class="fac-card fac-reminder-card">
-                  <div class="fac-panel-header">
-                    <h3>Reminders</h3>
-                  </div>
-                  <div class="fac-reminder-box">
-                    <div class="fac-reminder-title">{{ nextReminder.title }}</div>
-                    <div class="fac-reminder-time">{{ nextReminder.time }}</div>
-                    <button class="fac-btn fac-btn-primary fac-reminder-btn" type="button" @click="selectSection('documents')">Open Evidence</button>
-                  </div>
-                </article>
-
                 <article class="fac-card fac-progress-card">
                   <div class="fac-panel-header">
                     <h3>Project Progress</h3>
                   </div>
                   <div class="fac-progress-ring-wrap">
-                    <div class="fac-progress-ring-large">
+                    <div
+                      class="fac-progress-ring-large"
+                      :style="{
+                        '--progress': progressPercent,
+                        '--progress-fill': progressPercent >= 100 ? 'var(--adams-accent-success)' : 'var(--adams-accent-pending)',
+                      }"
+                    >
                       <span>{{ progressPercent }}%</span>
                     </div>
                     <div class="fac-progress-legend">
                       <span><i class="dot green"></i> Completed</span>
                       <span><i class="dot amber"></i> In Progress</span>
                       <span><i class="dot gray"></i> Pending</span>
-                    </div>
-                  </div>
-                </article>
-
-                <article class="fac-card fac-timeline-card">
-                  <div class="fac-panel-header">
-                    <h3>My Tasks</h3>
-                    <button class="fac-mini-action" type="button" @click="selectSection('revisions')">View All</button>
-                  </div>
-                  <ul class="fac-timeline">
-                    <li v-for="task in taskTimeline" :key="task.id || task.title">
-                      <span class="fac-task-bullet" :class="task.colorClass"></span>
-                      <div>
-                        <strong>{{ task.title }}</strong>
-                        <small>{{ task.dueLabel }}</small>
-                      </div>
-                    </li>
-                  </ul>
-                </article>
-
-                <article class="fac-card fac-timer-card">
-                  <div class="fac-timer-wrap">
-                    <div class="fac-timer-display">{{ dashboardSummaryData.overdueTasks }} Due</div>
-                    <div class="fac-timer-controls">
-                      <button class="fac-timer-btn stop" type="button">■</button>
-                      <button class="fac-timer-btn play" type="button">▶</button>
                     </div>
                   </div>
                 </article>
@@ -499,7 +323,6 @@ import { useAuthStore } from '@/stores/authStore'
 import { useUserCalls } from '@/lib/useUserCalls'
 import { useFacultyDashboardStore } from '@/stores/facultyDashboardStore'
 import { useNotificationStore, type InboxItem } from '@/stores/notificationStore'
-import FacultyAccreditationFolder from '@/components/FacultyAccreditationFolder.vue'
 import FacultyMyAreasPanel from '@/components/FacultyMyAreasPanel.vue'
 import AccreditationLevelStatus from '@/components/AccreditationLevelStatus.vue'
 import AdamsAppShell from '@/components/ui/AdamsAppShell.vue'
@@ -516,9 +339,6 @@ import {
   cloudUploadOutline,
   searchOutline,
   documentTextOutline,
-  videocamOutline,
-  imageOutline,
-  musicalNotesOutline,
   briefcaseOutline,
   schoolOutline,
   layersOutline,
@@ -532,16 +352,6 @@ const notificationStore = useNotificationStore()
 const inboxUnreadCount = computed(() => notificationStore.unreadCount)
 
 const authUser = computed(() => authStore.user)
-const currentUserInitials = computed(() => {
-  const name = authUser.value?.name || authUser.value?.first_name || ''
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() || '')
-    .join('') || 'U'
-})
-const currentUserName = computed(() => authUser.value?.name || 'Faculty User')
 const workspaceRoleLabel = computed(() =>
   authStore.userRole === 'area-in-charge' ? 'Area In-Charge' : 'Faculty',
 )
@@ -549,7 +359,6 @@ const workspaceRoleLabel = computed(() =>
 const pageTitle = computed(() => {
   switch (selectedSection.value) {
     case 'documents': return 'Documents'
-    case 'revisions': return 'Tasks'
     case 'areas': return 'Assigned Area'
     case 'team': return 'Team'
     case 'notifications': return 'Notifications'
@@ -559,10 +368,9 @@ const pageTitle = computed(() => {
 
 const pageDescription = computed(() => {
   switch (selectedSection.value) {
-    case 'documents': return 'Upload, organize, and track evidence files for your assigned areas.'
-    case 'revisions': return 'Complete assigned accreditation tasks and revision requests.'
+    case 'documents': return 'Upload and track PDF files for your assigned areas.'
     case 'areas': return 'Work through the requirements for your assigned accreditation area.'
-    case 'team': return 'See who you are collaborating with on this program.'
+    case 'team': return 'See who is assigned to the areas you chair or belong to.'
     case 'notifications': return 'Stay current on assignments, reviews, and reminders.'
     default: return 'Track assigned tasks, submissions, and personal accreditation progress.'
   }
@@ -571,18 +379,16 @@ const pageDescription = computed(() => {
 const {
   selectedSection,
   selectedDocuments,
-  pendingRevisions,
   myAreas,
   selectedAreaId,
+  taskStats,
+  areaTeamMembers,
 } = storeToRefs(facultyDashboard)
 
 const {
-  loadTeam,
   loadProgram,
-  loadTasks,
   loadDocuments,
   loadNotifications,
-  loadDashboard,
   loadMyAreas,
   openMyArea,
   uploadDocument,
@@ -595,7 +401,6 @@ const areasExpanded = ref(false)
 
 const toggleTasksAccordion = () => {
   tasksExpanded.value = !tasksExpanded.value
-  selectSection('revisions')
   if (!tasksExpanded.value) {
     areasExpanded.value = false
   }
@@ -613,102 +418,20 @@ const openAssignedArea = (area: { id: number }) => {
 
 const { activeCall, callMessage, endCall } = useUserCalls()
 const documentSearch = ref('')
-const documentTypeFilter = ref('All')
 const activeEvidenceId = ref<string | null>(null)
 
-watch([documentSearch, documentTypeFilter], async ([search, filter]) => {
-  await loadDocuments(search || '', filter === 'All' ? 'all' : filter.toLowerCase())
+watch(documentSearch, async (search) => {
+  await loadDocuments(search || '', 'all')
 }, { flush: 'post' })
 
-const revisionCount = computed(() => pendingRevisions.value.length || 0)
-
-const facultyTaskData = computed(() => {
-  const items = Array.isArray((facultyDashboard as any)?.tasks) ? (facultyDashboard as any).tasks : []
-
-  return items
-    .map((task: any) => ({
-      id: task.id,
-      title: task.title || 'Unassigned task',
-      status: task.status || 'Not Started',
-      dueDate: task.dueDate || task.due_date || null,
-      description: task.description || 'Faculty accreditation task',
-    }))
-    .sort((a: any, b: any) => {
-      const aTime = a.dueDate ? new Date(a.dueDate).getTime() : Number.MAX_SAFE_INTEGER
-      const bTime = b.dueDate ? new Date(b.dueDate).getTime() : Number.MAX_SAFE_INTEGER
-      return aTime - bTime
-    })
-})
-
-const dashboardSummaryData = computed(() => ({
-  totalProjects: facultyTaskData.value.length || selectedDocuments.value.length || 0,
-  totalEvidence: selectedDocuments.value.length,
-  pendingReviews: Math.max(revisionCount.value, Number((facultyDashboard as any)?.dashboardSummary?.pendingReviews ?? 0)),
-  overdueTasks: Number((facultyDashboard as any)?.dashboardSummary?.overdueTasks ?? facultyTaskData.value.filter((task: any) => {
-    if (!task.dueDate) return false
-    return new Date(task.dueDate) < new Date() && task.status !== 'Completed'
-  }).length),
-  completion: Number((facultyDashboard as any)?.dashboardSummary?.readinessPercent ?? 0),
-}))
-
-const taskStatusBreakdown = computed(() => {
-  const counts = { completed: 0, inProgress: 0, pending: 0 }
-
-  facultyTaskData.value.forEach((task: any) => {
-    const status = String(task.status || 'Not Started')
-    if (status.toLowerCase().includes('complete')) counts.completed += 1
-    else if (status.toLowerCase().includes('progress')) counts.inProgress += 1
-    else counts.pending += 1
-  })
-
-  return counts
-})
-
-const progressPercent = computed(() => {
-  const total = facultyTaskData.value.length || 1
-  const completed = taskStatusBreakdown.value.completed
-  return Math.min(100, Math.round((completed / total) * 100))
-})
-
-const fileTypeIcon = (type: string) => {
-  switch (type) {
-    case 'Video':
-      return videocamOutline
-    case 'Image':
-      return imageOutline
-    case 'Audio':
-      return musicalNotesOutline
-    default:
-      return documentTextOutline
-  }
-}
-
-const documentFolders = computed(() => {
-  const counts: Record<string, number> = { Documents: 0, Images: 0, Videos: 0, Audio: 0 }
-
-  selectedDocuments.value.forEach((document: AppDocument) => {
-    const name = String(document.fileName || document.title || '')
-    if (/\.(mp4|mov|avi|webm|mkv)$/i.test(name)) counts.Videos += 1
-    else if (/\.(jpg|jpeg|png|gif|webp)$/i.test(name)) counts.Images += 1
-    else if (/\.(mp3|wav|m4a)$/i.test(name)) counts.Audio += 1
-    else counts.Documents += 1
-  })
-
-  return [
-    { name: 'Documents', count: counts.Documents },
-    { name: 'Images', count: counts.Images },
-    { name: 'Videos', count: counts.Videos },
-    { name: 'Audio', count: counts.Audio },
-  ]
-})
-
-const normalizeDocumentKind = (document: AppDocument) => {
+const isPdfDocument = (document: AppDocument) => {
   const fileName = String(document.fileName || document.title || '')
-  if (/\.(mp4|mov|avi|webm|mkv)$/i.test(fileName)) return 'Video'
-  if (/\.(jpg|jpeg|png|gif|webp)$/i.test(fileName)) return 'Image'
-  if (/\.(mp3|wav|m4a)$/i.test(fileName)) return 'Audio'
-  return 'Document'
+  return /\.pdf$/i.test(fileName)
 }
+
+const progressPercent = computed(() => Number(taskStats.value.progressPercent || 0))
+
+const fileTypeIcon = () => documentTextOutline
 
 const isEvidenceDocument = (document: AppDocument) => {
   const description = String((document as any)?.description || '')
@@ -728,32 +451,30 @@ const evidenceDocumentLibrary = computed(() => {
 })
 
 const evidenceItems = computed(() => {
-  return evidenceDocumentLibrary.value.map((document: AppDocument) => {
-    const type = normalizeDocumentKind(document)
-    return {
+  return evidenceDocumentLibrary.value
+    .filter((document: AppDocument) => isPdfDocument(document))
+    .map((document: AppDocument) => ({
       id: String(document.id),
       name: document.title || 'Accreditation Evidence',
-      type,
-      typeClass: type.toLowerCase(),
+      type: 'PDF',
+      typeClass: 'document',
       size: document.size ? String(document.size) : 'N/A',
       modified: formatDate(document.uploadedAt),
-    }
-  })
+    }))
 })
 
 const filteredDocuments = computed(() => {
   const query = documentSearch.value.trim().toLowerCase()
 
   return personalDocumentLibrary.value.filter((document: AppDocument) => {
-    const type = normalizeDocumentKind(document)
-    const matchesType = documentTypeFilter.value === 'All' || type === documentTypeFilter.value
+    if (!isPdfDocument(document)) return false
     const matchesQuery = !query || String(document.title || document.fileName || '').toLowerCase().includes(query)
-    return matchesType && matchesQuery
+    return matchesQuery
   }).map((document: AppDocument) => ({
     id: String(document.id),
     name: document.title || document.fileName || 'Untitled Document',
-    type: normalizeDocumentKind(document),
-    typeClass: normalizeDocumentKind(document).toLowerCase(),
+    type: 'PDF',
+    typeClass: 'document',
     size: document.size ? String(document.size) : 'N/A',
     modified: formatDate(document.uploadedAt),
     favorite: false,
@@ -764,83 +485,33 @@ const filteredDocuments = computed(() => {
 const evidenceCount = computed(() => evidenceItems.value.length)
 
 const analyticsBars = computed(() => {
-  const base = [45, 58, 72, 66, 82, 60, 76]
-  const pending = facultyTaskData.value.length
-
-  if (!pending) return base
-
-  const completed = taskStatusBreakdown.value.completed
-  const inProgress = taskStatusBreakdown.value.inProgress
-  const pendingTasks = Math.max(1, taskStatusBreakdown.value.pending)
+  const total = Math.max(1, Number(taskStats.value.total || 0))
+  const completed = Number(taskStats.value.completed || 0)
+  const inProgress = Number(taskStats.value.inProgress || 0)
+  const pending = Number(taskStats.value.pendingReviews || 0)
 
   return [
-    Math.max(20, Math.min(100, Math.round((completed / pending) * 100) + 15)),
-    Math.max(25, Math.min(100, Math.round((inProgress / pending) * 100) + 30)),
-    Math.max(30, Math.min(100, Math.round((pendingTasks / pending) * 100) + 20)),
-    Math.max(35, Math.min(100, Math.round((completed / pending) * 100) + 10)),
-    Math.max(40, Math.min(100, Math.round((inProgress / pending) * 100) + 25)),
-    Math.max(30, Math.min(100, Math.round((pendingTasks / pending) * 100) + 15)),
-    Math.max(50, Math.min(100, Math.round((completed / pending) * 100) + 20)),
+    Math.max(12, Math.min(100, Math.round((completed / total) * 100))),
+    Math.max(12, Math.min(100, Math.round((inProgress / total) * 100))),
+    Math.max(12, Math.min(100, Math.round((pending / total) * 100))),
+    Math.max(12, Math.min(100, Math.round((completed / total) * 80))),
+    Math.max(12, Math.min(100, Math.round((inProgress / total) * 90))),
+    Math.max(12, Math.min(100, Math.round((pending / total) * 70))),
+    Math.max(12, Math.min(100, Number(taskStats.value.progressPercent || 0))),
   ]
 })
 
 const teamMembers = computed(() => {
-  const directMembers = Array.isArray((facultyDashboard as any).team?.members)
-    ? (facultyDashboard as any).team.members
-    : []
-
-  if (directMembers.length) {
-    return directMembers.map((member: any, index: number) => ({
-      name: member.name || member.full_name || 'Faculty Member',
-      focus: member.focus || member.role || 'Accreditation tasks',
-      role: member.role || 'Faculty',
-      initials: (member.name || member.full_name || 'FM').split(' ').filter(Boolean).slice(0, 2).map((part: string) => part[0]?.toUpperCase() || '').join('') || 'FM',
-      status: member.status || (index % 2 === 0 ? 'Available' : 'Reviewing'),
-      statusClass: member.statusClass || (index % 2 === 0 ? 'success' : 'progress'),
-      avatarClass: ['avatar-1', 'avatar-2', 'avatar-3'][index % 3],
-    }))
-  }
-
-  const chairName = facultyDashboard.dashboardTeamLead || 'Program Chair'
-  return [
-    { name: chairName, focus: 'Accreditation review', role: 'Program Chair', initials: chairName.split(' ').filter(Boolean).slice(0, 2).map((part: string) => part[0]?.toUpperCase() || '').join('') || 'PC', status: 'Reviewing', statusClass: 'progress', avatarClass: 'avatar-1' },
-    { name: currentUserName.value || 'Current Faculty', focus: 'Evidence preparation', role: 'Faculty', initials: currentUserInitials.value || 'F', status: 'Active', statusClass: 'success', avatarClass: 'avatar-2' },
-    { name: facultyDashboard.dashboardProgram || 'Program Team', focus: 'Documentation tasks', role: 'Area Team', initials: 'PT', status: 'Pending', statusClass: 'pending', avatarClass: 'avatar-3' },
-  ]
-})
-
-const nextReminder = computed(() => {
-  const tasks = facultyTaskData.value
-  if (!tasks.length) {
-    return { title: 'Log current evidence upload', time: 'No upcoming task found' }
-  }
-
-  const nearest = [...tasks].sort((a: any, b: any) => {
-    const aTime = a.dueDate ? new Date(a.dueDate).getTime() : Number.MAX_SAFE_INTEGER
-    const bTime = b.dueDate ? new Date(b.dueDate).getTime() : Number.MAX_SAFE_INTEGER
-    return aTime - bTime
-  })[0]
-
-  return {
-    title: nearest?.title || 'Review accreditation evidence',
-    time: nearest?.dueDate ? `Due ${formatDate(nearest.dueDate)}` : 'Needs action',
-  }
-})
-
-const taskTimeline = computed(() => {
-  const tasks = facultyTaskData.value.slice(0, 4)
-  if (!tasks.length) {
-    return [
-      { id: 'empty-task', title: 'No task assigned yet', dueLabel: 'Check your program tasks later', colorClass: 'gray' },
-    ]
-  }
-
-  return tasks.map((task: any, index: number) => ({
-    id: task.id,
-    title: task.title,
-    dueLabel: task.dueDate ? `Due ${formatDate(task.dueDate)}` : 'No due date',
-    colorClass: ['blue', 'green', 'yellow', 'orange'][index % 4],
-  }))
+  return (areaTeamMembers.value || []).map((member) => {
+    const name = String(member.name || 'Faculty Member')
+    return {
+      id: member.id,
+      name,
+      focus: member.focus || '',
+      role: member.role || 'Area Member',
+      initials: name.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase() || '').join('') || 'FM',
+    }
+  })
 })
 
 const storageLimitMb = ref(20 * 1024)
@@ -872,37 +543,19 @@ const parseSizeToMegabytes = (value: string | number | undefined) => {
 }
 
 const storageUsage = computed(() => {
-  const documentEntries = selectedDocuments.value.map((document) => ({
+  const pdfEntries = selectedDocuments.value.filter((document) => isPdfDocument(document))
+  const documentEntries = pdfEntries.map((document) => ({
     name: document.title || document.fileName || 'Document',
     size: document.size ?? document.fileSize,
     fileName: document.fileName || document.title || 'Document',
-    type: document.fileName?.match(/\.(mp4|mov|avi|webm|mkv)$/i) ? 'Video' : document.fileName?.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? 'Image' : 'Document',
   }))
 
   const totalSizeMb = documentEntries.reduce((sum, document) => sum + parseSizeToMegabytes(document.size), 0)
   const usedGb = totalSizeMb / 1024
   const percent = Math.min(100, (usedGb / storageLimitGb.value) * 100)
 
-  const totalVideos = documentEntries.filter((document) => {
-    const fileName = document.fileName || document.name
-    return /\.(mp4|mov|avi|webm|mkv)$/i.test(fileName) || document.type === 'Video'
-  }).length
-
-  const totalImages = documentEntries.filter((document) => {
-    const fileName = document.fileName || document.name
-    return /\.(jpg|jpeg|png|gif|webp)$/i.test(fileName) || document.type === 'Image'
-  }).length
-
-  const totalPdfs = documentEntries.filter((document) => {
-    const fileName = document.fileName || document.name
-    return /\.(pdf|docx|xlsx|pptx)$/i.test(fileName) || document.type === 'Document'
-  }).length
-
   return {
-    totalDocuments: documentEntries.length,
-    totalVideos,
-    totalImages,
-    totalPdfs,
+    totalPdfs: documentEntries.length,
     usedGb,
     usedLabel: `${Math.min(20, Number(usedGb.toFixed(1))).toFixed(1)} GB`,
     percent: Number(percent.toFixed(1)),
@@ -917,11 +570,10 @@ const useAsEvidence = async (documentId: string) => {
     return
   }
 
-  const selectedTask = facultyTaskData.value[0]
   const payload = {
     program_id: authStore.user?.programId ?? facultyDashboard.program?.id ?? null,
-    area_id: selectedTask?.areaId ?? selectedTask?.area_id ?? null,
-    task_id: selectedTask?.id ?? null,
+    area_id: myAreas.value[0]?.id ?? null,
+    task_id: null,
     title: String((match as any)?.title || (match as any)?.fileName || 'Pending Evidence'),
     description: (match as any)?.description || 'Linked as evidence for accreditation.',
     school_year: new Date().getFullYear() + '-' + (new Date().getFullYear() + 1),
@@ -932,7 +584,6 @@ const useAsEvidence = async (documentId: string) => {
     if (response?.success) {
       activeEvidenceId.value = documentId
       await loadDocuments()
-      await loadDashboard()
       return
     }
   } catch (error) {
@@ -984,6 +635,13 @@ const onFileSelected = async (event: Event) => {
 
   if (!file) return
 
+  const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name)
+  if (!isPdf) {
+    window.alert('This Documents view accepts PDF files only.')
+    if (input) input.value = ''
+    return
+  }
+
   const title = window.prompt('Enter document title', file.name) || file.name
   const description = window.prompt('Enter document description', 'Uploaded from faculty dashboard') || ''
 
@@ -991,7 +649,6 @@ const onFileSelected = async (event: Event) => {
 
   if (success) {
     await loadDocuments()
-    await loadDashboard()
   }
 
   if (input) input.value = ''
@@ -1012,12 +669,9 @@ const loadFacultyStorageLimit = async () => {
 
 const loadData = async () => {
   await Promise.all([
-    loadTeam(),
     loadProgram(),
-    loadTasks(),
     loadDocuments(),
     loadNotifications(),
-    loadDashboard(),
     loadFacultyStorageLimit(),
     loadMyAreas(),
   ])
@@ -1029,10 +683,14 @@ onMounted(() => {
 
 const applySectionFromRoute = (section: unknown) => {
   if (typeof section !== 'string' || !section) return
-  selectSection(section as any)
-  if (section === 'areas' || section === 'revisions') {
+  if (section === 'revisions') {
     tasksExpanded.value = true
-    if (section === 'areas') areasExpanded.value = true
+    return
+  }
+  selectSection(section as any)
+  if (section === 'areas') {
+    tasksExpanded.value = true
+    areasExpanded.value = true
   }
 }
 
@@ -1054,8 +712,8 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
   padding: 0.85rem 1rem;
   border-radius: 0.9rem;
   background: var(--adams-success-soft);
-  border: 1px solid #bbf7d0;
-  color: #064e3b;
+  border: 1px solid var(--adams-accent-success);
+  color: var(--color-success-dark);
 }
 
 /* ── Sidebar ── */
@@ -1191,8 +849,8 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
   align-items: stretch;
   gap: 0.28rem;
   font-size: 0.86rem;
-  padding: 0.42rem 0.7rem;
-  color: #3f5363;
+  padding: 0.42rem 0.7rem 0.42rem 0.85rem;
+  color: var(--adams-text-primary);
 }
 
 .fac-area-child-copy {
@@ -1203,7 +861,7 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
 }
 
 .fac-area-role {
-  color: #64748b;
+  color: var(--adams-text-muted);
   font-size: 0.68rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -1211,7 +869,7 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
 }
 
 .fac-area-progress {
-  color: #0e7a5f;
+  color: var(--adams-text-muted);
   font-size: 0.72rem;
   font-weight: 800;
 }
@@ -1220,14 +878,18 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
   display: block;
   height: 4px;
   border-radius: 999px;
-  background: #e2e8f0;
+  background: var(--adams-gridline);
   overflow: hidden;
 }
 
 .fac-area-progress-fill {
   display: block;
   height: 100%;
-  background: #0e7a5f;
+  background: var(--adams-accent-pending);
+}
+
+.fac-area-progress-fill.is-complete {
+  background: var(--adams-accent-success);
 }
 
 .fac-areas-empty {
@@ -1386,7 +1048,7 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
   height: 36px;
   border-radius: 50%;
   object-fit: cover;
-  background: linear-gradient(135deg, #f3d8d8, #e5d9ff);
+  background: var(--adams-structure-secondary);
   display: grid;
   place-items: center;
   font-weight: 800;
@@ -1444,9 +1106,9 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
   border-radius: 999px;
   padding: 0.75rem 1.15rem;
   font-weight: 700;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  background: #fff;
-  color: #1e293b;
+  border: 1px solid var(--adams-gridline);
+  background: var(--adams-canvas-panel);
+  color: var(--adams-text-primary);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -1455,10 +1117,10 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
 }
 
 .fac-btn-primary {
-  background: linear-gradient(135deg, #0f5c4d, #1aa779);
-  color: #fff;
-  border: none;
-  box-shadow: 0 10px 20px rgba(17, 100, 82, 0.2);
+  background: var(--adams-cta);
+  color: var(--adams-cta-fg);
+  border-color: var(--adams-cta);
+  box-shadow: none;
 }
 
 .fac-btn-ghost {
@@ -1466,8 +1128,8 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
 }
 
 .fac-btn-light {
-  background: #f7faf9;
-  color: #0f172a;
+  background: var(--adams-canvas);
+  color: var(--adams-text-primary);
 }
 
 .fac-level-status {
@@ -1483,20 +1145,19 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
 }
 
 .fac-stat-card {
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(15, 23, 42, 0.06);
+  background: var(--adams-canvas-panel);
+  border: 1px solid var(--adams-gridline);
   border-radius: 1.2rem;
   padding: 1rem 1rem 0.9rem;
   min-height: 132px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  color: var(--adams-text-primary);
 }
 
-.fac-stat-card-primary {
-  background: linear-gradient(135deg, #0d5e4a, #0f765f);
-  color: #fff;
-}
+.fac-stat-value.is-success { color: var(--adams-accent-success); }
+.fac-stat-value.is-pending { color: var(--adams-accent-pending); }
 
 .fac-stat-header {
   display: flex;
@@ -1641,12 +1302,12 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
   display: grid;
   place-items: center;
   font-weight: 800;
-  color: #fff;
+  color: var(--adams-canvas);
 }
 
-.avatar-1 { background: linear-gradient(135deg, #e7b5c5, #c8778c); }
-.avatar-2 { background: linear-gradient(135deg, #b5e4c8, #3f9d7b); }
-.avatar-3 { background: linear-gradient(135deg, #f8cf8d, #d58552); }
+.avatar-1 { background: var(--adams-structure-primary); }
+.avatar-2 { background: var(--adams-structure-secondary); }
+.avatar-3 { background: var(--adams-text-muted); }
 
 .fac-member-copy {
   flex: 1;
@@ -1677,9 +1338,9 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
   white-space: nowrap;
 }
 
-.fac-member-status.success { background: #dffae8; color: #0d8b5d; }
-.fac-member-status.progress { background: #eaf1ff; color: #3367d6; }
-.fac-member-status.pending { background: #f8f1d5; color: #9a6d11; }
+.fac-member-status.success { background: var(--adams-success-soft); color: var(--color-success-dark); }
+.fac-member-status.progress { background: var(--adams-warning-soft); color: var(--adams-text-primary); }
+.fac-member-status.pending { background: var(--adams-gridline); color: var(--adams-text-muted); }
 
 .fac-reminder-card {
   background: #f8faf9;
@@ -1725,7 +1386,7 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
   width: 165px;
   height: 165px;
   border-radius: 50%;
-  background: conic-gradient(#0f8e73 0 41%, #e7ecea 41% 100%);
+  background: conic-gradient(var(--progress-fill, var(--adams-accent-pending)) 0 calc(var(--progress, 0) * 1%), var(--adams-gridline) 0 100%);
   display: grid;
   place-items: center;
 }
@@ -1734,7 +1395,7 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
   content: '';
   position: absolute;
   inset: 18px;
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--adams-canvas-panel);
   border-radius: inherit;
 }
 
@@ -1764,9 +1425,9 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
   vertical-align: middle;
 }
 
-.dot.green { background: #0d8b5d; }
-.dot.amber { background: #d9a20f; }
-.dot.gray { background: #c7d1d7; }
+.dot.green { background: var(--adams-accent-success); }
+.dot.amber { background: var(--adams-accent-pending); }
+.dot.gray { background: var(--adams-gridline); }
 
 .fac-timeline-card {
   background: #f8faf9;
@@ -1808,10 +1469,11 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
   display: inline-block;
 }
 
-.fac-task-bullet.blue { background: #6aa9ff; }
-.fac-task-bullet.green { background: #2bb673; }
-.fac-task-bullet.yellow { background: #f2c94c; }
-.fac-task-bullet.orange { background: #f28d4e; }
+.fac-task-bullet.blue { background: var(--adams-accent-info); }
+.fac-task-bullet.green { background: var(--adams-accent-success); }
+.fac-task-bullet.yellow { background: var(--adams-accent-pending); }
+.fac-task-bullet.orange { background: var(--adams-accent-urgent); }
+.fac-task-bullet.gray { background: var(--adams-gridline); }
 
 .fac-timeline li div {
   display: flex;
@@ -1830,9 +1492,9 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
 }
 
 .fac-timer-card {
-  background: linear-gradient(140deg, #0d3f39, #0b2d2c 70%);
-  color: #fff;
-  border: none;
+  background: var(--adams-canvas-panel);
+  color: var(--adams-text-primary);
+  border: 1px solid var(--adams-gridline);
 }
 
 .fac-timer-wrap {
@@ -1846,6 +1508,10 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
   font-size: clamp(1.5rem, 2vw, 2.2rem);
   font-weight: 800;
   letter-spacing: -0.06em;
+}
+
+.fac-timer-display.is-urgent {
+  color: var(--adams-accent-urgent);
 }
 
 .fac-timer-controls {
@@ -1864,13 +1530,14 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
 }
 
 .fac-timer-btn.stop {
-  background: #eb5757;
-  color: #fff;
+  background: transparent;
+  color: var(--adams-accent-urgent);
+  border: 1px solid var(--adams-accent-urgent);
 }
 
 .fac-timer-btn.play {
-  background: #24c17d;
-  color: #fff;
+  background: var(--adams-structure-primary);
+  color: var(--adams-canvas);
 }
 
 .fac-documents-shell {
@@ -2050,9 +1717,9 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
   color: #244caa;
 }
 
-.fac-doc-icon.video { background: #e0f2fe; color: #0369a1; }
-.fac-doc-icon.image { background: #dcfce7; color: #15803d; }
-.fac-doc-icon.audio { background: #fae7f3; color: #be185d; }
+.fac-doc-icon.video { background: var(--adams-info-soft); color: var(--adams-accent-info); }
+.fac-doc-icon.image { background: var(--adams-success-soft); color: var(--adams-accent-success); }
+.fac-doc-icon.audio { background: var(--adams-warning-soft); color: var(--adams-text-primary); }
 
 .fac-doc-star {
   color: #fbbf24;
@@ -2105,17 +1772,17 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
 }
 
 .fac-doc-action.primary {
-  background: #1b7d5b;
-  border-color: #1b7d5b;
-  color: #fff;
+  background: var(--adams-cta);
+  border-color: var(--adams-cta);
+  color: var(--adams-cta-fg);
 }
 
 .fac-storage-panel {
-  background: linear-gradient(180deg, #f5faf7, #ecf5f0);
-  border: 1px solid rgba(15, 23, 42, 0.06);
+  background: var(--adams-canvas-panel);
+  border: 1px solid var(--adams-gridline);
   border-radius: 1rem;
   padding: 1rem 1rem 1.1rem;
-  border-left: 4px solid #1c8f68;
+  border-left: 4px solid var(--adams-structure-primary);
 }
 
 .fac-storage-panel h3 {
@@ -2146,7 +1813,7 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
   margin: 0.8rem 0 0.8rem;
   height: 12px;
   border-radius: 999px;
-  background: #e7eceb;
+  background: var(--adams-gridline);
   overflow: hidden;
 }
 
@@ -2154,7 +1821,7 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
   display: block;
   width: 24%;
   height: 100%;
-  background: linear-gradient(90deg, #34d399, #0f7a62);
+  background: var(--adams-accent-pending);
   border-radius: inherit;
 }
 
@@ -2376,14 +2043,14 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
   font-weight: 600;
 }
 
-.fac-status-pending { color: #f59e0b; }
-.fac-status-in_progress { color: #3b82f6; }
-.fac-status-submitted { color: #8b5cf6; }
-.fac-status-approved { color: #10b981; }
-.fac-status-returned { color: #ef4444; }
-.fac-status-revised { color: #f97316; }
-.fac-status-resubmitted { color: #06b6d4; }
-.fac-status-review { color: #6366f1; }
+.fac-status-pending { color: var(--adams-text-muted); }
+.fac-status-in_progress { color: var(--adams-accent-pending); }
+.fac-status-submitted { color: var(--adams-accent-pending); }
+.fac-status-approved { color: var(--adams-accent-success); }
+.fac-status-returned { color: var(--adams-accent-urgent); }
+.fac-status-revised { color: var(--adams-accent-pending); }
+.fac-status-resubmitted { color: var(--adams-accent-info); }
+.fac-status-review { color: var(--adams-accent-info); }
 
 .fac-return-feedback {
   background: #fef2f2;
@@ -2478,11 +2145,11 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
   white-space: nowrap;
 }
 
-.fac-task-status.fac-status-pending { background: #fef3c7; color: #92400e; }
-.fac-task-status.fac-status-in_progress { background: #dbeafe; color: #1e40af; }
-.fac-task-status.fac-status-submitted { background: #ede9fe; color: #5b21b6; }
-.fac-task-status.fac-status-approved { background: #d1fae5; color: #065f46; }
-.fac-task-status.fac-status-returned { background: #fee2e2; color: #7f1d1d; }
+.fac-task-status.fac-status-pending { background: var(--adams-gridline); color: var(--adams-text-muted); }
+.fac-task-status.fac-status-in_progress { background: var(--adams-warning-soft); color: var(--adams-text-primary); }
+.fac-task-status.fac-status-submitted { background: var(--adams-warning-soft); color: var(--adams-text-primary); }
+.fac-task-status.fac-status-approved { background: var(--adams-success-soft); color: var(--color-success-dark); }
+.fac-task-status.fac-status-returned { background: var(--adams-danger-soft); color: var(--color-danger-dark); }
 
 .fac-task-description {
   color: #475569;
@@ -2570,8 +2237,8 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--adams-structure-primary);
+  color: var(--adams-canvas);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2580,7 +2247,7 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
 }
 
 .fac-team-avatar.lead {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background: var(--adams-structure-secondary);
 }
 
 .fac-team-info {
@@ -2752,16 +2419,7 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
 }
 
 .fac-text-muted {
-  color: #94a3b8;
-}
-
-.fac-btn-primary {
-  background: #3b82f6;
-  color: white;
-}
-
-.fac-btn-primary:hover {
-  background: #2563eb;
+  color: var(--adams-text-muted);
 }
 
 </style>

@@ -147,14 +147,14 @@ const goTo = (path: string) => router.push(path)
   align-items: center;
   padding: 1rem 1.1rem;
   border-radius: 1rem;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  border: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, var(--adams-canvas-panel) 0%, var(--adams-canvas) 100%);
+  border: 1px solid var(--adams-gridline);
   margin-bottom: 1rem;
 }
 
-.eyebrow { margin: 0 0 0.25rem; color: #64748b; font-size: 0.73rem; letter-spacing: 0.24em; text-transform: uppercase; }
-.role-banner h2 { margin: 0; color: #0f172a; font-size: 1.1rem; }
-.role-banner p { margin: 0.3rem 0 0; color: #475569; }
+.eyebrow { margin: 0 0 0.25rem; color: var(--adams-text-muted); font-size: 0.73rem; letter-spacing: 0.24em; text-transform: uppercase; }
+.role-banner h2 { margin: 0; color: var(--adams-text-primary); font-size: 1.1rem; }
+.role-banner p { margin: 0.3rem 0 0; color: var(--adams-text-muted); }
 .role-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--spacing-lg); }
 

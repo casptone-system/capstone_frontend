@@ -14,7 +14,8 @@
             Assign an Area Chair, submission deadline and optional members to each of the 10 fixed AACCUP areas.
           </template>
           <template v-else>
-            Open a level to assign Area Chairs for that accreditation cycle.
+            Open a current or higher level to assign Area Chairs.
+            Lower levels are marked as reached.
             <template v-if="assignment?.programName"> {{ assignment.programName }}.</template>
           </template>
         </p>
@@ -33,7 +34,7 @@
         :key="level.level"
         type="button"
         class="afa-folder-card"
-        :class="{ 'is-disabled': !level.cycleId }"
+        :class="{ 'is-disabled': !isLevelOpen(level), 'is-reached': isLevelReached(level) }"
         @click="openLevel(level)"
       >
         <div class="afa-folder-head">
@@ -42,28 +43,33 @@
         </div>
         <strong class="afa-folder-name">
           {{ level.level }}
-          <span v-if="level.cycleId && level.cycleId === assignment?.activeCycleId" class="afa-chip afa-chip-chair">Active</span>
+          <span v-if="level.cycleId && level.cycleId === assignment?.activeCycleId" class="afa-chip afa-chip-chair">Current</span>
         </strong>
         <div class="afa-folder-meta">
-          <span v-if="level.cycleId" class="afa-chip afa-chip-chair">
+          <span v-if="isLevelReached(level)" class="afa-chip afa-chip-members">Successfully reached</span>
+          <span v-else-if="level.cycleId" class="afa-chip afa-chip-chair">
             {{ level.assignedCount }} of {{ level.totalAreas }} areas assigned
           </span>
           <span v-else class="afa-muted">No cycle yet</span>
         </div>
         <span class="afa-folder-action">
-          {{ level.cycleId ? 'Open areas' : 'Unavailable' }}
-          <ion-icon :icon="chevronForwardOutline" />
+          {{ levelActionLabel(level) }}
+          <ion-icon v-if="isLevelOpen(level)" :icon="chevronForwardOutline" />
         </span>
       </button>
     </div>
 
     <!-- 10 Fixed Folder Cards -->
+    <p v-else-if="!areas.length" class="afa-muted">
+      Areas for this level are not available yet. Press Refresh and try again.
+    </p>
     <div v-else class="afa-grid">
       <button
         v-for="folder in fixedAreas"
         :key="folder.code"
         type="button"
         class="afa-folder-card"
+        :class="{ 'is-disabled': !getArea(folder)?.id }"
         @click="openModal(folder)"
       >
         <div class="afa-folder-head">
@@ -263,6 +269,8 @@ type LevelFolder = {
   cycleId: number | null
   cycleStatus: string | null
   displayStatus: string
+  access?: 'reached' | 'open'
+  isOpen?: boolean
   assignedCount: number
   totalAreas: number
   areas: any[]
@@ -368,6 +376,7 @@ let memberTimer: ReturnType<typeof setTimeout> | null = null
 const statusClass = (status: string) => {
   switch (status) {
     case 'Accredited':
+    case 'Reached':
       return 'is-accredited'
     case 'In Progress':
       return 'is-progress'
@@ -376,6 +385,18 @@ const statusClass = (status: string) => {
     default:
       return 'is-not-started'
   }
+}
+
+const isLevelReached = (level: LevelFolder) =>
+  level.access === 'reached' || level.displayStatus === 'Reached'
+
+const isLevelOpen = (level: LevelFolder) =>
+  !isLevelReached(level) && (level.isOpen !== false) && Boolean(level.cycleId)
+
+const levelActionLabel = (level: LevelFolder) => {
+  if (isLevelReached(level)) return 'Reached'
+  if (isLevelOpen(level)) return 'Open areas'
+  return 'Unavailable'
 }
 
 /* ---------- Loading backend area data ---------- */
@@ -414,6 +435,9 @@ const loadAreas = async () => {
       selectedLevel.value = payload.levels.find((level: LevelFolder) => level.cycleId === payload.activeCycleId) || null
     } else if (selectedLevel.value) {
       selectedLevel.value = payload.levels.find((level: LevelFolder) => level.level === selectedLevel.value?.level) || null
+      if (selectedLevel.value && !isLevelOpen(selectedLevel.value)) {
+        selectedLevel.value = null
+      }
     }
   } catch (err: any) {
     assignment.value = null
@@ -424,7 +448,11 @@ const loadAreas = async () => {
 }
 
 const openLevel = (level: LevelFolder) => {
-  if (!level.cycleId) {
+  if (isLevelReached(level)) {
+    toastStore.show(`${level.level} was already reached for this program.`, 'success')
+    return
+  }
+  if (!isLevelOpen(level)) {
     toastStore.show('No accreditation cycle exists for this level yet.', 'error')
     return
   }
@@ -448,8 +476,12 @@ const deadlineToInput = (value: string | null | undefined): string => {
 }
 
 const openModal = (folder: any) => {
-  activeFolder.value = folder
   const area = getArea(folder)
+  if (!area?.id) {
+    toastStore.show('This area has not been initialised yet. Press Refresh and try again.', 'error')
+    return
+  }
+  activeFolder.value = folder
   const chair = getChair(folder)
   selectedChair.value = chair
   deadlineValue.value = deadlineToInput(area?.deadline)
@@ -640,7 +672,7 @@ onUnmounted(() => {
   padding: 0;
   border: none;
   background: transparent;
-  color: #2563eb;
+  color: var(--adams-accent-info);
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
@@ -649,12 +681,12 @@ onUnmounted(() => {
   margin: 0;
   font-size: 1.15rem;
   font-weight: 700;
-  color: #111;
+  color: var(--adams-text-primary);
 }
 .afa-sub {
   margin: 0.25rem 0 0;
   font-size: 0.85rem;
-  color: #6b7280;
+  color: var(--adams-text-muted);
 }
 
 .afa-btn {
@@ -670,15 +702,15 @@ onUnmounted(() => {
   transition: all 0.2s;
 }
 .afa-btn.afa-btn-ghost {
-  background: #f3f4f6;
-  color: #374151;
-  &:hover { background: #e5e7eb; }
+  background: var(--adams-canvas);
+  color: var(--adams-text-primary);
+  &:hover { background: var(--adams-gridline); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 .afa-btn.afa-btn-primary {
-  background: #2563eb;
-  color: #fff;
-  &:hover:not(:disabled) { background: #1d4ed8; }
+  background: var(--adams-cta);
+  color: var(--adams-cta-fg);
+  &:hover:not(:disabled) { background: var(--adams-cta-hover); }
   &:disabled { opacity: 0.55; cursor: not-allowed; }
 }
 
@@ -694,25 +726,30 @@ onUnmounted(() => {
   align-items: flex-start;
   gap: 0.5rem;
   padding: 1.1rem 1.1rem 0.9rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--adams-gridline);
   border-radius: 0.9rem;
-  background: #fff;
+  background: var(--adams-canvas-panel);
   cursor: pointer;
   text-align: left;
   transition: all 0.2s;
   text-decoration: none;
   &:hover {
-    border-color: #2563eb;
+    border-color: var(--adams-accent-info);
     box-shadow: 0 6px 18px rgba(37, 99, 235, 0.12);
     transform: translateY(-2px);
   }
   &.is-disabled {
-    opacity: 0.7;
+    opacity: 0.72;
+    cursor: not-allowed;
     &:hover {
-      border-color: #e5e7eb;
+      border-color: var(--adams-gridline);
       box-shadow: none;
       transform: none;
     }
+  }
+  &.is-reached {
+    opacity: 1;
+    border-color: color-mix(in srgb, var(--adams-accent-success) 35%, var(--adams-gridline));
   }
 }
 .afa-folder-head {
@@ -728,8 +765,8 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   border-radius: 0.7rem;
-  background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
-  color: #1d4ed8;
+  background: linear-gradient(135deg, var(--adams-info-soft) 0%, var(--adams-info-soft) 100%);
+  color: var(--adams-accent-info);
   font-size: 1.5rem;
 }
 .afa-folder-code {
@@ -737,8 +774,8 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #64748b;
-  background: #f1f5f9;
+  color: var(--adams-text-muted);
+  background: var(--adams-canvas);
   padding: 0.25rem 0.55rem;
   border-radius: 999px;
 }
@@ -748,15 +785,15 @@ onUnmounted(() => {
   letter-spacing: 0.03em;
   padding: 0.22rem 0.5rem;
   border-radius: 999px;
-  &.is-accredited { background: #d1fae5; color: #047857; }
-  &.is-progress { background: #dbeafe; color: #1d4ed8; }
-  &.is-expired { background: #fee2e2; color: #b91c1c; }
-  &.is-not-started { background: #f1f5f9; color: #64748b; }
+  &.is-accredited { background: var(--adams-success-soft); color: var(--adams-accent-success); }
+  &.is-progress { background: var(--adams-info-soft); color: var(--adams-accent-info); }
+  &.is-expired { background: var(--adams-danger-soft); color: var(--adams-accent-urgent); }
+  &.is-not-started { background: var(--adams-canvas); color: var(--adams-text-muted); }
 }
 .afa-folder-name {
   font-size: 0.98rem;
   font-weight: 600;
-  color: #111;
+  color: var(--adams-text-primary);
   line-height: 1.3;
   text-align: left;
 }
@@ -778,20 +815,20 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 .afa-chip-chair {
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: var(--adams-info-soft);
+  color: var(--adams-accent-info);
 }
 .afa-chip-deadline {
-  background: #fef3c7;
-  color: #b45309;
+  background: var(--adams-warning-soft);
+  color: var(--adams-text-primary);
 }
 .afa-chip-members {
-  background: #d1fae5;
-  color: #047857;
+  background: var(--adams-success-soft);
+  color: var(--adams-accent-success);
 }
 .afa-muted {
   font-size: 0.78rem;
-  color: #94a3b8;
+  color: var(--adams-text-muted);
 }
 .afa-folder-action {
   display: inline-flex;
@@ -799,7 +836,7 @@ onUnmounted(() => {
   gap: 0.25rem;
   font-size: 0.8rem;
   font-weight: 600;
-  color: #2563eb;
+  color: var(--adams-accent-info);
   margin-top: 0.35rem;
 }
 /* Modal */
@@ -818,7 +855,7 @@ onUnmounted(() => {
   align-items: center;
 }
 .afa-modal {
-  background: #fff;
+  background: var(--adams-canvas-panel);
   border-radius: 1rem;
   max-width: 560px;
   width: 100%;
@@ -835,27 +872,27 @@ onUnmounted(() => {
   justify-content: space-between;
   gap: 1rem;
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--adams-gridline);
 }
 .afa-modal-header h3 {
   margin: 0;
   font-size: 1.05rem;
   font-weight: 700;
-  color: #111;
+  color: var(--adams-text-primary);
 }
 .afa-modal-name {
   margin: 0.2rem 0 0;
   font-size: 0.82rem;
-  color: #6b7280;
+  color: var(--adams-text-muted);
 }
 .afa-modal-close {
   width: 2rem;
   height: 2rem;
   border: none;
   background: transparent;
-  color: #6b7280;
+  color: var(--adams-text-muted);
   cursor: pointer;
-  &:hover { background: #f3f4f6; color: #111; }
+  &:hover { background: var(--adams-canvas); color: var(--adams-text-primary); }
 }
 .afa-modal-body {
   padding: 1.25rem 1.5rem;
@@ -878,15 +915,15 @@ onUnmounted(() => {
   margin: 0;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #111;
+  color: var(--adams-text-primary);
 }
 .afa-required {
   font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #b45309;
-  background: #fef3c7;
+  color: var(--adams-text-primary);
+  background: var(--adams-warning-soft);
   padding: 0.15rem 0.45rem;
   border-radius: 999px;
 }
@@ -895,8 +932,8 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #047857;
-  background: #d1fae5;
+  color: var(--adams-accent-success);
+  background: var(--adams-success-soft);
   padding: 0.15rem 0.45rem;
   border-radius: 999px;
 }
@@ -906,14 +943,14 @@ onUnmounted(() => {
 .afa-input {
   width: 100%;
   padding: 0.7rem 0.8rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--adams-gridline);
   border-radius: 0.6rem;
   font-size: 0.88rem;
   font-family: inherit;
   box-sizing: border-box;
   &:focus {
     outline: none;
-    border-color: #2563eb;
+    border-color: var(--adams-accent-info);
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
   }
 }
@@ -925,8 +962,8 @@ onUnmounted(() => {
   z-index: 20;
   max-height: 220px;
   overflow: auto;
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--adams-canvas-panel);
+  border: 1px solid var(--adams-gridline);
   border-radius: 0.6rem;
   box-shadow: 0 12px 30px rgba(2, 6, 23, 0.12);
 }
@@ -940,7 +977,7 @@ onUnmounted(() => {
   background: transparent;
   cursor: pointer;
   text-align: left;
-  &:hover { background: #f3f4f6; }
+  &:hover { background: var(--adams-canvas); }
 }
 .afa-user-copy {
   display: flex;
@@ -950,14 +987,14 @@ onUnmounted(() => {
 }
 .afa-user-copy strong {
   font-size: 0.85rem;
-  color: #111;
+  color: var(--adams-text-primary);
 }
 .afa-user-copy small {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--adams-text-muted);
 }
 .afa-add-icon {
-  color: #2563eb;
+  color: var(--adams-accent-info);
   font-size: 1.15rem;
   flex-shrink: 0;
 }
@@ -969,8 +1006,8 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #fff;
+  background: linear-gradient(135deg, var(--adams-structure-primary) 0%, var(--adams-structure-secondary) 100%);
+  color: var(--adams-canvas-panel);
   font-size: 0.7rem;
   font-weight: 700;
   flex-shrink: 0;
@@ -980,17 +1017,17 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.6rem;
   padding: 0.6rem;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
+  background: var(--adams-info-soft);
+  border: 1px solid var(--adams-info-soft);
   border-radius: 0.6rem;
 }
 .afa-self-btn {
   appearance: none;
   align-self: flex-start;
   margin-top: 0.55rem;
-  border: 1px dashed #93c5fd;
+  border: 1px dashed var(--adams-info-soft);
   background: #f8fbff;
-  color: #1d4ed8;
+  color: var(--adams-accent-info);
   border-radius: 0.55rem;
   padding: 0.45rem 0.7rem;
   font-size: 0.8rem;
@@ -998,15 +1035,15 @@ onUnmounted(() => {
   cursor: pointer;
 }
 .afa-self-btn:hover {
-  background: #eff6ff;
+  background: var(--adams-info-soft);
 }
 .afa-remove-x {
   border: none;
   background: transparent;
-  color: #6b7280;
+  color: var(--adams-text-muted);
   cursor: pointer;
   margin-left: auto;
-  &:hover { color: #dc2626; }
+  &:hover { color: var(--adams-accent-urgent); }
 }
 
 .afa-tags {
@@ -1019,33 +1056,33 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.3rem;
   font-size: 0.8rem;
-  background: #f1f5f9;
-  color: #334155;
+  background: var(--adams-canvas);
+  color: var(--adams-text-primary);
   padding: 0.3rem 0.5rem;
   border-radius: 999px;
 }
 .afa-tag-remove {
   border: none;
   background: transparent;
-  color: #64748b;
+  color: var(--adams-text-muted);
   cursor: pointer;
   display: flex;
   align-items: center;
-  &:hover { color: #dc2626; }
+  &:hover { color: var(--adams-accent-urgent); }
 }
 
 .afa-field-error {
   margin: 0;
   font-size: 0.78rem;
-  color: #dc2626;
+  color: var(--adams-accent-urgent);
 }
 .afa-message {
   margin: 0;
   padding: 0.7rem 0.8rem;
   border-radius: 0.5rem;
   font-size: 0.85rem;
-  &.success { background: #d1fae5; color: #047857; }
-  &.error { background: #fee2e2; color: #b91c1c; }
+  &.success { background: var(--adams-success-soft); color: var(--adams-accent-success); }
+  &.error { background: var(--adams-danger-soft); color: var(--adams-accent-urgent); }
 }
 
 .afa-modal-footer {
@@ -1053,6 +1090,6 @@ onUnmounted(() => {
   justify-content: flex-end;
   gap: 0.75rem;
   padding: 1rem 1.5rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--adams-gridline);
 }
 </style>

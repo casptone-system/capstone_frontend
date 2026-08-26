@@ -61,6 +61,7 @@
               />
             </div>
             <span v-else class="apr-muted">No files yet</span>
+            <span v-if="row.isDone" class="apr-submitted">Submitted</span>
 
             <div v-if="canUpload" class="apr-row-actions">
               <button
@@ -88,13 +89,13 @@
               <button
                 type="button"
                 class="apr-icon-btn primary"
-                :disabled="pendingId === row.id || !canSubmit"
-                title="Submit"
-                aria-label="Submit"
-                @click="submitArea(row)"
+                :disabled="pendingId === row.id || !canSubmitRow(row)"
+                :title="row.isDone ? 'Submitted' : 'Submit'"
+                :aria-label="row.isDone ? 'Submitted' : 'Submit'"
+                @click="submitRow(row)"
               >
                 <ion-icon :icon="sendOutline" />
-                <span class="apr-tooltip">Submit</span>
+                <span class="apr-tooltip">{{ row.isDone ? 'Submitted' : 'Submit' }}</span>
               </button>
             </div>
           </td>
@@ -124,7 +125,7 @@ import {
   deleteParameterRow,
   deleteParameterRowDocuments,
   patchParameterRowContent,
-  submitAreaReview,
+  submitParameterRow,
 } from '@/lib/api'
 import AreaFileThumbnail from '@/components/AreaFileThumbnail.vue'
 import AreaRowUploadModal from '@/components/AreaRowUploadModal.vue'
@@ -162,7 +163,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (event: 'updated', row: ParameterRow): void
   (event: 'removed', row: ParameterRow): void
-  (event: 'submitted'): void
+  (event: 'submitted', row: ParameterRow): void
   (event: 'files-changed'): void
 }>()
 
@@ -295,17 +296,21 @@ const removeFiles = async (row: ParameterRow) => {
   }
 }
 
-const submitArea = async (row: ParameterRow) => {
-  if (!props.areaId) return
-  if (!window.confirm('This submits the whole area for review, not just this row. Continue?')) return
+const canSubmitRow = (row: ParameterRow) =>
+  Boolean(props.canUpload) && rowFiles(row).length > 0 && !row.isDone
+
+const submitRow = async (row: ParameterRow) => {
+  if (!canSubmitRow(row)) return
+  if (!window.confirm('Submit this row only? Other rows in the area will not be submitted.')) return
 
   pendingId.value = row.id
   try {
     error.value = ''
-    await submitAreaReview(props.areaId)
-    emit('submitted')
+    const updated = await submitParameterRow(row.id)
+    emit('updated', { ...row, ...(updated || {}), isDone: true })
+    emit('submitted', { ...row, ...(updated || {}), isDone: true })
   } catch (err: any) {
-    error.value = err?.response?.data?.message || 'Unable to submit this area.'
+    error.value = err?.response?.data?.message || 'Unable to submit this row.'
   } finally {
     pendingId.value = null
   }
@@ -321,20 +326,20 @@ const submitArea = async (row: ParameterRow) => {
 .apr-table {
   width: 100%;
   border-collapse: collapse;
-  background: #fff;
+  background: var(--adams-canvas-panel);
 }
 
 .apr-table th,
 .apr-table td {
-  border: 1px solid #dbe3ea;
+  border: 1px solid var(--adams-gridline);
   padding: 0.85rem 1rem;
   text-align: left;
   vertical-align: top;
 }
 
 .apr-table th {
-  background: #f3f7f4;
-  color: #0c5c4e;
+  background: var(--adams-canvas);
+  color: var(--adams-structure-primary);
   font-size: 0.78rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -387,10 +392,10 @@ const submitArea = async (row: ParameterRow) => {
   width: 2.1rem;
   height: 2.1rem;
   appearance: none;
-  border: 1px solid #0e7a5f;
+  border: 1px solid var(--adams-structure-primary);
   border-radius: 0.55rem;
-  background: #fff;
-  color: #0e7a5f;
+  background: var(--adams-canvas);
+  color: var(--adams-structure-primary);
   cursor: pointer;
 }
 
@@ -399,20 +404,20 @@ const submitArea = async (row: ParameterRow) => {
 }
 
 .apr-icon-btn.muted {
-  border-color: #94a3b8;
-  color: #64748b;
+  border-color: var(--adams-gridline);
+  color: var(--adams-text-muted);
 }
 
 .apr-icon-btn.danger {
-  border-color: #fecaca;
-  color: #b91c1c;
-  background: #fff7f7;
+  border-color: var(--adams-accent-urgent);
+  color: var(--adams-accent-urgent);
+  background: transparent;
 }
 
 .apr-icon-btn.primary {
-  background: #0e7a5f;
-  border-color: #0e7a5f;
-  color: #fff;
+  background: var(--adams-cta);
+  border-color: var(--adams-cta);
+  color: var(--adams-cta-fg);
 }
 
 .apr-icon-btn:disabled {
@@ -465,6 +470,16 @@ const submitArea = async (row: ParameterRow) => {
 }
 
 .apr-muted { color: #94a3b8; }
+
+.apr-submitted {
+  display: inline-block;
+  margin-top: 0.35rem;
+  color: #0c5c4e;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
 
 .apr-empty,
 .apr-error {

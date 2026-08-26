@@ -72,7 +72,7 @@ export default defineComponent({
 }
 
 .btn:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--adams-structure-primary);
   outline-offset: 2px;
 }
 
@@ -83,15 +83,15 @@ export default defineComponent({
   box-shadow: none;
 }
 
-/* Primary Button - Deep Navy Blue */
+/* 10% Accent — Gold CTA. Charcoal text meets WCAG AA; white-on-gold does not. */
 .btn-primary {
-  background-color: var(--color-primary);
-  color: var(--color-primary-fg);
+  background-color: var(--adams-cta);
+  color: var(--adams-cta-fg);
   box-shadow: var(--shadow-sm);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: var(--color-primary-hover);
+  background-color: var(--adams-cta-hover);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
@@ -100,11 +100,11 @@ export default defineComponent({
   transform: translateY(0);
 }
 
-/* Secondary Button - Light Gray */
+/* 60% Canvas — secondary / cancel */
 .btn-secondary {
-  background-color: var(--color-gray-100);
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
+  background-color: var(--adams-canvas-panel);
+  color: var(--adams-text-primary);
+  border: 1px solid var(--adams-gridline);
   box-shadow: var(--shadow-sm);
 }
 
@@ -118,27 +118,28 @@ export default defineComponent({
   transform: translateY(0);
 }
 
-/* Danger Button - Red */
+/* 10% Accent — outlined Crimson so Remove does not read as overdue */
 .btn-danger {
-  background-color: var(--color-danger);
-  color: var(--color-primary-fg);
-  box-shadow: var(--shadow-sm);
+  background-color: transparent;
+  color: var(--adams-accent-urgent);
+  border: 1px solid var(--adams-accent-urgent);
+  box-shadow: none;
 }
 
 .btn-danger:hover:not(:disabled) {
-  background-color: var(--color-danger-dark);
+  background-color: var(--adams-danger-soft);
   transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
 }
 
 .btn-danger:active:not(:disabled) {
   transform: translateY(0);
 }
 
-/* Success Button - Green */
+/* 10% Accent — complete / approve confirmation */
 .btn-success {
-  background-color: var(--color-success);
-  color: var(--color-primary-fg);
+  background-color: var(--adams-accent-success);
+  color: var(--adams-canvas);
   box-shadow: var(--shadow-sm);
 }
 
@@ -152,17 +153,17 @@ export default defineComponent({
   transform: translateY(0);
 }
 
-/* Outline Button - Blue Border */
+/* 30% Structure — Edit / non-completion action */
 .btn-outline {
   background-color: transparent;
-  color: var(--color-primary);
-  border: 2px solid var(--color-primary);
-  box-shadow: var(--shadow-sm);
+  color: var(--adams-structure-primary);
+  border: 2px solid var(--adams-structure-primary);
+  box-shadow: none;
 }
 
 .btn-outline:hover:not(:disabled) {
-  background-color: rgba(30, 64, 175, 0.05);
-  border-color: var(--color-primary-hover);
+  background-color: var(--adams-primary-soft);
+  border-color: var(--adams-primary-hover);
   transform: translateY(-1px);
 }
 

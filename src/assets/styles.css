@@ -2,34 +2,66 @@
 @import 'tailwind.css';
 
 :root {
-  /* Brand — operational ADAMS (dashboards) */
-  --adams-primary: #0f766e;
-  --adams-primary-hover: #115e59;
-  --adams-primary-active: #134e4a;
-  --adams-primary-soft: #ecfdf5;
-  --adams-primary-muted: #d1fae5;
-  --adams-primary-border: #a7f3d0;
-  --adams-accent: #16a34a;
-  --adams-ink: #0f172a;
-  --adams-ink-soft: #334155;
-  --adams-muted: #64748b;
-  --adams-bg: #f8fafc;
-  --adams-surface: #ffffff;
-  --adams-surface-alt: #f1f5f9;
-  --adams-border: #e2e8f0;
-  --adams-border-strong: #cbd5e1;
-  --adams-danger: #b91c1c;
-  --adams-danger-soft: #fef2f2;
-  --adams-warning: #b45309;
-  --adams-warning-soft: #fffbeb;
-  --adams-success: #15803d;
-  --adams-success-soft: #f0fdf4;
-  --adams-info: #0369a1;
-  --adams-info-soft: #f0f9ff;
+  /* ========================================================================
+     ISU 60-30-10 tokens (canonical). Tailwind and Ionic map onto these.
+     Never use #000000 or #FFFFFF. Never paint Forest Green or Gold on a
+     full page / full panel.
+     ======================================================================== */
+
+  /* 60% Canvas */
+  --adams-canvas: #FAF9F6;
+  --adams-canvas-panel: #EFEBE3;
+  --adams-gridline: #E0E0DC;
+
+  /* 30% Structure */
+  --adams-structure-primary: #1B5E20;
+  --adams-structure-secondary: #5D4037;
+  --adams-text-primary: #2B2B28;
+  --adams-text-muted: #757570;
+
+  /* 10% Accent */
+  --adams-accent-gold: #F9A825;
+  --adams-accent-gold-hover: #DB9421;
+  --adams-accent-gold-contrast: #2B2B28;
+  --adams-accent-success: #2E7D32;
+  --adams-accent-pending: #FBC02D;
+  --adams-accent-urgent: #C62828;
+  --adams-accent-info: #1565C0;
+
+  /* Soft tints of the five accents on canvas — badge/alert fills only */
+  --adams-success-soft: #E1EADE;
+  --adams-warning-soft: #FAF2DD;
+  --adams-danger-soft: #F4E0DD;
+  --adams-info-soft: #DFE7EF;
+  --adams-gold-soft: #FAEFDC;
+
+  /* Backward-compatible aliases used by existing CSS/components */
+  --adams-primary: var(--adams-structure-primary);
+  --adams-primary-hover: #154d19;
+  --adams-primary-active: #123f16;
+  --adams-primary-soft: #DFE6DC;
+  --adams-primary-muted: #D2DDD3;
+  --adams-primary-border: #A8C4AA;
+  --adams-accent: var(--adams-accent-gold);
+  --adams-ink: var(--adams-text-primary);
+  --adams-ink-soft: var(--adams-text-muted);
+  --adams-muted: var(--adams-text-muted);
+  --adams-bg: var(--adams-canvas);
+  --adams-surface: var(--adams-canvas-panel);
+  --adams-surface-alt: var(--adams-canvas);
+  --adams-border: var(--adams-gridline);
+  --adams-border-strong: #D4D0C8;
+  --adams-danger: var(--adams-accent-urgent);
+  --adams-warning: var(--adams-accent-pending);
+  --adams-success: var(--adams-accent-success);
+  --adams-info: var(--adams-accent-info);
+  --adams-cta: var(--adams-accent-gold);
+  --adams-cta-hover: var(--adams-accent-gold-hover);
+  --adams-cta-fg: var(--adams-accent-gold-contrast);
   --adams-sidebar-width: 256px;
   --adams-topbar-height: 72px;
   --adams-radius: 0.75rem;
-  --adams-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.04);
+  --adams-shadow: 0 1px 2px rgba(43, 43, 40, 0.04), 0 8px 24px rgba(43, 43, 40, 0.04);
 
   /* Auth / marketing tokens (login, register) */
   --ink: #09491c;
@@ -86,7 +118,7 @@
   --color-primary: var(--adams-primary);
   --color-primary-hover: var(--adams-primary-hover);
   --color-primary-2: var(--adams-ink-soft);
-  --color-primary-fg: #ffffff;
+  --color-primary-fg: var(--adams-canvas);
   --color-primary-light: var(--adams-primary-soft);
   --color-background: var(--adams-bg);
   --color-surface: var(--adams-surface);
@@ -95,24 +127,24 @@
   --color-border-hover: var(--adams-border-strong);
   --color-text: var(--adams-ink);
   --color-text-secondary: var(--adams-muted);
-  --color-text-muted: #94a3b8;
-  --color-white: #ffffff;
+  --color-text-muted: var(--adams-text-muted);
+  --color-white: var(--adams-canvas);
   --color-accent: var(--adams-accent);
-  --color-gray-50: #f8fafc;
-  --color-gray-100: #f1f5f9;
-  --color-gray-200: #e2e8f0;
-  --color-gray-300: #cbd5e1;
-  --color-gray-400: #94a3b8;
+  --color-gray-50: var(--adams-canvas);
+  --color-gray-100: var(--adams-canvas-panel);
+  --color-gray-200: var(--adams-gridline);
+  --color-gray-300: var(--adams-border-strong);
+  --color-gray-400: var(--adams-text-muted);
   --color-success: var(--adams-success);
-  --color-success-dark: #166534;
+  --color-success-dark: #246428;
   --color-warning: var(--adams-warning);
   --color-danger: var(--adams-danger);
-  --color-danger-dark: #991b1b;
+  --color-danger-dark: #ae2323;
 
-  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
-  --shadow-md: 0 8px 20px rgba(15, 23, 42, 0.06);
-  --shadow-lg: 0 16px 40px rgba(15, 23, 42, 0.08);
-  --shadow-2xl: 0 24px 50px rgba(15, 23, 42, 0.16);
+  --shadow-sm: 0 1px 2px rgba(43, 43, 40, 0.05);
+  --shadow-md: 0 8px 20px rgba(43, 43, 40, 0.06);
+  --shadow-lg: 0 16px 40px rgba(43, 43, 40, 0.08);
+  --shadow-2xl: 0 24px 50px rgba(43, 43, 40, 0.16);
   --z-modal: 1200;
   --z-toast: 1300;
 

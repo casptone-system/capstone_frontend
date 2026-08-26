@@ -58,6 +58,15 @@ export const useFacultyDashboardStore = defineStore('facultyDashboard', () => {
   })
   const selectedDocuments = ref<AppDocument[]>([])
   const notifications = ref<NotificationMessage[]>([])
+  const taskStats = ref({
+    total: 0,
+    completed: 0,
+    inProgress: 0,
+    notStarted: 0,
+    pendingReviews: 0,
+    progressPercent: 0,
+  })
+  const areaTeamMembers = ref<Array<{ id: number; name: string; email?: string; role: string; focus: string }>>([])
   const pipeline = ref([
     { label: 'Faculty Upload', sub: 'Submit evidence documents', done: true, active: false, returned: false },
     { label: 'Area In-Charge Review', sub: 'Documents are reviewed', done: false, active: false, returned: false },
@@ -95,8 +104,19 @@ export const useFacultyDashboardStore = defineStore('facultyDashboard', () => {
 
   const loadMyAreas = async () => {
     try {
-      const areas = await getMyAreas()
-      myAreas.value = (Array.isArray(areas) ? areas : [])
+      const payload = await getMyAreas()
+      const areas = Array.isArray(payload?.areas) ? payload.areas : []
+      const stats = payload?.meta?.taskStats || {}
+      taskStats.value = {
+        total: Number(stats.total ?? 0),
+        completed: Number(stats.completed ?? 0),
+        inProgress: Number(stats.inProgress ?? 0),
+        notStarted: Number(stats.notStarted ?? 0),
+        pendingReviews: Number(stats.pending ?? stats.pendingReviews ?? 0),
+        progressPercent: Number(stats.progressPercent ?? 0),
+      }
+      areaTeamMembers.value = Array.isArray(payload?.meta?.teamMembers) ? payload.meta.teamMembers : []
+      myAreas.value = areas
         .filter((area: any) => {
           const code = String(area?.code || '').trim()
           const role = String(area?.assignmentRole || '').toLowerCase()
@@ -115,6 +135,15 @@ export const useFacultyDashboardStore = defineStore('facultyDashboard', () => {
     } catch (error) {
       console.warn('Failed to load assigned areas', error)
       myAreas.value = []
+      taskStats.value = {
+        total: 0,
+        completed: 0,
+        inProgress: 0,
+        notStarted: 0,
+        pendingReviews: 0,
+        progressPercent: 0,
+      }
+      areaTeamMembers.value = []
     }
   }
 
@@ -424,6 +453,8 @@ export const useFacultyDashboardStore = defineStore('facultyDashboard', () => {
     selectedDocuments,
     pendingRevisions,
     unreadCount,
+    taskStats,
+    areaTeamMembers,
     loadTeam,
     loadProgram,
     loadTasks,

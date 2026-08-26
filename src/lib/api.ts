@@ -391,7 +391,12 @@ export const setAreaMembers = async (
 
 export const getMyAreas = async () => {
   const response = await api.get('/users/me/areas')
-  return unwrap(response)
+  const body = response.data ?? response
+  const areas = Array.isArray(body?.data) ? body.data : (Array.isArray(body) ? body : [])
+  return {
+    areas,
+    meta: body?.meta && typeof body.meta === 'object' ? body.meta : {},
+  }
 }
 
 export const getQaAreas = async (params: Record<string, unknown> = {}) => {
@@ -459,6 +464,11 @@ export const patchParameterRowContent = async (
 
 export const deleteParameterRowDocuments = async (rowId: number | string) => {
   const response = await api.delete(`/parameter-rows/${rowId}/documents`)
+  return unwrap(response)
+}
+
+export const submitParameterRow = async (rowId: number | string) => {
+  const response = await api.post(`/parameter-rows/${rowId}/submit`)
   return unwrap(response)
 }
 
@@ -803,6 +813,22 @@ export const updateDocument = async (
     data
   )
 
+  return response.data
+}
+
+export const approveDocumentReview = async (
+  id: number | string,
+  data: Record<string, any> = {}
+) => {
+  const response = await api.post(`/documents/${id}/approve`, data)
+  return response.data
+}
+
+export const requestDocumentRevision = async (
+  id: number | string,
+  data: Record<string, any> = {}
+) => {
+  const response = await api.post(`/documents/${id}/request-revision`, data)
   return response.data
 }
 

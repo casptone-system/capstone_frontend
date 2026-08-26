@@ -129,12 +129,12 @@ onMounted(() => {
   margin: 8px 0 0;
   font-size: 28px;
   font-weight: 700;
-  color: #1a237e;
+  color: var(--adams-structure-primary);
 }
 
 .vpaa-page-sub {
   margin: 6px 0 0;
-  color: #64748b;
+  color: var(--adams-text-muted);
   font-size: 14px;
 }
 
@@ -176,7 +176,7 @@ onMounted(() => {
 .vpaa-card-header p {
   margin: 4px 0 0;
   font-size: 12px;
-  color: #64748b;
+  color: var(--adams-text-muted);
 }
 
 .vpaa-risk-level {
@@ -269,7 +269,7 @@ onMounted(() => {
   font-weight: 600;
   cursor: pointer;
   flex: 1;
-  background: #1a237e;
+  background: var(--adams-structure-primary);
   color: white;
 }
 
@@ -285,6 +285,6 @@ onMounted(() => {
 }
 
 .vpaa-empty-state.error {
-  color: #b91c1c;
+  color: var(--adams-accent-urgent);
 }
 </style>

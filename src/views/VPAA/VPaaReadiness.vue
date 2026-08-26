@@ -114,12 +114,12 @@ onMounted(() => {
   margin: 8px 0 0;
   font-size: 28px;
   font-weight: 700;
-  color: #1a237e;
+  color: var(--adams-structure-primary);
 }
 
 .vpaa-page-sub {
   margin: 6px 0 0;
-  color: #64748b;
+  color: var(--adams-text-muted);
   font-size: 14px;
 }
 
@@ -130,11 +130,11 @@ onMounted(() => {
 .vpaa-state {
   padding: 48px 24px;
   text-align: center;
-  color: #64748b;
+  color: var(--adams-text-muted);
 }
 
 .vpaa-state.error {
-  color: #b91c1c;
+  color: var(--adams-accent-urgent);
 }
 
 .vpaa-readiness-container {
@@ -184,7 +184,7 @@ onMounted(() => {
 }
 
 .vpaa-table-row small {
-  color: #94a3b8;
+  color: var(--adams-text-muted);
 }
 
 .vpaa-mini-progress {
@@ -202,7 +202,7 @@ onMounted(() => {
 
 .vpaa-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #42a5f5 0%, #2196f3 100%);
+  background: var(--adams-accent-pending);
 }
 
 .vpaa-mini-progress span {
@@ -226,13 +226,13 @@ onMounted(() => {
 }
 
 .vpaa-status-badge.expired {
-  background: #fee2e2;
-  color: #b91c1c;
+  background: var(--adams-danger-soft);
+  color: var(--adams-accent-urgent);
 }
 
 .vpaa-status-badge.unset {
-  background: #f1f5f9;
-  color: #475569;
+  background: var(--adams-canvas);
+  color: var(--adams-text-muted);
 }
 
 @media (max-width: 1100px) {
