@@ -93,6 +93,22 @@ const handleJoin = async () => {
   background: linear-gradient(135deg, #f5f7fb 0%, #eef4ff 100%);
 }
 
+@media (max-width: 640px) {
+  .new-user-page {
+    padding: 1rem;
+    align-items: stretch;
+  }
+
+  .new-user-card {
+    padding: 1.4rem 1.15rem;
+    border-radius: 1.1rem;
+  }
+
+  .header-copy h1 {
+    font-size: 1.45rem;
+  }
+}
+
 .new-user-card {
   width: min(100%, 560px);
   background: white;

@@ -123,7 +123,20 @@ export const useAuthStore = defineStore('auth', () => {
         views.push('faculty')
       }
     }
+    if (uniqueRoles.includes('area-in-charge')) {
+      views.push('area-in-charge')
+      views.push('faculty')
+    }
     if (uniqueRoles.includes('faculty')) views.push('faculty')
+    if (uniqueRoles.includes('qa')) views.push('qa')
+    if (uniqueRoles.includes('vpaa')) views.push('vpaa')
+    if (uniqueRoles.includes('superadmin') || uniqueRoles.includes('admin')) {
+      views.push('superadmin')
+    }
+
+    if (views.length === 0 && (userData?.programId || userData?.program_id || userData?.program?.id)) {
+      views.push('faculty')
+    }
 
     return Array.from(new Set(views))
   }
@@ -318,7 +331,12 @@ export const useAuthStore = defineStore('auth', () => {
           await restoreSession()
         }
         if (user.value) {
-          if (canonicalizeRole((user.value as any)?.role_slug || (user.value as any)?.role || '') === 'dean') {
+          const savedView = getStoredDashboardView()
+          const available = getAvailableDashboardViews()
+          if (savedView && !available.includes(savedView)) {
+            clearDashboardView()
+          }
+          if (!dashboardView.value || !available.includes(dashboardView.value)) {
             setDefaultDashboardViewForRole()
           }
           isAuthenticated.value = true
@@ -422,7 +440,12 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await api.get('/me')
 
       user.value = normalizeUserProgramContext(response.data.data.user)
-      if (canonicalizeRole((user.value as any)?.role_slug || (user.value as any)?.role || '') === 'dean') {
+      const savedView = getStoredDashboardView()
+      const available = getAvailableDashboardViews()
+      if (savedView && !available.includes(savedView)) {
+        clearDashboardView()
+      }
+      if (!dashboardView.value || !available.includes(dashboardView.value)) {
         setDefaultDashboardViewForRole()
       }
       isAuthenticated.value = true

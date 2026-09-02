@@ -80,7 +80,9 @@
             </div>
 
             <div class="adams-topbar-right">
-              <slot name="header-actions" />
+              <div class="adams-header-actions">
+                <slot name="header-actions" />
+              </div>
 
               <NotificationBell />
 
@@ -125,8 +127,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { IonContent, IonIcon, IonPage } from '@ionic/vue'
 import {
   chevronDownOutline,
@@ -164,9 +166,19 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const mobileOpen = ref(false)
 const profileOpen = ref(false)
+
+watch(() => route.fullPath, () => {
+  mobileOpen.value = false
+  profileOpen.value = false
+})
+
+watch(mobileOpen, (open) => {
+  document.body.classList.toggle('adams-nav-open', open)
+})
 
 const user = computed(() => authStore.user as Record<string, unknown> | null)
 const userName = computed(() => getUserDisplayName(user.value, 'User'))
@@ -209,6 +221,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('click', closeMenus)
+  document.body.classList.remove('adams-nav-open')
 })
 </script>
 
@@ -350,9 +363,17 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem 1.5rem 0.35rem;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  padding: max(0.85rem, env(safe-area-inset-top)) max(1.5rem, env(safe-area-inset-right)) 0.35rem max(1.5rem, env(safe-area-inset-left));
   background: var(--adams-bg);
+}
+
+.adams-header-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
 }
 
 .adams-topbar-left,
@@ -526,8 +547,9 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 1.15rem;
-  padding: 0.75rem 1.5rem 1.75rem;
+  padding: 0.75rem 1.5rem max(1.75rem, env(safe-area-inset-bottom));
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .adams-menu-button,
@@ -538,7 +560,9 @@ export default {
 
 @media (max-width: 1024px) {
   .adams-search {
-    display: none;
+    order: 5;
+    flex: 1 1 100%;
+    max-width: none;
   }
 }
 
@@ -548,8 +572,12 @@ export default {
     left: 0;
     top: 0;
     bottom: 0;
+    width: min(86vw, 300px);
+    min-width: min(86vw, 300px);
     height: 100%;
     max-height: 100%;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
     transform: translateX(-105%);
     transition: transform 0.2s ease;
     box-shadow: 18px 0 50px rgba(43, 43, 40, 0.28);
@@ -571,10 +599,11 @@ export default {
 
   .adams-menu-button,
   .adams-mobile-close {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     display: grid;
     place-items: center;
+    flex-shrink: 0;
     border: 1px solid var(--adams-border);
     border-radius: 0.7rem;
     background: var(--adams-surface);
@@ -589,8 +618,16 @@ export default {
     color: var(--adams-text-primary);
   }
 
+  .adams-topbar {
+    padding: max(0.7rem, env(safe-area-inset-top)) 0.85rem 0.45rem;
+  }
+
   .adams-page-content {
-    padding: 0.85rem;
+    padding: 0.75rem 0.85rem max(1.1rem, env(safe-area-inset-bottom));
+  }
+
+  .adams-heading h1 {
+    font-size: 1.08rem;
   }
 }
 
@@ -600,9 +637,18 @@ export default {
     display: none;
   }
 
-  .adams-heading h1,
   .adams-heading > p:last-child {
     display: none;
+  }
+
+  .adams-header-actions :deep(.adams-btn) {
+    min-height: 36px;
+    padding: 0.4rem 0.55rem;
+    font-size: 0.72rem;
+  }
+
+  .adams-profile-chip {
+    padding: 0.2rem;
   }
 }
 </style>

@@ -944,4 +944,50 @@ onMounted(() => {
 }
 .qa-detail h3 { margin: 0 0 0.35rem; color: var(--adams-text-primary); }
 .qa-detail p, .qa-detail li { color: var(--adams-text-muted); font-size: 0.85rem; }
+
+@media (max-width: 1100px) {
+  .qa-stat-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .qa-content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .qa-stat-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .qa-card-header,
+  .qa-topbar,
+  .qa-missing-item,
+  .qa-coord-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .qa-compliance-row {
+    grid-template-columns: 1fr;
+  }
+
+  .qa-coord-right,
+  .qa-missing-right {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 520px) {
+  .qa-stat-strip {
+    grid-template-columns: 1fr;
+  }
+}
+.qa-detail {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--adams-canvas);
+}
+.qa-detail h3 { margin: 0 0 0.35rem; color: var(--adams-text-primary); }
+.qa-detail p, .qa-detail li { color: var(--adams-text-muted); font-size: 0.85rem; }
 </style>

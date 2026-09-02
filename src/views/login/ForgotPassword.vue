@@ -134,6 +134,7 @@ const handleSubmit = async () => {
 
 .forgot-container{
     min-height:100vh;
+    min-height:100dvh;
     display:flex;
     justify-content:center;
     align-items:center;
@@ -244,7 +245,10 @@ label{
 }
 
 /* Mobile */
-@media(max-width:480px){
+@media (max-width: 480px) {
+    .forgot-container {
+        padding: 16px;
+    }
     .forgot-card{
         padding:30px 24px;
     }

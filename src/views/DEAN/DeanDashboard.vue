@@ -6,7 +6,7 @@
     :show-title="true"
   >
     <template #nav>
-      <p class="adams-nav-label">Overview</p>
+      <p class="adams-nav-label">Dashboard</p>
       <button type="button" class="adams-nav-item" :class="{ active: isSectionActive('dashboard') }" @click="selectSection('dashboard')" :aria-current="isSectionActive('dashboard') ? 'page' : undefined">
         <span class="adams-nav-icon"><ion-icon :icon="gridOutline" /></span>
         <span>Overview</span>
@@ -3498,9 +3498,9 @@ const handleProgramCreated = async () => {
   .dean-main {
     flex: 1 1 auto;
     min-width: 0;
-    width: 0;
-    height: 100vh;
-    overflow-y: auto;
+    width: 100%;
+    height: auto;
+    overflow-y: visible;
     overflow-x: hidden;
     padding: 0 0 1.5rem;
     display: flex;
@@ -3539,6 +3539,10 @@ const handleProgramCreated = async () => {
   }
 
   .dean-content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dean-program-folder-grid {
     grid-template-columns: 1fr;
   }
 }

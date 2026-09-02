@@ -13,11 +13,17 @@ export type AppRole =
   | ''
 
 const normalizeRoleValue = (value: unknown): AppRole => {
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>
+    return normalizeRoleValue(record.slug ?? record.name ?? record.role)
+  }
+
   const role = String(value ?? '')
     .trim()
     .toLowerCase()
     .replace(/_/g, '-')
     .replace(/\s+/g, '-')
+    .replace(/\/+/g, '-')
 
   const aliases: Record<string, AppRole> = {
     'super-admin': 'superadmin',
@@ -28,6 +34,7 @@ const normalizeRoleValue = (value: unknown): AppRole => {
     vpaa: 'vpaa',
     'vpaa-di': 'vpaa',
     'vpaa/di': 'vpaa',
+    vpaadi: 'vpaa',
     qa: 'qa',
     dean: 'dean',
     'program-chair': 'program-chair',
@@ -35,6 +42,8 @@ const normalizeRoleValue = (value: unknown): AppRole => {
     'area-incharge': 'area-in-charge',
     'area-in-charge': 'area-in-charge',
     areaincharge: 'area-in-charge',
+    'area-chair': 'area-in-charge',
+    areachair: 'area-in-charge',
     faculty: 'faculty',
     accreditor: 'accreditor',
   }
@@ -60,7 +69,7 @@ const getUserRoleCandidates = (user: User | null | undefined): AppRole[] => {
     ...(Array.isArray((user as any).roles) ? (user as any).roles : []),
   ]
 
-  return Array.from(
+  const candidates = Array.from(
     new Set(
       rawValues
         .filter((value) => value !== null && value !== undefined && value !== '')
@@ -68,6 +77,19 @@ const getUserRoleCandidates = (user: User | null | undefined): AppRole[] => {
         .filter(Boolean) as AppRole[],
     ),
   )
+
+  if (candidates.length === 0) {
+    const hasProgram = Boolean(
+      (user as any).programId ||
+      (user as any).program_id ||
+      (user as any).program?.id,
+    )
+    if (hasProgram) {
+      return ['faculty']
+    }
+  }
+
+  return candidates
 }
 
 const roleFromUser = (
@@ -93,16 +115,14 @@ const roleFromUser = (
   return preferredOrder.find((role) => candidates.includes(role)) ?? candidates[0]
 }
 
-export const getRoleRedirectPath = (
+export const resolveAppRole = (
   roleValue: unknown,
-  hasGroup = false,
   user?: User | null,
-): string => {
-  const userRoles = getUserRoleCandidates(user)
-  const role =
-    (userRoles.length > 0 ? roleFromUser(user) : '') ||
-    normalizeRoleValue(roleValue)
+): AppRole => {
+  return normalizeRoleValue(roleValue) || roleFromUser(user)
+}
 
+export const getDashboardPathForRole = (role: AppRole, hasGroup = false): string => {
   switch (role) {
     case 'superadmin':
     case 'admin':
@@ -118,9 +138,7 @@ export const getRoleRedirectPath = (
       return '/user/dashboard/area-incharge'
 
     case 'faculty':
-      return hasGroup
-        ? '/user/dashboard/faculty'
-        : '/join-team'
+      return hasGroup ? '/user/dashboard/faculty' : '/join-team'
 
     case 'qa':
       return '/user/dashboard/qa'
@@ -129,6 +147,50 @@ export const getRoleRedirectPath = (
       return '/user/dashboard/vpaa'
 
     default:
-      return '/user/dashboard'
+      return hasGroup ? '/user/dashboard/faculty' : '/join-team'
   }
+}
+
+export const getRoleRedirectPath = (
+  roleValue: unknown,
+  hasGroup = false,
+  user?: User | null,
+): string => {
+  const role = resolveAppRole(roleValue, user)
+  return getDashboardPathForRole(role, hasGroup)
+}
+
+export const dashboardSegmentToRole = (segment: string): AppRole => {
+  if (segment === 'area-incharge' || segment === 'area-in-charge') {
+    return 'area-in-charge'
+  }
+  return normalizeRoleValue(segment)
+}
+
+export const canAccessDashboardRole = (
+  currentRole: AppRole,
+  requestedRole: AppRole,
+  availableViews: AppRole[] = [],
+): boolean => {
+  if (!requestedRole) {
+    return true
+  }
+
+  if (currentRole === requestedRole) {
+    return true
+  }
+
+  if (availableViews.includes(requestedRole)) {
+    return true
+  }
+
+  // Area Chair and Faculty share the same workspace.
+  if (
+    (requestedRole === 'faculty' || requestedRole === 'area-in-charge') &&
+    (currentRole === 'faculty' || currentRole === 'area-in-charge' || availableViews.includes('faculty'))
+  ) {
+    return true
+  }
+
+  return false
 }

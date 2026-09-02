@@ -15,9 +15,9 @@
         </p>
 
         <ul class="brand-facts" aria-hidden="true">
-          <li><span class="fact-num">01</span>Your Pathway to Accreditation Success</li>
-          <li><span class="fact-num">02</span>Self-Study Workspace</li>
-          <li><span class="fact-num">03</span>Site Visit Records</li>
+          <li>Your Pathway to Accreditation Success</li>
+          <li>Self-Study Workspace</li>
+          <li>Site Visit Records</li>
         </ul>
       </div>
 
@@ -194,7 +194,17 @@ const handleLogin = async () => {
     toastStore.show(welcomeMessage, 'success')
 
     await nextTick()
-    await router.replace(getRedirectPath())
+    const target = getRedirectPath()
+    try {
+      await router.replace(target)
+    } catch (navigationError: any) {
+      const message = String(navigationError?.message || '')
+      if (message.includes('Infinite redirect') || navigationError?.name === 'NavigationDuplicated') {
+        await router.replace('/user/dashboard/faculty').catch(() => undefined)
+        return
+      }
+      throw navigationError
+    }
   } catch (error: any) {
     loginError.value =
       error?.message ||
@@ -272,6 +282,7 @@ const cancel2FA = () => {
   display: grid;
   grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--parchment);
   font-family: var(--font-body);
 }
@@ -389,7 +400,7 @@ const cancel2FA = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 3rem 2.5rem;
+  padding: 7rem 2.5rem;
   max-height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
@@ -404,12 +415,10 @@ const cancel2FA = () => {
 .login-logo {
   position: absolute;
   top: 1.15rem;
-  right: 1.15rem;
   z-index: 2;
   display: block;
-  width: 78px;
+  width: 148px;
   height: auto;
-  margin: 0;
   filter: drop-shadow(1px 10px 28px rgba(19, 31, 53, 0.35));
   animation: stamp-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   animation-delay: 0.3s;
@@ -732,50 +741,56 @@ const cancel2FA = () => {
   .login-container {
     grid-template-columns: 1fr;
     min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  .form-panel {
+    order: -1;
+    padding: 4.5rem 1.5rem 2rem;
+    align-items: flex-start;
+    max-height: none;
   }
 
   .brand-panel {
-    padding: 2rem 1.75rem 2.5rem;
+    padding: 1.1rem 1.25rem 1.35rem;
     min-height: unset;
     height: auto;
   }
 
   .brand-content {
     margin-top: 0;
+    max-width: none;
   }
 
-  /* hide the numbered list and footer on mobile — copy already sets context */
+  .brand-title {
+    font-size: 1.35rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .brand-copy,
   .brand-facts,
   .brand-footer {
     display: none;
   }
 
-  /* remove bottom gap so logo doesn't peek between panels */
-  .brand-copy {
-    margin-bottom: 0;
-  }
-
-  .form-panel {
-    padding: 2.5rem 1.75rem 3rem;
-    align-items: flex-start;
-    /* logo hugs top of form panel, not mid-float */
+  .eyebrow {
+    margin-bottom: 0.65rem;
   }
 
   .login-logo {
-    width: 64px;
+    width: 76px;
     top: 0.85rem;
-    right: 0.85rem;
     margin: 0;
   }
 }
 
 @media (max-width: 480px) {
   .brand-panel {
-    padding: 1.75rem 1.25rem 2rem;
+    padding: 1rem 1rem 1.15rem;
   }
 
   .brand-title {
-    font-size: 1.7rem;
+    font-size: 1.2rem;
   }
 
   .form-title {
@@ -783,11 +798,20 @@ const cancel2FA = () => {
   }
 
   .form-panel {
-    padding: 2rem 1.25rem 2.5rem;
+    padding: 4.25rem 1.1rem 1.75rem;
+  }
+
+  .form-options {
+    flex-wrap: wrap;
+    gap: 0.5rem;
   }
 
   .social-login-buttons {
     grid-template-columns: 1fr;
+  }
+
+  .field-input {
+    font-size: 16px;
   }
 }
 </style>

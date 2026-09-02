@@ -52,6 +52,7 @@ defineProps<{
 
 .header-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--spacing-md);
 }
 

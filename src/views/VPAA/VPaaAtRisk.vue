@@ -144,7 +144,7 @@ onMounted(() => {
 
 .vpaa-at-risk-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   gap: 20px;
 }
 
@@ -205,6 +205,17 @@ onMounted(() => {
   gap: 12px;
   border-bottom: 1px solid #f0f0f0;
   background: #fffbf0;
+}
+
+@media (max-width: 768px) {
+  .vpaa-content {
+    padding: 16px;
+  }
+
+  .vpaa-card-header,
+  .vpaa-card-metrics {
+    grid-template-columns: 1fr;
+  }
 }
 
 .vpaa-metric {

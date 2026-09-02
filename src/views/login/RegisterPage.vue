@@ -15,9 +15,9 @@
         </p>
 
         <ul class="brand-facts" aria-hidden="true">
-          <li><span class="fact-num">01</span>Standards &amp; Compliance</li>
-          <li><span class="fact-num">02</span>Self-Study Workspace</li>
-          <li><span class="fact-num">03</span>Site Visit Records</li>
+          <li>Standards &amp; Compliance</li>
+          <li>Self-Study Workspace</li>
+          <li>Site Visit Records</li>
         </ul>
       </div>
 
@@ -479,6 +479,7 @@ const handleProfilePhotoChange = (event: Event) => {
   display: grid;
   grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--parchment);
   font-family: var(--font-body);
 }
@@ -598,7 +599,7 @@ const handleProfilePhotoChange = (event: Event) => {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 3rem 2.5rem;
+  padding: 8rem 2.5rem;
   max-height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
@@ -614,10 +615,9 @@ const handleProfilePhotoChange = (event: Event) => {
 .login-logo {
   position: absolute;
   top: 1.15rem;
-  right: 1.15rem;
   z-index: 2;
   display: block;
-  width: 78px;
+  width: 148px;
   height: auto;
   margin: 0;
   filter: drop-shadow(1px 10px 28px rgba(19, 31, 53, 0.35));
@@ -864,31 +864,35 @@ const handleProfilePhotoChange = (event: Event) => {
   .login-container {
     grid-template-columns: 1fr;
     min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  .form-panel {
+    order: -1;
+    padding: 4.5rem 1.5rem 2rem;
+    align-items: flex-start;
   }
 
   .brand-panel {
-    padding: 2rem 1.75rem 2.5rem;
+    padding: 1.1rem 1.25rem 1.35rem;
     min-height: unset;
     height: auto;
   }
 
   .brand-content {
     margin-top: 0;
+    max-width: none;
   }
 
+  .brand-title {
+    font-size: 1.35rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .brand-copy,
   .brand-facts,
   .brand-footer {
     display: none;
-  }
-
-  /* close the gap so logo doesn't float between panels */
-  .brand-copy {
-    margin-bottom: 0;
-  }
-
-  .form-panel {
-    padding: 2.5rem 1.75rem 3rem;
-    align-items: flex-start;
   }
 
   .form-wrap {
@@ -896,18 +900,18 @@ const handleProfilePhotoChange = (event: Event) => {
   }
 
   .login-logo {
-    width: 64px;
+    width: 76px;
     top: 0.85rem;
-    right: 0.85rem;
     margin: 0;
   }
 }
 
 @media (max-width: 600px) {
-  .brand-panel  { padding: 1.75rem 1.25rem 2rem; }
-  .brand-title  { font-size: 1.7rem; }
+  .brand-panel  { padding: 1rem 1rem 1.15rem; }
+  .brand-title  { font-size: 1.2rem; }
   .two-col      { grid-template-columns: 1fr; }
   .form-title   { font-size: 1.35rem; }
-  .form-panel   { padding: 2rem 1.25rem 2.5rem; }
+  .form-panel   { padding: 4.25rem 1.1rem 1.75rem; }
+  .field-input  { font-size: 16px; }
 }
 </style>

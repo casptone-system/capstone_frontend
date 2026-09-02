@@ -1,6 +1,11 @@
 import { createRouter, createWebHistory } from '@ionic/vue-router'
 import { useAuthStore } from '@/stores/authStore'
-import { getRoleRedirectPath, normalizeRole } from '@/lib/roleRedirects'
+import {
+  canAccessDashboardRole,
+  dashboardSegmentToRole,
+  getRoleRedirectPath,
+  normalizeRole,
+} from '@/lib/roleRedirects'
 
 // ============================================================
 // AUTHENTICATION
@@ -675,6 +680,11 @@ const router = createRouter({
 // AUTHENTICATION + AUTHORIZATION GUARD
 // ============================================================
 
+const samePath = (left, right) => {
+  const normalize = (value) => String(value || '').replace(/\/+$/, '') || '/'
+  return normalize(left) === normalize(right)
+}
+
 router.beforeEach(async (to) => {
   const authStore = useAuthStore()
 
@@ -696,7 +706,14 @@ router.beforeEach(async (to) => {
     authStore.user,
   )
 
-   // ----------------------------------------------------------
+  const redirectTo = (target) => {
+    if (!target || samePath(target, to.path) || samePath(target, to.fullPath)) {
+      return true
+    }
+    return target
+  }
+
+  // ----------------------------------------------------------
   // Authenticated users should not remain on auth pages
   // ----------------------------------------------------------
 
@@ -713,7 +730,7 @@ router.beforeEach(async (to) => {
     authStore.isAuthenticated &&
     publicAuthPages.includes(to.path)
   ) {
-    return authRedirectPath
+    return redirectTo(authRedirectPath)
   }
 
   // ----------------------------------------------------------
@@ -740,14 +757,12 @@ router.beforeEach(async (to) => {
     to.path === '/user/dashboard' ||
     to.path === '/user/dashboard/'
   ) {
-    return authRedirectPath
+    return redirectTo(authRedirectPath)
   }
 
   if (to.path === '/superadmin' || to.path === '/superadmin/') {
     return true
   }
-
- 
 
   // ----------------------------------------------------------
   // Protect role dashboard routes
@@ -758,16 +773,17 @@ router.beforeEach(async (to) => {
       String(authStore.userRole || ''),
     )
 
-    const requestedRole = normalizeRole(
-      to.path.split('/').filter(Boolean).pop() || '',
-    )
+    const requestedSegment = to.path.split('/').filter(Boolean)[2] || ''
+    const requestedRole = dashboardSegmentToRole(requestedSegment)
+    const availableViews = Array.isArray(authStore.availableDashboardViews)
+      ? authStore.availableDashboardViews
+      : []
 
     if (
       requestedRole &&
-      currentRole &&
-      requestedRole !== currentRole
+      !canAccessDashboardRole(currentRole, requestedRole, availableViews)
     ) {
-      return authRedirectPath
+      return redirectTo(authRedirectPath)
     }
   }
 
@@ -795,9 +811,10 @@ router.beforeEach(async (to) => {
     )
 
     if (
+      currentRole &&
       !normalizedAllowedRoles.includes(currentRole)
     ) {
-      return authRedirectPath
+      return redirectTo(authRedirectPath)
     }
   }
 

@@ -1893,6 +1893,14 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
   .fac-documents-actions > * {
     flex: 1;
   }
+
+  .fac-details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fac-stat-value {
+    font-size: 1.7rem;
+  }
 }
 
 .fac-role-switcher {

@@ -316,16 +316,21 @@ onMounted(() => {
     grid-template-columns: 1fr;
   }
 
+  .form-panel {
+    order: -1;
+  }
+
   .brand-panel {
-    min-height: 300px;
-    padding: 2rem 1.4rem 1.6rem;
+    min-height: unset;
+    padding: 1.1rem 1.25rem 1.25rem;
   }
 
   .brand-content {
     margin-top: 0;
   }
 
-  .brand-facts {
+  .brand-facts,
+  .brand-copy {
     display: none;
   }
 

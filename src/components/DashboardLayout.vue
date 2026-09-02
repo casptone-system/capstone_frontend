@@ -2,12 +2,28 @@
   <ion-page>
     <ion-content fullscreen>
       <div :class="['dashboard-layout', roleClass]">
-        <aside class="dashboard-sidebar">
+        <button
+          v-if="mobileOpen"
+          class="dashboard-overlay"
+          type="button"
+          aria-label="Close navigation"
+          @click="mobileOpen = false"
+        />
+
+        <aside class="dashboard-sidebar" :class="{ 'is-open': mobileOpen }">
           <div class="dashboard-brand">
             <AppBrandLogo />
+            <button
+              class="dashboard-mobile-close"
+              type="button"
+              aria-label="Close navigation"
+              @click="mobileOpen = false"
+            >
+              <ion-icon :icon="closeOutline" />
+            </button>
           </div>
 
-          <nav class="dashboard-nav" aria-label="Main navigation">
+          <nav class="dashboard-nav" aria-label="Main navigation" @click="mobileOpen = false">
             <p class="nav-label">Menu</p>
             <button class="nav-item active" type="button">
               <ion-icon :icon="gridOutline" />
@@ -31,7 +47,7 @@
             </button>
           </nav>
 
-          <nav class="dashboard-nav secondary" aria-label="Secondary navigation">
+          <nav class="dashboard-nav secondary" aria-label="Secondary navigation" @click="mobileOpen = false">
             <p class="nav-label">General</p>
             <button class="nav-item" type="button">
               <ion-icon :icon="settingsOutline" />
@@ -59,6 +75,14 @@
 
         <div class="dashboard-content-panel">
           <header class="dashboard-topbar">
+            <button
+              class="dashboard-menu-button"
+              type="button"
+              aria-label="Open navigation"
+              @click="mobileOpen = true"
+            >
+              <ion-icon :icon="menuOutline" />
+            </button>
             <div class="dashboard-search-shell">
               <ion-icon :icon="searchOutline" class="search-icon" />
               <input type="text" class="dashboard-search-input" placeholder="Search task" />
@@ -120,10 +144,12 @@ import {
   searchOutline,
   mailOutline,
   notificationsOutline,
+  menuOutline,
+  closeOutline,
 } from 'ionicons/icons'
 import { useAuthStore } from '@/stores/authStore'
 import AppBrandLogo from '@/components/AppBrandLogo.vue'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 const props = defineProps({
   title: { type: String, default: 'Dashboard' },
@@ -133,6 +159,7 @@ const props = defineProps({
 
 const authStore = useAuthStore()
 const router = useRouter()
+const mobileOpen = ref(false)
 
 const resolveUserImageUrl = (value: unknown): string | null => {
   if (!value || typeof value !== 'string') return null
@@ -224,6 +251,7 @@ export default {
 .dashboard-brand {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 0.7rem 0.5rem 0.95rem;
 }
 
@@ -491,4 +519,87 @@ export default {
 .role-faculty { --accent: #0f766e; }
 .role-qa { --accent: #ea580c; }
 .role-vpaa { --accent: #0891b2; }
+
+.dashboard-menu-button,
+.dashboard-mobile-close,
+.dashboard-overlay {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .dashboard-layout {
+    grid-template-columns: 1fr;
+    padding: 0.55rem;
+  }
+
+  .dashboard-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    display: block;
+    border: 0;
+    background: rgba(15, 23, 42, 0.4);
+  }
+
+  .dashboard-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 100;
+    width: min(86vw, 280px);
+    border-radius: 0;
+    transform: translateX(-105%);
+    transition: transform 0.2s ease;
+  }
+
+  .dashboard-sidebar.is-open {
+    transform: translateX(0);
+  }
+
+  .dashboard-mobile-close,
+  .dashboard-menu-button {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 0.7rem;
+    background: rgba(255,255,255,0.8);
+    color: #334155;
+    cursor: pointer;
+  }
+
+  .dashboard-content-panel {
+    border-radius: 1.1rem;
+    border-left: 1px solid rgba(148, 163, 184, 0.18);
+  }
+
+  .dashboard-topbar,
+  .dashboard-page-header {
+    flex-wrap: wrap;
+  }
+
+  .dashboard-search-shell {
+    width: 100%;
+    max-width: none;
+  }
+
+  .user-meta {
+    display: none;
+  }
+
+  .dashboard-page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dashboard-main {
+    padding: 0.85rem;
+  }
+
+  .page-copy h1 {
+    font-size: 1.55rem;
+  }
+}
 </style>

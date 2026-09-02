@@ -559,7 +559,53 @@
   .pc-stat-strip,
   .qa-stat-strip,
   .vpaa-stat-strip {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .adams-page-content,
+  .sa-page-shell,
+  .dean-main,
+  .fac-documents-shell,
+  .vpaa-content,
+  .vpaa-page,
+  .qa-card {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .sa-content-grid,
+  .sa-health-grid,
+  .sa-system-grid,
+  .sa-form-grid,
+  .fac-content-grid,
+  .fac-doc-layout,
+  .fac-details-grid,
+  .dean-content-grid,
+  .dean-program-folder-grid,
+  .pc-content-grid,
+  .pc-accreditation-grid,
+  .qa-content-grid,
+  .vpaa-content-grid,
+  .vpaa-at-risk-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .sa-page-header,
+  .sa-section-heading,
+  .sa-toolbar,
+  .college-header,
+  .college-detail-header,
+  .vpaa-topbar,
+  .qa-topbar,
+  .qa-card-header,
+  .pc-card-header,
+  .fac-topbar,
+  .fac-page-header,
+  .fac-documents-header,
+  .fac-panel-header,
+  .dean-topbar,
+  .dean-panel-header {
+    flex-wrap: wrap;
   }
 }
 
@@ -570,16 +616,107 @@
   .dean-stat-strip,
   .pc-stat-strip,
   .qa-stat-strip,
-  .vpaa-stat-strip {
-    grid-template-columns: 1fr;
+  .vpaa-stat-strip,
+  .sa-metric-grid,
+  .sa-summary-grid,
+  .sa-settings-grid {
+    grid-template-columns: 1fr !important;
   }
 
   .sa-page-header,
   .college-header,
   .college-detail-header,
   .vpaa-topbar,
-  .qa-topbar {
+  .qa-topbar,
+  .qa-card-header,
+  .pc-card-header,
+  .fac-documents-header,
+  .dean-topbar {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .adams-btn,
+  .sa-btn,
+  .fac-btn,
+  .dean-btn,
+  .pc-btn,
+  .qa-btn,
+  .vpaa-btn {
+    white-space: normal;
+  }
+
+  .qa-card {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .qa-compliance-row,
+  .qa-missing-item,
+  .pc-call-banner,
+  .fac-call-banner,
+  .dean-call-banner {
+    flex-direction: column;
+    align-items: stretch !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  .modal-overlay,
+  .modal-backdrop {
+    padding: 0.75rem;
+    align-items: flex-end;
+  }
+
+  .modal-dialog,
+  .modal-card {
+    width: 100%;
+    max-width: 100%;
+    max-height: min(92dvh, 100%);
+    border-radius: 1rem 1rem 0 0;
+  }
+}
+
+/* Wide data tables scroll sideways instead of blowing out the page */
+.adams-table,
+.sa-card,
+.pc-doc-table,
+.qa-doc-table,
+.vpaa-table,
+.table-shell {
+  max-width: 100%;
+}
+
+@media (max-width: 768px) {
+  .adams-table,
+  .sa-card,
+  .pc-doc-table,
+  .qa-doc-table,
+  .vpaa-table,
+  .table-shell {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .qa-table-header,
+  .qa-table-row,
+  .pc-table-header,
+  .pc-table-row,
+  .sa-table-header,
+  .sa-table-row {
+    min-width: 640px;
+  }
+
+  .vpaa-content,
+  .vpaa-topbar,
+  .vpaa-accreditations,
+  .vpaa-header-panel,
+  .vpaa-monitor-wrap {
+    padding-left: 0.85rem !important;
+    padding-right: 0.85rem !important;
+  }
+
+  .vpaa-accreditations-grid,
+  .vpaa-at-risk-grid {
+    grid-template-columns: 1fr !important;
   }
 }

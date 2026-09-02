@@ -216,7 +216,7 @@ const goTo = (path: string) => router.push(path)
   }
 
   .stats-grid {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: 1fr;
   }
 
   .header-actions {

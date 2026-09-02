@@ -170,6 +170,7 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-size: 16px;
+  overflow-x: clip;
 }
 
 body {
@@ -180,13 +181,38 @@ body {
   font-weight: 400;
   line-height: 1.65;
   min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: clip;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#app {
+body.adams-nav-open {
+  overflow: hidden;
+}
+
+#app,
+ion-app,
+ion-router-outlet,
+ion-page,
+ion-content {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+#app {
   min-height: 100vh;
+  min-height: 100dvh;
+}
+
+img,
+video,
+canvas,
+svg,
+iframe {
+  max-width: 100%;
+  height: auto;
 }
 
 /* ==========================================================================
@@ -397,12 +423,40 @@ h4, .h4 {
 
   h1, .h1 { font-size: var(--text-2xl); }
   h2, .h2 { font-size: var(--text-xl); }
+
+  .grid-cols-2,
+  .grid-cols-3,
+  .grid-cols-4 {
+    grid-template-columns: 1fr;
+  }
+
+  .flex-between {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  .toast-container {
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+
+  .toast {
+    max-width: none;
+  }
 }
 
 @media (max-width: 640px) {
   :root {
-    --spacing-lg: 1.25rem;
-    --spacing-xl: 1.5rem;
+    --spacing-lg: 1rem;
+    --spacing-xl: 1.25rem;
+    --adams-sidebar-width: 86vw;
   }
 }
 

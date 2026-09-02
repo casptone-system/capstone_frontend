@@ -1854,6 +1854,14 @@ onMounted(async () => {
   .pc-accreditation-grid {
     grid-template-columns: 1fr;
   }
+
+  .pc-stat-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .pc-content-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ── Cards ── */
@@ -2012,6 +2020,33 @@ onMounted(async () => {
   .pc-member-role { grid-column: 1; grid-row: 2; }
   .pc-member-email { grid-column: 1; grid-row: 3; }
   .pc-member-action { grid-column: 2; grid-row: 1 / span 3; }
+
+  .pc-stat-strip {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .pc-card-header,
+  .pc-call-banner,
+  .pc-team-card-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pc-table-header,
+  .pc-table-row {
+    grid-template-columns: 1.4fr 1fr 1fr;
+    min-width: 520px;
+  }
+
+  .pc-doc-table {
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .pc-stat-strip {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ── Doc Table ── */

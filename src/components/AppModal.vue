@@ -70,6 +70,7 @@ export default defineComponent({
   justify-content: center;
   z-index: var(--z-modal);
   padding: var(--spacing-lg);
+  padding-bottom: max(var(--spacing-lg), env(safe-area-inset-bottom));
   animation: fadeIn var(--transition-base);
 }
 
@@ -158,5 +159,32 @@ export default defineComponent({
   border-top: 1px solid var(--color-border);
   background-color: var(--color-surface-alt);
   justify-content: flex-end;
+}
+
+@media (max-width: 640px) {
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0.5rem;
+  }
+
+  .modal-dialog {
+    max-width: 100%;
+    max-height: 92dvh;
+    border-radius: 1rem 1rem 0 0;
+  }
+
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding: 1rem;
+  }
+
+  .modal-footer {
+    flex-wrap: wrap;
+  }
+
+  .modal-footer > * {
+    flex: 1 1 100%;
+  }
 }
 </style>

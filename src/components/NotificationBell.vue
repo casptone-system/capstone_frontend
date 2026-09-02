@@ -324,10 +324,14 @@ onBeforeUnmount(() => {
   box-shadow: var(--shadow-lg, 0 18px 40px rgba(43, 43, 40, 0.16));
 }
 
-@media (max-width: 480px) {
+@media (max-width: 720px) {
   .notification-panel {
-    width: min(100vw - 1.5rem, 420px);
-    right: -8px;
+    position: fixed;
+    top: max(0.6rem, env(safe-area-inset-top));
+    right: 0.6rem;
+    left: 0.6rem;
+    width: auto;
+    max-height: min(80dvh, 560px);
   }
 }
 

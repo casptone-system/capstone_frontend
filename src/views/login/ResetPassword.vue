@@ -147,6 +147,7 @@ const handleSubmit = async () => {
 
 .reset-container {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -257,6 +258,9 @@ label {
 }
 
 @media (max-width: 480px) {
+  .reset-container {
+    padding: 16px;
+  }
   .reset-card {
     padding: 30px 24px;
   }

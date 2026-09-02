@@ -4,6 +4,15 @@
     <header class="app-header">
       <div class="header-content">
         <div class="logo-section">
+          <button
+            v-if="isAuthenticated"
+            class="mobile-menu-button"
+            type="button"
+            aria-label="Open navigation"
+            @click="mobileNavOpen = true"
+          >
+            <ion-icon name="menu-outline"></ion-icon>
+          </button>
           <AppBrandLogo />
         </div>
 
@@ -52,9 +61,16 @@
     </header>
 
     <div class="app-content">
+      <button
+        v-if="mobileNavOpen"
+        class="mobile-nav-overlay"
+        type="button"
+        aria-label="Close navigation"
+        @click="mobileNavOpen = false"
+      />
       <!-- Sidebar Navigation -->
-      <aside class="app-sidebar" v-if="isAuthenticated">
-        <nav class="sidebar-nav">
+      <aside class="app-sidebar" :class="{ 'is-open': mobileNavOpen }" v-if="isAuthenticated">
+        <nav class="sidebar-nav" @click="mobileNavOpen = false">
           <div class="nav-section">
             <div class="nav-label">Main</div>
             <router-link
@@ -107,6 +123,7 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const showProfileMenu = ref(false)
+const mobileNavOpen = ref(false)
 
 const currentRole = computed(() => normalizeRole(String(authStore.userRole || '')))
 const isAuthenticated = computed(() => authStore.isAuthenticated)
@@ -217,7 +234,13 @@ const handleLogout = () => {
 .logo-section {
   display: flex;
   align-items: center;
+  gap: 0.65rem;
   min-width: 0;
+}
+
+.mobile-menu-button,
+.mobile-nav-overlay {
+  display: none;
 }
 
 .header-nav {
@@ -457,7 +480,7 @@ const handleLogout = () => {
   background-color: #f7f3ea;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1023px) {
   .app-content {
     grid-template-columns: 1fr;
   }
@@ -469,6 +492,43 @@ const handleLogout = () => {
   .app-main {
     padding: 1.2rem;
   }
+
+  .mobile-menu-button {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid rgba(185, 141, 70, 0.25);
+    border-radius: 0.7rem;
+    background: rgba(255, 255, 255, 0.82);
+    color: #0f172a;
+    cursor: pointer;
+  }
+
+  .mobile-nav-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: block;
+    border: 0;
+    background: rgba(15, 23, 42, 0.4);
+  }
+
+  .app-sidebar {
+    display: block;
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 90;
+    max-height: 100vh;
+    transform: translateX(-105%);
+    transition: transform 0.2s ease;
+  }
+
+  .app-sidebar.is-open {
+    transform: translateX(0);
+  }
 }
 
 @media (max-width: 640px) {
@@ -477,6 +537,10 @@ const handleLogout = () => {
   }
 
   .header-nav {
+    display: none;
+  }
+
+  .profile-button span {
     display: none;
   }
 
