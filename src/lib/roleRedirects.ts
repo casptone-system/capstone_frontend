@@ -107,6 +107,7 @@ const roleFromUser = (
     'area-in-charge',
     'faculty',
     'qa',
+    'accreditor',
     'vpaa',
     'superadmin',
     'admin',
@@ -142,6 +143,9 @@ export const getDashboardPathForRole = (role: AppRole, hasGroup = false): string
 
     case 'qa':
       return '/user/dashboard/qa'
+
+    case 'accreditor':
+      return '/user/dashboard/accreditor'
 
     case 'vpaa':
       return '/user/dashboard/vpaa'

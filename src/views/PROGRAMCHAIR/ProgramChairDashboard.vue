@@ -297,31 +297,50 @@
                     <span>Document</span><span>Area In-Charge</span><span>Submitted</span><span>Action</span>
                   </div>
                   <p v-if="!documents.length" class="pc-muted" style="padding: 1rem;">No submitted files yet.</p>
-                  <div class="pc-table-row" v-for="doc in documents" :key="doc.documentId || doc.title">
-                    <span class="pc-doc-title-cell">
-                      <ion-icon :icon="documentOutline" class="pc-doc-icon" />
-                      {{ doc.title }}
-                    </span>
-                    <span class="pc-role-tag">{{ doc.incharge }}</span>
-                    <span class="pc-muted">{{ doc.submitted }}</span>
-                    <div class="pc-action-btns">
-                      <button
-                        class="pc-approve-btn"
-                        type="button"
-                        :disabled="reviewBusyId === doc.documentId"
-                        @click="approveDocument(doc)"
-                      >
-                        Approve
-                      </button>
-                      <button
-                        class="pc-return-btn"
-                        type="button"
-                        :disabled="reviewBusyId === doc.documentId"
-                        @click="returnDocument(doc)"
-                      >
-                        Return
-                      </button>
+                  <div v-for="doc in documents" :key="doc.documentId || doc.title">
+                    <div class="pc-table-row">
+                      <span class="pc-doc-title-cell">
+                        <ion-icon :icon="documentOutline" class="pc-doc-icon" />
+                        <span>
+                          {{ doc.title }}
+                          <small class="pc-doc-version">v{{ doc.currentVersion || 1 }} · {{ doc.areaLabel || 'Area' }}</small>
+                        </span>
+                      </span>
+                      <span class="pc-role-tag">{{ doc.incharge }}</span>
+                      <span class="pc-muted">{{ doc.submitted }}</span>
+                      <div class="pc-action-btns">
+                        <button
+                          class="pc-approve-btn"
+                          type="button"
+                          :disabled="reviewBusyId === doc.documentId"
+                          @click="approveDocument(doc)"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          class="pc-return-btn"
+                          type="button"
+                          :disabled="reviewBusyId === doc.documentId"
+                          @click="returnDocument(doc)"
+                        >
+                          Return
+                        </button>
+                        <button
+                          v-if="(doc.versions || []).length"
+                          class="pc-link-btn"
+                          type="button"
+                          @click="toggleReviewVersions(doc.documentId)"
+                        >
+                          {{ expandedReviewVersions.has(doc.documentId) ? 'Hide versions' : 'Versions' }}
+                        </button>
+                      </div>
                     </div>
+                    <ul v-if="expandedReviewVersions.has(doc.documentId)" class="pc-version-list">
+                      <li v-for="version in doc.versions" :key="version.id || version.version">
+                        v{{ version.version }} · {{ version.originalName || version.original_name }}
+                        <button type="button" class="pc-link-btn" @click="previewReviewVersion(doc, version)">Preview</button>
+                      </li>
+                    </ul>
                   </div>
                 </div>
               </div>
@@ -555,8 +574,11 @@ import {
   getDocuments,
   getProgramChairAreaDocuments,
   getProgramChairAreaFiles,
+  getProgramChairAreas,
+  getProgramChairReviewDocuments,
   approveDocumentReview,
   requestDocumentRevision,
+  previewDocument,
 } from '@/lib/api'
 import AccreditationLevelStatus from '@/components/AccreditationLevelStatus.vue'
 import ProgramChairAccreditationSetup from './ProgramChairAccreditationSetup.vue'
@@ -574,7 +596,7 @@ import { useNotificationStore } from '@/stores/notificationStore'
 const authStore = useAuthStore()
 const facultyDashboard = useFacultyDashboardStore()
 const notificationStore = useNotificationStore()
-const { myAreas, selectedAreaId } = storeToRefs(facultyDashboard)
+const { myAreas, selectedAreaId, programCompletionRate: assignedAreaProgramRate } = storeToRefs(facultyDashboard)
 const router = useRouter()
 const route = useRoute()
 const { activeCall, callMessage, callUser, endCall } = useUserCalls()
@@ -599,6 +621,8 @@ const inviteBusy = ref(false)
 const documents = ref<any[]>([])
 const reviewBusyId = ref<number | string | null>(null)
 const areas = ref<any[]>([])
+const programCompletionRate = ref<number | null>(null)
+const expandedReviewVersions = ref(new Set<number | string>())
 // const programChairWorkflowPhase = computed(() => {
 //   if (!documents.value.length) return 'Planning'
 //   if (completionRate.value >= 85) return 'Ready'
@@ -657,9 +681,14 @@ const pageDescription = computed(() => {
 })
 
 const completionRate = computed(() => {
-  if (!areas.value.length) return 0
-  const total = areas.value.reduce((sum, area) => sum + Number(area.pct || 0), 0)
-  return Math.round(total / areas.value.length)
+  if (programCompletionRate.value != null) return programCompletionRate.value
+  if (assignedAreaProgramRate.value != null) return Number(assignedAreaProgramRate.value)
+  const programScore = Number(currentProgram.value?.complianceScore ?? currentProgram.value?.compliance_score)
+  if (Number.isFinite(programScore) && programScore >= 0) return Math.round(programScore)
+  const listed = areas.value.length ? areas.value : myAreas.value
+  if (!listed.length) return 0
+  const total = listed.reduce((sum, area) => sum + Number(area.progressPercent ?? area.pct ?? 0), 0)
+  return Math.round(total / listed.length)
 })
 
 const assignedProgramName = computed(() => {
@@ -1055,10 +1084,52 @@ const regenCode = async () => {
   codeMessage.value = 'Generated a temporary code — save or send it.'
 }
 
+const applyCompletionRate = (value: unknown) => {
+  if (value == null || value === '') return
+  const next = Number(value)
+  if (Number.isFinite(next)) {
+    programCompletionRate.value = Math.round(next)
+    if (currentProgram.value) {
+      currentProgram.value.complianceScore = programCompletionRate.value
+    }
+  }
+}
+
+const loadProgramAreas = async () => {
+  try {
+    const payload = await getProgramChairAreas(currentProgram.value?.id || authStore.user?.programId)
+    applyCompletionRate(payload?.programCompletionRate)
+    const activeLevel = (payload?.levels || []).find((level: any) => level?.isOpen && level?.cycleId === payload?.activeCycleId)
+      || (payload?.levels || []).find((level: any) => level?.isOpen)
+    areas.value = Array.isArray(activeLevel?.areas) ? activeLevel.areas : []
+  } catch (err) {
+    console.warn('Unable to load program areas:', err)
+  }
+}
+
 const loadProgramDocumentsForReview = async () => {
   try {
-    const tree = await getProgramChairAreaDocuments(currentProgram.value?.id || authStore.user?.programId)
+    const programId = currentProgram.value?.id || authStore.user?.programId
+    try {
+      const payload = await getProgramChairReviewDocuments(programId)
+      if (payload?.programId && !currentProgram.value?.id) {
+        currentProgram.value = {
+          ...(currentProgram.value || {}),
+          id: payload.programId,
+          name: payload.programName || currentProgram.value?.name || 'Program',
+        }
+      }
+      applyCompletionRate(payload?.programCompletionRate)
+      const list = Array.isArray(payload?.documents) ? payload.documents : []
+      documents.value = list.map((doc: any) => mapReviewDocument(doc, doc.area)).filter(Boolean)
+      return
+    } catch (batchErr) {
+      console.warn('Batch review documents unavailable, falling back:', batchErr)
+    }
+
+    const tree = await getProgramChairAreaDocuments(programId)
     const levels = Array.isArray(tree?.levels) ? tree.levels : []
+    applyCompletionRate(tree?.programCompletionRate)
 
     if (tree?.programId && !currentProgram.value?.id) {
       currentProgram.value = {
@@ -1070,6 +1141,7 @@ const loadProgramDocumentsForReview = async () => {
 
     const rows: any[] = []
     for (const level of levels) {
+      if (!level?.isOpen) continue
       for (const area of level.areas || []) {
         if (!area?.id) continue
         const files = await getProgramChairAreaFiles(area.id)
@@ -1086,13 +1158,12 @@ const loadProgramDocumentsForReview = async () => {
       return
     }
 
-    const programId = currentProgram.value?.id || authStore.user?.programId || tree?.programId
-    if (!programId) {
+    if (!programId && !tree?.programId) {
       documents.value = []
       return
     }
 
-    const response = await getDocuments({ program_id: programId, per_page: 100 })
+    const response = await getDocuments({ program_id: programId || tree?.programId, per_page: 100 })
     const payload = Array.isArray(response?.data)
       ? response.data
       : Array.isArray(response?.data?.data)
@@ -1114,6 +1185,7 @@ const mapReviewDocument = (doc: any, area?: any) => {
   if (!doc || doc.source === 'criterion-evidence') return null
   const status = String(doc.status || 'Active')
   if (status !== 'Active' && status !== 'Draft') return null
+  const versions = Array.isArray(doc.versions) ? [...doc.versions].sort((a, b) => Number(b.version || 0) - Number(a.version || 0)) : []
 
   return {
     documentId: doc.id,
@@ -1121,6 +1193,9 @@ const mapReviewDocument = (doc: any, area?: any) => {
     workspaceId: doc.workspaceId || null,
     status,
     title: doc.title || 'Evidence Document',
+    currentVersion: doc.currentVersion || versions[0]?.version || 1,
+    versions,
+    areaLabel: area?.name || area?.label || doc.area?.name || '',
     incharge: doc.uploader?.name || doc.uploaded_by_name || area?.chair?.name || 'Faculty member',
     submitted: (doc.createdAt || doc.created_at)
       ? new Date(doc.createdAt || doc.created_at).toLocaleDateString()
@@ -1128,12 +1203,30 @@ const mapReviewDocument = (doc: any, area?: any) => {
   }
 }
 
+const toggleReviewVersions = (id: number | string) => {
+  if (expandedReviewVersions.value.has(id)) expandedReviewVersions.value.delete(id)
+  else expandedReviewVersions.value.add(id)
+  expandedReviewVersions.value = new Set(expandedReviewVersions.value)
+}
+
+const previewReviewVersion = async (doc: any, version?: any) => {
+  try {
+    const blob = await previewDocument(doc.documentId, version?.version)
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank', 'noopener')
+  } catch (err: any) {
+    window.alert(err?.response?.data?.message || err?.message || 'Preview is not available for this file.')
+  }
+}
+
 const approveDocument = async (doc: any) => {
   if (!doc.documentId) return
   reviewBusyId.value = doc.documentId
   try {
-    await approveDocumentReview(doc.documentId)
-    await loadProgramDocumentsForReview()
+    const response = await approveDocumentReview(doc.documentId)
+    documents.value = documents.value.filter((item) => item.documentId !== doc.documentId)
+    applyCompletionRate(response?.programCompletionRate)
+    await facultyDashboard.loadMyAreas()
   } catch (err: any) {
     console.error('Unable to approve document:', err)
     const message = err?.response?.data?.message || err?.message || 'Approval failed.'
@@ -1147,8 +1240,10 @@ const returnDocument = async (doc: any) => {
   if (!doc.documentId) return
   reviewBusyId.value = doc.documentId
   try {
-    await requestDocumentRevision(doc.documentId, { comment: 'Returned for revision by Program Chair.' })
-    await loadProgramDocumentsForReview()
+    const response = await requestDocumentRevision(doc.documentId, { comment: 'Returned for revision by Program Chair.' })
+    documents.value = documents.value.filter((item) => item.documentId !== doc.documentId)
+    applyCompletionRate(response?.programCompletionRate)
+    await facultyDashboard.loadMyAreas()
   } catch (err: any) {
     console.error('Unable to return document for revision:', err)
     const message = err?.response?.data?.message || err?.message || 'Document return failed.'
@@ -1162,9 +1257,15 @@ onMounted(async () => {
   await loadAssignedProgram()
   await fetchTeams()
   await fetchInvitations()
-  await loadProgramDocumentsForReview()
-  await facultyDashboard.loadMyAreas()
-  await notificationStore.fetchNotifications()
+  await Promise.all([
+    loadProgramAreas(),
+    loadProgramDocumentsForReview(),
+    facultyDashboard.loadMyAreas(),
+    notificationStore.fetchNotifications(),
+  ])
+  if (programCompletionRate.value == null) {
+    applyCompletionRate(currentProgram.value?.complianceScore ?? currentProgram.value?.compliance_score)
+  }
 })
 </script>
 
@@ -2065,7 +2166,16 @@ onMounted(async () => {
 }
 
 .pc-doc-title-cell { display: flex; align-items: center; gap: 0.4rem; font-weight: 600; }
+.pc-doc-title-cell span { display: grid; gap: 0.12rem; min-width: 0; }
+.pc-doc-version { display: block; color: var(--adams-text-muted); font-size: 0.7rem; font-weight: 600; }
 .pc-doc-icon       { color: var(--adams-text-muted); flex-shrink: 0; }
+.pc-version-list {
+  margin: 0 0 0.55rem;
+  padding: 0.35rem 0.8rem 0.55rem 2.2rem;
+  color: var(--adams-text-muted);
+  font-size: 0.75rem;
+}
+.pc-version-list li { display: flex; align-items: center; gap: 0.55rem; padding: 0.2rem 0; }
 
 .pc-role-tag {
   font-size: 0.7rem; background: var(--adams-success-soft); color: var(--color-success-dark);
@@ -2074,7 +2184,7 @@ onMounted(async () => {
 
 .pc-muted { color: var(--adams-text-muted); font-size: 0.75rem; }
 
-.pc-action-btns { display: flex; gap: 0.35rem; }
+.pc-action-btns { display: flex; flex-wrap: wrap; gap: 0.35rem; }
 
 .pc-approve-btn, .pc-return-btn {
   padding: 0.25rem 0.55rem; border-radius: 0.4rem;

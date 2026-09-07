@@ -66,6 +66,7 @@ export const useFacultyDashboardStore = defineStore('facultyDashboard', () => {
     pendingReviews: 0,
     progressPercent: 0,
   })
+  const programCompletionRate = ref<number | null>(null)
   const areaTeamMembers = ref<Array<{ id: number; name: string; email?: string; role: string; focus: string }>>([])
   const pipeline = ref([
     { label: 'Faculty Upload', sub: 'Submit evidence documents', done: true, active: false, returned: false },
@@ -115,6 +116,10 @@ export const useFacultyDashboardStore = defineStore('facultyDashboard', () => {
         pendingReviews: Number(stats.pending ?? stats.pendingReviews ?? 0),
         progressPercent: Number(stats.progressPercent ?? 0),
       }
+      const programRate = payload?.meta?.programCompletionRate
+      programCompletionRate.value = programRate == null || programRate === ''
+        ? null
+        : Number(programRate)
       areaTeamMembers.value = Array.isArray(payload?.meta?.teamMembers) ? payload.meta.teamMembers : []
       myAreas.value = areas
         .filter((area: any) => {
@@ -143,6 +148,7 @@ export const useFacultyDashboardStore = defineStore('facultyDashboard', () => {
         pendingReviews: 0,
         progressPercent: 0,
       }
+      programCompletionRate.value = null
       areaTeamMembers.value = []
     }
   }
@@ -454,6 +460,7 @@ export const useFacultyDashboardStore = defineStore('facultyDashboard', () => {
     pendingRevisions,
     unreadCount,
     taskStats,
+    programCompletionRate,
     areaTeamMembers,
     loadTeam,
     loadProgram,

@@ -140,7 +140,11 @@
                 {{ uploaderName(doc) }}
                 · {{ formatDate(doc.createdAt) }}
                 · {{ fileLabel(doc) }}
+                · {{ doc.status || 'Active' }}
                 · v{{ doc.currentVersion || latestVersion(doc)?.version || 1 }}
+                <template v-if="(doc.versions || []).length > 1">
+                  · {{ doc.versions.length }} versions
+                </template>
               </p>
             </div>
           </div>
@@ -154,12 +158,11 @@
             </button>
             <button type="button" class="adr-btn ghost" @click="download(doc)">Download</button>
             <button
-              v-if="(doc.versions || []).length > 1"
               type="button"
               class="adr-btn ghost"
               @click="toggleVersions(fileKey(doc))"
             >
-              Versions
+              {{ expandedVersions.has(fileKey(doc)) ? 'Hide versions' : 'Version history' }}
             </button>
           </div>
           <ul v-if="expandedVersions.has(fileKey(doc))" class="adr-versions">
@@ -204,6 +207,7 @@ import {
   approveReview,
   downloadDocument,
   downloadWorkspaceEvidence,
+  getDocumentVersions,
   getProgramChairAreaDocuments,
   getProgramChairAreaFiles,
   previewDocument,
@@ -470,9 +474,25 @@ const resetFilters = () => {
   dateTo.value = ''
 }
 
-const toggleVersions = (id: string) => {
-  if (expandedVersions.value.has(id)) expandedVersions.value.delete(id)
-  else expandedVersions.value.add(id)
+const toggleVersions = async (id: string) => {
+  if (expandedVersions.value.has(id)) {
+    expandedVersions.value.delete(id)
+    expandedVersions.value = new Set(expandedVersions.value)
+    return
+  }
+
+  const doc = documents.value.find((item) => fileKey(item) === id)
+  if (doc && !isWorkspaceEvidence(doc) && (!Array.isArray(doc.versions) || doc.versions.length === 0)) {
+    try {
+      const payload = await getDocumentVersions(doc.id)
+      const versions = Array.isArray(payload?.data) ? payload.data : (Array.isArray(payload) ? payload : [])
+      doc.versions = versions
+    } catch (err) {
+      console.warn('Unable to load document versions:', err)
+    }
+  }
+
+  expandedVersions.value.add(id)
   expandedVersions.value = new Set(expandedVersions.value)
 }
 

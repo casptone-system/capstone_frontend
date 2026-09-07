@@ -439,6 +439,15 @@ const routes = [
   },
 
   {
+    path: '/user/dashboard/accreditor',
+    name: 'dashboard-accreditor',
+    component: DashboardQA,
+    meta: {
+      requiresAuth: true,
+    },
+  },
+
+  {
     path: '/user/dashboard/vpaa',
     name: 'dashboard-vpaa',
     component: VPaaLayout,
@@ -758,6 +767,16 @@ router.beforeEach(async (to) => {
     to.path === '/user/dashboard/'
   ) {
     return redirectTo(authRedirectPath)
+  }
+
+  if (
+    authStore.isAuthenticated &&
+    (to.path === '/join-team' || to.path === '/new-user')
+  ) {
+    const currentRole = normalizeRole(String(authStore.userRole || ''))
+    if (currentRole && currentRole !== 'faculty') {
+      return redirectTo(authRedirectPath)
+    }
   }
 
   if (to.path === '/superadmin' || to.path === '/superadmin/') {

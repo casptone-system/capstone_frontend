@@ -129,6 +129,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
     if (uniqueRoles.includes('faculty')) views.push('faculty')
     if (uniqueRoles.includes('qa')) views.push('qa')
+    if (uniqueRoles.includes('accreditor')) views.push('accreditor')
     if (uniqueRoles.includes('vpaa')) views.push('vpaa')
     if (uniqueRoles.includes('superadmin') || uniqueRoles.includes('admin')) {
       views.push('superadmin')
@@ -166,6 +167,7 @@ export const useAuthStore = defineStore('auth', () => {
       'area-in-charge',
       'faculty',
       'qa',
+      'accreditor',
       'vpaa',
       'superadmin',
       'admin',
@@ -179,6 +181,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isSuperAdmin = computed(() => userRole.value === 'superadmin' || userRole.value === 'admin')
   const isQA = computed(() => userRole.value === 'qa')
+  const isAccreditor = computed(() => userRole.value === 'accreditor')
   const isVPAA = computed(() => userRole.value === 'vpaa')
   const isDean = computed(() => userRole.value === 'dean')
   const isFaculty = computed(() => userRole.value === 'faculty')
@@ -578,6 +581,7 @@ export const useAuthStore = defineStore('auth', () => {
     hasGroup,
     isSuperAdmin,
     isQA,
+    isAccreditor,
     isVPAA,
     isDean,
     isFaculty,

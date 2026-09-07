@@ -1,6 +1,6 @@
 <template>
   <AdamsAppShell
-    role-label="Quality Assurance"
+    :role-label="shellRoleLabel"
     :page-title="pageTitle"
     :page-description="pageDescription"
     :show-title="true"
@@ -361,6 +361,10 @@ import AccreditationMonitorCard from '@/components/AccreditationMonitorCard.vue'
 import AccreditationLevelStatus from '@/components/AccreditationLevelStatus.vue'
 import AdamsAppShell from '@/components/ui/AdamsAppShell.vue'
 import api from '@/lib/api'
+import { useAuthStore } from '@/stores/authStore'
+
+const authStore = useAuthStore()
+const shellRoleLabel = computed(() => authStore.isAccreditor ? 'Accreditor' : 'Quality Assurance')
 
 type QaSection = 'dashboard' | 'colleges' | 'programs' | 'at-risk' | 'accreditations' | 'progress'
 
@@ -373,7 +377,7 @@ const pageTitle = computed(() => {
     case 'at-risk': return 'At-Risk Programs'
     case 'accreditations': return 'Accreditations'
     case 'progress': return 'Area Progress'
-    default: return 'QA Dashboard'
+    default: return authStore.isAccreditor ? 'Accreditor Dashboard' : 'QA Dashboard'
   }
 })
 

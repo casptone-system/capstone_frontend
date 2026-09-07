@@ -50,15 +50,30 @@
           </td>
           <td v-if="showUpload && !isSectionHeading(row)" class="apr-upload-cell">
             <div v-if="rowFiles(row).length" class="apr-files">
-              <AreaFileThumbnail
-                v-for="doc in rowFiles(row)"
-                :key="doc.id"
-                :doc="doc"
-                :can-remove="canUpload"
-                :removing="pendingDocId === doc.id || pendingId === row.id"
-                @remove="removeFile(row, doc)"
-                @error="error = $event"
-              />
+              <div v-for="doc in rowFiles(row)" :key="doc.id" class="apr-file-block">
+                <AreaFileThumbnail
+                  :doc="doc"
+                  :can-remove="canUpload"
+                  :removing="pendingDocId === doc.id || pendingId === row.id"
+                  @remove="removeFile(row, doc)"
+                  @error="error = $event"
+                />
+                <button
+                  v-if="canUpload"
+                  type="button"
+                  class="apr-version-btn"
+                  :disabled="pendingId === row.id"
+                  @click="openReplacer(row, doc)"
+                >
+                  New version
+                </button>
+                <p class="apr-version-meta">
+                  v{{ currentVersion(doc) }}
+                  <template v-if="(doc.versions || []).length > 1">
+                    · {{ doc.versions?.length }} versions
+                  </template>
+                </p>
+              </div>
             </div>
             <span v-else class="apr-muted">No files yet</span>
             <span v-if="row.isDone" class="apr-submitted">Submitted</span>
@@ -106,11 +121,12 @@
     <AreaRowUploadModal
       :open="uploaderOpen"
       :row-id="uploaderRow?.id || null"
-      :row-label="uploaderRow?.content || 'Content row'"
+      :row-label="replaceTarget ? `New version of ${fileName(replaceTarget)}` : (uploaderRow?.content || 'Content row')"
       :existing-count="uploaderRow ? rowFiles(uploaderRow).length : 0"
       :program-id="programId"
       :area-id="areaId"
-      @close="uploaderOpen = false"
+      :replace-document-id="replaceTarget?.id || null"
+      @close="closeUploader"
       @uploaded="onUploaded"
     />
   </div>
@@ -174,6 +190,7 @@ const pendingDocId = ref<number | null>(null)
 const error = ref('')
 const uploaderOpen = ref(false)
 const uploaderRow = ref<ParameterRow | null>(null)
+const replaceTarget = ref<RowDocument | null>(null)
 
 const columnCount = computed(() => (props.showUpload ? 2 : 1))
 
@@ -216,6 +233,22 @@ const fileName = (doc: RowDocument) =>
   || doc.title
   || 'Uploaded PDF'
 
+const currentVersion = (doc: RowDocument) =>
+  doc.latestVersion?.version
+  || doc.versions?.[0]?.version
+  || 1
+
+const openReplacer = (row: ParameterRow, doc: RowDocument) => {
+  uploaderRow.value = row
+  replaceTarget.value = doc
+  uploaderOpen.value = true
+}
+
+const closeUploader = () => {
+  uploaderOpen.value = false
+  replaceTarget.value = null
+}
+
 const saveContent = async (row: ParameterRow) => {
   const content = draftContent.value.trim()
   if (!content) return
@@ -244,6 +277,7 @@ const removeRow = async (row: ParameterRow) => {
 
 const openUploader = (row: ParameterRow) => {
   uploaderRow.value = row
+  replaceTarget.value = null
   uploaderOpen.value = true
 }
 
@@ -462,6 +496,31 @@ const submitRow = async (row: ParameterRow) => {
   flex-wrap: wrap;
   gap: 0.85rem 0.75rem;
   margin-bottom: 0.35rem;
+}
+
+.apr-file-block {
+  display: grid;
+  gap: 0.28rem;
+  justify-items: start;
+}
+
+.apr-version-btn {
+  appearance: none;
+  border: none;
+  background: #edf7f2;
+  color: #0c5c4e;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.apr-version-meta {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 700;
 }
 
 .apr-muted {

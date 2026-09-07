@@ -3,15 +3,17 @@
     <div class="arum-modal" role="dialog" aria-modal="true" aria-labelledby="arum-title">
       <header class="arum-head">
         <div>
-          <p class="arum-kicker">Upload evidence</p>
+          <p class="arum-kicker">{{ replaceDocumentId ? 'Upload new version' : 'Upload evidence' }}</p>
           <h3 id="arum-title">{{ rowLabel }}</h3>
         </div>
         <button type="button" class="arum-close" @click="emit('close')">Close</button>
       </header>
 
       <p class="arum-reminder">
-        PDF files only. Each file must be 10 MB or smaller. This row can hold up to 5 PDFs
-        ({{ remaining }} remaining).
+        PDF files only. Each file must be 10 MB or smaller.
+        {{ replaceDocumentId
+          ? 'This upload becomes the next numbered version of the selected file and returns it to Program Chair review.'
+          : `This row can hold up to 5 PDFs (${remaining} remaining).` }}
       </p>
 
       <div
@@ -29,7 +31,7 @@
           class="arum-file-input"
           type="file"
           accept="application/pdf,.pdf"
-          multiple
+          :multiple="!replaceDocumentId"
           :disabled="remaining <= 0 || uploading"
           @change="onPick"
         />
@@ -80,7 +82,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { uploadDocument } from '@/lib/api'
+import { replaceDocument, uploadDocument } from '@/lib/api'
 
 type QueueItem = {
   id: string
@@ -97,6 +99,7 @@ const props = defineProps<{
   existingCount?: number
   programId?: number | string | null
   areaId?: number | string | null
+  replaceDocumentId?: number | string | null
 }>()
 
 const emit = defineEmits<{
@@ -115,7 +118,10 @@ const uploading = ref(false)
 const uploadedAny = ref(false)
 const initialCount = ref(0)
 
-const remaining = computed(() => Math.max(0, MAX_FILES - initialCount.value - queue.value.length))
+const remaining = computed(() => {
+  if (props.replaceDocumentId) return queue.value.length ? 0 : 1
+  return Math.max(0, MAX_FILES - initialCount.value - queue.value.length)
+})
 const pendingFiles = computed(() => queue.value.filter((item) => item.status === 'queued' || item.status === 'error'))
 
 watch(() => props.open, (open) => {
@@ -194,7 +200,7 @@ const removeQueued = (id: string) => {
 }
 
 const startUpload = async () => {
-  if (!props.rowId || !props.programId) {
+  if (!props.replaceDocumentId && (!props.rowId || !props.programId)) {
     error.value = 'This row is missing program information, so the upload cannot start.'
     return
   }
@@ -208,14 +214,20 @@ const startUpload = async () => {
     item.progress = 0
     item.message = ''
     try {
-      await uploadDocument(item.file, {
-        program_id: props.programId,
-        area_id: props.areaId,
-        content_row_id: props.rowId,
-        title: item.file.name,
-      }, (percent) => {
-        item.progress = percent
-      })
+      if (props.replaceDocumentId) {
+        await replaceDocument(props.replaceDocumentId, item.file, (percent) => {
+          item.progress = percent
+        })
+      } else {
+        await uploadDocument(item.file, {
+          program_id: props.programId,
+          area_id: props.areaId,
+          content_row_id: props.rowId,
+          title: item.file.name,
+        }, (percent) => {
+          item.progress = percent
+        })
+      }
       item.progress = 100
       item.status = 'done'
       uploadedAny.value = true

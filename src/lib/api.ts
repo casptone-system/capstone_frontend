@@ -39,6 +39,14 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`
   }
 
+  if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+    if (config.headers && typeof (config.headers as any).delete === 'function') {
+      (config.headers as any).delete('Content-Type')
+    } else if (config.headers) {
+      delete (config.headers as any)['Content-Type']
+    }
+  }
+
   return config
 })
 
@@ -345,6 +353,13 @@ export const getProgramChairAreaDocuments = async (programId?: number | string) 
 
 export const getProgramChairAreaFiles = async (areaId: number | string) => {
   const response = await api.get(`/program-chair/areas/${areaId}/documents`)
+  return unwrap(response)
+}
+
+export const getProgramChairReviewDocuments = async (programId?: number | string) => {
+  const response = await api.get('/program-chair/review-documents', {
+    params: programId ? { program_id: programId } : undefined,
+  })
   return unwrap(response)
 }
 
@@ -768,9 +783,6 @@ export const uploadDocument = async (
   })
 
   const response = await api.post('/documents', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
     onUploadProgress: (event) => {
       if (!onProgress || !event.total) return
       onProgress(Math.round((event.loaded / event.total) * 100))
@@ -782,14 +794,24 @@ export const uploadDocument = async (
 
 export const replaceDocument = async (
   id: number | string,
-  formData: FormData
+  file: File | FormData,
+  onProgress?: (percent: number) => void
 ) => {
+  const formData = file instanceof FormData ? file : new FormData()
+  if (!(file instanceof FormData)) {
+    formData.append('file', file)
+  }
+
   const response = await api.post(
     `/documents/${id}/replace`,
     formData,
     {
       headers: {
         'Content-Type': 'multipart/form-data',
+      },
+      onUploadProgress: (event) => {
+        if (!onProgress || !event.total) return
+        onProgress(Math.round((event.loaded / event.total) * 100))
       },
     }
   )

@@ -23,6 +23,7 @@
         </span>
       </span>
       <span class="aft-name">{{ name }}</span>
+      <span class="aft-version">v{{ current?.version || 1 }}</span>
     </button>
     <button
       v-if="canRemove"
@@ -208,6 +209,18 @@ onUnmounted(revokeUrl)
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.aft-version {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 0.15rem;
+  padding: 0.08rem 0.4rem;
+  border-radius: 999px;
+  background: #edf7f2;
+  color: #0c5c4e;
+  font-size: 0.64rem;
+  font-weight: 800;
 }
 
 .aft-x {
