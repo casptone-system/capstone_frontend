@@ -304,7 +304,8 @@ const submitNotification = async () => {
     formData.append('description', form.value.description)
     formData.append('instrument_file', uploadedFile.value)
 
-    const response = await fetch('/api/dean/notify-program-chair', {
+    const apiBase = process.env.VUE_APP_API_BASE_URL || '/api'
+    const response = await fetch(`${apiBase}/dean/notify-program-chair`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

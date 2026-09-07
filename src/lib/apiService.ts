@@ -2,7 +2,7 @@ import axios from 'axios'
 import { TOKEN_KEY } from '@/lib/apiClient'
 
 const apiService = axios.create({
-  baseURL: 'http://127.0.0.1:8000/api',
+  baseURL: process.env.VUE_APP_API_BASE_URL || '/api',
   headers: {
     Accept: 'application/json',
     'Content-Type': 'application/json',

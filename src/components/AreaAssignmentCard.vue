@@ -392,7 +392,7 @@ const successFacultyId = ref<number | null>(null)
 
 // Create axios instance for API calls
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: process.env.VUE_APP_API_BASE_URL || '/api',
   headers: {
     'Content-Type': 'application/json',
   },

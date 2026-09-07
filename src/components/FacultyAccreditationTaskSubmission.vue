@@ -264,10 +264,12 @@ const submitFiles = async () => {
     formData.append('area_id', String(props.areaId || 0))
     formData.append('notes', submissionNotes.value)
 
-    const response = await fetch('/api/accreditation-areas/submit-files', {
+    const apiBase = process.env.VUE_APP_API_BASE_URL || '/api'
+    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token') || ''
+    const response = await fetch(`${apiBase}/accreditation-areas/submit-files`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('auth_token') || ''}`,
+        Authorization: `Bearer ${token}`,
       },
       body: formData,
     })
