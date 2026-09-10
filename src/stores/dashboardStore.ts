@@ -62,7 +62,13 @@ export const useDashboardStore = defineStore('dashboard', () => {
     return statusMap[stats.value.securityStatus]
   })
 
-  const fetchDashboardStats = async () => {
+  const fetchedAt = ref(0)
+
+  const fetchDashboardStats = async (force = false) => {
+    if (!force && fetchedAt.value && Date.now() - fetchedAt.value < 15_000) {
+      return
+    }
+
     isLoading.value = true
     error.value = null
     try {
@@ -105,6 +111,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
       activities.value = []
     } finally {
       isLoading.value = false
+      fetchedAt.value = Date.now()
     }
   }
 

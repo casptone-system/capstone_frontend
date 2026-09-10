@@ -103,7 +103,13 @@ export const useFacultyDashboardStore = defineStore('facultyDashboard', () => {
     selectedSection.value = section
   }
 
-  const loadMyAreas = async () => {
+  const myAreasFetchedAt = ref(0)
+
+  const loadMyAreas = async (force = false) => {
+    if (!force && myAreasFetchedAt.value && Date.now() - myAreasFetchedAt.value < 30_000) {
+      return
+    }
+
     try {
       const payload = await getMyAreas()
       const areas = Array.isArray(payload?.areas) ? payload.areas : []
@@ -137,6 +143,7 @@ export const useFacultyDashboardStore = defineStore('facultyDashboard', () => {
       ) {
         selectedAreaId.value = null
       }
+      myAreasFetchedAt.value = Date.now()
     } catch (error) {
       console.warn('Failed to load assigned areas', error)
       myAreas.value = []
@@ -150,6 +157,7 @@ export const useFacultyDashboardStore = defineStore('facultyDashboard', () => {
       }
       programCompletionRate.value = null
       areaTeamMembers.value = []
+      myAreasFetchedAt.value = Date.now()
     }
   }
 

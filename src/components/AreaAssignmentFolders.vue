@@ -624,7 +624,7 @@ const saveArea = async (confirmReassign = false) => {
     await setAreaMembers(area.id, selectedMembers.value.map((m) => m.id))
 
     await loadAreas()
-    await facultyDashboard.loadMyAreas()
+    await facultyDashboard.loadMyAreas(true)
     toastStore.show(`${activeFolder.value.codeLabel} saved successfully.`, 'success')
     reassignConfirmOpen.value = false
     isOpen.value = false

@@ -773,10 +773,7 @@ router.beforeEach(async (to) => {
     authStore.isAuthenticated &&
     (to.path === '/join-team' || to.path === '/new-user')
   ) {
-    const currentRole = normalizeRole(String(authStore.userRole || ''))
-    if (currentRole && currentRole !== 'faculty') {
-      return redirectTo(authRedirectPath)
-    }
+    return redirectTo(authRedirectPath)
   }
 
   if (to.path === '/superadmin' || to.path === '/superadmin/') {

@@ -123,7 +123,7 @@ export const resolveAppRole = (
   return normalizeRoleValue(roleValue) || roleFromUser(user)
 }
 
-export const getDashboardPathForRole = (role: AppRole, hasGroup = false): string => {
+export const getDashboardPathForRole = (role: AppRole): string => {
   switch (role) {
     case 'superadmin':
     case 'admin':
@@ -139,7 +139,7 @@ export const getDashboardPathForRole = (role: AppRole, hasGroup = false): string
       return '/user/dashboard/area-incharge'
 
     case 'faculty':
-      return hasGroup ? '/user/dashboard/faculty' : '/join-team'
+      return '/user/dashboard/faculty'
 
     case 'qa':
       return '/user/dashboard/qa'
@@ -151,17 +151,18 @@ export const getDashboardPathForRole = (role: AppRole, hasGroup = false): string
       return '/user/dashboard/vpaa'
 
     default:
-      return hasGroup ? '/user/dashboard/faculty' : '/join-team'
+      return '/user/dashboard/faculty'
   }
 }
 
 export const getRoleRedirectPath = (
   roleValue: unknown,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept so login/router call sites stay unchanged
   hasGroup = false,
   user?: User | null,
 ): string => {
   const role = resolveAppRole(roleValue, user)
-  return getDashboardPathForRole(role, hasGroup)
+  return getDashboardPathForRole(role)
 }
 
 export const dashboardSegmentToRole = (segment: string): AppRole => {

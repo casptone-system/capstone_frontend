@@ -49,7 +49,7 @@
           </div>
           <div v-if="loginError" class="login-error" role="alert"> {{ loginError }} </div>
           <div v-if="showRegistrationNotice" class="login-success" role="status"> 
-            Registration successful! Please verify your account through the email we sent you before signing in. 
+            Registration successful. You can sign in now.
           </div>
           <div v-if="showResetNotice" class="login-success" role="status"> Your password has been reset. Please sign in
             with your new password. </div>

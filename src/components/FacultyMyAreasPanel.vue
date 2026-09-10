@@ -165,12 +165,12 @@ const openParameter = async (parameter: any) => {
 
 const onRowUpdated = (updated: any) => {
   rows.value = rows.value.map((row) => (Number(row.id) === Number(updated.id) ? { ...row, ...updated } : row))
-  void facultyDashboard.loadMyAreas()
+  void facultyDashboard.loadMyAreas(true)
 }
 
 const onRowRemoved = (removed: any) => {
   rows.value = rows.value.filter((row) => Number(row.id) !== Number(removed.id))
-  void facultyDashboard.loadMyAreas()
+  void facultyDashboard.loadMyAreas(true)
 }
 
 const reloadSelectedRows = async () => {
@@ -181,7 +181,7 @@ const reloadSelectedRows = async () => {
   } catch (err: any) {
     error.value = err?.response?.data?.message || 'Unable to refresh parameter content.'
   }
-  void facultyDashboard.loadMyAreas()
+  void facultyDashboard.loadMyAreas(true)
 }
 
 const addRow = async () => {
@@ -193,7 +193,7 @@ const addRow = async () => {
     error.value = ''
     const created = await createParameterRow(selectedParameter.value.id, { content: content.trim() })
     rows.value = [...rows.value, created]
-    void facultyDashboard.loadMyAreas()
+    void facultyDashboard.loadMyAreas(true)
   } catch (err: any) {
     error.value = err?.response?.data?.message || 'Unable to add a row.'
   }

@@ -127,7 +127,13 @@ export const useNotificationStore = defineStore('notifications', () => {
     unreadCount.value = items.value.filter((item) => !item.read).length
   }
 
-  const fetchNotifications = async () => {
+  const fetchedAt = ref(0)
+
+  const fetchNotifications = async (force = false) => {
+    if (!force && fetchedAt.value && Date.now() - fetchedAt.value < 15_000) {
+      return
+    }
+
     isLoading.value = true
     error.value = null
 
@@ -155,6 +161,7 @@ export const useNotificationStore = defineStore('notifications', () => {
       unreadCount.value = 0
     } finally {
       isLoading.value = false
+      fetchedAt.value = Date.now()
     }
   }
 

@@ -696,7 +696,7 @@ const applySectionFromRoute = (section: unknown) => {
 
 const onNotificationOpened = async (item: InboxItem) => {
   if (item.type === 'faculty_area_assignment' || item.type === 'accreditation_area_assigned') {
-    await loadMyAreas()
+    await loadMyAreas(true)
   }
 }
 

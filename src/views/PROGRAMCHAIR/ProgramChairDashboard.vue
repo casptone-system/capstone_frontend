@@ -619,6 +619,7 @@ const inviteSuccess = ref('')
 const invitations = ref<any[]>([])
 const inviteBusy = ref(false)
 const documents = ref<any[]>([])
+const reviewDocumentsLoaded = ref(false)
 const reviewBusyId = ref<number | string | null>(null)
 const areas = ref<any[]>([])
 const programCompletionRate = ref<number | null>(null)
@@ -877,64 +878,65 @@ const loadAssignedProgram = async () => {
 
   try {
     let programData: any = null
-    if (programId) {
-      try {
-        const programResponse = await getProgram(programId)
-        programData = programResponse?.data ?? programResponse ?? null
-        if (programData) {
-          console.log('✓ Program details loaded:', programData.name || programData.title)
-          currentProgram.value = programData
+    let facultyData: any[] = []
 
-          if (programData?.code) {
-            activeCode.value = programData.code
-          }
-        }
-      } catch (programErr: any) {
-        console.warn('⚠️ Failed to load program details:', programErr.message)
+    const [programResponse, facultyResponse] = await Promise.all([
+      programId
+        ? getProgram(programId).catch((programErr: any) => {
+            console.warn('⚠️ Failed to load program details:', programErr.message)
+            return null
+          })
+        : Promise.resolve(null),
+      getProgramFaculty().catch((facultyErr: any) => {
+        console.warn('⚠️ Failed to load faculty from backend:', facultyErr.message)
+        return null
+      }),
+    ])
+
+    programData = programResponse?.data ?? programResponse ?? null
+    if (programData) {
+      console.log('✓ Program details loaded:', programData.name || programData.title)
+      currentProgram.value = programData
+      if (programData?.code) {
+        activeCode.value = programData.code
       }
     }
 
-    let facultyData: any[] = []
-    try {
-      const facultyResponse = await getProgramFaculty()
-      facultyData = Array.isArray(facultyResponse?.data)
-        ? facultyResponse.data
-        : Array.isArray(facultyResponse)
-          ? facultyResponse
-          : []
+    facultyData = Array.isArray(facultyResponse?.data)
+      ? facultyResponse.data
+      : Array.isArray(facultyResponse)
+        ? facultyResponse
+        : []
 
-      if (facultyData.length > 0) {
-        const mappedFaculty = facultyData.map((person: any) => ({
-          id: person.id || person.user_id,
-          name: person.name || person.full_name || 'Unknown Faculty',
-          email: person.email || 'no-email@university.edu',
-          role: person.role || person.role_name || 'Faculty',
-          profilePhoto: person.profilePhoto || person.profile_photo || person.photo || null,
-          program_id: person.program_id || programId || null,
-        }))
+    if (facultyData.length > 0) {
+      const mappedFaculty = facultyData.map((person: any) => ({
+        id: person.id || person.user_id,
+        name: person.name || person.full_name || 'Unknown Faculty',
+        email: person.email || 'no-email@university.edu',
+        role: person.role || person.role_name || 'Faculty',
+        profilePhoto: person.profilePhoto || person.profile_photo || person.photo || null,
+        program_id: person.program_id || programId || null,
+      }))
 
-        if (currentProgram.value) {
-          currentProgram.value.faculty = mappedFaculty
-          currentProgram.value.members = mappedFaculty
-        } else {
-          currentProgram.value = {
-            id: programId || facultyData[0]?.program_id || facultyData[0]?.programId || null,
-            name: 'Program',
-            code: 'PROG',
-            faculty: mappedFaculty,
-            members: mappedFaculty,
-          }
-        }
-
-        if (currentProgram.value?.id && !user?.programId) {
-          user.programId = currentProgram.value.id
-          user.program_id = currentProgram.value.id
-        }
+      if (currentProgram.value) {
+        currentProgram.value.faculty = mappedFaculty
+        currentProgram.value.members = mappedFaculty
       } else {
-        console.warn('⚠️ No faculty returned from getProgramFaculty - program may have no faculty assigned yet')
+        currentProgram.value = {
+          id: programId || facultyData[0]?.program_id || facultyData[0]?.programId || null,
+          name: 'Program',
+          code: 'PROG',
+          faculty: mappedFaculty,
+          members: mappedFaculty,
+        }
       }
-    } catch (facultyErr: any) {
-      console.warn('⚠️ Failed to load faculty from backend:', facultyErr.message)
+
+      if (currentProgram.value?.id && !user?.programId) {
+        user.programId = currentProgram.value.id
+        user.program_id = currentProgram.value.id
+      }
+    } else if (facultyResponse != null) {
+      console.warn('⚠️ No faculty returned from getProgramFaculty - program may have no faculty assigned yet')
     }
 
     if (!currentProgram.value && programId) {
@@ -1013,10 +1015,6 @@ const copyCode = async () => {
   } catch {
     codeMessage.value = 'Copy failed. Please copy manually.'
   }
-}
-
-const fetchInvitations = async () => {
-  invitations.value = []
 }
 
 const submitInvitation = async () => {
@@ -1181,6 +1179,14 @@ const loadProgramDocumentsForReview = async () => {
   }
 }
 
+watch(selectedSection, (section) => {
+  if (section === 'review' && !reviewDocumentsLoaded.value) {
+    void loadProgramDocumentsForReview().then(() => {
+      reviewDocumentsLoaded.value = true
+    })
+  }
+})
+
 const mapReviewDocument = (doc: any, area?: any) => {
   if (!doc || doc.source === 'criterion-evidence') return null
   const status = String(doc.status || 'Active')
@@ -1226,7 +1232,7 @@ const approveDocument = async (doc: any) => {
     const response = await approveDocumentReview(doc.documentId)
     documents.value = documents.value.filter((item) => item.documentId !== doc.documentId)
     applyCompletionRate(response?.programCompletionRate)
-    await facultyDashboard.loadMyAreas()
+    await facultyDashboard.loadMyAreas(true)
   } catch (err: any) {
     console.error('Unable to approve document:', err)
     const message = err?.response?.data?.message || err?.message || 'Approval failed.'
@@ -1243,7 +1249,7 @@ const returnDocument = async (doc: any) => {
     const response = await requestDocumentRevision(doc.documentId, { comment: 'Returned for revision by Program Chair.' })
     documents.value = documents.value.filter((item) => item.documentId !== doc.documentId)
     applyCompletionRate(response?.programCompletionRate)
-    await facultyDashboard.loadMyAreas()
+    await facultyDashboard.loadMyAreas(true)
   } catch (err: any) {
     console.error('Unable to return document for revision:', err)
     const message = err?.response?.data?.message || err?.message || 'Document return failed.'
@@ -1254,17 +1260,20 @@ const returnDocument = async (doc: any) => {
 }
 
 onMounted(async () => {
-  await loadAssignedProgram()
-  await fetchTeams()
-  await fetchInvitations()
   await Promise.all([
-    loadProgramAreas(),
-    loadProgramDocumentsForReview(),
+    (async () => {
+      await loadAssignedProgram()
+      await loadProgramAreas()
+    })(),
+    fetchTeams(),
     facultyDashboard.loadMyAreas(),
-    notificationStore.fetchNotifications(),
   ])
   if (programCompletionRate.value == null) {
     applyCompletionRate(currentProgram.value?.complianceScore ?? currentProgram.value?.compliance_score)
+  }
+  if (selectedSection.value === 'review' && !reviewDocumentsLoaded.value) {
+    await loadProgramDocumentsForReview()
+    reviewDocumentsLoaded.value = true
   }
 })
 </script>

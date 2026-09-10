@@ -3,7 +3,7 @@
     <div class="inbox-toolbar">
       <p v-if="!compact" class="inbox-copy">{{ subtitle }}</p>
       <div class="inbox-actions">
-        <button class="adams-btn adams-btn-ghost" type="button" :disabled="store.isLoading" @click="store.fetchNotifications()">
+        <button class="adams-btn adams-btn-ghost" type="button" :disabled="store.isLoading" @click="store.fetchNotifications(true)">
           Refresh
         </button>
         <button

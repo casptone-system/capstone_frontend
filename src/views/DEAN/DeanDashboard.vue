@@ -1646,9 +1646,16 @@ const loadDashboard = async () => {
   loading.value = true
   error.value = null
   try {
-    await authStore.refreshCurrentUser()
-    const response = await getDeanDashboard()
+    if (!authStore.user) {
+      await authStore.refreshCurrentUser()
+    }
+    const [response, folders] = await Promise.all([
+      getDeanDashboard(),
+      getAccreditationWorkspaces().catch(() => []),
+      loadTaskOptions(),
+    ])
     const payload = response?.data?.data || response?.data || {}
+    workspaceProgress.value = Array.isArray(folders) ? folders : []
     const userData: any = authStore.user || {}
     const deanCollegeName = payload.college?.name || userData.college?.name || userData.department || 'Department'
     const deanInfo = payload.dean || {
@@ -1705,7 +1712,6 @@ const loadDashboard = async () => {
     if (!documents.value.length) {
       await loadDeanDocumentList()
     }
-    await loadTaskOptions()
 
     const payloadAlerts = Array.isArray(payload.notifications) ? payload.notifications : []
     const normalizedAlerts = payloadAlerts.map((alert: any) => ({
@@ -1767,13 +1773,6 @@ const loadDashboard = async () => {
       }))
     }).slice(0, 12)
 
-    try {
-      const folders = await getAccreditationWorkspaces()
-      workspaceProgress.value = Array.isArray(folders) ? folders : []
-    } catch {
-      workspaceProgress.value = []
-    }
-
   } catch (err: any) {
     error.value = err.response?.data?.message || 'Unable to load Dean dashboard.'
   } finally {
@@ -1784,7 +1783,6 @@ const loadDashboard = async () => {
 onMounted(() => {
   void loadDashboard()
   void syncDeanAssignmentNotice()
-  void notificationStore.fetchNotifications()
 })
 
 watch(

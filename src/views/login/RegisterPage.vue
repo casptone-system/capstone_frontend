@@ -219,7 +219,7 @@
           </app-button>
 
           <p class="form-note">
-            After creating your account, a verification email will be sent to the address you provided. Please open your Gmail inbox and click the link to confirm your account.
+            After creating your account, you can sign in immediately. Email verification is skipped for testing.
           </p>
 
           <div @click="$router.push('/login')" class="alt-btn">
