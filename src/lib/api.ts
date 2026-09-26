@@ -282,6 +282,12 @@ export const getAccreditationLevelStatus = async (params: Record<string, any> = 
   return unwrap(response)
 }
 
+export const getAccreditationLevels = async (): Promise<string[]> => {
+  const response = await api.get('/accreditation-levels')
+  const data = unwrap(response)
+  return Array.isArray(data) ? data : []
+}
+
 export const getVPAADashboard = async () => {
   const response = await api.get('/vpaa/dashboard')
   return unwrap(response)
@@ -451,6 +457,11 @@ export const getQaAccreditationDetail = async (cycleId: number | string) => {
   return unwrap(response)
 }
 
+export const getReviewAreas = async () => {
+  const response = await api.get('/review/areas')
+  return unwrap(response)
+}
+
 export const getAreaParameters = async (areaId: number | string) => {
   const response = await api.get(`/accreditation-areas/${areaId}/parameters`)
   return unwrap(response)
@@ -484,6 +495,112 @@ export const deleteParameterRowDocuments = async (rowId: number | string) => {
 
 export const submitParameterRow = async (rowId: number | string) => {
   const response = await api.post(`/parameter-rows/${rowId}/submit`)
+  return unwrap(response)
+}
+
+const filenameFromDisposition = (header: string | undefined, fallback: string) => {
+  if (!header) return fallback
+  const utf = /filename\*=UTF-8''([^;]+)/i.exec(header)
+  if (utf?.[1]) return decodeURIComponent(utf[1])
+  const quoted = /filename="([^"]+)"/i.exec(header)
+  if (quoted?.[1]) return quoted[1]
+  const plain = /filename=([^;]+)/i.exec(header)
+  return plain?.[1]?.trim() || fallback
+}
+
+const throwIfBlobError = async (error: any, failureMessage = 'Unable to download the compiled PDF.') => {
+  const data = error?.response?.data
+  if (data instanceof Blob) {
+    const text = await data.text()
+    try {
+      const json = JSON.parse(text)
+      throw new Error(json.message || failureMessage)
+    } catch (parsed) {
+      if (parsed instanceof Error && parsed.message !== failureMessage && !parsed.message.startsWith('Unexpected')) {
+        throw parsed
+      }
+      throw new Error(failureMessage)
+    }
+  }
+  throw error
+}
+
+const triggerPdfDownload = (blob: Blob, filename: string) => {
+  const file = blob.type === 'application/pdf' ? blob : new Blob([blob], { type: 'application/pdf' })
+  const url = URL.createObjectURL(file)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = filename
+  anchor.rel = 'noopener'
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 30000)
+}
+
+const downloadCompiledPdf = async (path: string, fallbackName: string, failureMessage = 'Unable to download the compiled PDF.') => {
+  try {
+    const response = await api.get(path, { responseType: 'blob' })
+    const blob: Blob = response.data
+    const contentType = String(response.headers?.['content-type'] || blob?.type || '')
+
+    if (contentType.includes('json') || contentType.includes('text/html')) {
+      const text = await blob.text()
+      try {
+        const json = JSON.parse(text)
+        throw new Error(json.message || failureMessage)
+      } catch (err) {
+        if (err instanceof Error && err.message !== failureMessage) throw err
+        throw new Error(failureMessage)
+      }
+    }
+
+    triggerPdfDownload(blob, filenameFromDisposition(response.headers?.['content-disposition'], fallbackName))
+  } catch (error) {
+    await throwIfBlobError(error, failureMessage)
+  }
+}
+
+export const downloadParameterCompiledPdf = async (parameterId: number | string) => {
+  return downloadCompiledPdf(
+    `/parameters/${parameterId}/compiled-pdf`,
+    `instrument-${parameterId}-compiled.pdf`,
+  )
+}
+
+export const downloadRowCompiledPdf = async (rowId: number | string) => {
+  return downloadCompiledPdf(
+    `/parameter-rows/${rowId}/compiled-pdf`,
+    `row-${rowId}-compiled.pdf`,
+  )
+}
+
+export const getDesignationFiles = async () => {
+  const response = await api.get('/designation-files')
+  const data = unwrap(response)
+  return Array.isArray(data) ? data : []
+}
+
+export const downloadDesignationFile = async (id: number | string, fallbackName = 'designation.pdf') => {
+  return downloadCompiledPdf(
+    `/designation-files/${id}/download`,
+    fallbackName,
+    'Unable to download the designation file.',
+  )
+}
+
+export const getRowComments = async (rowId: number | string) => {
+  const response = await api.get(`/parameter-rows/${rowId}/comments`)
+  return unwrap(response)
+}
+
+export const postRowComment = async (rowId: number | string, body: string) => {
+  const response = await api.post(`/parameter-rows/${rowId}/comments`, { body })
+  return unwrap(response)
+}
+
+export const markRowCommentsRead = async (rowId: number | string) => {
+  const response = await api.post(`/parameter-rows/${rowId}/comments/read`)
   return unwrap(response)
 }
 

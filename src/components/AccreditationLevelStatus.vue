@@ -86,7 +86,7 @@ const subtitle = computed(() => {
   if (props.view === 'vpaa') {
     return 'Level, preparation status, and validity for each program.'
   }
-  return 'Level I–IV status for each program in your scope.'
+  return 'Status for each accreditation level in your scope.'
 })
 
 const formatDate = (date: string | null | undefined) => {
@@ -217,7 +217,7 @@ watch(() => props.view, () => {
 
 .als-levels {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 0.55rem;
 }
 
@@ -278,7 +278,7 @@ watch(() => props.view, () => {
 
 @media (max-width: 900px) {
   .als-levels {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   }
 }
 </style>

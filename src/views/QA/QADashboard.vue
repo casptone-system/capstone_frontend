@@ -31,6 +31,10 @@
         <span class="adams-nav-icon"><ion-icon :icon="layersOutline" /></span>
         <span>Area Progress</span>
       </button>
+      <button class="adams-nav-item" :class="{ active: qaSection === 'evidence-review' }" type="button" @click="openSection('evidence-review')">
+        <span class="adams-nav-icon"><ion-icon :icon="chatbubblesOutline" /></span>
+        <span>Evidence Review</span>
+      </button>
     </template>
 
     <template #header-actions>
@@ -158,6 +162,10 @@
                 </li>
               </ul>
             </div>
+          </section>
+
+          <section v-else-if="qaSection === 'evidence-review'" class="qa-card" style="margin: 1rem 1.5rem; padding: 0;">
+            <AreaEvidenceReviewPanel />
           </section>
 
           <section v-else-if="qaSection === 'progress'" class="qa-card" style="margin: 1rem 1.5rem;">
@@ -359,6 +367,7 @@ import {
 
 import AccreditationMonitorCard from '@/components/AccreditationMonitorCard.vue'
 import AccreditationLevelStatus from '@/components/AccreditationLevelStatus.vue'
+import AreaEvidenceReviewPanel from '@/components/AreaEvidenceReviewPanel.vue'
 import AdamsAppShell from '@/components/ui/AdamsAppShell.vue'
 import api from '@/lib/api'
 import { useAuthStore } from '@/stores/authStore'
@@ -366,7 +375,7 @@ import { useAuthStore } from '@/stores/authStore'
 const authStore = useAuthStore()
 const shellRoleLabel = computed(() => authStore.isAccreditor ? 'Accreditor' : 'Quality Assurance')
 
-type QaSection = 'dashboard' | 'colleges' | 'programs' | 'at-risk' | 'accreditations' | 'progress'
+type QaSection = 'dashboard' | 'colleges' | 'programs' | 'at-risk' | 'accreditations' | 'progress' | 'evidence-review'
 
 const qaSection = ref<QaSection>('dashboard')
 
@@ -377,6 +386,7 @@ const pageTitle = computed(() => {
     case 'at-risk': return 'At-Risk Programs'
     case 'accreditations': return 'Accreditations'
     case 'progress': return 'Area Progress'
+    case 'evidence-review': return 'Evidence Review'
     default: return authStore.isAccreditor ? 'Accreditor Dashboard' : 'QA Dashboard'
   }
 })
@@ -388,6 +398,7 @@ const pageDescription = computed(() => {
     case 'at-risk': return 'Programs below the institutional readiness threshold.'
     case 'accreditations': return 'Every accreditation cycle in the university. View only.'
     case 'progress': return 'Area-level progress across all departments.'
+    case 'evidence-review': return 'Review uploaded evidence and leave comments for Area Chairs and members.'
     default: return 'Overall monitoring of all colleges and programs at university level.'
   }
 })

@@ -38,10 +38,7 @@
             required
           >
             <option value="">Select Level...</option>
-            <option value="Level I">Level I</option>
-            <option value="Level II">Level II</option>
-            <option value="Level III">Level III</option>
-            <option value="Level IV">Level IV</option>
+            <option v-for="levelOption in availableLevels" :key="levelOption" :value="levelOption">{{ levelOption }}</option>
           </select>
         </div>
 
@@ -130,6 +127,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 import { getAccreditationCycles, getProgram } from '@/lib/api'
+import { fetchAccreditationLevels } from '@/lib/levels'
 import axios from 'axios'
 const api = axios.create({
   baseURL: process.env.VUE_APP_API_BASE_URL || '/api',
@@ -169,6 +167,7 @@ interface Program {
 
 const cycle = ref<AccreditationCycle | null>(null)
 const program = ref<Program | null>(null)
+const availableLevels = ref<string[]>([])
 const loading = ref(false)
 const saving = ref(false)
 const error = ref<string | null>(null)
@@ -193,6 +192,7 @@ const hasChanges = computed(() => {
 })
 
 onMounted(async () => {
+  availableLevels.value = await fetchAccreditationLevels()
   await loadAccreditationData()
 })
 

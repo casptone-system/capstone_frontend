@@ -50,4 +50,5 @@ export const roleHomePaths: Record<string, string> = {
   admin: '/superadmin',
   staff: '/documents',
   'area-in-charge': '/user/dashboard/area-incharge',
+  accreditor: '/user/dashboard/accreditor',
 }

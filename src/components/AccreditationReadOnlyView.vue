@@ -172,6 +172,7 @@ const groupedFacultyByArea = computed(() => {
 
 const getLevelClass = (level: string) => {
   const mappings: Record<string, string> = {
+    Preliminary: 'level-0',
     'Level I': 'level-1',
     'Level II': 'level-2',
     'Level III': 'level-3',
@@ -366,6 +367,12 @@ onMounted(() => {
   background: #f0f9ff;
   color: #0c4a6e;
   border: 2px solid #0284c7;
+}
+
+.level-badge.level-0 {
+  background: #ffe4e6;
+  color: #9f1239;
+  border-color: #fb7185;
 }
 
 .level-badge.level-1 {

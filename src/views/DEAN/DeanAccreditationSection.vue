@@ -6,8 +6,29 @@
         <h1 class="dean-page-title">Accreditation Cycles</h1>
         <p class="dean-panel-description">View and manage accreditation cycles for your college programs.</p>
       </div>
+      <div class="dean-mode-toggle">
+        <button
+          type="button"
+          class="dean-mode-btn"
+          :class="{ active: viewMode === 'cycles' }"
+          @click="viewMode = 'cycles'"
+        >
+          Cycles
+        </button>
+        <button
+          type="button"
+          class="dean-mode-btn"
+          :class="{ active: viewMode === 'evidence-review' }"
+          @click="viewMode = 'evidence-review'"
+        >
+          Evidence &amp; Comments
+        </button>
+      </div>
     </div>
 
+    <AreaEvidenceReviewPanel v-if="viewMode === 'evidence-review'" />
+
+    <template v-else>
     <!-- Loading State -->
     <div v-if="loading" class="dean-loading-state">
       <p>Loading accreditation cycles…</p>
@@ -236,6 +257,7 @@
         </div>
       </section>
     </div>
+    </template>
   </div>
 </template>
 
@@ -248,6 +270,9 @@ import {
   getAccreditationStructure,
   getDeanDocuments,
 } from '@/lib/api'
+import AreaEvidenceReviewPanel from '@/components/AreaEvidenceReviewPanel.vue'
+
+const viewMode = ref<'cycles' | 'evidence-review'>('cycles')
 
 interface AccreditationCycle {
   id: number
@@ -423,6 +448,7 @@ const forwardClick = async (cycle: AccreditationCycle) => {
 
 const levelClass = (level: string) => {
   const map: { [key: string]: string } = {
+    Preliminary: 'level-preliminary',
     'Level I': 'level-i',
     'Level II': 'level-ii',
     'Level III': 'level-iii',
@@ -461,6 +487,40 @@ onMounted(() => {
 <style scoped>
 .dean-accreditation-section {
   width: 100%;
+}
+
+.dean-panel-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.dean-mode-toggle {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: 0.65rem;
+  background: var(--adams-canvas-panel, #eef2f7);
+}
+
+.dean-mode-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: #475569;
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.dean-mode-btn.active {
+  background: #fff;
+  color: var(--adams-accent-info, #1565c0);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
 }
 
 .dean-loading-state,
@@ -641,6 +701,11 @@ onMounted(() => {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.dean-cycle-badge.level-preliminary {
+  background: #fde2e2;
+  color: #9f1239;
 }
 
 .dean-cycle-badge.level-i {

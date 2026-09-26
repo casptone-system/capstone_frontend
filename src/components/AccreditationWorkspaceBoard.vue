@@ -152,11 +152,12 @@ import {
   getProgramFaculty,
   removeWorkspaceAreaMember,
 } from '@/lib/api'
+import { fetchAccreditationLevels } from '@/lib/levels'
 import { useAuthStore } from '@/stores/authStore'
 
 const authStore = useAuthStore()
-const levels = ['Level I', 'Level II', 'Level III', 'Level IV']
-const level = ref('Level I')
+const levels = ref<string[]>([])
+const level = ref('')
 const deadline = ref('')
 const workspaces = ref<any[]>([])
 const faculty = ref<any[]>([])
@@ -287,7 +288,11 @@ const openDone = (area: any) => {
   doneArea.value = area
 }
 
-onMounted(load)
+onMounted(async () => {
+  levels.value = await fetchAccreditationLevels()
+  level.value = levels.value[0] || ''
+  await load()
+})
 </script>
 
 <style scoped>

@@ -1,11 +1,25 @@
 <template>
   <div class="apr-wrap">
     <div v-if="error" class="apr-error">{{ error }}</div>
+    <div v-if="canUpload && parameterId" class="apr-toolbar">
+      <button
+        type="button"
+        class="apr-icon-btn"
+        :disabled="compilingInstrument"
+        title="Download compiled instrument PDF"
+        aria-label="Download compiled instrument PDF"
+        @click="downloadInstrument"
+      >
+        <ion-icon :icon="downloadOutline" />
+        <span class="apr-tooltip">{{ compilingInstrument ? 'Preparing…' : 'Print instrument PDF' }}</span>
+      </button>
+    </div>
     <table class="apr-table">
       <thead>
         <tr>
           <th class="apr-col-content">Content</th>
           <th v-if="showUpload" class="apr-col-upload">Upload</th>
+          <th v-if="showComments" class="apr-col-comments">Comments</th>
         </tr>
       </thead>
       <tbody>
@@ -82,6 +96,17 @@
               <button
                 type="button"
                 class="apr-icon-btn"
+                :disabled="pendingId === row.id || compilingId === row.id || !rowFiles(row).length"
+                title="Download compiled PDF"
+                aria-label="Download compiled PDF"
+                @click="downloadCompiled(row)"
+              >
+                <ion-icon :icon="downloadOutline" />
+                <span class="apr-tooltip">{{ compilingId === row.id ? 'Preparing…' : 'Print PDF' }}</span>
+              </button>
+              <button
+                type="button"
+                class="apr-icon-btn"
                 :disabled="pendingId === row.id"
                 title="Edit"
                 aria-label="Edit"
@@ -114,9 +139,33 @@
               </button>
             </div>
           </td>
+          <td v-if="showComments && !isSectionHeading(row)" class="apr-comments-cell">
+            <button
+              type="button"
+              class="apr-comment-btn"
+              :class="{ unread: (row.unreadCommentCount || 0) > 0 }"
+              :title="canComment ? 'View or add comments' : 'View comments'"
+              aria-label="Comments"
+              @click="openComments(row)"
+            >
+              <ion-icon :icon="chatbubbleOutline" />
+              <span v-if="row.commentCount">{{ row.commentCount }}</span>
+              <span v-if="(row.unreadCommentCount || 0) > 0" class="apr-comment-dot" aria-hidden="true"></span>
+            </button>
+          </td>
         </tr>
       </tbody>
     </table>
+
+    <RowCommentThreadModal
+      :open="commentsOpen"
+      :row-id="commentsRow?.id ?? null"
+      :row-label="commentsRow?.content"
+      :can-comment="canComment"
+      @close="closeComments"
+      @posted="onCommentPosted"
+      @read="onCommentsRead"
+    />
 
     <AreaRowUploadModal
       :open="uploaderOpen"
@@ -135,16 +184,19 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { IonIcon } from '@ionic/vue'
-import { checkmarkOutline, closeOutline, createOutline, sendOutline, trashOutline } from 'ionicons/icons'
+import { chatbubbleOutline, checkmarkOutline, closeOutline, createOutline, downloadOutline, sendOutline, trashOutline } from 'ionicons/icons'
 import {
   deleteDocument,
   deleteParameterRow,
   deleteParameterRowDocuments,
+  downloadParameterCompiledPdf,
+  downloadRowCompiledPdf,
   patchParameterRowContent,
   submitParameterRow,
 } from '@/lib/api'
 import AreaFileThumbnail from '@/components/AreaFileThumbnail.vue'
 import AreaRowUploadModal from '@/components/AreaRowUploadModal.vue'
+import RowCommentThreadModal from '@/components/RowCommentThreadModal.vue'
 
 type RowDocument = {
   id: number
@@ -163,6 +215,9 @@ type ParameterRow = {
   doneBy?: { id: number; name?: string } | null
   document?: RowDocument | null
   documents?: RowDocument[]
+  commentCount?: number
+  unreadCommentCount?: number
+  canComment?: boolean
 }
 
 const props = defineProps<{
@@ -172,8 +227,11 @@ const props = defineProps<{
   showUpload?: boolean
   canUpload?: boolean
   canSubmit?: boolean
+  showComments?: boolean
+  canComment?: boolean
   programId?: number | string | null
   areaId?: number | string | null
+  parameterId?: number | string | null
 }>()
 
 const emit = defineEmits<{
@@ -191,8 +249,38 @@ const error = ref('')
 const uploaderOpen = ref(false)
 const uploaderRow = ref<ParameterRow | null>(null)
 const replaceTarget = ref<RowDocument | null>(null)
+const commentsOpen = ref(false)
+const commentsRow = ref<ParameterRow | null>(null)
+const compilingId = ref<number | null>(null)
+const compilingInstrument = ref(false)
 
-const columnCount = computed(() => (props.showUpload ? 2 : 1))
+const columnCount = computed(() => {
+  let count = 1
+  if (props.showUpload) count += 1
+  if (props.showComments) count += 1
+  return count
+})
+
+const openComments = (row: ParameterRow) => {
+  commentsRow.value = row
+  commentsOpen.value = true
+}
+
+const closeComments = () => {
+  commentsOpen.value = false
+}
+
+const onCommentPosted = () => {
+  const row = commentsRow.value
+  if (!row) return
+  emit('updated', { ...row, commentCount: (row.commentCount || 0) + 1, unreadCommentCount: 0 })
+}
+
+const onCommentsRead = () => {
+  const row = commentsRow.value
+  if (!row) return
+  emit('updated', { ...row, unreadCommentCount: 0 })
+}
 
 const normalizeHeading = (content: string) =>
   String(content || '')
@@ -330,6 +418,34 @@ const removeFiles = async (row: ParameterRow) => {
   }
 }
 
+const downloadInstrument = async () => {
+  if (!props.canUpload || !props.parameterId) return
+
+  compilingInstrument.value = true
+  try {
+    error.value = ''
+    await downloadParameterCompiledPdf(props.parameterId)
+  } catch (err: any) {
+    error.value = err?.response?.data?.message || err?.message || 'Unable to download the compiled PDF.'
+  } finally {
+    compilingInstrument.value = false
+  }
+}
+
+const downloadCompiled = async (row: ParameterRow) => {
+  if (!props.canUpload || !rowFiles(row).length) return
+
+  compilingId.value = row.id
+  try {
+    error.value = ''
+    await downloadRowCompiledPdf(row.id)
+  } catch (err: any) {
+    error.value = err?.response?.data?.message || err?.message || 'Unable to download the compiled PDF.'
+  } finally {
+    compilingId.value = null
+  }
+}
+
 const canSubmitRow = (row: ParameterRow) =>
   Boolean(props.canUpload) && rowFiles(row).length > 0 && !row.isDone
 
@@ -357,6 +473,13 @@ const submitRow = async (row: ParameterRow) => {
   overflow: auto;
 }
 
+.apr-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--adams-gridline);
+}
+
 .apr-table {
   width: 100%;
   border-collapse: collapse;
@@ -379,8 +502,52 @@ const submitRow = async (row: ParameterRow) => {
   text-transform: uppercase;
 }
 
-.apr-col-content { width: 62%; }
-.apr-col-upload { width: 38%; }
+.apr-col-content { width: 55%; }
+.apr-col-upload { width: 35%; }
+.apr-col-comments { width: 90px; text-align: center; }
+
+.apr-comments-cell {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.apr-comment-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-width: 2.4rem;
+  height: 2.1rem;
+  padding: 0 0.55rem;
+  appearance: none;
+  border: 1px solid var(--adams-accent-info, #1565c0);
+  border-radius: 999px;
+  background: var(--adams-info-soft, #dfe7ef);
+  color: var(--adams-accent-info, #1565c0);
+  font-weight: 800;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.apr-comment-btn ion-icon {
+  font-size: 1.05rem;
+}
+
+.apr-comment-btn.unread {
+  box-shadow: 0 0 0 2px rgba(21, 101, 192, 0.25);
+}
+
+.apr-comment-dot {
+  position: absolute;
+  top: -0.2rem;
+  right: -0.2rem;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: var(--adams-accent-info, #1565c0);
+  border: 1.5px solid var(--adams-canvas-panel, #fff);
+}
 
 .apr-section-row td {
   background: #edf7f2;

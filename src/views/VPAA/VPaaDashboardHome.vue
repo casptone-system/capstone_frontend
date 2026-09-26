@@ -64,7 +64,7 @@
         <div v-if="programMonitor.length > 0" class="vpaa-table">
           <div class="vpaa-table-header vpaa-monitor-header">
             <span>Program</span>
-            <span>Level</span>
+            <span>Currently on</span>
             <span>Preparation</span>
             <span>Validity</span>
             <span>Visit</span>
@@ -81,7 +81,9 @@
                 <strong>{{ item.program }}</strong>
                 <small>{{ item.college }}</small>
               </span>
-              <span>{{ item.level || 'Not set' }}</span>
+              <span>
+                <span class="vpaa-current-level-badge">{{ item.level ? `Currently: ${item.level}` : 'Not set' }}</span>
+              </span>
               <span>{{ item.preparation_status }}</span>
               <span>{{ item.validity_status }}{{ item.valid_until ? ` · ${item.valid_until}` : '' }}</span>
               <span>{{ item.scheduled_visit || 'Not scheduled' }}</span>
@@ -552,6 +554,17 @@ onMounted(async () => {
   display: block;
   color: var(--adams-text-muted);
   font-size: 12px;
+}
+
+.vpaa-current-level-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #e6f4ee;
+  color: #0e7a5f;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .vpaa-content-grid {

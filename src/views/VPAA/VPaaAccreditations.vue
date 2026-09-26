@@ -37,9 +37,7 @@
           <label>Level</label>
           <select v-model="selectedLevel" class="vpaa-filter-select">
             <option value="">All Levels</option>
-            <option value="Level I">Level I</option>
-            <option value="Level II">Level II</option>
-            <option value="Level III">Level III</option>
+            <option v-for="levelOption in levels" :key="levelOption" :value="levelOption">{{ levelOption }}</option>
           </select>
         </div>
 
@@ -154,6 +152,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { getColleges, getPrograms, getAccreditationCycles } from '@/lib/api'
+import { fetchAccreditationLevels } from '@/lib/levels'
 
 const router = useRouter()
 
@@ -162,6 +161,7 @@ const error = ref<string | null>(null)
 const accreditations = ref<any[]>([])
 const colleges = ref<any[]>([])
 const programs = ref<any[]>([])
+const levels = ref<string[]>([])
 
 const selectedCollege = ref('')
 const selectedProgram = ref('')
@@ -283,6 +283,7 @@ const loadPrograms = async () => {
 }
 
 onMounted(async () => {
+  levels.value = await fetchAccreditationLevels()
   await Promise.all([loadAccreditations(), loadColleges(), loadPrograms()])
 })
 </script>
@@ -467,6 +468,16 @@ onMounted(async () => {
 .vpaa-card-badge.level-iii {
   background: #e8eaf6;
   color: var(--adams-structure-primary);
+}
+
+.vpaa-card-badge.level-iv {
+  background: #fce4ec;
+  color: #ad1457;
+}
+
+.vpaa-card-badge.preliminary {
+  background: #fff3e0;
+  color: #ef6c00;
 }
 
 .vpaa-card-body {

@@ -4,7 +4,7 @@
       <div>
         <p class="tpl-kicker">Accreditation templates</p>
         <h2>Level folders used by Program Chairs</h2>
-        <p>VPAA/DI edit the master instrument for Levels I–IV. They do not set a program’s Level or Phase — the Program Chair does that. QA monitors institution-wide progress and does not edit templates.</p>
+        <p>VPAA/DI edit the master instrument for each accreditation level. They do not set a program’s Level or Phase — the Program Chair does that. QA monitors institution-wide progress and does not edit templates.</p>
       </div>
       <select v-model="selectedLevel" class="tpl-select" @change="loadSelected">
         <option v-for="level in levels" :key="level" :value="level">{{ level }}</option>
@@ -55,9 +55,10 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { getInstrumentTemplates, saveInstrumentTemplate } from '@/lib/api'
+import { fetchAccreditationLevels } from '@/lib/levels'
 
-const levels = ['Level I', 'Level II', 'Level III', 'Level IV']
-const selectedLevel = ref('Level I')
+const levels = ref<string[]>([])
+const selectedLevel = ref('')
 const template = ref<any>(null)
 const loading = ref(false)
 const error = ref('')
@@ -140,7 +141,11 @@ const removeCriterion = async (areaIndex: number, parameterIndex: number, criter
   await save()
 }
 
-onMounted(loadSelected)
+onMounted(async () => {
+  levels.value = await fetchAccreditationLevels()
+  selectedLevel.value = levels.value[0] || ''
+  await loadSelected()
+})
 </script>
 
 <style scoped>

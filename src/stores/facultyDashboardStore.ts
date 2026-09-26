@@ -37,7 +37,7 @@ export const formatAssignedAreaLabel = (area: any): string => {
 export const useFacultyDashboardStore = defineStore('facultyDashboard', () => {
   const authStore = useAuthStore()
 
-  const selectedSection = ref<'dashboard' | 'documents' | 'revisions' | 'join' | 'team' | 'notifications' | 'areas'>('dashboard')
+  const selectedSection = ref<'dashboard' | 'documents' | 'designation-files' | 'revisions' | 'join' | 'team' | 'notifications' | 'areas'>('dashboard')
   const myAreas = ref<any[]>([])
   const selectedAreaId = ref<number | null>(null)
   const team = ref<any>(null)

@@ -15,6 +15,10 @@
         <span class="adams-nav-icon"><ion-icon :icon="folderOpenOutline" /></span>
         <span>Documents</span>
       </button>
+        <button class="adams-nav-item" :class="{ active: selectedSection === 'designation-files' }" type="button" @click="selectSection('designation-files')">
+        <span class="adams-nav-icon"><ion-icon :icon="documentTextOutline" /></span>
+        <span>Designation Files</span>
+      </button>
       <div class="fac-tasks-nav">
         <button
           class="adams-nav-item"
@@ -215,6 +219,10 @@
             </div>
           </div>
 
+          <div v-else-if="selectedSection === 'designation-files'" class="fac-designation-shell">
+            <DesignationFilesPanel />
+          </div>
+
           <div v-else-if="selectedSection === 'areas'" class="fac-areas-shell">
             <FacultyMyAreasPanel />
           </div>
@@ -324,6 +332,7 @@ import { useUserCalls } from '@/lib/useUserCalls'
 import { useFacultyDashboardStore } from '@/stores/facultyDashboardStore'
 import { useNotificationStore, type InboxItem } from '@/stores/notificationStore'
 import FacultyMyAreasPanel from '@/components/FacultyMyAreasPanel.vue'
+import DesignationFilesPanel from '@/components/DesignationFilesPanel.vue'
 import AccreditationLevelStatus from '@/components/AccreditationLevelStatus.vue'
 import AdamsAppShell from '@/components/ui/AdamsAppShell.vue'
 import NotificationInbox from '@/components/NotificationInbox.vue'
@@ -359,6 +368,7 @@ const workspaceRoleLabel = computed(() =>
 const pageTitle = computed(() => {
   switch (selectedSection.value) {
     case 'documents': return 'Documents'
+    case 'designation-files': return 'Designation Files'
     case 'areas': return 'Assigned Area'
     case 'team': return 'Team'
     case 'notifications': return 'Notifications'
@@ -369,6 +379,7 @@ const pageTitle = computed(() => {
 const pageDescription = computed(() => {
   switch (selectedSection.value) {
     case 'documents': return 'Upload and track PDF files for your assigned areas.'
+    case 'designation-files': return 'Download the designation letters issued for your area assignments.'
     case 'areas': return 'Work through the requirements for your assigned accreditation area.'
     case 'team': return 'See who is assigned to the areas you chair or belong to.'
     case 'notifications': return 'Stay current on assignments, reviews, and reminders.'
@@ -898,7 +909,8 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
   font-size: 0.8rem;
 }
 
-.fac-areas-shell {
+.fac-areas-shell,
+.fac-designation-shell {
   height: 100%;
   overflow: auto;
 }

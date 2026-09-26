@@ -58,6 +58,10 @@
         <span>Team & Invitations</span>
         <span class="adams-nav-badge">{{ recentCodes.length }}</span>
       </button>
+      <button class="adams-nav-item" :class="{ active: selectedSection === 'designation-files' }" type="button" @click="selectSection('designation-files')">
+        <span class="adams-nav-icon"><ion-icon :icon="documentTextOutline" /></span>
+        <span>Designation Files</span>
+      </button>
 
       <p class="adams-nav-label">Communication</p>
       <button class="adams-nav-item" :class="{ active: selectedSection === 'notifications' }" type="button" @click="selectSection('notifications')">
@@ -74,6 +78,10 @@
       <button class="adams-nav-item" :class="{ active: selectedSection === 'review' }" type="button" @click="selectSection('review')">
         <span class="adams-nav-icon"><ion-icon :icon="documentTextOutline" /></span>
         <span>Area Documents</span>
+      </button>
+      <button class="adams-nav-item" :class="{ active: selectedSection === 'evidence-review' }" type="button" @click="selectSection('evidence-review')">
+        <span class="adams-nav-icon"><ion-icon :icon="chatbubblesOutline" /></span>
+        <span>Evidence & Comments</span>
       </button>
     </template>
 
@@ -521,6 +529,12 @@
             </div>
           </div>
 
+          <div v-if="selectedSection === 'designation-files'" class="pc-full-width-section">
+            <div class="pc-card">
+              <DesignationFilesPanel />
+            </div>
+          </div>
+
           <div v-if="selectedSection === 'areas'" class="pc-full-width-section">
             <div class="pc-card">
               <FacultyMyAreasPanel />
@@ -547,6 +561,13 @@
           <div v-if="selectedSection === 'review'" class="pc-full-width-section">
             <AreaDocumentsReview :program-id="currentProgram?.id" />
           </div>
+
+          <!-- Full-Width Evidence & Comments Section -->
+          <div v-if="selectedSection === 'evidence-review'" class="pc-full-width-section">
+            <div class="pc-card">
+              <AreaEvidenceReviewPanel />
+            </div>
+          </div>
   </AdamsAppShell>
 </template>
 
@@ -560,7 +581,7 @@ import {
   barChartOutline, notificationsOutline,
   documentOutline, copyOutline, mailOutline, refreshOutline,
   checkmarkCircleOutline, hourglassOutline, callOutline,
-  checkmarkDoneOutline, layersOutline,
+  checkmarkDoneOutline, layersOutline, chatbubblesOutline,
 } from 'ionicons/icons'
 
 import { useRouter, useRoute } from 'vue-router'
@@ -587,9 +608,11 @@ import AdamsAppShell from '@/components/ui/AdamsAppShell.vue'
 //import AreaAssignmentCard from '@/components/AreaAssignmentCard.vue'
 import AccreditationWorkspaceBoard from '@/components/AccreditationWorkspaceBoard.vue'
 import AreaDocumentsReview from '@/components/AreaDocumentsReview.vue'
+import AreaEvidenceReviewPanel from '@/components/AreaEvidenceReviewPanel.vue'
 import AreaAssignmentFolders from '@/components/AreaAssignmentFolders.vue'
 import ProgramActiveLevelToggle from '@/components/ProgramActiveLevelToggle.vue'
 import FacultyMyAreasPanel from '@/components/FacultyMyAreasPanel.vue'
+import DesignationFilesPanel from '@/components/DesignationFilesPanel.vue'
 import { useFacultyDashboardStore } from '@/stores/facultyDashboardStore'
 import { useNotificationStore } from '@/stores/notificationStore'
 
@@ -601,7 +624,7 @@ const router = useRouter()
 const route = useRoute()
 const { activeCall, callMessage, callUser, endCall } = useUserCalls()
 
-const selectedSection = ref<'accreditation' | 'dashboard' | 'team' | 'review' | 'faculty-areas' | 'notifications' | 'revisions' | 'areas'>('dashboard')
+const selectedSection = ref<'accreditation' | 'dashboard' | 'team' | 'review' | 'evidence-review' | 'faculty-areas' | 'notifications' | 'revisions' | 'areas' | 'designation-files'>('dashboard')
 const tasksExpanded = ref(false)
 const areasExpanded = ref(false)
 const currentProgram = ref<any>(null)
@@ -657,11 +680,13 @@ const sectionLabel = computed(() => {
   switch (selectedSection.value) {
     case 'dashboard': return 'Program Chair Dashboard'
     case 'team': return 'Team & Invitations'
+    case 'designation-files': return 'Designation Files'
     case 'accreditation': return 'Accreditation'
     case 'faculty-areas': return 'Faculty Area Assignments'
     case 'revisions': return 'My Area Tasks'
     case 'areas': return 'Assigned Area'
     case 'review': return 'Area Documents'
+    case 'evidence-review': return 'Evidence & Comments'
     case 'notifications': return 'Notifications'
     default: return 'Program Chair Dashboard'
   }
@@ -670,10 +695,12 @@ const sectionLabel = computed(() => {
 const pageDescription = computed(() => {
   switch (selectedSection.value) {
     case 'team': return 'Invite faculty, manage membership, and coordinate program work.'
+    case 'designation-files': return 'Download designation letters issued when you are assigned as an Area Chair or member.'
     case 'faculty-areas': return 'Assign area chairs, members, and deadlines for AACCUP areas.'
     case 'revisions': return 'Complete your assigned area tasks and follow-up items.'
     case 'areas': return 'Work through the assigned accreditation area.'
     case 'review': return 'Review submitted area documents and evidence.'
+    case 'evidence-review': return 'Browse every area in your program and comment on uploaded evidence.'
     case 'notifications': return 'Stay current on program tasks and invitations.'
     default: return assignedProgramName.value
       ? `Program overview for ${assignedProgramName.value}.`
@@ -1244,9 +1271,14 @@ const approveDocument = async (doc: any) => {
 
 const returnDocument = async (doc: any) => {
   if (!doc.documentId) return
+
+  const reason = window.prompt('Explain why this document is being returned for revision:', '')
+  if (reason === null) return
+  const comment = reason.trim() || 'Returned for revision by Program Chair.'
+
   reviewBusyId.value = doc.documentId
   try {
-    const response = await requestDocumentRevision(doc.documentId, { comment: 'Returned for revision by Program Chair.' })
+    const response = await requestDocumentRevision(doc.documentId, { comment })
     documents.value = documents.value.filter((item) => item.documentId !== doc.documentId)
     applyCompletionRate(response?.programCompletionRate)
     await facultyDashboard.loadMyAreas(true)

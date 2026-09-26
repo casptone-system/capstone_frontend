@@ -45,6 +45,8 @@
           v-if="selectedParameter"
           :rows="rows"
           :editable="true"
+          :show-comments="true"
+          :can-comment="true"
           @updated="onRowUpdated"
           @removed="onRowRemoved"
         />
