@@ -11,11 +11,7 @@
         <span class="adams-nav-icon"><ion-icon :icon="gridOutline" /></span>
         <span>Dashboard</span>
       </button>
-      <button class="adams-nav-item" :class="{ active: selectedSection === 'documents' }" type="button" @click="selectSection('documents')">
-        <span class="adams-nav-icon"><ion-icon :icon="folderOpenOutline" /></span>
-        <span>Documents</span>
-      </button>
-        <button class="adams-nav-item" :class="{ active: selectedSection === 'designation-files' }" type="button" @click="selectSection('designation-files')">
+      <button class="adams-nav-item" :class="{ active: selectedSection === 'designation-files' }" type="button" @click="selectSection('designation-files')">
         <span class="adams-nav-icon"><ion-icon :icon="documentTextOutline" /></span>
         <span>Designation Files</span>
       </button>
@@ -341,7 +337,6 @@ import type { AppDocument } from '@/lib'
 
 import {
   gridOutline,
-  folderOpenOutline,
   peopleOutline,
   notificationsOutline,
   checkmarkDoneOutline,
@@ -689,11 +684,14 @@ const loadData = async () => {
 }
 
 onMounted(() => {
+  if (selectedSection.value === 'documents') {
+    selectSection('dashboard')
+  }
   void loadData()
 })
 
 const applySectionFromRoute = (section: unknown) => {
-  if (typeof section !== 'string' || !section) return
+  if (typeof section !== 'string' || !section || section === 'documents') return
   if (section === 'revisions') {
     tasksExpanded.value = true
     return

@@ -508,70 +508,81 @@ const filenameFromDisposition = (header: string | undefined, fallback: string) =
   return plain?.[1]?.trim() || fallback
 }
 
-const throwIfBlobError = async (error: any, failureMessage = 'Unable to download the compiled PDF.') => {
-  const data = error?.response?.data
-  if (data instanceof Blob) {
-    const text = await data.text()
-    try {
-      const json = JSON.parse(text)
-      throw new Error(json.message || failureMessage)
-    } catch (parsed) {
-      if (parsed instanceof Error && parsed.message !== failureMessage && !parsed.message.startsWith('Unexpected')) {
-        throw parsed
-      }
-      throw new Error(failureMessage)
-    }
-  }
-  throw error
-}
-
 const triggerPdfDownload = (blob: Blob, filename: string) => {
   const file = blob.type === 'application/pdf' ? blob : new Blob([blob], { type: 'application/pdf' })
   const url = URL.createObjectURL(file)
   const anchor = document.createElement('a')
   anchor.href = url
-  anchor.download = filename
-  anchor.rel = 'noopener'
+  anchor.download = filename || 'compiled-evidence.pdf'
   document.body.appendChild(anchor)
   anchor.click()
-  anchor.remove()
-  setTimeout(() => URL.revokeObjectURL(url), 30000)
+  window.setTimeout(() => {
+    anchor.remove()
+    URL.revokeObjectURL(url)
+  }, 60000)
 }
 
 const downloadCompiledPdf = async (path: string, fallbackName: string, failureMessage = 'Unable to download the compiled PDF.') => {
-  try {
-    const response = await api.get(path, { responseType: 'blob' })
-    const blob: Blob = response.data
-    const contentType = String(response.headers?.['content-type'] || blob?.type || '')
+  const base = (process.env.VUE_APP_API_BASE_URL || '/api').replace(/\/$/, '')
+  const token =
+    window?.localStorage.getItem(TOKEN_KEY) ||
+    window?.sessionStorage.getItem(TOKEN_KEY)
 
-    if (contentType.includes('json') || contentType.includes('text/html')) {
-      const text = await blob.text()
-      try {
-        const json = JSON.parse(text)
-        throw new Error(json.message || failureMessage)
-      } catch (err) {
-        if (err instanceof Error && err.message !== failureMessage) throw err
-        throw new Error(failureMessage)
-      }
+  const response = await fetch(`${base}${path}`, {
+    headers: {
+      Accept: 'application/pdf, application/json',
+      Authorization: token ? `Bearer ${token}` : '',
+    },
+  })
+
+  const contentType = response.headers.get('content-type') || ''
+  if (!response.ok || contentType.includes('json') || contentType.includes('text/html')) {
+    let message = failureMessage
+    try {
+      const json = await response.json()
+      message = json?.message || message
+    } catch {
+      message = failureMessage
     }
-
-    triggerPdfDownload(blob, filenameFromDisposition(response.headers?.['content-disposition'], fallbackName))
-  } catch (error) {
-    await throwIfBlobError(error, failureMessage)
+    throw new Error(message)
   }
-}
 
-export const downloadParameterCompiledPdf = async (parameterId: number | string) => {
-  return downloadCompiledPdf(
-    `/parameters/${parameterId}/compiled-pdf`,
-    `instrument-${parameterId}-compiled.pdf`,
+  const buffer = await response.arrayBuffer()
+  const bytes = new Uint8Array(buffer)
+  const isPdf = bytes.length > 4 && bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46
+  if (!isPdf) {
+    throw new Error(failureMessage)
+  }
+
+  triggerPdfDownload(
+    new Blob([buffer], { type: 'application/pdf' }),
+    filenameFromDisposition(response.headers.get('content-disposition') || undefined, fallbackName),
   )
 }
 
-export const downloadRowCompiledPdf = async (rowId: number | string) => {
+const compiledName = (label: string | undefined, fallback: string) => {
+  const safe = String(label || '')
+    .trim()
+    .replace(/[^\w.\- ]+/g, ' ')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 80)
+
+  return safe ? `${safe}-compiled-evidence.pdf` : fallback
+}
+
+export const downloadParameterCompiledPdf = async (parameterId: number | string, rowNames?: string) => {
+  return downloadCompiledPdf(
+    `/parameters/${parameterId}/compiled-pdf`,
+    compiledName(rowNames, `instrument-${parameterId}-compiled-evidence.pdf`),
+  )
+}
+
+export const downloadRowCompiledPdf = async (rowId: number | string, rowName?: string) => {
   return downloadCompiledPdf(
     `/parameter-rows/${rowId}/compiled-pdf`,
-    `row-${rowId}-compiled.pdf`,
+    compiledName(rowName, `row-${rowId}-compiled-evidence.pdf`),
   )
 }
 

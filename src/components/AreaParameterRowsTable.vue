@@ -424,7 +424,12 @@ const downloadInstrument = async () => {
   compilingInstrument.value = true
   try {
     error.value = ''
-    await downloadParameterCompiledPdf(props.parameterId)
+    const rowNames = props.rows
+      .filter((row) => !isSectionHeading(row) && rowFiles(row).length)
+      .map((row) => row.content)
+      .filter(Boolean)
+      .join(', ')
+    await downloadParameterCompiledPdf(props.parameterId, rowNames)
   } catch (err: any) {
     error.value = err?.response?.data?.message || err?.message || 'Unable to download the compiled PDF.'
   } finally {
@@ -438,7 +443,7 @@ const downloadCompiled = async (row: ParameterRow) => {
   compilingId.value = row.id
   try {
     error.value = ''
-    await downloadRowCompiledPdf(row.id)
+    await downloadRowCompiledPdf(row.id, row.content)
   } catch (err: any) {
     error.value = err?.response?.data?.message || err?.message || 'Unable to download the compiled PDF.'
   } finally {
