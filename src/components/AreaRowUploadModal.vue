@@ -37,6 +37,46 @@
         />
       </div>
 
+      <section v-if="canAddLinks && !replaceDocumentId" class="arum-link">
+        <p class="arum-link-label">Add link</p>
+        <label class="arum-field">
+          <span>URL</span>
+          <input
+            v-model="linkUrl"
+            type="url"
+            inputmode="url"
+            autocomplete="off"
+            placeholder="https://"
+            :disabled="addingLink || uploading"
+            @keydown.enter.prevent="addLink"
+          />
+        </label>
+        <label class="arum-field">
+          <span>Title (optional)</span>
+          <input
+            v-model="linkTitle"
+            type="text"
+            maxlength="255"
+            placeholder="Name reviewers will see"
+            :disabled="addingLink || uploading"
+            @keydown.enter.prevent="addLink"
+          />
+        </label>
+        <p class="arum-link-help">
+          Make sure reviewers can open this link (for Google Drive, set sharing to 'Anyone with the link').
+          The system cannot verify access.
+        </p>
+        <p v-if="linkError" class="arum-error">{{ linkError }}</p>
+        <button
+          type="button"
+          class="arum-primary arum-link-add"
+          :disabled="addingLink || uploading || !linkUrl.trim()"
+          @click="addLink"
+        >
+          {{ addingLink ? 'Adding…' : 'Add link' }}
+        </button>
+      </section>
+
       <p v-if="error" class="arum-error">{{ error }}</p>
 
       <ul v-if="queue.length" class="arum-queue">
@@ -64,13 +104,13 @@
       </ul>
 
       <footer class="arum-foot">
-        <button type="button" class="arum-secondary" :disabled="uploading" @click="emit('close')">
+        <button type="button" class="arum-secondary" :disabled="uploading || addingLink" @click="emit('close')">
           {{ uploadedAny ? 'Done' : 'Cancel' }}
         </button>
         <button
           type="button"
           class="arum-primary"
-          :disabled="!pendingFiles.length || uploading || remaining <= 0"
+          :disabled="!pendingFiles.length || uploading || addingLink || remaining <= 0"
           @click="startUpload"
         >
           {{ uploading ? 'Uploading…' : `Upload ${pendingFiles.length || ''} PDF${pendingFiles.length === 1 ? '' : 's'}` }}
@@ -82,7 +122,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { replaceDocument, uploadDocument } from '@/lib/api'
+import { addEvidenceLink, replaceDocument, uploadDocument } from '@/lib/api'
 
 type QueueItem = {
   id: string
@@ -97,6 +137,8 @@ const props = defineProps<{
   rowId: number | null
   rowLabel?: string
   existingCount?: number
+  canAddLinks?: boolean
+  existingLinkUrls?: string[]
   programId?: number | string | null
   areaId?: number | string | null
   replaceDocumentId?: number | string | null
@@ -110,6 +152,8 @@ const emit = defineEmits<{
 const MAX_FILES = 5
 const MAX_BYTES = 10 * 1024 * 1024
 
+const MAX_URL_LENGTH = 2048
+
 const picker = ref<HTMLInputElement | null>(null)
 const dragging = ref(false)
 const error = ref('')
@@ -117,6 +161,11 @@ const queue = ref<QueueItem[]>([])
 const uploading = ref(false)
 const uploadedAny = ref(false)
 const initialCount = ref(0)
+const linkUrl = ref('')
+const linkTitle = ref('')
+const linkError = ref('')
+const addingLink = ref(false)
+const addedLinkUrls = ref<string[]>([])
 
 const remaining = computed(() => {
   if (props.replaceDocumentId) return queue.value.length ? 0 : 1
@@ -128,10 +177,82 @@ watch(() => props.open, (open) => {
   if (!open) return
   queue.value = []
   error.value = ''
+  linkUrl.value = ''
+  linkTitle.value = ''
+  linkError.value = ''
+  addedLinkUrls.value = []
   uploadedAny.value = false
   uploading.value = false
+  addingLink.value = false
   initialCount.value = Number(props.existingCount || 0)
 })
+
+const linkErrorMessage = (err: any) =>
+  err?.response?.data?.errors?.url?.[0]
+  || err?.response?.data?.errors?.title?.[0]
+  || err?.response?.data?.message
+  || 'Unable to add this link.'
+
+const validateLinkUrl = (raw: string) => {
+  const url = raw.trim()
+  if (!url) return 'Enter a link URL.'
+  if (url.length > MAX_URL_LENGTH) {
+    return `That link is too long. Use a URL of ${MAX_URL_LENGTH} characters or fewer.`
+  }
+  const hasControlCharacter = [...url].some((character) => {
+    const code = character.charCodeAt(0)
+    return code <= 32 || code === 127
+  })
+  if (hasControlCharacter) return 'Enter a valid http or https URL.'
+
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    return 'Enter a valid http or https URL.'
+  }
+
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return 'Only http and https links are allowed.'
+  }
+  if (!parsed.hostname) return 'Enter a valid http or https URL.'
+
+  const known = [...(props.existingLinkUrls || []), ...addedLinkUrls.value]
+  if (known.includes(url)) return 'This link is already attached to this row.'
+
+  return ''
+}
+
+const addLink = async () => {
+  linkError.value = ''
+  if (!props.canAddLinks || props.replaceDocumentId) return
+  if (!props.rowId) {
+    linkError.value = 'This row is missing, so the link cannot be saved.'
+    return
+  }
+
+  const message = validateLinkUrl(linkUrl.value)
+  if (message) {
+    linkError.value = message
+    return
+  }
+
+  const url = linkUrl.value.trim()
+  const title = linkTitle.value.trim()
+  addingLink.value = true
+  try {
+    await addEvidenceLink(props.rowId, title ? { url, title } : { url })
+    addedLinkUrls.value = [...addedLinkUrls.value, url]
+    linkUrl.value = ''
+    linkTitle.value = ''
+    uploadedAny.value = true
+    emit('uploaded')
+  } catch (err: any) {
+    linkError.value = linkErrorMessage(err)
+  } finally {
+    addingLink.value = false
+  }
+}
 
 const formatSize = (bytes: number) => {
   if (bytes < 1024) return `${bytes} B`
@@ -365,7 +486,55 @@ const startUpload = async () => {
 
 .arum-bar span.error { background: #b91c1c; }
 
+.arum-link {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.arum-link-label {
+  margin: 0;
+  color: #0c5c4e;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.arum-field {
+  display: grid;
+  gap: 0.2rem;
+  color: #334155;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.arum-field input {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.65rem;
+  padding: 0.5rem 0.7rem;
+  font: inherit;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.arum-link-help {
+  margin: 0;
+  color: #475569;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.arum-link-add {
+  justify-self: start;
+}
+
 .arum-error { color: #b91c1c; margin: 0.7rem 0 0; font-weight: 600; }
+
+.arum-link .arum-error { margin: 0; }
 
 .arum-foot { margin-top: 1rem; }
 

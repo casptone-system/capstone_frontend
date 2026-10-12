@@ -1,12 +1,5 @@
 <template>
     <section class="designation-files">
-      <header class="designation-files-header">
-        <div>
-          <h2>Designation Files</h2>
-          <p>Letters issued when you are designated as an Area Chair or area member.</p>
-        </div>
-      </header>
-
       <p v-if="loading" class="designation-files-status">Loading designation files...</p>
       <p v-else-if="error" class="designation-files-status is-error">{{ error }}</p>
       <p v-else-if="!files.length" class="designation-files-status">No designation files yet.</p>
@@ -108,13 +101,6 @@
     gap: 1rem;
   }
 
-  .designation-files-header h2 {
-    margin: 0;
-    font-size: 1.25rem;
-    color: var(--adams-ink);
-  }
-
-  .designation-files-header p,
   .designation-file-copy span {
     margin: 0.2rem 0 0;
     color: var(--adams-muted);

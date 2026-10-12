@@ -101,10 +101,6 @@
 
           <div v-if="selectedSection === 'documents'" class="fac-documents-shell">
             <div class="fac-documents-header">
-              <div class="fac-documents-heading">
-                <span class="fac-doc-title-tag">ADAMS Faculty File Storage</span>
-                <h2>My Documents</h2>
-              </div>
               <div class="fac-documents-actions">
                 <div class="fac-doc-search">
                   <ion-icon :icon="searchOutline" />
@@ -194,10 +190,6 @@
           </div>
 
           <div v-else-if="selectedSection === 'team'" class="fac-team-shell">
-            <div class="fac-team-header">
-              <h2>Team</h2>
-              <p>People assigned to the areas you chair or belong to</p>
-            </div>
             <div class="fac-team-content">
               <div class="fac-team-members">
                 <h4>Assigned members</h4>
@@ -224,21 +216,10 @@
           </div>
 
           <div v-else-if="selectedSection === 'notifications'" class="fac-notifications-shell">
-            <div class="fac-notifications-header">
-              <h2>Notifications</h2>
-              <p>Important updates about your accreditation work</p>
-            </div>
-            <NotificationInbox subtitle="Area assignments, reviews, deadlines, and task updates." @opened="onNotificationOpened" />
+            <NotificationInbox compact @opened="onNotificationOpened" />
           </div>
 
           <div v-else class="fac-dashboard-content">
-            <div class="fac-page-header">
-              <div>
-                <h1>Dashboard</h1>
-                <p>Plan, prioritize, and accomplish your tasks with ease.</p>
-              </div>
-            </div>
-
             <AccreditationLevelStatus view="faculty" title="Program accreditation by level" class="fac-level-status" />
 
             <section class="fac-stat-row">
@@ -1084,28 +1065,6 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
   color: #7b8897;
 }
 
-.fac-page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin: 0.2rem 0 1.2rem;
-  padding: 0 0.25rem;
-}
-
-.fac-page-header h1 {
-  margin: 0;
-  font-size: clamp(2rem, 2vw, 2.5rem);
-  line-height: 1.1;
-  letter-spacing: -0.04em;
-}
-
-.fac-page-header p {
-  margin: 0.35rem 0 0;
-  color: #64748b;
-  font-size: 0.95rem;
-}
-
 .fac-header-cta {
   display: flex;
   align-items: center;
@@ -1561,28 +1520,9 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
 .fac-documents-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 1rem;
   margin-bottom: 1rem;
-}
-
-.fac-documents-heading {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.fac-doc-title-tag {
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #0a8a6a;
-}
-
-.fac-documents-header h2 {
-  margin: 0;
-  font-size: 1.5rem;
 }
 
 .fac-documents-actions {
@@ -1882,7 +1822,6 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
 
 @media (max-width: 760px) {
   .fac-topbar,
-  .fac-page-header,
   .fac-documents-header {
     flex-direction: column;
     align-items: stretch;
@@ -2215,22 +2154,7 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
 
 /* Team Section */
 .fac-team-shell {
-  padding: 1.5rem;
-}
-
-.fac-team-header {
-  margin-bottom: 2rem;
-}
-
-.fac-team-header h2 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.5rem;
-  color: #0f172a;
-}
-
-.fac-team-header p {
-  margin: 0;
-  color: #64748b;
+  padding: 0;
 }
 
 .fac-team-content {
@@ -2363,22 +2287,7 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
 
 /* Notifications Section */
 .fac-notifications-shell {
-  padding: 1.5rem;
-}
-
-.fac-notifications-header {
-  margin-bottom: 2rem;
-}
-
-.fac-notifications-header h2 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.5rem;
-  color: #0f172a;
-}
-
-.fac-notifications-header p {
-  margin: 0;
-  color: #64748b;
+  padding: 0;
 }
 
 .fac-notifications-list {

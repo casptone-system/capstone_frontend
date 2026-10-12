@@ -2,9 +2,12 @@ import { createRouter, createWebHistory } from '@ionic/vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import {
   canAccessDashboardRole,
+  canJoinWithTeamCode,
   dashboardSegmentToRole,
   getRoleRedirectPath,
   normalizeRole,
+  postAuthPath,
+  userHasProgram,
 } from '@/lib/roleRedirects'
 
 // ============================================================
@@ -25,6 +28,9 @@ const ResetPassword = () =>
 
 const EmailVerified = () =>
   import('@/views/login/EmailVerified.vue')
+
+const VerifyEmail = () =>
+  import('@/views/login/VerifyEmail.vue')
 
 // ============================================================
 // GENERAL PAGES
@@ -283,6 +289,14 @@ const routes = [
     component: EmailVerified,
     meta: {
       requiresAuth: false,
+    },
+  },
+  {
+    path: '/verify-email',
+    name: 'VerifyEmail',
+    component: VerifyEmail,
+    meta: {
+      requiresAuth: true,
     },
   },
 
@@ -709,7 +723,7 @@ router.beforeEach(async (to) => {
   // Determine where this user belongs
   // ----------------------------------------------------------
 
-  const authRedirectPath = getRoleRedirectPath(
+  const authRedirectPath = postAuthPath(
     authStore.userRole,
     authStore.hasGroup,
     authStore.user,
@@ -769,11 +783,34 @@ router.beforeEach(async (to) => {
     return redirectTo(authRedirectPath)
   }
 
+  if (authStore.isAuthenticated && authStore.user?.mustVerifyEmail && to.path !== '/verify-email') {
+    return redirectTo('/verify-email')
+  }
+
+  if (authStore.isAuthenticated && to.path === '/verify-email' && !authStore.user?.mustVerifyEmail) {
+    return redirectTo(authRedirectPath)
+  }
+
+  if (
+    authStore.isAuthenticated &&
+    !authStore.user?.mustVerifyEmail &&
+    !userHasProgram(authStore.user) &&
+    canJoinWithTeamCode(authStore.userRole, authStore.user) &&
+    to.meta.requiresAuth &&
+    to.path !== '/join-team' &&
+    to.path !== '/new-user'
+  ) {
+    return redirectTo('/join-team')
+  }
+
   if (
     authStore.isAuthenticated &&
     (to.path === '/join-team' || to.path === '/new-user')
   ) {
-    return redirectTo(authRedirectPath)
+    if (!userHasProgram(authStore.user) && canJoinWithTeamCode(authStore.userRole, authStore.user)) {
+      return true
+    }
+    return redirectTo(getRoleRedirectPath(authStore.userRole, authStore.hasGroup, authStore.user))
   }
 
   if (to.path === '/superadmin' || to.path === '/superadmin/') {

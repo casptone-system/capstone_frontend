@@ -155,6 +155,29 @@ export const getDashboardPathForRole = (role: AppRole): string => {
   }
 }
 
+const TEAM_JOIN_BLOCKED = new Set(['superadmin', 'admin', 'vpaa', 'qa', 'dean', 'accreditor'])
+
+export const userHasProgram = (user?: User | null): boolean => {
+  if (!user) return false
+  const record = user as User & { program?: { id?: string | number | null } | null }
+  return Boolean(record.programId || record.program_id || record.program?.id)
+}
+
+export const canJoinWithTeamCode = (roleValue: unknown, user?: User | null): boolean => {
+  const role = resolveAppRole(roleValue, user)
+  return !TEAM_JOIN_BLOCKED.has(role)
+}
+
+export const postAuthPath = (
+  roleValue: unknown,
+  hasGroup = false,
+  user?: User | null,
+): string => {
+  if (user?.mustVerifyEmail) return '/verify-email'
+  if (!userHasProgram(user) && canJoinWithTeamCode(roleValue, user)) return '/join-team'
+  return getRoleRedirectPath(roleValue, hasGroup, user)
+}
+
 export const getRoleRedirectPath = (
   roleValue: unknown,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept so login/router call sites stay unchanged

@@ -180,11 +180,14 @@
                   <button class="pc-code-btn copy" @click.prevent="copyCode">
                     <ion-icon :icon="copyOutline" /> Copy Code / Token
                   </button>
-                  <button class="pc-code-btn send" @click.prevent="() => sendInvite()">
+                  <button class="pc-code-btn send" @click.prevent="submitInvitation">
                     <ion-icon :icon="mailOutline" /> Send to Member
                   </button>
                   <button class="pc-code-btn regen" @click.prevent="regenCode">
                     <ion-icon :icon="refreshOutline" /> New Value
+                  </button>
+                  <button class="pc-code-btn regen" @click.prevent="revokeActiveCode">
+                    Revoke
                   </button>
                 </div>
                 <p v-if="codeMessage" class="pc-code-hint">{{ codeMessage }}</p>
@@ -192,11 +195,6 @@
               <div class="pc-invite-form">
                 <label class="pc-field-label">Invite faculty by email</label>
                 <input class="pc-input" v-model="inviteEmail" placeholder="faculty@example.com" />
-                <select class="pc-input" v-model="inviteRole">
-                  <option value="faculty">Faculty</option>
-                  <option value="area-in-charge">Area In-Charge</option>
-                  <option value="program-chair">Program Chair</option>
-                </select>
                 <button class="pc-btn pc-btn-primary" :disabled="inviteBusy" @click.prevent="submitInvitation">
                   <ion-icon :icon="mailOutline" /> {{ inviteBusy ? 'Creating...' : 'Create Invitation' }}
                 </button>
@@ -269,8 +267,8 @@
             <button class="pc-btn pc-btn-ghost" v-if="activeCall" @click="endCall">End Call</button>
           </div>
 
-          <!-- Stat Strip -->
-          <section class="pc-stat-strip">
+          <!-- Stat cards stay on Dashboard (and other sections that were not named for removal). -->
+          <section v-if="showStatCards" class="pc-stat-strip">
             <div class="pc-stat" v-for="stat in stats" :key="stat.label">
               <div class="pc-stat-icon" :style="{ background: stat.bg, color: stat.color }">
                 <ion-icon :icon="stat.icon" />
@@ -283,7 +281,7 @@
           </section>
 
           <!-- Content Grid -->
-          <div class="pc-content-grid">
+          <div v-if="selectedSection === 'dashboard' || selectedSection === 'accreditation'" class="pc-content-grid">
 
             <!-- Left Column -->
             <div class="pc-col-left">
@@ -386,7 +384,7 @@
                     <button class="pc-code-btn copy" @click.prevent="copyCode">
                       <ion-icon :icon="copyOutline" /> Copy Code / Token
                     </button>
-                    <button class="pc-code-btn send" @click.prevent="() => sendInvite()">
+                    <button class="pc-code-btn send" @click.prevent="submitInvitation">
                       <ion-icon :icon="mailOutline" /> Send to Member
                     </button>
                     <button class="pc-code-btn regen" @click.prevent="regenCode">
@@ -486,33 +484,15 @@
                 </div>
               </div> -->
 
-              <div v-if="selectedSection === 'notifications'" class="pc-card pc-notifications-card" style="grid-column: 1 / -1;">
-                <div class="pc-card-header">
-                  <div class="pc-card-title-group">
-                    <div class="pc-card-icon teal"><ion-icon :icon="notificationsOutline" /></div>
-                    <div>
-                      <h2 class="pc-card-title">Notifications</h2>
-                      <p class="pc-card-sub">Dean tasks, faculty submissions, and program updates</p>
-                    </div>
-                  </div>
-                </div>
-                <NotificationInbox subtitle="Review assignments, submissions, and follow-up items." />
-              </div>
-
             </div>
+          </div>
+
+          <div v-if="selectedSection === 'notifications'">
+            <NotificationInbox compact />
           </div>
 
           <div v-if="selectedSection === 'revisions'" class="pc-full-width-section">
             <div class="pc-card">
-              <div class="pc-card-header">
-                <div class="pc-card-title-group">
-                  <div class="pc-card-icon teal"><ion-icon :icon="checkmarkDoneOutline" /></div>
-                  <div>
-                    <h2 class="pc-card-title">My Area Tasks</h2>
-                    <p class="pc-card-sub">Work assigned areas as Area Chair or member. Open an area from Tasks → Areas.</p>
-                  </div>
-                </div>
-              </div>
               <div v-if="myAreas.length" class="pc-assigned-area-grid">
                 <button
                   v-for="area in myAreas"
@@ -544,15 +524,6 @@
           <!-- Full-Width Faculty Area Assignments Section -->
           <div v-if="selectedSection === 'faculty-areas'" class="pc-full-width-section">
             <div class="pc-card">
-              <div class="pc-card-header">
-                <div class="pc-card-title-group">
-                  <div class="pc-card-icon emerald"><ion-icon :icon="peopleOutline" /></div>
-                  <div>
-                    <h2 class="pc-card-title">Faculty Area Assignments</h2>
-                    <p class="pc-card-sub">Open a level, then assign an Area Chair, deadline, and optional members for each AACCUP area</p>
-                  </div>
-                </div>
-              </div>
               <AreaAssignmentFolders />
             </div>
           </div>
@@ -589,7 +560,10 @@ import { useAuthStore } from '@/stores/authStore'
 import { useUserCalls } from '@/lib/useUserCalls'
 import {
   createTeam,
+  emailTeamCode,
   getTeams,
+  regenerateTeamCode,
+  revokeTeamCode,
   getProgram,
   getProgramFaculty,
   getDocuments,
@@ -630,19 +604,18 @@ const areasExpanded = ref(false)
 const currentProgram = ref<any>(null)
 const teams = ref<any[]>([])
 const activeCode = ref('')
+const activeTeamId = ref<number | string | null>(null)
 const recentCodes = ref<any[]>([])
 const createTeamName = ref('')
 const createTeamError = ref('')
 const createTeamSuccess = ref('')
 const codeMessage = ref('')
 const inviteEmail = ref('')
-const inviteRole = ref('faculty')
 const inviteError = ref('')
 const inviteSuccess = ref('')
 const invitations = ref<any[]>([])
 const inviteBusy = ref(false)
 const documents = ref<any[]>([])
-const reviewDocumentsLoaded = ref(false)
 const reviewBusyId = ref<number | string | null>(null)
 const areas = ref<any[]>([])
 const programCompletionRate = ref<number | null>(null)
@@ -813,7 +786,6 @@ const stats = computed(() => [
   { label: 'Pending Review', value: String(documents.value.length), icon: hourglassOutline, color: 'var(--adams-accent-pending)', bg: 'var(--adams-warning-soft)' },
   { label: 'Compliance Rate', value: `${completionRate.value}%`, icon: analyticsOutline, color: 'var(--adams-accent-pending)', bg: 'var(--adams-warning-soft)' },
   { label: 'Active Codes', value: String(recentCodes.value.filter((code) => !code.expired).length), icon: keyOutline, color: 'var(--adams-accent-info)', bg: 'var(--adams-info-soft)' },
-  { label: 'Reports Ready', value: String(invitations.value.length), icon: barChartOutline, color: 'var(--adams-structure-secondary)', bg: 'var(--adams-canvas-panel)' },
 ])
 
 const inboxUnreadCount = computed(() => notificationStore.unreadCount)
@@ -1004,6 +976,19 @@ const fetchTeams = async () => {
       statusClass: team?.statusClass || 'ts-active',
       member_count: Number(team?.member_count || team?.members?.length || 0),
     }))
+    recentCodes.value = teams.value.map((team: any) => ({
+      id: team.id,
+      code: team.code,
+      used: `${Number(team.member_count || 0)} joined`,
+      expired: Boolean(team.expires_at) && new Date(team.expires_at).getTime() <= Date.now(),
+    }))
+    const current = teams.value.find((team: any) => String(team.id) === String(activeTeamId.value))
+      || teams.value.find((team: any) => team.code && !(team.expires_at && new Date(team.expires_at).getTime() <= Date.now()))
+      || teams.value[0]
+    if (current?.code) {
+      activeCode.value = current.code
+      activeTeamId.value = current.id
+    }
   } catch (err: any) {
     console.warn('Failed to load Program Chair teams:', err)
     teams.value = []
@@ -1023,10 +1008,16 @@ const generateTeamCode = async () => {
   }
 
   try {
-    const response = await createTeam({ name, program_id: authStore.user.programId })
-    activeCode.value = response.data?.code || response.code || activeCode.value
-    recentCodes.value.unshift({ code: activeCode.value, used: '0 joined', expired: false })
-    createTeamSuccess.value = `Team created and code generated: ${activeCode.value}`
+    if (activeTeamId.value) {
+      const response = await regenerateTeamCode(activeTeamId.value)
+      activeCode.value = response.data?.code || activeCode.value
+      createTeamSuccess.value = `Team code regenerated: ${activeCode.value}`
+    } else {
+      const response = await createTeam({ name, program_id: authStore.user.programId })
+      activeCode.value = response.data?.code || response.code || activeCode.value
+      activeTeamId.value = response.data?.id || null
+      createTeamSuccess.value = `Team created and code generated: ${activeCode.value}`
+    }
     createTeamName.value = ''
     codeMessage.value = 'Team created successfully.'
     await fetchTeams()
@@ -1063,12 +1054,14 @@ const submitInvitation = async () => {
   inviteBusy.value = true
 
   try {
-    sendInvite(token, email)
+    if (!activeTeamId.value) {
+      throw new Error('Generate a team code first.')
+    }
+    await emailTeamCode(activeTeamId.value, email, activeCode.value)
     inviteEmail.value = ''
-    inviteRole.value = 'faculty'
-    inviteSuccess.value = `Team code sent to ${email}. They can join from the Join Team page.`
+    inviteSuccess.value = `Team code emailed to ${email}. They can join from the Join Team page.`
   } catch (err: any) {
-    inviteError.value = err?.message || 'Unable to share the team code.'
+    inviteError.value = err?.response?.data?.message || err?.message || 'Unable to share the team code.'
   } finally {
     inviteBusy.value = false
   }
@@ -1085,28 +1078,33 @@ const clearLegacyInvitationList = () => {
   inviteSuccess.value = 'Invitation tokens are no longer used. Faculty join with the team code.'
 }
 
-const sendInvite = (tokenOverride?: string, targetEmail?: string) => {
-  const token = (tokenOverride || activeCode.value || '').trim()
-  const recipient = (targetEmail || inviteEmail.value || '').trim()
-
-  if (!token) {
-    codeMessage.value = 'No invitation token available to send.'
+const regenCode = async () => {
+  if (!activeTeamId.value) {
+    codeMessage.value = 'Generate a team code first.'
     return
   }
-
-  const mailBody = `You have been invited to join the accreditation team.\n\nUse this 6-character team code to join: ${token}\n\nSign in to ADAMS and enter it on the Join Team page.`
-
-  const mailTo = recipient
-    ? `mailto:${encodeURIComponent(recipient)}?subject=${encodeURIComponent('ADAMS Program Invitation')}&body=${encodeURIComponent(mailBody)}`
-    : `mailto:?subject=${encodeURIComponent('ADAMS Program Invitation')}&body=${encodeURIComponent(mailBody)}`
-
-  window.open(mailTo, '_blank')
-  codeMessage.value = `Invitation code/token prepared for ${recipient || 'the invited member'}.`
+  try {
+    const response = await regenerateTeamCode(activeTeamId.value)
+    activeCode.value = response.data?.code || activeCode.value
+    codeMessage.value = 'New code saved. The previous code no longer works.'
+    await fetchTeams()
+  } catch (err: any) {
+    codeMessage.value = err.response?.data?.message || 'Unable to regenerate the team code.'
+  }
 }
 
-const regenCode = async () => {
-  activeCode.value = String(Math.floor(100000 + Math.random() * 900000))
-  codeMessage.value = 'Generated a temporary code — save or send it.'
+const revokeActiveCode = async () => {
+  if (!activeTeamId.value) {
+    codeMessage.value = 'There is no team code to revoke.'
+    return
+  }
+  try {
+    await revokeTeamCode(activeTeamId.value)
+    codeMessage.value = 'Team code revoked.'
+    await fetchTeams()
+  } catch (err: any) {
+    codeMessage.value = err.response?.data?.message || 'Unable to revoke the team code.'
+  }
 }
 
 const applyCompletionRate = (value: unknown) => {
@@ -1206,11 +1204,33 @@ const loadProgramDocumentsForReview = async () => {
   }
 }
 
+const sectionsWithoutStatCards = new Set([
+  'revisions',
+  'areas',
+  'designation-files',
+  'notifications',
+  'faculty-areas',
+  'review',
+  'evidence-review',
+])
+
+const showStatCards = computed(() => !sectionsWithoutStatCards.has(selectedSection.value))
+
+const statCardDataLoaded = ref(false)
+
+const loadStatCardData = async () => {
+  if (statCardDataLoaded.value || !showStatCards.value) return
+  statCardDataLoaded.value = true
+  await Promise.all([
+    fetchTeams(),
+    loadProgramAreas(),
+    loadProgramDocumentsForReview(),
+  ])
+}
+
 watch(selectedSection, (section) => {
-  if (section === 'review' && !reviewDocumentsLoaded.value) {
-    void loadProgramDocumentsForReview().then(() => {
-      reviewDocumentsLoaded.value = true
-    })
+  if (!sectionsWithoutStatCards.has(section)) {
+    void loadStatCardData()
   }
 })
 
@@ -1293,20 +1313,13 @@ const returnDocument = async (doc: any) => {
 
 onMounted(async () => {
   await Promise.all([
-    (async () => {
-      await loadAssignedProgram()
-      await loadProgramAreas()
-    })(),
-    fetchTeams(),
+    loadAssignedProgram(),
     facultyDashboard.loadMyAreas(),
   ])
   if (programCompletionRate.value == null) {
     applyCompletionRate(currentProgram.value?.complianceScore ?? currentProgram.value?.compliance_score)
   }
-  if (selectedSection.value === 'review' && !reviewDocumentsLoaded.value) {
-    await loadProgramDocumentsForReview()
-    reviewDocumentsLoaded.value = true
-  }
+  await loadStatCardData()
 })
 </script>
 

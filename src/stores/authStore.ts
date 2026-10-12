@@ -372,31 +372,83 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // DISABLED: 2FA verification — skipped in login, see [2026-08-18]
-  // This method is kept as a stub to avoid breaking any lingering frontend calls
-  // Original implementation commented out:
-  // const verifyTwoFactor = async (code: string) => {
-  //   if (!loginChallenge.value) { ... }
-  //   const response = await api.post('/auth/verify-2fa', { ... })
-  //   ...
-  // }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- param kept so the signature stays stable when 2FA is re-enabled
   const verifyTwoFactor = async (code: string) => {
-    error.value = '2FA verification is skipped for development. The login endpoint now returns a token directly.'
-    throw new Error(error.value)
+    if (!loginChallenge.value) {
+      throw new Error('Sign in again to request a new code.')
+    }
+
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const response = await api.post('/auth/verify-2fa', {
+        challenge_token: loginChallenge.value.challengeToken,
+        code,
+      })
+      const token = response.data?.data?.token
+      if (!token) {
+        throw new Error('Verification did not return a session.')
+      }
+
+      setToken(token, loginChallenge.value.remember)
+      const userData = response.data.data.user
+      if (userData) {
+        user.value = normalizeUserProgramContext(userData)
+      } else {
+        await restoreSession()
+      }
+      if (user.value) {
+        const savedView = getStoredDashboardView()
+        const available = getAvailableDashboardViews()
+        if (savedView && !available.includes(savedView)) {
+          clearDashboardView()
+        }
+        if (!dashboardView.value || !available.includes(dashboardView.value)) {
+          setDefaultDashboardViewForRole()
+        }
+        isAuthenticated.value = true
+        attachActivityListeners()
+        resetSessionTimer()
+      }
+      clearLoginChallenge()
+      return response.data
+    } catch (err: any) {
+      const responseMessage = err.response?.data?.message
+      const codeError = err.response?.data?.errors?.code?.[0]
+      const challengeError = err.response?.data?.errors?.challenge_token?.[0]
+      const message: string = codeError || challengeError || responseMessage || err.message || 'Verification failed.'
+      error.value = message
+      throw new Error(message)
+    } finally {
+      isLoading.value = false
+    }
   }
 
-  // DISABLED: 2FA resend — skipped in login, see [2026-08-18]
-  // This method is kept as a stub to avoid breaking any lingering frontend calls
-  // Original implementation commented out:
-  // const resendTwoFactor = async () => {
-  //   if (!loginChallenge.value) { ... }
-  //   const response = await api.post('/auth/resend-2fa', { ... })
-  //   ...
-  // }
   const resendTwoFactor = async () => {
-    error.value = '2FA resend is skipped for development. The login endpoint now returns a token directly.'
-    throw new Error(error.value)
+    if (!loginChallenge.value) {
+      throw new Error('Sign in again to request a new code.')
+    }
+
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const response = await api.post('/auth/resend-2fa', {
+        challenge_token: loginChallenge.value.challengeToken,
+      })
+      loginChallenge.value = {
+        ...loginChallenge.value,
+        expiresIn: response.data?.expires_in || loginChallenge.value.expiresIn,
+      }
+      persistLoginChallenge()
+      return response.data
+    } catch (err: any) {
+      const message: string = err.response?.data?.message || 'Unable to resend the code.'
+      error.value = message
+      throw new Error(message)
+    } finally {
+      isLoading.value = false
+    }
   }
 
   // ======================
@@ -594,6 +646,7 @@ export const useAuthStore = defineStore('auth', () => {
     clearDashboardView,
 
     login,
+    loginChallenge,
     verifyTwoFactor,
     resendTwoFactor,
 

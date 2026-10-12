@@ -8,8 +8,8 @@
         <button v-else-if="selectedLevel && !isLevelLocked" type="button" class="adr-back" @click="selectedLevel = null">
           <ion-icon :icon="chevronBackOutline" /> All levels
         </button>
-        <h3 class="adr-title">{{ headerTitle }}</h3>
-        <p class="adr-sub">{{ headerSub }}</p>
+        <h3 v-if="selectedArea || selectedLevel" class="adr-title">{{ headerTitle }}</h3>
+        <p v-if="selectedArea || selectedLevel" class="adr-sub">{{ headerSub }}</p>
       </div>
       <button class="adr-btn ghost" :disabled="loading" @click="loadTree">
         <ion-icon :icon="refreshOutline" /> {{ loading ? 'Loading…' : 'Refresh' }}

@@ -162,6 +162,37 @@ export const getProgramInvitations = async () => {
   return { data: [] }
 }
 
+export const regenerateTeamCode = async (teamId: number | string) => {
+  const response = await api.post(`/teams/${teamId}/regenerate`)
+  return response.data
+}
+
+export const revokeTeamCode = async (teamId: number | string) => {
+  const response = await api.post(`/teams/${teamId}/revoke`)
+  return response.data
+}
+
+export const emailTeamCode = async (teamId: number | string, email: string, fallbackCode?: string) => {
+  try {
+    const response = await api.post(`/teams/${teamId}/invite`, { email })
+    return response.data
+  } catch (error: any) {
+    if (error?.response?.status === 409 && fallbackCode && typeof window !== 'undefined') {
+      const mailBody = `You have been invited to join the accreditation team.\n\nUse this 6-character team code to join: ${fallbackCode}\n\nSign in to ADAMS and enter it on the Join Team page.`
+      window.open(
+        `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent('ADAMS team join code')}&body=${encodeURIComponent(mailBody)}`,
+        '_blank',
+      )
+      return {
+        success: true,
+        message: 'Email invites are turned off, so your mail app was opened with the team code.',
+        data: { code: fallbackCode, email },
+      }
+    }
+    throw error
+  }
+}
+
 export const createProgramInvitation = async (
   programId: number | string,
   data: { email?: string; role?: string; expires_in_hours?: number }
@@ -177,20 +208,12 @@ export const createProgramInvitation = async (
     : Array.isArray(response.data)
       ? response.data
       : []
-  const code = list[0]?.code
-  if (!code) {
+  const team = list.find((item: any) => item?.code && !item?.expires_at) || list.find((item: any) => item?.code)
+  if (!team?.id) {
     throw new Error('No team code exists for this program yet. Generate one from the Program Chair dashboard.')
   }
 
-  const mailBody = `You have been invited to join the accreditation team.\n\nUse this 6-character team code to join: ${code}\n\nSign in to ADAMS and enter it on the Join Team page.`
-  if (typeof window !== 'undefined') {
-    window.open(
-      `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent('ADAMS team join code')}&body=${encodeURIComponent(mailBody)}`,
-      '_blank',
-    )
-  }
-
-  return { success: true, data: { code, email } }
+  return emailTeamCode(team.id, email, team.code)
 }
 
 export const resendInvitation = async () => {
@@ -486,6 +509,14 @@ export const patchParameterRowContent = async (
 ) => {
   const response = await api.patch(`/parameter-rows/${rowId}/content`, { content })
   return unwrap(response)
+}
+
+export const addEvidenceLink = async (
+  rowId: number | string,
+  payload: { url: string; title?: string }
+) => {
+  const response = await api.post(`/parameter-rows/${rowId}/links`, payload)
+  return response.data
 }
 
 export const deleteParameterRowDocuments = async (rowId: number | string) => {

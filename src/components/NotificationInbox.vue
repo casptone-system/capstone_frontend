@@ -154,6 +154,11 @@ export default {
 
 <style scoped>
 .inbox-shell {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  justify-self: stretch;
+  align-self: stretch;
   display: grid;
   gap: 1rem;
 }

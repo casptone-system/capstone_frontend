@@ -26,10 +26,8 @@
         <div class="result-icon success" aria-hidden="true">
           <ion-icon :icon="checkmarkCircleOutline" />
         </div>
-        <!-- DISABLED: Email verification page — no longer needed for dev, see [2026-08-18]
-             All users are auto-verified on registration; this page is kept for backward compatibility. -->
-        <h2 class="form-title">Email Verification Skipped</h2>
-        <p class="form-subtitle">Email verification has been disabled for development. Redirecting to login...</p>
+        <h2 class="form-title">{{ title }}</h2>
+        <p class="form-subtitle">{{ subtitle }}</p>
 
         <div class="actions">
           <app-button variant="primary" block size="lg" @click="goToLogin">
@@ -42,29 +40,32 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { IonPage, IonIcon } from '@ionic/vue'
 import { checkmarkCircleOutline } from 'ionicons/icons'
 import AppButton from '@/components/AppButton.vue'
 
 const router = useRouter()
+const route = useRoute()
 const currentYear = new Date().getFullYear()
+const status = computed(() => String(route.query.status || 'success'))
 
-// DISABLED: Email verification logic — no longer needed for dev, see [2026-08-18]
-// Original logic: parse status query param, show different messages, handle resends
-// All users are now auto-verified on registration, so this page is a pass-through
+const title = computed(() => {
+  if (status.value === 'already_verified') return 'Already verified'
+  if (status.value === 'invalid') return 'Verification failed'
+  return 'Email verified'
+})
+
+const subtitle = computed(() => {
+  if (status.value === 'already_verified') return 'This email is already verified. Sign in to continue.'
+  if (status.value === 'invalid') return 'This verification link is invalid or expired. Sign in and request a new one.'
+  return 'Your email address is confirmed. Sign in to continue.'
+})
 
 const goToLogin = () => {
   router.push('/login')
 }
-
-// Auto-redirect to login after 3 seconds
-onMounted(() => {
-  setTimeout(() => {
-    goToLogin()
-  }, 3000)
-})
 </script>
 
 <style scoped>

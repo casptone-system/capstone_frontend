@@ -219,7 +219,7 @@
           </app-button>
 
           <p class="form-note">
-            After creating your account, you can sign in immediately. Email verification is skipped for testing.
+            After creating your account, sign in. If email verification is on, confirm the link before using ADAMS.
           </p>
 
           <div @click="$router.push('/login')" class="alt-btn">

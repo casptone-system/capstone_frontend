@@ -37,6 +37,7 @@
         :editable="canEditContent && editMode"
         :show-upload="true"
         :can-upload="!!selectedArea?.canUpload"
+        :can-manage-links="selectedArea?.assignmentRole === 'chair'"
         :can-submit="!!selectedArea?.canUpload"
         :show-comments="true"
         :can-comment="!!selectedArea?.canComment"

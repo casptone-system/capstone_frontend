@@ -16,7 +16,9 @@ export interface User {
   profilePhoto?: string | null
   profilePhotoPath?: string | null
   createdAt?: string
-  programId?: string
+  programId?: string | number | null
+  program_id?: string | number | null
+  mustVerifyEmail?: boolean
 }
 
 // Programs

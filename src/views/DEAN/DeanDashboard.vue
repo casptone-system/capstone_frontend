@@ -19,10 +19,6 @@
         <span class="adams-nav-icon"><ion-icon :icon="peopleOutline" /></span>
         <span>Faculty Monitoring</span>
       </button>
-      <button type="button" class="adams-nav-item" :class="{ active: isSectionActive('department-documents') }" @click="selectSection('department-documents')" :aria-current="isSectionActive('department-documents') ? 'page' : undefined">
-        <span class="adams-nav-icon"><ion-icon :icon="documentTextOutline" /></span>
-        <span>Department Documents</span>
-      </button>
       <button type="button" class="adams-nav-item" :class="{ active: isSectionActive('issues') }" @click="selectSection('issues')" :aria-current="isSectionActive('issues') ? 'page' : undefined">
         <span class="adams-nav-icon"><ion-icon :icon="alertCircleOutline" /></span>
         <span>Issues &amp; Actions</span>
@@ -56,14 +52,7 @@
     </template>
 
           <main class="dean-main">
-            <section v-if="selectedSection === 'dashboard'" class="dean-workspace-header">
-              <div class="dean-workspace-copy">
-                <h1 class="dean-workspace-title">College Leadership Dashboard</h1>
-                <p class="dean-workspace-subtitle">Drive accreditation readiness, monitor programs, and intervene where required.</p>
-              </div>
-            </section>
-
- <section v-if="selectedSection === 'dashboard'" class="dean-readiness-overview" aria-label="Dean college readiness overview">
+            <section v-if="selectedSection === 'dashboard'" class="dean-readiness-overview" aria-label="Dean college readiness overview">
               <div class="dean-readiness-header">
                 <div>
                   <p class="dean-readiness-label">Accreditation Overview</p>
@@ -224,30 +213,6 @@
                         </div>
                       </div>
                     </div>
-                    <div class="dean-card">
-                      <div class="dean-card-header">
-                        <div class="dean-card-title-group">
-                          <div class="dean-card-icon blue"><ion-icon :icon="documentTextOutline" /></div>
-                          <div>
-                            <h2 class="dean-card-title">Department Documents</h2>
-                            <p class="dean-card-sub">Latest college-level document activity for dean review.</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="dean-doc-table">
-                        <div class="dean-table-header">
-                          <span>Document</span><span>Program</span><span>Status</span><span>Action</span>
-                        </div>
-                        <div class="dean-table-row" v-for="doc in documents.slice(0, 3)" :key="doc.id || doc.title">
-                          <span class="dean-doc-title-cell"><ion-icon :icon="documentOutline" class="dean-doc-icon" /> {{ doc.title }}</span>
-                          <span class="dean-role-tag">{{ doc.program }}</span>
-                          <span class="dean-muted">{{ doc.status || 'Pending' }}</span>
-                          <div class="dean-action-btns">
-                            <button class="dean-approve-btn" type="button" @click.prevent="viewDocument(doc)">Open</button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </template>
@@ -255,10 +220,6 @@
               <template v-else-if="selectedSection === 'programs'">
                 <div class="dean-program-folder-shell">
                   <div class="dean-program-folder-header">
-                    <div>
-                      <p class="dean-section-caption">College folders</p>
-                      <h2>Program Monitoring</h2>
-                    </div>
                     <div class="dean-folder-count">{{ programs.length }} program{{ programs.length === 1 ? '' : 's' }}</div>
                   </div>
 
@@ -486,15 +447,6 @@
                 <div class="dean-content-grid">
                   <div class="dean-col-left">
                     <div class="dean-card">
-                      <div class="dean-card-header">
-                        <div class="dean-card-title-group">
-                          <div class="dean-card-icon amber"><ion-icon :icon="peopleOutline" /></div>
-                          <div>
-                            <h2 class="dean-card-title">Faculty Monitoring</h2>
-                            <p class="dean-card-sub">Faculty activity and program engagement.</p>
-                          </div>
-                        </div>
-                      </div>
                       <div class="dean-faculty-toolbar">
                         <label class="dean-faculty-search">
                           <ion-icon :icon="searchOutline" />
@@ -814,18 +766,7 @@
               </template>
 
               <template v-else-if="selectedSection === 'notifications'">
-                <div class="dean-card">
-                  <div class="dean-card-header">
-                    <div class="dean-card-title-group">
-                      <div class="dean-card-icon rose"><ion-icon :icon="notificationsOutline" /></div>
-                      <div>
-                        <h2 class="dean-card-title">Notifications</h2>
-                        <p class="dean-card-sub">Alerts, assignments, and follow-up items.</p>
-                      </div>
-                    </div>
-                  </div>
-                  <NotificationInbox subtitle="Dean assignment notices, cycle updates, and pending actions." />
-                </div>
+                <NotificationInbox compact />
               </template>
             </div>
           </main>
@@ -1500,14 +1441,13 @@ const responsibilityCards = computed(() => [
   { id: 'college-profile', title: 'My College', description: 'College profile, readiness, and assigned scope.', action: 'college-profile', icon: businessOutline, colorClass: 'blue' },
   { id: 'programs', title: 'Program Monitoring', description: 'Track program readiness and review progress.', action: 'programs', icon: schoolOutline, colorClass: 'amber' },
   { id: 'faculty', title: 'Faculty Monitoring', description: 'Review submissions, participation, and follow-ups.', action: 'faculty', icon: peopleOutline, colorClass: 'green' },
-  { id: 'documents', title: 'Department Documents', description: 'View and manage department files and submissions.', action: 'department-documents', icon: documentTextOutline, colorClass: 'rose' },
   { id: 'issues', title: 'Issues & Actions', description: 'Check deficiencies, risks, and intervention needs.', action: 'issues', icon: alertCircleOutline, colorClass: 'teal' },
   { id: 'reports', title: 'Reports', description: 'Open summaries and report-ready performance views.', action: 'program-reports', icon: barChartOutline, colorClass: 'blue' },
   { id: 'activity', title: 'Activity', description: 'Review recent college and accreditation events.', action: 'activity', icon: timeOutline, colorClass: 'amber' },
   { id: 'notifications', title: 'Notifications', description: 'Check alerts and pending dean actions.', action: 'notifications', icon: notificationsOutline, colorClass: 'green' },
 ])
 const selectSection = (section: string) => {
-  selectedSection.value = section
+  selectedSection.value = section === 'department-documents' ? 'dashboard' : section
 }
 const isSectionActive = (section: string) => selectedSection.value === section
 
@@ -1519,7 +1459,7 @@ const progressFill = (pct: number | string | undefined) => {
 watch(
   () => route.query.section,
   (section) => {
-    if (typeof section === 'string' && section) {
+    if (typeof section === 'string' && section && section !== 'department-documents') {
       selectedSection.value = section
     }
   },
@@ -2159,7 +2099,7 @@ const handleProgramCreated = async () => {
 .dean-program-folder-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 1rem;
   padding: 0.2rem 0;
 }
@@ -2171,12 +2111,6 @@ const handleProgramCreated = async () => {
   text-transform: uppercase;
   color: var(--adams-text-muted);
   font-weight: 700;
-}
-
-.dean-program-folder-header h2 {
-  margin: 0;
-  font-size: 1.6rem;
-  color: var(--adams-text-primary);
 }
 
 .dean-folder-count {
@@ -3024,39 +2958,6 @@ const handleProgramCreated = async () => {
   grid-template-columns: 1.4fr 1fr;
   gap: 1.25rem;
   align-items: start;
-}
-
-.dean-workspace-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.25rem 0 0.15rem;
-}
-
-.dean-workspace-copy {
-  min-width: 0;
-}
-
-.dean-workspace-title {
-  margin: 0;
-  font-size: clamp(2.1rem, 2.6vw, 3rem);
-  line-height: 1.1;
-  color: var(--adams-text-primary);
-  letter-spacing: -0.05em;
-  font-weight: 800;
-}
-
-.dean-workspace-subtitle {
-  margin: 0.35rem 0 0;
-  color: var(--adams-text-muted);
-  font-size: 0.98rem;
-}
-
-.dean-workspace-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
 }
 
 .dean-col-left, .dean-col-right { display: flex; flex-direction: column; gap: 1.25rem; }

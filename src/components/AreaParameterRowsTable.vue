@@ -63,7 +63,7 @@
             </div>
           </td>
           <td v-if="showUpload && !isSectionHeading(row)" class="apr-upload-cell">
-            <div v-if="rowFiles(row).length" class="apr-files">
+            <div v-if="rowDocuments(row).length" class="apr-files">
               <div v-for="doc in rowFiles(row)" :key="doc.id" class="apr-file-block">
                 <AreaFileThumbnail
                   :doc="doc"
@@ -88,15 +88,24 @@
                   </template>
                 </p>
               </div>
+              <AreaEvidenceLink
+                v-for="doc in rowLinks(row)"
+                :key="`link-${doc.id}`"
+                :url="doc.url"
+                :title="doc.title"
+                :can-remove="canManageLinks"
+                :removing="pendingDocId === doc.id || pendingId === row.id"
+                @remove="removeLink(row, doc)"
+              />
             </div>
-            <span v-else class="apr-muted">No files yet</span>
+            <span v-else class="apr-muted">No files or links yet</span>
             <span v-if="row.isDone" class="apr-submitted">Submitted</span>
 
             <div v-if="canUpload" class="apr-row-actions">
               <button
                 type="button"
                 class="apr-icon-btn"
-                :disabled="pendingId === row.id || compilingId === row.id || !rowFiles(row).length"
+                :disabled="pendingId === row.id || compilingId === row.id || !rowDocuments(row).length"
                 title="Download compiled PDF"
                 aria-label="Download compiled PDF"
                 @click="downloadCompiled(row)"
@@ -118,7 +127,7 @@
               <button
                 type="button"
                 class="apr-icon-btn danger"
-                :disabled="pendingId === row.id || !rowFiles(row).length"
+                :disabled="pendingId === row.id || !rowDocuments(row).length"
                 title="Remove"
                 aria-label="Remove"
                 @click="removeFiles(row)"
@@ -172,6 +181,8 @@
       :row-id="uploaderRow?.id || null"
       :row-label="replaceTarget ? `New version of ${fileName(replaceTarget)}` : (uploaderRow?.content || 'Content row')"
       :existing-count="uploaderRow ? rowFiles(uploaderRow).length : 0"
+      :can-add-links="!!canUpload"
+      :existing-link-urls="uploaderRow ? rowLinks(uploaderRow).map((doc) => doc.url || '').filter(Boolean) : []"
       :program-id="programId"
       :area-id="areaId"
       :replace-document-id="replaceTarget?.id || null"
@@ -194,6 +205,7 @@ import {
   patchParameterRowContent,
   submitParameterRow,
 } from '@/lib/api'
+import AreaEvidenceLink from '@/components/AreaEvidenceLink.vue'
 import AreaFileThumbnail from '@/components/AreaFileThumbnail.vue'
 import AreaRowUploadModal from '@/components/AreaRowUploadModal.vue'
 import RowCommentThreadModal from '@/components/RowCommentThreadModal.vue'
@@ -201,6 +213,8 @@ import RowCommentThreadModal from '@/components/RowCommentThreadModal.vue'
 type RowDocument = {
   id: number
   title?: string
+  kind?: string
+  url?: string | null
   latestVersion?: { originalName?: string; mimeType?: string; version?: number } | null
   versions?: { originalName?: string; mimeType?: string; version?: number }[]
 }
@@ -226,6 +240,7 @@ const props = defineProps<{
   canToggle?: boolean
   showUpload?: boolean
   canUpload?: boolean
+  canManageLinks?: boolean
   canSubmit?: boolean
   showComments?: boolean
   canComment?: boolean
@@ -300,10 +315,18 @@ const isSectionHeading = (row: ParameterRow) => {
   )
 }
 
-const rowFiles = (row: ParameterRow): RowDocument[] => {
+const isLinkDoc = (doc: RowDocument) => doc.kind === 'link'
+
+const rowDocuments = (row: ParameterRow): RowDocument[] => {
   if (Array.isArray(row.documents) && row.documents.length) return row.documents
   return row.document ? [row.document] : []
 }
+
+const rowFiles = (row: ParameterRow): RowDocument[] =>
+  rowDocuments(row).filter((doc) => !isLinkDoc(doc))
+
+const rowLinks = (row: ParameterRow): RowDocument[] =>
+  rowDocuments(row).filter((doc) => isLinkDoc(doc))
 
 const startEdit = (row: ParameterRow) => {
   editingId.value = row.id
@@ -373,14 +396,12 @@ const onUploaded = () => {
   emit('files-changed')
 }
 
-const removeFile = async (row: ParameterRow, doc: RowDocument) => {
-  if (!window.confirm(`Remove ${fileName(doc)} from this row?`)) return
-
+const removeDocument = async (row: ParameterRow, doc: RowDocument) => {
   pendingDocId.value = doc.id
   try {
     error.value = ''
     await deleteDocument(doc.id)
-    const remaining = rowFiles(row).filter((item) => item.id !== doc.id)
+    const remaining = rowDocuments(row).filter((item) => item.id !== doc.id)
     emit('updated', {
       ...row,
       hasFile: remaining.length > 0,
@@ -390,14 +411,25 @@ const removeFile = async (row: ParameterRow, doc: RowDocument) => {
     })
     emit('files-changed')
   } catch (err: any) {
-    error.value = err?.response?.data?.message || 'Unable to remove this file.'
+    error.value = err?.response?.data?.message || (isLinkDoc(doc) ? 'Unable to remove this link.' : 'Unable to remove this file.')
   } finally {
     pendingDocId.value = null
   }
 }
 
+const removeLink = async (row: ParameterRow, doc: RowDocument) => {
+  const label = doc.title?.trim() || 'this link'
+  if (!window.confirm(`Remove ${label} from this row?`)) return
+  await removeDocument(row, doc)
+}
+
+const removeFile = async (row: ParameterRow, doc: RowDocument) => {
+  if (!window.confirm(`Remove ${fileName(doc)} from this row?`)) return
+  await removeDocument(row, doc)
+}
+
 const removeFiles = async (row: ParameterRow) => {
-  if (!window.confirm('Remove all PDFs attached to this row?')) return
+  if (!window.confirm('Remove all PDFs and links attached to this row? The row will also be marked not done.')) return
 
   pendingId.value = row.id
   try {
@@ -425,7 +457,7 @@ const downloadInstrument = async () => {
   try {
     error.value = ''
     const rowNames = props.rows
-      .filter((row) => !isSectionHeading(row) && rowFiles(row).length)
+      .filter((row) => !isSectionHeading(row) && rowDocuments(row).length)
       .map((row) => row.content)
       .filter(Boolean)
       .join(', ')
@@ -438,7 +470,7 @@ const downloadInstrument = async () => {
 }
 
 const downloadCompiled = async (row: ParameterRow) => {
-  if (!props.canUpload || !rowFiles(row).length) return
+  if (!props.canUpload || !rowDocuments(row).length) return
 
   compilingId.value = row.id
   try {
@@ -452,7 +484,7 @@ const downloadCompiled = async (row: ParameterRow) => {
 }
 
 const canSubmitRow = (row: ParameterRow) =>
-  Boolean(props.canUpload) && rowFiles(row).length > 0 && !row.isDone
+  Boolean(props.canUpload) && rowDocuments(row).length > 0 && !row.isDone
 
 const submitRow = async (row: ParameterRow) => {
   if (!canSubmitRow(row)) return
