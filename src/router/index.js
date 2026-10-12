@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from '@ionic/vue-router'
+ import { createRouter, createWebHistory } from '@ionic/vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import {
   canAccessDashboardRole,
@@ -19,6 +19,9 @@ const LoginPage = () =>
 
 const RegisterPage = () =>
   import('@/views/login/RegisterPage.vue')
+
+const WebsitePage = () =>
+  import('@/views/website/WebsitePage.vue')
 
 const ForgotPassword = () =>
   import('@/views/login/ForgotPassword.vue')
@@ -233,6 +236,7 @@ const ProgramManagementPage = () =>
 // ROUTES
 // ============================================================
 
+
 const routes = [
   // ==========================================================
   // ROOT
@@ -240,8 +244,24 @@ const routes = [
 
   {
     path: '/',
-    redirect: '/login',
+    redirect: '/Adams',
   },
+  {
+    path: '/Adams',
+    name: 'Adams',
+    component: WebsitePage,
+    meta: {
+      requiresAuth: false,
+    },
+  },
+  // {
+  //   path: '/website-page',
+  //   name: 'website-page',
+  //   component: Website,
+  //   meta: {
+  //     requiresAuth: false,
+  //   },
+  // },
 
   // ==========================================================
   // PUBLIC AUTH

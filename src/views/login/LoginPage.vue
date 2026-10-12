@@ -2,6 +2,10 @@
   <ion-page class="login-container">
     <!-- LEFT: Institutional panel -->
     <div class="brand-panel">
+      <router-link class="alt-btn-back" :to="{ name: 'Adams' }">
+        <img src="@/assets/text.png" alt="ADAMS" class="adams_logo" />
+      </router-link>
+      <small class="alt-btn-back-text">Back to Home</small>
       <div class="ledger-lines" aria-hidden="true"></div>
       <div class="brand-content">
         <span class="eyebrow">Isabela State University · Echague Main Campus</span>
@@ -335,6 +339,27 @@ const cancel2FA = () => {
   flex-direction: column;
   justify-content: space-between;
   overflow: hidden;
+}
+
+.adams_logo {
+  width: 245px;
+  height: auto;
+}
+
+.alt-btn-back {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  margin-bottom: -1.5rem;
+}
+
+.alt-btn-back-text {
+  position: relative;
+  z-index: 1;
+  color: rgba(247, 243, 234, 0.72);
+  font-size: 0.8rem;
 }
 
 .ledger-lines {

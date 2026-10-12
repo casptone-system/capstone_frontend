@@ -2,6 +2,10 @@
   <ion-page class="login-container">
     <!-- LEFT: Institutional panel -->
     <div class="brand-panel">
+      <router-link class="alt-btn-back" :to="{ name: 'Adams' }">
+              <img src="@/assets/text.png" alt="Archiving logo" class="adams_logo" />
+        </router-link>
+              <small class="alt-btn-back-text">Back to Home</small> 
       <div class="ledger-lines" aria-hidden="true"></div>
       <div class="brand-content">
         <span class="eyebrow">Est. Registry &middot; Institutional Access</span>
@@ -495,6 +499,24 @@ const handleProfilePhotoChange = (event: Event) => {
   justify-content: space-between;
   overflow: hidden;
 }
+
+.adams_logo {
+    width: 245px;
+    height: auto;
+    fill: currentColor;
+    font-size: 26px;
+}
+
+  .alt-btn-back {
+    display: flex;
+    align-items: center;
+    /* gap: 0.5rem; */
+    font-size: 0.9rem;
+    color: var(--ink);
+    text-decoration: none;
+    font-weight: 600;
+    margin-bottom: -1.5rem;
+  }
 
 .ledger-lines {
   position: absolute;
