@@ -313,7 +313,7 @@ import DesignationFilesPanel from '@/components/DesignationFilesPanel.vue'
 import AccreditationLevelStatus from '@/components/AccreditationLevelStatus.vue'
 import AdamsAppShell from '@/components/ui/AdamsAppShell.vue'
 import NotificationInbox from '@/components/NotificationInbox.vue'
-import { getSystemSettings, linkRoleStorageFileAsEvidence } from '@/lib/api'
+import { linkRoleStorageFileAsEvidence } from '@/lib/api'
 import type { AppDocument } from '@/lib'
 
 import {
@@ -641,25 +641,11 @@ const onFileSelected = async (event: Event) => {
   if (input) input.value = ''
 }
 
-const loadFacultyStorageLimit = async () => {
-  try {
-    const response = await getSystemSettings()
-    const rawLimitMb = Number(response?.data?.storage_limit_mb ?? response?.storage_limit_mb ?? storageLimitMb.value)
-
-    if (rawLimitMb > 0) {
-      storageLimitMb.value = rawLimitMb
-    }
-  } catch {
-    storageLimitMb.value = 20 * 1024
-  }
-}
-
 const loadData = async () => {
   await Promise.all([
     loadProgram(),
     loadDocuments(),
     loadNotifications(),
-    loadFacultyStorageLimit(),
     loadMyAreas(),
   ])
 }
