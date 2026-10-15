@@ -47,10 +47,6 @@
         <span class="adams-nav-icon"><ion-icon :icon="documentsOutline" /></span>
         <span>Universal Files</span>
       </button>
-      <button v-if="canViewFileRequests" class="adams-nav-item" :class="{ active: qaSection === 'file-requests' }" type="button" @click="openSection('file-requests')">
-        <span class="adams-nav-icon"><ion-icon :icon="documentTextOutline" /></span>
-        <span>File Requests</span>
-      </button>
     </template>
 
     <template #header-actions>
@@ -61,7 +57,7 @@
 
           <div v-if="error" class="qa-feedback-banner error">{{ error }}</div>
 
-          <section v-if="qaSection !== 'board-of-action' && qaSection !== 'universal-files' && qaSection !== 'file-requests' && qaSection !== 'submitted-evidence'" class="qa-stat-strip">
+          <section v-if="qaSection !== 'board-of-action' && qaSection !== 'universal-files' && qaSection !== 'submitted-evidence'" class="qa-stat-strip">
             <div class="qa-stat" v-for="stat in stats" :key="stat.label">
               <div class="qa-stat-icon" :style="{ background: stat.bg, color: stat.color }">
                 <ion-icon :icon="stat.icon" />
@@ -206,16 +202,6 @@
               </div>
             </div>
             <UniversalFilesPanel mode="manage" />
-          </section>
-
-          <section v-else-if="qaSection === 'file-requests' && canViewFileRequests" class="qa-card" style="margin: 1rem 1.5rem;">
-            <div class="qa-card-header">
-              <div>
-                <h2 class="qa-card-title">File Requests</h2>
-                <p>Read-only view of file requests between program chairs.</p>
-              </div>
-            </div>
-            <FileRequestsPanel mode="oversight" />
           </section>
 
           <section v-else-if="qaSection === 'progress'" class="qa-card" style="margin: 1rem 1.5rem;">
@@ -420,7 +406,6 @@ import {
 import AccreditationMonitorCard from '@/components/AccreditationMonitorCard.vue'
 import BoardOfActionPanel from '@/components/BoardOfActionPanel.vue'
 import UniversalFilesPanel from '@/components/UniversalFilesPanel.vue'
-import FileRequestsPanel from '@/components/FileRequestsPanel.vue'
 import AccreditationLevelStatus from '@/components/AccreditationLevelStatus.vue'
 import AreaEvidenceReviewPanel from '@/components/AreaEvidenceReviewPanel.vue'
 import AccreditorEvidenceBrowser from '@/components/AccreditorEvidenceBrowser.vue'
@@ -432,10 +417,9 @@ const authStore = useAuthStore()
 const route = useRoute()
 const shellRoleLabel = computed(() => authStore.isAccreditor ? 'Accreditor' : 'Quality Assurance')
 
-type QaSection = 'dashboard' | 'colleges' | 'programs' | 'at-risk' | 'accreditations' | 'progress' | 'evidence-review' | 'submitted-evidence' | 'board-of-action' | 'universal-files' | 'file-requests'
+type QaSection = 'dashboard' | 'colleges' | 'programs' | 'at-risk' | 'accreditations' | 'progress' | 'evidence-review' | 'submitted-evidence' | 'board-of-action' | 'universal-files'
 
 const canManageBoardOfAction = computed(() => authStore.isQA || authStore.isSuperAdmin)
-const canViewFileRequests = computed(() => authStore.isQA || authStore.isSuperAdmin)
 
 const qaSection = ref<QaSection>('dashboard')
 
@@ -450,7 +434,6 @@ const pageTitle = computed(() => {
     case 'submitted-evidence': return 'Submitted Evidence'
     case 'board-of-action': return 'Board of Action'
     case 'universal-files': return 'Universal Files'
-    case 'file-requests': return 'File Requests'
     default: return authStore.isAccreditor ? 'Accreditor Dashboard' : 'QA Dashboard'
   }
 })
@@ -466,7 +449,6 @@ const pageDescription = computed(() => {
     case 'submitted-evidence': return 'Open a submitted college, program, area, and parameter to view the uploaded evidence files.'
     case 'board-of-action': return 'Upload the accreditor\'s Board of Action for a program. The file comes from the hard copy given to the university.'
     case 'universal-files': return 'Upload shared PDFs into an AACCUP area. Every program chair sees them in that same group.'
-    case 'file-requests': return 'Read-only view of file requests between program chairs.'
     default: return 'Overall monitoring of all colleges and programs at university level.'
   }
 })
