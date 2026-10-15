@@ -495,6 +495,31 @@ export const getParameterRows = async (parameterId: number | string) => {
   return unwrap(response)
 }
 
+export const getAccreditorSubmission = async () => {
+  const response = await api.get('/program-chair/accreditor-submission')
+  return response.data
+}
+
+export const submitToAccreditor = async () => {
+  const response = await api.post('/program-chair/accreditor-submission')
+  return response.data
+}
+
+export const getAccreditorColleges = async () => {
+  const response = await api.get('/accreditor/evidence/colleges')
+  return unwrap(response)
+}
+
+export const getAccreditorPrograms = async (collegeId: number | string) => {
+  const response = await api.get(`/accreditor/evidence/colleges/${collegeId}/programs`)
+  return unwrap(response)
+}
+
+export const getAccreditorAreas = async (programId: number | string) => {
+  const response = await api.get(`/accreditor/evidence/programs/${programId}/areas`)
+  return unwrap(response)
+}
+
 export const patchParameterRowStatus = async (
   rowId: number | string,
   isDone: boolean
@@ -628,6 +653,177 @@ export const downloadDesignationFile = async (id: number | string, fallbackName 
     `/designation-files/${id}/download`,
     fallbackName,
     'Unable to download the designation file.',
+  )
+}
+
+export const getBoardOfActionPrograms = async (params: { search?: string; missing?: number } = {}) => {
+  const response = await api.get('/board-of-action/programs', { params })
+  return response.data
+}
+
+export const getMyBoardOfAction = async () => {
+  const response = await api.get('/board-of-action/mine')
+  return response.data
+}
+
+export const uploadBoardOfAction = async (form: FormData) => {
+  const response = await api.post('/board-of-action', form)
+  return response.data
+}
+
+export const replaceBoardOfAction = async (id: number | string, form: FormData) => {
+  const response = await api.post(`/board-of-action/${id}/replace`, form)
+  return response.data
+}
+
+export const deleteBoardOfAction = async (id: number | string) => {
+  const response = await api.delete(`/board-of-action/${id}`)
+  return response.data
+}
+
+export const downloadBoardOfAction = async (id: number | string, fallbackName = 'board-of-action.pdf') => {
+  return downloadCompiledPdf(
+    `/board-of-action/${id}/download`,
+    fallbackName,
+    'Unable to download this Board of Action file.',
+  )
+}
+
+export const getFileRequestPrograms = async (q = '') => {
+  const response = await api.get('/file-requests/programs', { params: q ? { q } : {} })
+  return response.data
+}
+
+export const getFileRequests = async (box?: 'incoming' | 'sent') => {
+  const response = await api.get('/file-requests', { params: box ? { box } : {} })
+  return response.data
+}
+
+export const createFileRequest = async (payload: {
+  recipient_program_id: number
+  title: string
+  description?: string
+  needed_by?: string
+}) => {
+  const response = await api.post('/file-requests', payload)
+  return response.data
+}
+
+export const cancelFileRequest = async (id: number | string) => {
+  const response = await api.post(`/file-requests/${id}/cancel`)
+  return response.data
+}
+
+export const declineFileRequest = async (id: number | string, declineReason: string) => {
+  const response = await api.post(`/file-requests/${id}/decline`, { decline_reason: declineReason })
+  return response.data
+}
+
+export const fulfillFileRequest = async (id: number | string, files: File[]) => {
+  const form = new FormData()
+  files.forEach((file) => form.append('files[]', file))
+  const response = await api.post(`/file-requests/${id}/fulfill`, form)
+  return response.data
+}
+
+export const removeFileRequestFile = async (requestId: number | string, fileId: number | string) => {
+  const response = await api.delete(`/file-requests/${requestId}/files/${fileId}`)
+  return response.data
+}
+
+export const downloadFileRequestFile = async (
+  requestId: number | string,
+  fileId: number | string,
+  fallbackName = 'file-request.pdf',
+) => {
+  return downloadCompiledPdf(
+    `/file-requests/${requestId}/files/${fileId}/download`,
+    fallbackName,
+    'Unable to download this file.',
+  )
+}
+
+export const previewFileRequestFile = async (requestId: number | string, fileId: number | string): Promise<Blob> => {
+  const response = await api.get(`/file-requests/${requestId}/files/${fileId}/preview`, { responseType: 'blob' })
+  const blob: Blob = response.data
+  const contentType = String(response.headers?.['content-type'] || blob?.type || '')
+
+  if (contentType.includes('json') || contentType.includes('text/html')) {
+    const text = await blob.text()
+    let message = 'Preview is not available for this file.'
+    try {
+      message = JSON.parse(text)?.message || message
+    } catch {
+      message = 'Preview is not available for this file.'
+    }
+    throw new Error(message)
+  }
+
+  return new Blob([blob], { type: 'application/pdf' })
+}
+
+export const previewBoardOfAction = async (id: number | string): Promise<Blob> => {
+  const response = await api.get(`/board-of-action/${id}/preview`, { responseType: 'blob' })
+  const blob: Blob = response.data
+  const contentType = String(response.headers?.['content-type'] || blob?.type || '')
+
+  if (contentType.includes('json') || contentType.includes('text/html')) {
+    const text = await blob.text()
+    let message = 'Preview is not available for this file.'
+    try {
+      message = JSON.parse(text)?.message || message
+    } catch {
+      message = 'Preview is not available for this file.'
+    }
+    throw new Error(message)
+  }
+
+  return new Blob([blob], { type: 'application/pdf' })
+}
+
+const universalFileBlob = async (id: number | string, action: 'preview' | 'download'): Promise<Blob> => {
+  const response = await api.get(`/universal-files/${id}/${action}`, { responseType: 'blob' })
+  const blob: Blob = response.data
+  const contentType = String(response.headers?.['content-type'] || blob?.type || '')
+
+  if (contentType.includes('json') || contentType.includes('text/html')) {
+    const text = await blob.text()
+    let message = 'This file is not available.'
+    try {
+      message = JSON.parse(text)?.message || message
+    } catch {
+      message = 'This file is not available.'
+    }
+    throw new Error(message)
+  }
+
+  return new Blob([blob], { type: 'application/pdf' })
+}
+
+export const getUniversalFiles = async () => {
+  const response = await api.get('/universal-files')
+  return unwrap(response)
+}
+
+export const uploadUniversalFiles = async (formData: FormData) => {
+  const response = await api.post('/universal-files', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return unwrap(response)
+}
+
+export const deleteUniversalFile = async (id: number | string) => {
+  const response = await api.delete(`/universal-files/${id}`)
+  return unwrap(response)
+}
+
+export const previewUniversalFile = async (id: number | string): Promise<Blob> => universalFileBlob(id, 'preview')
+
+export const downloadUniversalFile = async (id: number | string, fallbackName = 'universal-file.pdf') => {
+  return downloadCompiledPdf(
+    `/universal-files/${id}/download`,
+    fallbackName,
+    'Unable to download this universal file.',
   )
 }
 

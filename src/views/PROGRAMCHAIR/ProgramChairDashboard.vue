@@ -62,6 +62,19 @@
         <span class="adams-nav-icon"><ion-icon :icon="documentTextOutline" /></span>
         <span>Designation Files</span>
       </button>
+      <button class="adams-nav-item" :class="{ active: selectedSection === 'board-of-action' }" type="button" @click="selectSection('board-of-action')">
+        <span class="adams-nav-icon"><ion-icon :icon="documentTextOutline" /></span>
+        <span>Board of Action</span>
+      </button>
+      <button class="adams-nav-item" :class="{ active: selectedSection === 'universal-files' }" type="button" @click="selectSection('universal-files')">
+        <span class="adams-nav-icon"><ion-icon :icon="documentsOutline" /></span>
+        <span>Universal Files</span>
+      </button>
+      <button class="adams-nav-item" :class="{ active: selectedSection === 'file-requests' }" type="button" @click="selectSection('file-requests')">
+        <span class="adams-nav-icon"><ion-icon :icon="documentsOutline" /></span>
+        <span>File Requests</span>
+        <span v-if="fileRequestPending > 0" class="adams-nav-badge">{{ fileRequestPending }}</span>
+      </button>
 
       <p class="adams-nav-label">Communication</p>
       <button class="adams-nav-item" :class="{ active: selectedSection === 'notifications' }" type="button" @click="selectSection('notifications')">
@@ -83,6 +96,10 @@
         <span class="adams-nav-icon"><ion-icon :icon="chatbubblesOutline" /></span>
         <span>Evidence & Comments</span>
       </button>
+      <button class="adams-nav-item" :class="{ active: selectedSection === 'submit-accreditor' }" type="button" @click="selectSection('submit-accreditor')">
+        <span class="adams-nav-icon"><ion-icon :icon="paperPlaneOutline" /></span>
+        <span>Submit to Accreditor</span>
+      </button>
     </template>
 
     <template #header-actions>
@@ -101,6 +118,10 @@
 
           <section v-if="selectedSection === 'dashboard' && currentProgram?.id" class="pc-card">
             <ProgramActiveLevelToggle :program-id="currentProgram.id" />
+          </section>
+
+          <section v-if="selectedSection === 'dashboard'" class="pc-card">
+            <SubmitToAccreditorPanel />
           </section>
 
           <section v-if="selectedSection === 'dashboard'" class="pc-card pc-todo-card">
@@ -515,6 +536,24 @@
             </div>
           </div>
 
+          <div v-if="selectedSection === 'board-of-action'" class="pc-full-width-section">
+            <div class="pc-card">
+              <BoardOfActionPanel mode="read" />
+            </div>
+          </div>
+
+          <div v-if="selectedSection === 'universal-files'" class="pc-full-width-section">
+            <div class="pc-card">
+              <UniversalFilesPanel mode="read" />
+            </div>
+          </div>
+
+          <div v-if="selectedSection === 'file-requests'" class="pc-full-width-section">
+            <div class="pc-card">
+              <FileRequestsPanel mode="chair" :initial-box="fileRequestBox" @pending="fileRequestPending = $event" />
+            </div>
+          </div>
+
           <div v-if="selectedSection === 'areas'" class="pc-full-width-section">
             <div class="pc-card">
               <FacultyMyAreasPanel />
@@ -539,6 +578,12 @@
               <AreaEvidenceReviewPanel />
             </div>
           </div>
+
+          <div v-if="selectedSection === 'submit-accreditor'" class="pc-full-width-section">
+            <div class="pc-card">
+              <SubmitToAccreditorPanel />
+            </div>
+          </div>
   </AdamsAppShell>
 </template>
 
@@ -553,6 +598,7 @@ import {
   documentOutline, copyOutline, mailOutline, refreshOutline,
   checkmarkCircleOutline, hourglassOutline, callOutline,
   checkmarkDoneOutline, layersOutline, chatbubblesOutline,
+  documentsOutline, paperPlaneOutline,
 } from 'ionicons/icons'
 
 import { useRouter, useRoute } from 'vue-router'
@@ -574,6 +620,7 @@ import {
   approveDocumentReview,
   requestDocumentRevision,
   previewDocument,
+  getFileRequests,
 } from '@/lib/api'
 import AccreditationLevelStatus from '@/components/AccreditationLevelStatus.vue'
 import ProgramChairAccreditationSetup from './ProgramChairAccreditationSetup.vue'
@@ -583,10 +630,14 @@ import AdamsAppShell from '@/components/ui/AdamsAppShell.vue'
 import AccreditationWorkspaceBoard from '@/components/AccreditationWorkspaceBoard.vue'
 import AreaDocumentsReview from '@/components/AreaDocumentsReview.vue'
 import AreaEvidenceReviewPanel from '@/components/AreaEvidenceReviewPanel.vue'
+import SubmitToAccreditorPanel from '@/components/SubmitToAccreditorPanel.vue'
 import AreaAssignmentFolders from '@/components/AreaAssignmentFolders.vue'
 import ProgramActiveLevelToggle from '@/components/ProgramActiveLevelToggle.vue'
 import FacultyMyAreasPanel from '@/components/FacultyMyAreasPanel.vue'
 import DesignationFilesPanel from '@/components/DesignationFilesPanel.vue'
+import BoardOfActionPanel from '@/components/BoardOfActionPanel.vue'
+import UniversalFilesPanel from '@/components/UniversalFilesPanel.vue'
+import FileRequestsPanel from '@/components/FileRequestsPanel.vue'
 import { useFacultyDashboardStore } from '@/stores/facultyDashboardStore'
 import { useNotificationStore } from '@/stores/notificationStore'
 
@@ -598,7 +649,9 @@ const router = useRouter()
 const route = useRoute()
 const { activeCall, callMessage, callUser, endCall } = useUserCalls()
 
-const selectedSection = ref<'accreditation' | 'dashboard' | 'team' | 'review' | 'evidence-review' | 'faculty-areas' | 'notifications' | 'revisions' | 'areas' | 'designation-files'>('dashboard')
+const selectedSection = ref<'accreditation' | 'dashboard' | 'team' | 'review' | 'evidence-review' | 'submit-accreditor' | 'faculty-areas' | 'notifications' | 'revisions' | 'areas' | 'designation-files' | 'board-of-action' | 'universal-files' | 'file-requests'>('dashboard')
+const fileRequestPending = ref(0)
+const fileRequestBox = computed(() => (route.query.box === 'sent' ? 'sent' : 'incoming'))
 const tasksExpanded = ref(false)
 const areasExpanded = ref(false)
 const currentProgram = ref<any>(null)
@@ -654,12 +707,16 @@ const sectionLabel = computed(() => {
     case 'dashboard': return 'Program Chair Dashboard'
     case 'team': return 'Team & Invitations'
     case 'designation-files': return 'Designation Files'
+    case 'board-of-action': return 'Board of Action'
+    case 'universal-files': return 'Universal Files'
+    case 'file-requests': return 'File Requests'
     case 'accreditation': return 'Accreditation'
     case 'faculty-areas': return 'Faculty Area Assignments'
     case 'revisions': return 'My Area Tasks'
     case 'areas': return 'Assigned Area'
     case 'review': return 'Area Documents'
     case 'evidence-review': return 'Evidence & Comments'
+    case 'submit-accreditor': return 'Submit to Accreditor'
     case 'notifications': return 'Notifications'
     default: return 'Program Chair Dashboard'
   }
@@ -669,11 +726,15 @@ const pageDescription = computed(() => {
   switch (selectedSection.value) {
     case 'team': return 'Invite faculty, manage membership, and coordinate program work.'
     case 'designation-files': return 'Download designation letters issued when you are assigned as an Area Chair or member.'
+    case 'board-of-action': return 'View and download your program\'s Board of Action. Quality Assurance uploads it from the hard copy.'
+    case 'universal-files': return 'Shared accreditation PDFs, grouped by AACCUP area. Every program chair can preview and download them.'
+    case 'file-requests': return 'Ask another program for a shared file, or respond to requests sent to your program.'
     case 'faculty-areas': return 'Assign area chairs, members, and deadlines for AACCUP areas.'
     case 'revisions': return 'Complete your assigned area tasks and follow-up items.'
     case 'areas': return 'Work through the assigned accreditation area.'
     case 'review': return 'Review submitted area documents and evidence.'
     case 'evidence-review': return 'Browse every area in your program and comment on uploaded evidence.'
+    case 'submit-accreditor': return 'Release this program\'s uploaded evidence so the accreditor can review it.'
     case 'notifications': return 'Stay current on program tasks and invitations.'
     default: return assignedProgramName.value
       ? `Program overview for ${assignedProgramName.value}.`
@@ -1208,10 +1269,14 @@ const sectionsWithoutStatCards = new Set([
   'revisions',
   'areas',
   'designation-files',
+  'board-of-action',
+  'universal-files',
+  'file-requests',
   'notifications',
   'faculty-areas',
   'review',
   'evidence-review',
+  'submit-accreditor',
 ])
 
 const showStatCards = computed(() => !sectionsWithoutStatCards.has(selectedSection.value))
@@ -1315,6 +1380,13 @@ onMounted(async () => {
   await Promise.all([
     loadAssignedProgram(),
     facultyDashboard.loadMyAreas(),
+    getFileRequests('incoming')
+      .then((response) => {
+        fileRequestPending.value = Number(response?.meta?.pendingIncomingCount || 0)
+      })
+      .catch(() => {
+        fileRequestPending.value = 0
+      }),
   ])
   if (programCompletionRate.value == null) {
     applyCompletionRate(currentProgram.value?.complianceScore ?? currentProgram.value?.compliance_score)

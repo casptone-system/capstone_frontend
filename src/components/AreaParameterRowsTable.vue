@@ -700,6 +700,8 @@ const submitRow = async (row: ParameterRow) => {
   flex-wrap: wrap;
   gap: 0.85rem 0.75rem;
   margin-bottom: 0.35rem;
+  max-height: 22rem;
+  overflow: auto;
 }
 
 .apr-file-block {

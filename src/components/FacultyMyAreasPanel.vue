@@ -306,6 +306,9 @@ watch(selectedAreaId, () => {
 .fma-param-list {
   display: grid;
   gap: 0.75rem;
+  align-content: start;
+  max-height: calc(100vh - 16rem);
+  overflow: auto;
 }
 
 .fma-param-card {
@@ -334,7 +337,8 @@ watch(selectedAreaId, () => {
   background: var(--adams-canvas-panel);
   border: 1px solid #dbe3ea;
   border-radius: 0.9rem;
-  overflow: hidden;
+  max-height: calc(100vh - 16rem);
+  overflow: auto;
 }
 
 .fma-empty {

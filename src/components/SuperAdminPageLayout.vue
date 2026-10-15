@@ -58,6 +58,8 @@ import { IonIcon } from '@ionic/vue'
 import {
   barChartOutline,
   businessOutline,
+  documentTextOutline,
+  documentsOutline,
   gridOutline,
   peopleOutline,
   settingsOutline,
@@ -75,6 +77,9 @@ const pageTitle = computed(() => {
   if (route.path.startsWith('/superadmin/roles')) return 'Roles & Permissions'
   if (route.path.startsWith('/superadmin/activity')) return 'Activity & Audit'
   if (route.path.startsWith('/superadmin/accreditation')) return 'Accreditation'
+  if (route.path.startsWith('/superadmin/board-of-action')) return 'Board of Action'
+  if (route.path.startsWith('/superadmin/universal-files')) return 'Universal Files'
+  if (route.path.startsWith('/superadmin/file-requests')) return 'File Requests'
   if (route.path.startsWith('/superadmin/settings')) return 'System Settings'
   return 'Administration'
 })
@@ -86,6 +91,9 @@ const pageDescription = computed(() => {
   if (route.path.startsWith('/superadmin/roles')) return 'Configure roles, permissions, and access policies.'
   if (route.path.startsWith('/superadmin/activity')) return 'Review audit history and important system activity.'
   if (route.path.startsWith('/superadmin/accreditation')) return 'Monitor institutional compliance and readiness.'
+  if (route.path.startsWith('/superadmin/board-of-action')) return 'Upload the accreditor\'s Board of Action from the hard copy given to the university.'
+  if (route.path.startsWith('/superadmin/universal-files')) return 'Upload shared PDFs into an AACCUP area. Every program chair sees them in that same group.'
+  if (route.path.startsWith('/superadmin/file-requests')) return 'Read-only view of file requests between program chairs.'
   if (route.path.startsWith('/superadmin/settings')) return 'Configure core system and security settings.'
   return 'Manage the ADAMS platform.'
 })
@@ -96,6 +104,9 @@ const primaryItems = [
 
 const organizationItems = [
   { label: 'Colleges', route: '/superadmin/colleges', icon: businessOutline },
+  { label: 'Board of Action', route: '/superadmin/board-of-action', icon: documentTextOutline },
+  { label: 'Universal Files', route: '/superadmin/universal-files', icon: documentsOutline },
+  { label: 'File Requests', route: '/superadmin/file-requests', icon: documentTextOutline },
   { label: 'Users', route: '/superadmin/users', icon: peopleOutline },
   { label: 'Roles & Permissions', route: '/superadmin/roles', icon: shieldCheckmarkOutline },
 ]

@@ -374,11 +374,14 @@ const startUpload = async () => {
   display: grid;
   place-items: center;
   padding: 1.25rem;
+  overflow: auto;
   background: rgba(15, 23, 42, 0.45);
 }
 
 .arum-modal {
   width: min(36rem, 100%);
+  max-height: min(90vh, 100%);
+  overflow: auto;
   background: #fff;
   border-radius: 1rem;
   padding: 1.15rem 1.2rem 1rem;

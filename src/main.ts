@@ -24,10 +24,14 @@ import {
   peopleOutline,
   layersOutline,
   listOutline,
-  logOutOutline
+  logOutOutline,
+  close,
+  closeOutline
 } from 'ionicons/icons'
 
 addIcons({
+  close,
+  'close-outline': closeOutline,
   'mail-outline': mailOutline,
   'lock-closed-outline': lockClosedOutline,
   'sync-outline': syncOutline,

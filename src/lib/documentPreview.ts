@@ -51,3 +51,26 @@ export const openBlobInNewTab = (blob: Blob, name?: string | null, mime?: string
 
 export const isJsonBlob = (blob: Blob): boolean =>
   String(blob.type || '').includes('json') || String(blob.type || '').includes('text/html')
+
+const MAX_CONCURRENT_PREVIEWS = 2
+let activePreviews = 0
+const previewWaiters: Array<() => void> = []
+
+export const acquirePreviewSlot = () => new Promise<void>((resolve) => {
+  if (activePreviews < MAX_CONCURRENT_PREVIEWS) {
+    activePreviews += 1
+    resolve()
+    return
+  }
+
+  previewWaiters.push(() => {
+    activePreviews += 1
+    resolve()
+  })
+})
+
+export const releasePreviewSlot = () => {
+  activePreviews = Math.max(0, activePreviews - 1)
+  const next = previewWaiters.shift()
+  if (next) next()
+}

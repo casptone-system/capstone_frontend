@@ -128,8 +128,22 @@ export const useNotificationStore = defineStore('notifications', () => {
   }
 
   const fetchedAt = ref(0)
+  let badgeFlight: Promise<void> | null = null
+  let pausedUntil = 0
+
+  const isBlocked = (err: unknown) => {
+    const status = Number((err as { response?: { status?: number } })?.response?.status || 0)
+    return status === 0 || status === 429
+  }
+
+  const pauseIfBlocked = (err: unknown) => {
+    if (isBlocked(err)) {
+      pausedUntil = Date.now() + 60_000
+    }
+  }
 
   const fetchNotifications = async (force = false) => {
+    if (Date.now() < pausedUntil) return
     if (!force && fetchedAt.value && Date.now() - fetchedAt.value < 15_000) {
       return
     }
@@ -139,9 +153,18 @@ export const useNotificationStore = defineStore('notifications', () => {
 
     try {
       const [inboxResponse, inboxUnread, taskResponse] = await Promise.all([
-        getNotifications().catch(() => ({ data: [] })),
-        apiUnreadCount().catch(() => 0),
-        taskNotificationAPI.getAll().catch(() => null),
+        getNotifications().catch((err) => {
+          pauseIfBlocked(err)
+          return { data: [] }
+        }),
+        apiUnreadCount().catch((err) => {
+          pauseIfBlocked(err)
+          return 0
+        }),
+        taskNotificationAPI.getAll().catch((err) => {
+          pauseIfBlocked(err)
+          return null
+        }),
       ])
 
       const inboxItems = extractNotificationList(inboxResponse).map(normalizeInboxItem)
@@ -166,17 +189,33 @@ export const useNotificationStore = defineStore('notifications', () => {
   }
 
   const fetchBadgeCount = async () => {
-    try {
-      const [inboxUnread, taskResponse] = await Promise.all([
-        apiUnreadCount().catch(() => 0),
-        taskNotificationAPI.getBadgeCount().catch(() => null),
-      ])
-      const taskBody = taskResponse?.data || taskResponse
-      const taskCount = Number(taskBody?.badge_count || 0)
-      unreadCount.value = (Number(inboxUnread) || 0) + taskCount
-    } catch {
-      refreshUnreadCount()
-    }
+    if (Date.now() < pausedUntil) return
+    if (badgeFlight) return badgeFlight
+
+    badgeFlight = (async () => {
+      try {
+        const [inboxUnread, taskResponse] = await Promise.all([
+          apiUnreadCount().catch((err) => {
+            pauseIfBlocked(err)
+            return 0
+          }),
+          taskNotificationAPI.getBadgeCount().catch((err) => {
+            pauseIfBlocked(err)
+            return null
+          }),
+        ])
+        const taskBody = taskResponse?.data || taskResponse
+        const taskCount = Number(taskBody?.badge_count || 0)
+        unreadCount.value = (Number(inboxUnread) || 0) + taskCount
+      } catch (err) {
+        pauseIfBlocked(err)
+        refreshUnreadCount()
+      } finally {
+        badgeFlight = null
+      }
+    })()
+
+    return badgeFlight
   }
 
   const dismissingIds = new Set<string>()

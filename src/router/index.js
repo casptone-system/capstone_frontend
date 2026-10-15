@@ -166,6 +166,12 @@ const VPaaReports = () =>
     '@/views/VPAA/VPaaReports.vue'
   )
 
+const VPaaFileRequests = () =>
+  import(
+    /* webpackChunkName: "vpaa-file-requests" */
+    '@/views/VPAA/VPaaFileRequests.vue'
+  )
+
 const VPaaNotifications = () =>
   import(
     /* webpackChunkName: "vpaa-notifications" */
@@ -204,6 +210,15 @@ const SystemSettingsPage = () =>
 
 const SuperAdminAccreditationPage = () =>
   import('@/views/SUPERADMIN/SuperAdminAccreditationPage.vue')
+
+const SuperAdminBoardOfActionPage = () =>
+  import('@/views/SUPERADMIN/BoardOfActionPage.vue')
+
+const SuperAdminFileRequestsPage = () =>
+  import('@/views/SUPERADMIN/FileRequestsPage.vue')
+
+const SuperAdminUniversalFilesPage = () =>
+  import('@/views/SUPERADMIN/UniversalFilesPage.vue')
 
 // ============================================================
 // CRM / ERP
@@ -540,6 +555,11 @@ const routes = [
         component: VPaaReports,
       },
       {
+        path: 'file-requests',
+        name: 'vpaa-file-requests',
+        component: VPaaFileRequests,
+      },
+      {
         path: 'messages/:conversationId?',
         redirect: { name: 'vpaa-dashboard' },
       },
@@ -624,6 +644,21 @@ const routes = [
         path: 'accreditation',
         name: 'superadmin-accreditation',
         component: SuperAdminAccreditationPage,
+      },
+      {
+        path: 'board-of-action',
+        name: 'superadmin-board-of-action',
+        component: SuperAdminBoardOfActionPage,
+      },
+      {
+        path: 'universal-files',
+        name: 'superadmin-universal-files',
+        component: SuperAdminUniversalFilesPage,
+      },
+      {
+        path: 'file-requests',
+        name: 'superadmin-file-requests',
+        component: SuperAdminFileRequestsPage,
       },
       {
         path: 'settings',

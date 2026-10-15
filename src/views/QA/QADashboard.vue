@@ -31,9 +31,25 @@
         <span class="adams-nav-icon"><ion-icon :icon="layersOutline" /></span>
         <span>Area Progress</span>
       </button>
-      <button class="adams-nav-item" :class="{ active: qaSection === 'evidence-review' }" type="button" @click="openSection('evidence-review')">
+      <button v-if="!authStore.isAccreditor" class="adams-nav-item" :class="{ active: qaSection === 'evidence-review' }" type="button" @click="openSection('evidence-review')">
         <span class="adams-nav-icon"><ion-icon :icon="chatbubblesOutline" /></span>
         <span>Evidence Review</span>
+      </button>
+      <button v-if="authStore.isAccreditor" class="adams-nav-item" :class="{ active: qaSection === 'submitted-evidence' }" type="button" @click="openSection('submitted-evidence')">
+        <span class="adams-nav-icon"><ion-icon :icon="folderOpenOutline" /></span>
+        <span>Submitted Evidence</span>
+      </button>
+      <button v-if="canManageBoardOfAction" class="adams-nav-item" :class="{ active: qaSection === 'board-of-action' }" type="button" @click="openSection('board-of-action')">
+        <span class="adams-nav-icon"><ion-icon :icon="documentTextOutline" /></span>
+        <span>Board of Action</span>
+      </button>
+      <button v-if="canManageBoardOfAction" class="adams-nav-item" :class="{ active: qaSection === 'universal-files' }" type="button" @click="openSection('universal-files')">
+        <span class="adams-nav-icon"><ion-icon :icon="documentsOutline" /></span>
+        <span>Universal Files</span>
+      </button>
+      <button v-if="canViewFileRequests" class="adams-nav-item" :class="{ active: qaSection === 'file-requests' }" type="button" @click="openSection('file-requests')">
+        <span class="adams-nav-icon"><ion-icon :icon="documentTextOutline" /></span>
+        <span>File Requests</span>
       </button>
     </template>
 
@@ -45,7 +61,7 @@
 
           <div v-if="error" class="qa-feedback-banner error">{{ error }}</div>
 
-          <section class="qa-stat-strip">
+          <section v-if="qaSection !== 'board-of-action' && qaSection !== 'universal-files' && qaSection !== 'file-requests' && qaSection !== 'submitted-evidence'" class="qa-stat-strip">
             <div class="qa-stat" v-for="stat in stats" :key="stat.label">
               <div class="qa-stat-icon" :style="{ background: stat.bg, color: stat.color }">
                 <ion-icon :icon="stat.icon" />
@@ -164,8 +180,42 @@
             </div>
           </section>
 
-          <section v-else-if="qaSection === 'evidence-review'" class="qa-card" style="margin: 1rem 1.5rem; padding: 0;">
+          <section v-else-if="qaSection === 'evidence-review' && !authStore.isAccreditor" class="qa-card" style="margin: 1rem 1.5rem; padding: 0;">
             <AreaEvidenceReviewPanel />
+          </section>
+
+          <section v-else-if="qaSection === 'submitted-evidence' && authStore.isAccreditor" class="qa-card" style="margin: 1rem 1.5rem; padding: 0;">
+            <AccreditorEvidenceBrowser />
+          </section>
+
+          <section v-else-if="qaSection === 'board-of-action' && canManageBoardOfAction" class="qa-card" style="margin: 1rem 1.5rem;">
+            <div class="qa-card-header">
+              <div>
+                <h2 class="qa-card-title">Board of Action</h2>
+                <p>The accreditor's Board of Action, received as a hard copy. Upload it here for the program's next accreditation. Program Chairs can view and download their own.</p>
+              </div>
+            </div>
+            <BoardOfActionPanel mode="manage" />
+          </section>
+
+          <section v-else-if="qaSection === 'universal-files' && canManageBoardOfAction" class="qa-card" style="margin: 1rem 1.5rem;">
+            <div class="qa-card-header">
+              <div>
+                <h2 class="qa-card-title">Universal Files</h2>
+                <p>Shared PDFs grouped by AACCUP area. Every program chair can preview and download them. They are not counted as a program's area evidence.</p>
+              </div>
+            </div>
+            <UniversalFilesPanel mode="manage" />
+          </section>
+
+          <section v-else-if="qaSection === 'file-requests' && canViewFileRequests" class="qa-card" style="margin: 1rem 1.5rem;">
+            <div class="qa-card-header">
+              <div>
+                <h2 class="qa-card-title">File Requests</h2>
+                <p>Read-only view of file requests between program chairs.</p>
+              </div>
+            </div>
+            <FileRequestsPanel mode="oversight" />
           </section>
 
           <section v-else-if="qaSection === 'progress'" class="qa-card" style="margin: 1rem 1.5rem;">
@@ -356,26 +406,36 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { IonIcon } from '@ionic/vue'
 
 import {
   gridOutline, shieldCheckmarkOutline, documentTextOutline, alertCircleOutline,
   checkmarkDoneOutline, chatbubblesOutline,
   gitMergeOutline, checkmarkCircleOutline,
-  closeCircleOutline, layersOutline, businessOutline, schoolOutline
+  closeCircleOutline, layersOutline, businessOutline, schoolOutline, documentsOutline,
+  folderOpenOutline,
 } from 'ionicons/icons'
 
 import AccreditationMonitorCard from '@/components/AccreditationMonitorCard.vue'
+import BoardOfActionPanel from '@/components/BoardOfActionPanel.vue'
+import UniversalFilesPanel from '@/components/UniversalFilesPanel.vue'
+import FileRequestsPanel from '@/components/FileRequestsPanel.vue'
 import AccreditationLevelStatus from '@/components/AccreditationLevelStatus.vue'
 import AreaEvidenceReviewPanel from '@/components/AreaEvidenceReviewPanel.vue'
+import AccreditorEvidenceBrowser from '@/components/AccreditorEvidenceBrowser.vue'
 import AdamsAppShell from '@/components/ui/AdamsAppShell.vue'
 import api from '@/lib/api'
 import { useAuthStore } from '@/stores/authStore'
 
 const authStore = useAuthStore()
+const route = useRoute()
 const shellRoleLabel = computed(() => authStore.isAccreditor ? 'Accreditor' : 'Quality Assurance')
 
-type QaSection = 'dashboard' | 'colleges' | 'programs' | 'at-risk' | 'accreditations' | 'progress' | 'evidence-review'
+type QaSection = 'dashboard' | 'colleges' | 'programs' | 'at-risk' | 'accreditations' | 'progress' | 'evidence-review' | 'submitted-evidence' | 'board-of-action' | 'universal-files' | 'file-requests'
+
+const canManageBoardOfAction = computed(() => authStore.isQA || authStore.isSuperAdmin)
+const canViewFileRequests = computed(() => authStore.isQA || authStore.isSuperAdmin)
 
 const qaSection = ref<QaSection>('dashboard')
 
@@ -387,6 +447,10 @@ const pageTitle = computed(() => {
     case 'accreditations': return 'Accreditations'
     case 'progress': return 'Area Progress'
     case 'evidence-review': return 'Evidence Review'
+    case 'submitted-evidence': return 'Submitted Evidence'
+    case 'board-of-action': return 'Board of Action'
+    case 'universal-files': return 'Universal Files'
+    case 'file-requests': return 'File Requests'
     default: return authStore.isAccreditor ? 'Accreditor Dashboard' : 'QA Dashboard'
   }
 })
@@ -399,6 +463,10 @@ const pageDescription = computed(() => {
     case 'accreditations': return 'Every accreditation cycle in the university. View only.'
     case 'progress': return 'Area-level progress across all departments.'
     case 'evidence-review': return 'Review uploaded evidence and leave comments for Area Chairs and members.'
+    case 'submitted-evidence': return 'Open a submitted college, program, area, and parameter to view the uploaded evidence files.'
+    case 'board-of-action': return 'Upload the accreditor\'s Board of Action for a program. The file comes from the hard copy given to the university.'
+    case 'universal-files': return 'Upload shared PDFs into an AACCUP area. Every program chair sees them in that same group.'
+    case 'file-requests': return 'Read-only view of file requests between program chairs.'
     default: return 'Overall monitoring of all colleges and programs at university level.'
   }
 })
@@ -502,7 +570,7 @@ const loadDashboard = async () => {
 }
 
 const loadSectionData = async (section: QaSection) => {
-  if (section === 'dashboard') return
+  if (section === 'dashboard' || section === 'submitted-evidence' || section === 'evidence-review') return
 
   reportsLoading.value = true
   error.value = null
@@ -543,7 +611,16 @@ watch(qaSection, (section) => {
   void loadSectionData(section)
 })
 
+const applySectionQuery = (section: unknown) => {
+  if (section === 'submitted-evidence' && authStore.isAccreditor) {
+    qaSection.value = 'submitted-evidence'
+  }
+}
+
+watch(() => route.query.section, applySectionQuery)
+
 onMounted(() => {
+  applySectionQuery(route.query.section)
   void loadDashboard()
 })
 </script>

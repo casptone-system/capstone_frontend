@@ -34,6 +34,7 @@
             <option value="superadmin">Super Administrator</option>
             <option value="dean">Dean</option>
             <option value="program-chair">Program Chair</option>
+            <option value="accreditor">Accreditor</option>
             <option value="faculty">Faculty</option>
           </select>
         </div>

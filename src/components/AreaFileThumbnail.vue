@@ -1,5 +1,5 @@
 <template>
-  <div class="aft" :class="{ removing }">
+  <div ref="root" class="aft" :class="{ removing }">
     <button
       type="button"
       class="aft-hit"
@@ -40,11 +40,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { IonIcon } from '@ionic/vue'
 import { closeOutline, documentOutline } from 'ionicons/icons'
 import { previewDocument } from '@/lib/api'
-import { openBlobInNewTab, previewKindFromMeta } from '@/lib/documentPreview'
+import { acquirePreviewSlot, openBlobInNewTab, previewKindFromMeta, releasePreviewSlot } from '@/lib/documentPreview'
 
 type RowDocument = {
   id: number
@@ -64,10 +64,15 @@ const emit = defineEmits<{
   (event: 'error', message: string): void
 }>()
 
+const root = ref<HTMLElement | null>(null)
 const loading = ref(false)
 const url = ref('')
 const blob = ref<Blob | null>(null)
 const pendingOpen = ref(false)
+const visible = ref(false)
+let observer: IntersectionObserver | null = null
+let loadToken = 0
+let failedKey = ''
 
 const current = computed(() => props.doc.latestVersion || props.doc.versions?.[0] || null)
 const name = computed(() => current.value?.originalName || props.doc.title || 'Uploaded PDF')
@@ -88,21 +93,40 @@ const revokeUrl = () => {
   blob.value = null
 }
 
+const docKey = () => `${props.doc.id}:${current.value?.version || ''}`
+
 const loadThumbnail = async () => {
   if (!props.doc?.id) return
 
+  const token = ++loadToken
+  const key = docKey()
   loading.value = true
   revokeUrl()
+  await acquirePreviewSlot()
 
   try {
+    if (token !== loadToken) return
+
     const preview = await previewDocument(props.doc.id, current.value?.version)
+    if (token !== loadToken) return
+
     blob.value = preview
     url.value = URL.createObjectURL(preview)
+    failedKey = ''
   } catch (err: any) {
-    emit('error', err?.response?.data?.message || err?.message || 'Preview is not available for this file.')
+    failedKey = key
+    if (pendingOpen.value) {
+      emit('error', err?.response?.data?.message || err?.message || 'Preview is not available for this file.')
+    }
   } finally {
-    loading.value = false
+    releasePreviewSlot()
+    if (token === loadToken) loading.value = false
   }
+}
+
+const scheduleThumbnail = () => {
+  if (!visible.value || loading.value || url.value || failedKey === docKey()) return
+  void loadThumbnail()
 }
 
 const openPreview = async () => {
@@ -113,7 +137,10 @@ const openPreview = async () => {
     await loadThumbnail()
   }
 
-  if (!blob.value) return
+  if (!blob.value) {
+    pendingOpen.value = false
+    return
+  }
 
   try {
     openBlobInNewTab(blob.value, name.value, mime.value)
@@ -124,11 +151,26 @@ const openPreview = async () => {
   }
 }
 
-watch(() => `${props.doc.id}:${current.value?.version || ''}`, () => {
-  void loadThumbnail()
-}, { immediate: true })
+watch(docKey, () => {
+  failedKey = ''
+  revokeUrl()
+  scheduleThumbnail()
+})
 
-onUnmounted(revokeUrl)
+onMounted(() => {
+  observer = new IntersectionObserver((entries) => {
+    visible.value = entries.some((entry) => entry.isIntersecting)
+    if (visible.value) scheduleThumbnail()
+  }, { rootMargin: '80px' })
+
+  if (root.value) observer.observe(root.value)
+})
+
+onUnmounted(() => {
+  loadToken += 1
+  observer?.disconnect()
+  revokeUrl()
+})
 </script>
 
 <style scoped>

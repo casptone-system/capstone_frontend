@@ -4,7 +4,7 @@
       <div class="modal-header">
         <h2 class="modal-title">{{ title }}</h2>
         <button class="modal-close" @click="closeModal" aria-label="Close modal">
-          <ion-icon name="close"></ion-icon>
+          <ion-icon :icon="closeIcon"></ion-icon>
         </button>
       </div>
 
@@ -21,6 +21,8 @@
 
 <script lang="ts">
 import { defineComponent, watch } from 'vue'
+import { IonIcon } from '@ionic/vue'
+import { close } from 'ionicons/icons'
 
 export default defineComponent({
   name: 'AppModal',
@@ -38,6 +40,7 @@ export default defineComponent({
       default: 'md',
     },
   },
+  components: { IonIcon },
   emits: ['update:modelValue'],
   setup(props, { emit }) {
     const closeModal = () => {
@@ -52,7 +55,7 @@ export default defineComponent({
       }
     })
 
-    return { closeModal }
+    return { closeModal, closeIcon: close }
   },
 })
 </script>

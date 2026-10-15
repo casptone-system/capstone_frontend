@@ -52,6 +52,12 @@
           <span>Reports</span>
         </button>
       </router-link>
+      <router-link :to="{ name: 'vpaa-file-requests' }" custom v-slot="{ isActive, navigate }">
+        <button type="button" class="adams-nav-item" :class="{ active: isActive }" @click="navigate">
+          <span class="adams-nav-icon"><ion-icon :icon="documentTextOutline" /></span>
+          <span>File Requests</span>
+        </button>
+      </router-link>
 
       <p class="adams-nav-label">Communication</p>
       <router-link :to="{ name: 'vpaa-notifications' }" custom v-slot="{ isActive, navigate }">
@@ -105,6 +111,7 @@ const pageMeta: Record<string, { title: string; description: string }> = {
   'vpaa-readiness': { title: 'Readiness', description: 'Monitor accreditation preparation status per program.' },
   'vpaa-at-risk': { title: 'At Risk', description: 'Programs with expired validity or incomplete preparation.' },
   'vpaa-reports': { title: 'Reports', description: 'Institutional compliance and progress reports.' },
+  'vpaa-file-requests': { title: 'File Requests', description: 'Read-only view of file requests between program chairs.' },
   'vpaa-notifications': { title: 'Notifications', description: 'Alerts and assigned follow-up items.' },
   'vpaa-activity': { title: 'Activity Log', description: 'Recent institutional accreditation activity.' },
 }

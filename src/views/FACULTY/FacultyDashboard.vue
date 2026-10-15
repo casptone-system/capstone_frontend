@@ -874,7 +874,11 @@ watch(() => route.query.section, applySectionFromRoute, { immediate: true })
   font-size: 0.8rem;
 }
 
-.fac-areas-shell,
+.fac-areas-shell {
+  min-height: 0;
+  overflow: auto;
+}
+
 .fac-designation-shell {
   height: 100%;
   overflow: auto;
