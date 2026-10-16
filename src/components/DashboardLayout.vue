@@ -148,6 +148,7 @@ import {
   closeOutline,
 } from 'ionicons/icons'
 import { useAuthStore } from '@/stores/authStore'
+import { getUserPhotoUrl } from '@/lib/userDisplay'
 import AppBrandLogo from '@/components/AppBrandLogo.vue'
 import { computed, ref } from 'vue'
 
@@ -161,26 +162,6 @@ const authStore = useAuthStore()
 const router = useRouter()
 const mobileOpen = ref(false)
 
-const resolveUserImageUrl = (value: unknown): string | null => {
-  if (!value || typeof value !== 'string') return null
-
-  const trimmed = value.trim()
-  if (!trimmed) return null
-  if (trimmed.startsWith('data:') || /^https?:\/\//i.test(trimmed)) return trimmed
-
-  const rawBase = process.env.VUE_APP_API_BASE_URL || '/api'
-  const backendOrigin = rawBase.replace(/\/api\/?$/, '')
-
-  if (trimmed.startsWith('/')) return `${backendOrigin}${trimmed}`
-  if (trimmed.includes('/storage/')) {
-    return trimmed.startsWith('http') ? trimmed : `${backendOrigin}/${trimmed.replace(/^\/+/, '')}`
-  }
-  if (trimmed.startsWith('storage/')) return `${backendOrigin}/${trimmed.replace(/^\/+/, '')}`
-  if (trimmed.startsWith('profile_photos/')) return `${backendOrigin}/storage/${trimmed}`
-
-  return `${backendOrigin}/storage/${trimmed.replace(/^\/+/, '')}`
-}
-
 const logout = async () => {
   await authStore.logout()
   router.replace('/login')
@@ -191,21 +172,7 @@ const userName = computed(() => {
   return user?.name || user?.first_name || 'User'
 })
 const userEmail = computed(() => (authStore.user as any)?.email || 'user@college.edu')
-const userPhotoUrl = computed(() => {
-  const user = authStore.user as any
-  const candidate =
-    user?.profilePhoto ||
-    user?.profilePhotoPath ||
-    user?.profile_photo ||
-    user?.profile_photo_url ||
-    user?.avatar ||
-    user?.avatar_url ||
-    user?.photo_url ||
-    user?.image_url ||
-    null
-
-  return resolveUserImageUrl(candidate)
-})
+const userPhotoUrl = computed(() => getUserPhotoUrl(authStore.user as Record<string, unknown> | null))
 const userInitials = computed(() => {
   const name = userName.value || ''
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part: string) => part[0]?.toUpperCase() || '').join('') || 'U'

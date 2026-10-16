@@ -94,7 +94,13 @@
                   :aria-expanded="profileOpen"
                   @click="profileOpen = !profileOpen"
                 >
-                  <img v-if="userPhotoUrl" :src="userPhotoUrl" alt="" class="adams-avatar adams-avatar-image" />
+                  <img
+                    v-if="userPhotoUrl && !photoFailed"
+                    :src="userPhotoUrl"
+                    alt=""
+                    class="adams-avatar adams-avatar-image"
+                    @error="photoFailed = true"
+                  />
                   <div v-else class="adams-avatar">{{ initials }}</div>
                   <div class="adams-user-copy">
                     <strong>{{ userName }}</strong>
@@ -104,6 +110,10 @@
                 </button>
 
                 <div v-if="profileOpen" class="adams-profile-menu">
+                  <button class="adams-profile-item" type="button" :disabled="photoUploading" @click="pickProfilePhoto">
+                    <ion-icon :icon="cameraOutline" />
+                    {{ photoUploading ? 'Uploading…' : 'Change photo' }}
+                  </button>
                   <button class="adams-profile-item" type="button" @click="goSettings">
                     <ion-icon :icon="settingsOutline" />
                     Settings
@@ -113,6 +123,13 @@
                     Sign out
                   </button>
                 </div>
+                <input
+                  ref="photoInput"
+                  type="file"
+                  accept="image/*"
+                  class="adams-photo-input"
+                  @change="onProfilePhotoSelected"
+                />
               </div>
             </div>
           </header>
@@ -131,6 +148,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { IonContent, IonIcon, IonPage } from '@ionic/vue'
 import {
+  cameraOutline,
   chevronDownOutline,
   closeOutline,
   logOutOutline,
@@ -138,6 +156,7 @@ import {
   searchOutline,
   settingsOutline,
 } from 'ionicons/icons'
+import api from '@/lib/api'
 import { useAuthStore } from '@/stores/authStore'
 import { getUserDisplayName, getUserInitials, getUserPhotoUrl } from '@/lib/userDisplay'
 import NotificationBell from '@/components/NotificationBell.vue'
@@ -170,6 +189,9 @@ const route = useRoute()
 const authStore = useAuthStore()
 const mobileOpen = ref(false)
 const profileOpen = ref(false)
+const photoFailed = ref(false)
+const photoUploading = ref(false)
+const photoInput = ref<HTMLInputElement | null>(null)
 
 watch(() => route.fullPath, () => {
   mobileOpen.value = false
@@ -184,6 +206,10 @@ const user = computed(() => authStore.user as Record<string, unknown> | null)
 const userName = computed(() => getUserDisplayName(user.value, 'User'))
 const userPhotoUrl = computed(() => getUserPhotoUrl(user.value))
 const initials = computed(() => getUserInitials(userName.value))
+
+watch(userPhotoUrl, () => {
+  photoFailed.value = false
+})
 
 const onSearchInput = (event: Event) => {
   emit('update:search', (event.target as HTMLInputElement).value)
@@ -206,6 +232,34 @@ const closeMenus = (event: MouseEvent) => {
 const goSettings = async () => {
   profileOpen.value = false
   await router.push('/settings')
+}
+
+const pickProfilePhoto = () => {
+  photoInput.value?.click()
+}
+
+const onProfilePhotoSelected = async (event: Event) => {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+
+  if (!file.type.startsWith('image/')) return
+  if (file.size > 10 * 1024 * 1024) return
+
+  photoUploading.value = true
+  profileOpen.value = false
+  try {
+    const form = new FormData()
+    form.append('profile_photo', file)
+    await api.post('/me/profile-photo', form)
+    await authStore.refreshCurrentUser()
+    photoFailed.value = false
+  } catch {
+    photoFailed.value = true
+  } finally {
+    photoUploading.value = false
+  }
 }
 
 const logout = async () => {
@@ -441,6 +495,10 @@ export default {
   font: inherit;
   font-size: 0.88rem;
   outline: none;
+}
+
+.adams-photo-input {
+  display: none;
 }
 
 .adams-profile {
