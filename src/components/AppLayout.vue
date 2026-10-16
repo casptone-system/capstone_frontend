@@ -150,9 +150,12 @@ const userPhotoUrl = computed(() => {
   const backendOrigin = rawBase.replace(/\/api\/?$/, '')
 
   if (trimmed.startsWith('/')) return `${backendOrigin}${trimmed}`
-  if (trimmed.includes('/storage/')) return trimmed
+  if (trimmed.includes('/storage/')) {
+    return trimmed.startsWith('http') ? trimmed : `${backendOrigin}/${trimmed.replace(/^\/+/, '')}`
+  }
   if (trimmed.startsWith('storage/')) return `${backendOrigin}/${trimmed.replace(/^\/+/, '')}`
-  return `${backendOrigin}/${trimmed.replace(/^\/+/, '')}`
+  if (trimmed.startsWith('profile_photos/')) return `${backendOrigin}/storage/${trimmed}`
+  return `${backendOrigin}/storage/${trimmed.replace(/^\/+/, '')}`
 })
 
 const navItems = computed(() => {
