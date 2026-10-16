@@ -87,31 +87,50 @@ onBeforeUnmount(() => {
 <style scoped>
 .auth-shell {
   min-height: 100vh;
-  display: grid;
-  place-items: center;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: #edf0ee;
   font-family: 'Inter', sans-serif;
 }
+
+.form-panel {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  box-sizing: border-box;
+}
+
 .form-wrap {
   width: min(100%, 460px);
+  margin: 0 auto;
   background: #fff;
   border-radius: 24px;
   padding: 2rem;
   text-align: center;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
 }
+
 .form-title {
   margin: 0 0 0.6rem;
   font-size: 1.8rem;
 }
+
 .form-subtitle {
   color: rgba(31, 42, 45, 0.72);
   line-height: 1.6;
 }
+
 .actions {
   display: grid;
   gap: 0.8rem;
   margin-top: 1.2rem;
 }
+
 .secondary-link {
   border: 0;
   background: transparent;

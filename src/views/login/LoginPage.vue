@@ -44,12 +44,30 @@
                 required autocomplete="email" class="field-input" /> </div> <span v-if="emailError" class="field-error">
               {{ emailError }} </span>
           </div>
-          <div class="field-group"> <label class="field-label" for="password"> Password <span class="req">*</span>
-            </label>
-            <div class="input-wrap" :class="{ error: passwordError }"> <ion-icon name="lock-closed-outline"
-                class="input-icon" aria-hidden="true" /> <input id="password" v-model="password" type="password"
-                placeholder="••••••••" required autocomplete="current-password" class="field-input" /> </div> <span
-              v-if="passwordError" class="field-error"> {{ passwordError }} </span>
+          <div class="field-group">
+            <label class="field-label" for="password"> Password <span class="req">*</span></label>
+            <div class="input-wrap" :class="{ error: passwordError }">
+              <ion-icon name="lock-closed-outline" class="input-icon" aria-hidden="true" />
+              <input
+                id="password"
+                v-model="password"
+                :type="showPassword ? 'text' : 'password'"
+                placeholder="••••••••"
+                required
+                autocomplete="current-password"
+                class="field-input"
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                :aria-pressed="showPassword"
+                @click="showPassword = !showPassword"
+              >
+                <ion-icon :name="showPassword ? 'eye-off-outline' : 'eye-outline'" aria-hidden="true" />
+              </button>
+            </div>
+            <span v-if="passwordError" class="field-error">{{ passwordError }}</span>
           </div>
           <div v-if="loginError" class="login-error" role="alert"> {{ loginError }} </div>
           <div v-if="showRegistrationNotice" class="login-success" role="status"> 
@@ -134,6 +152,7 @@ const toastStore = useToastStore()
 
 const email = ref('')
 const password = ref('')
+const showPassword = ref(false)
 const rememberMe = ref(false)
 const isLoading = ref(false)
 // const isSocialLoading = ref(false)
@@ -573,6 +592,27 @@ const cancel2FA = () => {
   flex-shrink: 0;
 }
 
+.password-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  color: rgba(19, 31, 53, 0.45);
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.password-toggle:hover,
+.password-toggle:focus-visible {
+  color: var(--ink);
+  outline: none;
+}
+
 .field-input {
   flex: 1;
   border: none;
@@ -585,6 +625,12 @@ const cancel2FA = () => {
 
 .field-input::placeholder {
   color: rgba(19, 31, 53, 0.3);
+}
+
+/* Keep only the custom eye toggle; hide Edge/IE native reveal. */
+.field-input[type='password']::-ms-reveal,
+.field-input[type='password']::-ms-clear {
+  display: none;
 }
 
 /* ── ERROR ALERT ── */

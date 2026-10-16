@@ -2,7 +2,7 @@
   <div class="sa-page-shell">
         <div class="sa-page-header">
           <div>
-            <p class="sa-breadcrumb">Super Admin</p>
+            <p class="sa-breadcrumb">System Admin</p>
             <h1 class="sa-page-title">Backup & System Settings</h1>
           </div>
         </div>

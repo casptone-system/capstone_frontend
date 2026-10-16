@@ -31,7 +31,7 @@
     <!-- RIGHT: Form panel -->
     <div class="form-panel">
       <img src="@/assets/Archiving_logo.png" alt="Archiving logo" class="login-logo" />
-      <div class="form-wrap">
+      <div v-if="privacyGatePassed" class="form-wrap">
         <h2 class="form-title">Create your account</h2>
         <p class="form-subtitle">Join the Accreditation Management System.</p>
 
@@ -94,7 +94,7 @@
                 id="email"
                 v-model="email"
                 type="email"
-                placeholder="ISU Email"
+                placeholder="name@isu.edu.ph"
                 required
                 class="field-input"
               />
@@ -122,14 +122,19 @@
               <ion-icon name="call-outline" class="input-icon" aria-hidden="true"></ion-icon>
               <input
                 id="phone"
-                v-model="phone"
+                :value="phone"
                 type="tel"
-                placeholder="0912-345-6789"
+                inputmode="numeric"
+                maxlength="12"
+                autocomplete="tel"
+                placeholder="09123456789"
                 required
                 class="field-input"
+                @input="handlePhoneInput"
               />
             </div>
             <span v-if="phoneError" class="field-error">{{ phoneError }}</span>
+            <span v-else class="field-hint">Numbers only, up to 12 digits.</span>
           </div>
 
           <!-- b-day -->
@@ -142,10 +147,27 @@
                 v-model="birthdate"
                 type="date"
                 required
+                :max="maxBirthdate"
+                min="1900-01-01"
                 class="field-input"
               />
             </div>
             <span v-if="birthdateError" class="field-error">{{ birthdateError }}</span>
+            <span v-else class="field-hint">You must be at least 21 years old.</span>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="sex">Sex <span class="req">*</span></label>
+            <div class="input-wrap select-wrap" :class="{ error: sexError }">
+              <ion-icon name="male-female-outline" class="input-icon" aria-hidden="true"></ion-icon>
+              <select id="sex" v-model="sex" required class="field-input field-select" :class="{ 'has-value': sex }">
+                <option value="" disabled>Select sex</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
+              <ion-icon name="chevron-down-outline" class="select-caret" aria-hidden="true"></ion-icon>
+            </div>
+            <span v-if="sexError" class="field-error">{{ sexError }}</span>
           </div>
 
           <!-- Password row -->
@@ -157,14 +179,28 @@
                 <input
                   id="password"
                   v-model="password"
-                  type="password"
+                  :type="showPassword ? 'text' : 'password'"
                   placeholder="••••••••"
                   required
+                  autocomplete="new-password"
                   class="field-input"
                 />
+                <button
+                  type="button"
+                  class="password-toggle"
+                  :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                  :aria-pressed="showPassword"
+                  @click="showPassword = !showPassword"
+                >
+                  <ion-icon :name="showPassword ? 'eye-off-outline' : 'eye-outline'" aria-hidden="true"></ion-icon>
+                </button>
               </div>
               <span v-if="passwordError" class="field-error">{{ passwordError }}</span>
-              <span v-else class="field-hint">At least 6 characters</span>
+              <ul class="password-rules" aria-label="Password requirements">
+                <li :class="{ met: password.length >= 8 }">At least 8 characters</li>
+                <li :class="{ met: hasUppercase }">At least 1 uppercase letter</li>
+                <li :class="{ met: hasNumber }">At least 1 number</li>
+              </ul>
             </div>
 
             <div class="field-group">
@@ -174,11 +210,21 @@
                 <input
                   id="confirm-password"
                   v-model="confirmPassword"
-                  type="password"
+                  :type="showConfirmPassword ? 'text' : 'password'"
                   placeholder="••••••••"
                   required
+                  autocomplete="new-password"
                   class="field-input"
                 />
+                <button
+                  type="button"
+                  class="password-toggle"
+                  :aria-label="showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'"
+                  :aria-pressed="showConfirmPassword"
+                  @click="showConfirmPassword = !showConfirmPassword"
+                >
+                  <ion-icon :name="showConfirmPassword ? 'eye-off-outline' : 'eye-outline'" aria-hidden="true"></ion-icon>
+                </button>
               </div>
               <span v-if="confirmPasswordError" class="field-error">{{ confirmPasswordError }}</span>
             </div>
@@ -223,7 +269,7 @@
           </app-button>
 
           <p class="form-note">
-            After creating your account, sign in. If email verification is on, confirm the link before using ADAMS.
+            After creating your account, sign in and confirm the verification link sent to your email before using ADAMS.
           </p>
 
           <div @click="$router.push('/login')" class="alt-btn">
@@ -231,18 +277,59 @@
           </div>
         </form>
       </div>
+
+      <div v-else class="form-wrap privacy-waiting">
+        <h2 class="form-title">Almost there</h2>
+        <p class="form-subtitle">Review and accept the Data Privacy notice to continue registration.</p>
+      </div>
+    </div>
+
+    <div
+      v-if="showPrivacyGate"
+      class="privacy-gate"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="privacy-gate-title"
+    >
+      <div class="privacy-gate-card">
+        <p class="privacy-kicker">Before you register</p>
+        <h2 id="privacy-gate-title" class="privacy-gate-title">Data Privacy Notice</h2>
+        <div class="privacy-gate-body">
+          <p>
+            Isabela State University will use your personal information only for accreditation and related academic purposes through the Accreditation Document Archiving and Management System (ADAMS). By creating an account and using the system, you agree to the collection and use of your information in accordance with the Data Privacy Act of 2012. Withholding or giving false information may make your account ineligible for access or subject to suspension from the system. By registering, you agree to abide by the policies, rules, and regulations of Isabela State University. Thank you.
+          </p>
+        </div>
+        <label class="privacy-check" for="privacy-accepted">
+          <input id="privacy-accepted" v-model="privacyAccepted" type="checkbox" />
+          <span>I have read and agree to this Data Privacy notice and the terms of use.</span>
+        </label>
+        <span v-if="privacyError" class="field-error">{{ privacyError }}</span>
+        <div class="privacy-gate-actions">
+          <button type="button" class="privacy-cancel" @click="declinePrivacy">
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="privacy-continue"
+            :disabled="!privacyAccepted"
+            @click="acceptPrivacy"
+          >
+            Continue to Register
+          </button>
+        </div>
+      </div>
     </div>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 // import api from '@/lib/api'
 import { IonPage, IonIcon } from '@ionic/vue'
 import AppButton from '@/components/AppButton.vue'
-import { validateEmail, validatePasswordStrength, validateRequired } from '@/lib/validation'
+import { validateEmail, validateMinimumAge, validatePasswordStrength, validatePhoneNumber, validateRequired } from '@/lib/validation'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -254,8 +341,23 @@ const firstname = ref('')
 const email = ref('')
 const phone = ref('')
 const birthdate = ref('')
+const sex = ref('')
 const password = ref('')
 const confirmPassword = ref('')
+const showPassword = ref(false)
+const showConfirmPassword = ref(false)
+const showPrivacyGate = ref(true)
+const privacyGatePassed = ref(false)
+const privacyAccepted = ref(false)
+const hasUppercase = computed(() => /[A-Z]/.test(password.value))
+const hasNumber = computed(() => /\d/.test(password.value))
+const maxBirthdate = computed(() => {
+  const cutoff = new Date()
+  cutoff.setFullYear(cutoff.getFullYear() - 21)
+  const month = String(cutoff.getMonth() + 1).padStart(2, '0')
+  const day = String(cutoff.getDate()).padStart(2, '0')
+  return `${cutoff.getFullYear()}-${month}-${day}`
+})
 const profilePhoto = ref<File | null>(null)
 const profilePhotoPreview = ref('')
 const photoInput = ref<HTMLInputElement>()
@@ -273,8 +375,10 @@ const firstNameError = ref('')
 const emailError = ref('')
 const phoneError = ref('')
 const birthdateError = ref('')
+const sexError = ref('')
 const passwordError = ref('')
 const confirmPasswordError = ref('')
+const privacyError = ref('')
 const profilePhotoError = ref('')
 
 const handleRegister = async () => {
@@ -285,8 +389,11 @@ const handleRegister = async () => {
   emailError.value = ''
   phoneError.value = ''
   birthdateError.value = ''
+  sexError.value = ''
   passwordError.value = ''
   confirmPasswordError.value = ''
+  privacyError.value = ''
+  profilePhotoError.value = ''
 
   // Validation
   lastnameError.value = validateRequired(lastname.value, 'Last name')
@@ -295,20 +402,29 @@ const handleRegister = async () => {
   firstNameError.value = validateRequired(firstname.value, 'First name')
   if (firstNameError.value) return
 
-  emailError.value = validateEmail(email.value)
+  emailError.value = validateEmail(email.value, { institutionalOnly: true })
   if (emailError.value) return
 
-  phoneError.value = validateRequired(phone.value, 'Phone number')
+  phoneError.value = validatePhoneNumber(phone.value)
   if (phoneError.value) return
 
-  birthdateError.value = validateRequired(birthdate.value, 'Birth date')
+  birthdateError.value = validateMinimumAge(birthdate.value, 21)
   if (birthdateError.value) return
+
+  sexError.value = validateRequired(sex.value, 'Sex')
+  if (sexError.value) return
 
   passwordError.value = validatePasswordStrength(password.value)
   if (passwordError.value) return
 
   if (password.value !== confirmPassword.value) {
     confirmPasswordError.value = 'Passwords do not match'
+    return
+  }
+
+  if (!privacyGatePassed.value || !privacyAccepted.value) {
+    privacyError.value = 'You must agree to the Data Privacy notice before registering.'
+    showPrivacyGate.value = true
     return
   }
 
@@ -337,8 +453,10 @@ const handleRegister = async () => {
       email: email.value.trim().toLowerCase(),
       phone: phone.value.trim(),
       birthdate: birthdate.value,
+      sex: sex.value,
       password: password.value,
       password_confirmation: confirmPassword.value,
+      privacy_accepted: privacyAccepted.value ? '1' : '0',
     }
 
     const requestData = new FormData()
@@ -384,8 +502,16 @@ const handleRegister = async () => {
       birthdateError.value = errors.birthdate[0]
     }
 
+    if (errors?.sex) {
+      sexError.value = errors.sex[0]
+    }
+
     if (errors?.password) {
       passwordError.value = errors.password[0]
+    }
+
+    if (errors?.privacy_accepted) {
+      privacyError.value = errors.privacy_accepted[0]
     }
 
     if (!errors) {
@@ -428,6 +554,32 @@ const handleRegister = async () => {
 //     isCheckingSmtp.value = false
 //   }
 // }
+
+const acceptPrivacy = () => {
+  privacyError.value = ''
+  if (!privacyAccepted.value) {
+    privacyError.value = 'Please confirm that you have read and agree to the Data Privacy notice.'
+    return
+  }
+  privacyGatePassed.value = true
+  showPrivacyGate.value = false
+}
+
+const declinePrivacy = () => {
+  privacyAccepted.value = false
+  privacyGatePassed.value = false
+  showPrivacyGate.value = false
+  router.replace('/login')
+}
+
+const handlePhoneInput = (event: Event) => {
+  const input = event.target as HTMLInputElement
+  const digits = input.value.replace(/\D/g, '').slice(0, 12)
+  phone.value = digits
+  if (input.value !== digits) {
+    input.value = digits
+  }
+}
 
 const handleProfilePhotoChange = (event: Event) => {
   profilePhotoError.value = ''
@@ -742,7 +894,34 @@ const handleProfilePhotoChange = (event: Event) => {
   font-family: var(--font-body);
 }
 
+.password-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  color: rgba(19, 31, 53, 0.45);
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.password-toggle:hover,
+.password-toggle:focus-visible {
+  color: var(--ink);
+  outline: none;
+}
+
 .field-input::placeholder { color: rgba(19, 31, 53, 0.28); }
+
+/* Keep only the custom eye toggle; hide Edge/IE native reveal. */
+.field-input[type='password']::-ms-reveal,
+.field-input[type='password']::-ms-clear {
+  display: none;
+}
 
 .field-select {
   appearance: none;
@@ -751,6 +930,157 @@ const handleProfilePhotoChange = (event: Event) => {
 }
 
 .field-select option { color: var(--ink); }
+.field-select.has-value { color: var(--ink); }
+
+.password-rules {
+  list-style: none;
+  margin: 0.15rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.password-rules li {
+  font-size: 0.72rem;
+  color: rgba(19, 31, 53, 0.5);
+  padding-left: 0.95rem;
+  position: relative;
+}
+
+.password-rules li::before {
+  content: '•';
+  position: absolute;
+  left: 0.15rem;
+}
+
+.password-rules li.met {
+  color: #1f7a3a;
+}
+
+.password-rules li.met::before {
+  content: '✓';
+  left: 0;
+}
+
+.privacy-waiting {
+  opacity: 0.72;
+}
+
+.privacy-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: rgba(19, 31, 53, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.privacy-gate-card {
+  width: min(540px, 100%);
+  max-height: min(88vh, 720px);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.35rem 1.4rem 1.25rem;
+  border-radius: 14px;
+  background: var(--parchment);
+  border: 1px solid rgba(247, 243, 234, 0.2);
+  box-shadow: 0 24px 60px rgba(9, 20, 34, 0.35);
+}
+
+.privacy-kicker {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.privacy-gate-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  color: var(--ink);
+}
+
+.privacy-gate-body {
+  padding: 0.9rem 0.95rem;
+  border-radius: 10px;
+  background: rgba(9, 73, 28, 0.05);
+  border: 1px solid rgba(9, 73, 28, 0.14);
+}
+
+.privacy-gate-body p {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.6;
+  color: rgba(19, 31, 53, 0.82);
+}
+
+.privacy-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.privacy-check input {
+  margin-top: 0.15rem;
+  accent-color: var(--ink);
+  flex-shrink: 0;
+}
+
+.privacy-gate-actions {
+  display: flex;
+  gap: 0.65rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-top: 0.25rem;
+}
+
+.privacy-cancel,
+.privacy-continue {
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  padding: 0.65rem 1rem;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, opacity 0.18s, transform 0.18s;
+}
+
+.privacy-cancel {
+  border: 1.5px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+}
+
+.privacy-cancel:hover {
+  background: rgba(9, 73, 28, 0.06);
+}
+
+.privacy-continue {
+  border: none;
+  background: var(--ink);
+  color: #fff;
+}
+
+.privacy-continue:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.privacy-continue:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 
 .field-error {
   font-size: 0.75rem;

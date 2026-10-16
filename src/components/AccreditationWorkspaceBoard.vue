@@ -48,17 +48,20 @@
         </div>
 
         <div v-if="memberPicker === area.id" class="ws-member-picker">
-          <input v-model="memberQuery" class="ws-input" placeholder="Search faculty to add as member..." />
-          <button
-            v-for="person in filteredFaculty(area)"
-            :key="person.id"
-            type="button"
-            class="ws-person"
-            @click="addMember(workspace.id, area.id, person.id)"
+          <select
+            class="ws-input"
+            :value="memberDraft[area.id] || ''"
+            @change="onMemberSelect(workspace.id, area.id, $event)"
           >
-            <img v-if="person.photo || person.profilePhoto" :src="person.photo || person.profilePhoto" alt="" />
-            <span>{{ person.name }}</span>
-          </button>
+            <option value="">Select a program member</option>
+            <option
+              v-for="person in filteredFaculty(area)"
+              :key="person.id"
+              :value="person.id"
+            >
+              {{ person.name }}{{ person.email ? ` · ${person.email}` : '' }}
+            </option>
+          </select>
         </div>
 
         <div class="ws-members">
@@ -163,7 +166,7 @@ const workspaces = ref<any[]>([])
 const faculty = ref<any[]>([])
 const chairDraft = ref<Record<number, string>>({})
 const memberPicker = ref<number | null>(null)
-const memberQuery = ref('')
+const memberDraft = ref<Record<number, string>>({})
 const loading = ref(false)
 const saving = ref(false)
 const error = ref('')
@@ -253,23 +256,24 @@ const assignChair = async (workspaceId: number, areaId: number) => {
 
 const toggleMemberPicker = (areaId: number) => {
   memberPicker.value = memberPicker.value === areaId ? null : areaId
+  if (memberPicker.value !== areaId) memberDraft.value[areaId] = ''
 }
 
 const filteredFaculty = (area: any) => {
   const assigned = new Set((area.members || []).map((member: any) => Number(member.userId)))
-  const query = memberQuery.value.trim().toLowerCase()
-  return faculty.value.filter((person) => {
-    if (assigned.has(Number(person.id))) return false
-    if (!query) return true
-    return `${person.name} ${person.email || ''}`.toLowerCase().includes(query)
-  })
+  if (area.chair?.id) assigned.add(Number(area.chair.id))
+  return faculty.value.filter((person) => !assigned.has(Number(person.id)))
 }
 
-const addMember = async (workspaceId: number, areaId: number, userId: number) => {
+const onMemberSelect = async (workspaceId: number, areaId: number, event: Event) => {
+  const userId = String((event.target as HTMLSelectElement).value || '')
+  memberDraft.value[areaId] = userId
+  if (!userId) return
   try {
-    await addWorkspaceAreaMember(workspaceId, areaId, userId)
+    await addWorkspaceAreaMember(workspaceId, areaId, Number(userId))
     success.value = 'Optional area member added.'
     memberPicker.value = null
+    memberDraft.value[areaId] = ''
     await load()
   } catch (err: any) {
     error.value = err?.response?.data?.message || 'Unable to add member.'

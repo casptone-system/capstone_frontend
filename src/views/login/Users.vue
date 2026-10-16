@@ -136,7 +136,7 @@ const activeCount = computed(() => users.value.filter((item) => item.status === 
 
 const formatRole = (role: string = '') => {
   const normalized = String(role || '').toLowerCase()
-  if (normalized === 'super-admin') return 'Super Admin'
+  if (normalized === 'super-admin' || normalized === 'superadmin' || normalized === 'admin') return 'System Admin'
   if (normalized === 'program-chair') return 'Program Chair'
   if (normalized === 'vpaa') return 'VPAA'
   return normalized.replace(/-/g, ' ').replace(/^./, (char) => char.toUpperCase())

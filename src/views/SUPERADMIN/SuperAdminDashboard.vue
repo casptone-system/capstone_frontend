@@ -3,10 +3,10 @@
         <!-- Header -->
         <header class="sa-page-header">
           <div>
-            <p class="sa-eyebrow">SUPER ADMINISTRATOR</p>
+            <p class="sa-eyebrow">SYSTEM ADMIN</p>
             <h1>System Overview</h1>
             <p class="sa-page-description">
-              Monitor users, colleges, accreditation activity, system health, and pending actions.
+              Accounts, colleges, and AACCUP cycles for Isabela State University, Echague Main Campus.
             </p>
           </div>
 
@@ -62,70 +62,72 @@
                 <ion-icon :icon="checkmarkDoneOutline" />
               </div>
               <div>
-                <h2>Today’s To-dos</h2>
-                <p>Priority actions for the system admin workload.</p>
+                <h2>Needs attention</h2>
+                <p>Gaps in accounts, college ownership, and open accreditation cycles.</p>
               </div>
             </div>
-            <span class="sa-notification-badge">{{ todayTodos.length }}</span>
+            <span class="sa-notification-badge">{{ attentionItems.length }}</span>
           </div>
 
-          <div class="sa-todo-list">
-            <div v-for="todo in todayTodos" :key="todo.id" class="sa-todo-item">
-              <span class="sa-todo-status" :class="todo.statusClass"></span>
+          <div v-if="attentionItems.length" class="sa-todo-list">
+            <button
+              v-for="item in attentionItems"
+              :key="item.id"
+              class="sa-todo-item sa-todo-button"
+              type="button"
+              @click="go(item.route)"
+            >
+              <span class="sa-todo-status" :class="item.statusClass"></span>
               <div class="sa-todo-copy">
-                <strong>{{ todo.title }}</strong>
-                <span>{{ todo.meta }}</span>
+                <strong>{{ item.title }}</strong>
+                <span>{{ item.meta }}</span>
               </div>
-              <small>{{ todo.time }}</small>
-            </div>
+              <small>Open</small>
+            </button>
+          </div>
+          <div v-else class="sa-empty">
+            <p>Nothing is waiting on the super administrator.</p>
           </div>
         </section>
 
-        <!-- Overview -->
         <section class="sa-card sa-overview-card">
           <div class="sa-section-heading">
             <div>
-              <h2>System Health</h2>
-              <p>Current status of the major ADAMS services.</p>
+              <h2>Campus</h2>
+              <p>{{ campusLabel }}</p>
             </div>
-            <span class="sa-health-pill">
-              <span class="sa-health-dot"></span>
-              {{ superAdminStore.securityStatus || 'Healthy' }}
-            </span>
           </div>
 
           <div class="sa-health-grid">
             <div class="sa-health-item">
+              <ion-icon :icon="businessOutline" />
+              <div>
+                <strong>Colleges</strong>
+                <span>{{ collegeNames || 'None yet' }}</span>
+              </div>
+            </div>
+
+            <div class="sa-health-item">
+              <ion-icon :icon="peopleOutline" />
+              <div>
+                <strong>Deans assigned</strong>
+                <span>{{ deanCount }} of {{ departments.length }}</span>
+              </div>
+            </div>
+
+            <div class="sa-health-item">
+              <ion-icon :icon="documentTextOutline" />
+              <div>
+                <strong>Evidence on file</strong>
+                <span>{{ superAdminStore.stats.totalDocuments }} files</span>
+              </div>
+            </div>
+
+            <div class="sa-health-item">
               <ion-icon :icon="serverOutline" />
               <div>
-                <strong>Database</strong>
-                <span class="sa-success">Healthy</span>
-              </div>
-            </div>
-
-            <div class="sa-health-item">
-              <ion-icon :icon="mailOutline" />
-              <div>
-                <strong>Email</strong>
-                <span class="sa-success">Configured</span>
-              </div>
-            </div>
-
-            <div class="sa-health-item">
-              <ion-icon :icon="cloudOutline" />
-              <div>
-                <strong>Storage</strong>
-                <span class="sa-warning">
-                  {{ superAdminStore.stats.storageUsed ?? 0 }}% Used
-                </span>
-              </div>
-            </div>
-
-            <div class="sa-health-item">
-              <ion-icon :icon="lockClosedOutline" />
-              <div>
-                <strong>Security</strong>
-                <span class="sa-success">Enforced</span>
+                <strong>AACCUP areas</strong>
+                <span>{{ superAdminStore.stats.totalAreas }} areas</span>
               </div>
             </div>
           </div>
@@ -169,8 +171,7 @@
                 <div class="sa-table-header">
                   <span>User</span>
                   <span>Role</span>
-                  <span>Status</span>
-                  <span>Last Active</span>
+                  <span>Last login</span>
                   <span>Action</span>
                 </div>
 
@@ -185,16 +186,6 @@
                   </div>
 
                   <span class="sa-role-tag">{{ user.role }}</span>
-
-                  <span
-                    :class="[
-                      'sa-status',
-                      user.status === 'Active' ? 'active' : 'inactive'
-                    ]"
-                  >
-                    {{ user.status }}
-                  </span>
-
                   <span class="sa-muted">{{ user.last }}</span>
 
                   <div class="sa-row-actions">
@@ -332,25 +323,28 @@
                     <ion-icon :icon="barChartOutline" />
                   </div>
                   <div>
-                    <h2>Compliance Snapshot</h2>
-                    <p>System-wide accreditation indicators.</p>
+                    <h2>Open accreditation cycles</h2>
+                    <p>Preparation state of the cycle each program is working on.</p>
                   </div>
                 </div>
               </div>
 
-              <div class="sa-compliance-list">
-                <div v-for="item in compliance" :key="item.label">
+              <div v-if="cycleStatus.length" class="sa-compliance-list">
+                <div v-for="item in cycleStatus" :key="item.label">
                   <div class="sa-compliance-label">
                     <span>{{ item.label }}</span>
-                    <strong>{{ item.pct }}%</strong>
+                    <strong>{{ item.count }}</strong>
                   </div>
                   <div class="sa-progress-track">
                     <div
                       class="sa-progress-fill"
-                      :style="{ width: `${item.pct}%`, background: item.color }"
+                      :style="{ width: `${item.share}%`, background: item.color }"
                     ></div>
                   </div>
                 </div>
+              </div>
+              <div v-else class="sa-empty">
+                <p>No accreditation cycle is open. The VPAA creates one when a visit is planned.</p>
               </div>
             </section>
 
@@ -367,7 +361,7 @@
                 </div>
               </div>
 
-              <div class="sa-alert-list">
+              <div v-if="alerts.length" class="sa-alert-list">
                 <button
                   v-for="alert in alerts"
                   :key="alert.msg"
@@ -379,6 +373,9 @@
                   <span>{{ alert.msg }}</span>
                   <ion-icon :icon="chevronForwardOutline" class="sa-alert-arrow" />
                 </button>
+              </div>
+              <div v-else class="sa-empty">
+                <p>No outstanding alerts.</p>
               </div>
             </section>
           </div>
@@ -427,7 +424,7 @@
                     <option value="dean">Dean</option>
                     <option value="qa">QA</option>
                     <option value="vpaa">VPAA</option>
-                    <option value="superadmin">Super Administrator</option>
+                    <option value="superadmin">System Admin</option>
                     <option value="accreditor">Accreditor</option>
                   </select>
                 </label>
@@ -506,21 +503,19 @@ import {
   businessOutline,
   checkmarkDoneOutline,
   chevronForwardOutline,
-  cloudOutline,
   closeOutline,
-  lockClosedOutline,
-  mailOutline,
   peopleOutline,
   peopleCircleOutline,
   serverOutline,
   shieldCheckmarkOutline,
   settingsOutline,
   documentTextOutline,
+  layersOutline,
   notificationsOutline,
 } from 'ionicons/icons'
 import { useUserCalls } from '@/lib/useUserCalls'
 import { useSuperAdminStore } from '@/stores/superAdminStore'
-import { getColleges, getNotifications, extractNotificationList } from '@/lib/api'
+import { getAccreditationCycles, getColleges, getNotifications, extractNotificationList } from '@/lib/api'
 import AccreditationLevelStatus from '@/components/AccreditationLevelStatus.vue'
 
 const router = useRouter()
@@ -531,48 +526,50 @@ const go = (path: string) => {
   void router.push(path)
 }
 
+const openCycles = ref<any[]>([])
+
 const stats = computed(() => [
   {
-    label: 'Total Users',
+    label: 'Users',
     value: String(superAdminStore.stats.totalUsers ?? 0),
     icon: peopleOutline,
     color: 'var(--adams-structure-primary)',
     bg: 'var(--adams-primary-soft)',
   },
   {
-    label: 'Active Users',
-    value: String(superAdminStore.stats.activeUsers ?? 0),
-    icon: peopleCircleOutline,
+    label: 'Colleges',
+    value: String(departments.value.length),
+    icon: businessOutline,
     color: 'var(--adams-accent-info)',
     bg: 'var(--adams-info-soft)',
   },
   {
-    label: 'Pending Accounts',
-    value: String(superAdminStore.stats.pendingAccounts ?? 0),
-    icon: mailOutline,
-    color: 'var(--adams-accent-pending)',
-    bg: 'var(--adams-warning-soft)',
-  },
-  {
-    label: 'System Health',
-    value: superAdminStore.securityStatus || 'Healthy',
-    icon: shieldCheckmarkOutline,
+    label: 'Programs',
+    value: String(superAdminStore.stats.totalPrograms ?? 0),
+    icon: layersOutline,
     color: 'var(--adams-accent-success)',
     bg: 'var(--adams-success-soft)',
   },
   {
-    label: 'Storage Used',
-    value: `${superAdminStore.stats.storageUsed ?? 0}%`,
-    icon: cloudOutline,
+    label: 'Open cycles',
+    value: String(openCycles.value.length),
+    icon: documentTextOutline,
+    color: 'var(--adams-structure-secondary)',
+    bg: 'var(--adams-canvas-panel)',
+  },
+  {
+    label: 'Evidence files',
+    value: String(superAdminStore.stats.totalDocuments ?? 0),
+    icon: documentTextOutline,
     color: 'var(--adams-accent-pending)',
     bg: 'var(--adams-warning-soft)',
   },
   {
-    label: 'Pending Reviews',
+    label: 'Open reviews',
     value: String(superAdminStore.stats.pendingReviews ?? 0),
     icon: barChartOutline,
-    color: 'var(--adams-structure-secondary)',
-    bg: 'var(--adams-canvas-panel)',
+    color: 'var(--adams-accent-urgent)',
+    bg: 'var(--adams-danger-soft)',
   },
 ])
 
@@ -591,13 +588,8 @@ const recentUsers = computed(() =>
           .slice(0, 2)
           .toUpperCase() || 'U',
       name,
-      role: user.role || user.role_name || user.role_slug || 'Unassigned',
-      status: user.status || 'Active',
-      last: user.lastLogin
-        ? new Date(user.lastLogin).toLocaleDateString()
-        : user.last_login_at
-          ? new Date(user.last_login_at).toLocaleDateString()
-          : 'Never',
+      role: formatRole(user.role || user.role_name || user.role_slug || 'Unassigned'),
+      last: formatWhen(user.lastLogin || user.last_login_at, 'Never'),
       raw: user,
     }
   }),
@@ -606,9 +598,9 @@ const recentUsers = computed(() =>
 const auditLogs = computed(() =>
   (superAdminStore.auditLogs || []).slice(0, 6).map((log: any, index: number) => ({
     id: log.id ?? `${log.event ?? 'activity'}-${index}`,
-    action: log.event || log.action || 'System activity',
+    action: formatRole(String(log.event || log.action || 'System activity').replace(/[_-]+/g, ' ')),
     user: log.user_email || log.user?.email || 'System',
-    time: log.created_at ? new Date(log.created_at).toLocaleString() : 'Recently',
+    time: formatWhen(log.created_at, 'Recently'),
     type: log.status || log.type || 'Audit',
   })),
 )
@@ -628,19 +620,19 @@ const systemModules = [
     statusClass: 'sa-success',
     statusText: 'Manage',
   },
+  // {
+  //   label: 'Roles & Permissions',
+  //   route: '/superadmin/roles',
+  //   icon: shieldCheckmarkOutline,
+  //   statusClass: 'sa-success',
+  //   statusText: 'Configure',
+  // },
   {
-    label: 'Roles & Permissions',
-    route: '/superadmin/roles',
-    icon: shieldCheckmarkOutline,
+    label: 'Accreditation',
+    route: '/superadmin/accreditation',
+    icon: documentTextOutline,
     statusClass: 'sa-success',
-    statusText: 'Configure',
-  },
-  {
-    label: 'Notifications',
-    route: '/superadmin/notifications',
-    icon: notificationsOutline,
-    statusClass: 'sa-success',
-    statusText: 'Open',
+    statusText: 'Monitor',
   },
   {
     label: 'Settings',
@@ -651,68 +643,178 @@ const systemModules = [
   },
 ]
 
-const compliance = computed(() => [
-  {
-    label: 'Overall Accreditation',
-    pct: superAdminStore.stats.pendingReviews > 0 ? 78 : 80,
-    color: 'var(--adams-structure-primary)',
-  },
-  { label: 'Document Submission', pct: 85, color: 'var(--adams-accent-info)' },
-  { label: 'Faculty Participation', pct: 91, color: 'var(--adams-accent-success)' },
-  { label: 'Pending QA Review', pct: 43, color: 'var(--adams-accent-pending)' },
-  { label: 'Overdue Requirements', pct: 12, color: 'var(--adams-accent-urgent)' },
-])
+const CYCLE_STATUSES = ['Planning', 'Preparation', 'Internal Review', 'Ready', 'Completed', 'Expired']
+const CYCLE_COLORS: Record<string, string> = {
+  Planning: 'var(--adams-text-muted)',
+  Preparation: 'var(--adams-structure-primary)',
+  'Internal Review': 'var(--adams-accent-info)',
+  Ready: 'var(--adams-accent-success)',
+  Completed: 'var(--adams-structure-primary)',
+  Expired: 'var(--adams-accent-urgent)',
+}
 
-const todayTodos = [
-  {
-    id: 1,
-    title: 'Review pending user approvals',
-    meta: '3 accounts waiting for activation',
-    time: 'Today',
-    statusClass: 'sa-todo-urgent',
-  },
-  {
-    id: 2,
-    title: 'Check dean assignment updates',
-    meta: '2 colleges require confirmation',
-    time: 'Today',
-    statusClass: 'sa-todo-warn',
-  },
-  {
-    id: 3,
-    title: 'Audit accreditation alerts',
-    meta: '5 documents need follow-up',
-    time: 'Tomorrow',
-    statusClass: 'sa-todo-ok',
-  },
-]
+const formatRole = (value: string) => {
+  const normalized = value.trim().toLowerCase().replace(/[_\s]+/g, '-')
+  if (normalized === 'superadmin' || normalized === 'super-admin' || normalized === 'admin') {
+    return 'System Admin'
+  }
 
-const alerts = [
-  {
-    msg: 'Review user accounts and permissions',
-    route: '/superadmin/users',
-    icon: peopleOutline,
-    color: 'var(--adams-accent-pending)',
-  },
-  {
-    msg: 'Review pending accreditation activity',
-    route: '/superadmin',
-    icon: documentTextOutline,
-    color: 'var(--adams-accent-info)',
-  },
-  {
-    msg: 'Review recent audit activity',
-    route: '/superadmin/activity',
-    icon: shieldCheckmarkOutline,
-    color: 'var(--adams-accent-pending)',
-  },
-  {
-    msg: 'Configure system settings',
-    route: '/superadmin/settings',
-    icon: settingsOutline,
-    color: 'var(--adams-structure-primary)',
-  },
-]
+  return value
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ')
+}
+
+const formatWhen = (value?: string | null, emptyLabel = 'Never') => {
+  if (!value) return emptyLabel
+  const date = new Date(value.includes('T') ? value : value.replace(' ', 'T'))
+  return Number.isNaN(date.getTime()) ? emptyLabel : date.toLocaleString()
+}
+
+const programs = computed(() =>
+  departments.value.flatMap((college: any) => (Array.isArray(college.programs) ? college.programs : [])),
+)
+
+const programsNeedingChair = computed(() =>
+  programs.value.filter((program: any) => program.needsChairAssigned || program.needs_chair_assigned || (!program.chairId && !program.chair_id && !program.chair)),
+)
+
+const deanCount = computed(() => {
+  const collegeIds = new Set(
+    (superAdminStore.users || [])
+      .filter((user: any) => String(user.role || '').toLowerCase().includes('dean') && user.collegeId != null)
+      .map((user: any) => String(user.collegeId)),
+  )
+  return collegeIds.size
+})
+
+const neverSignedIn = computed(() =>
+  (superAdminStore.users || []).filter((user: any) => !user.lastLogin).length,
+)
+
+const expiredCycles = computed(() =>
+  openCycles.value.filter((cycle) => (cycle.validity_status || cycle.validityStatus) === 'Expired'),
+)
+
+const campusLabel = computed(() => {
+  const campus = departments.value.find((college: any) => college.campus)?.campus
+  return campus || 'Isabela State University — Echague Main Campus'
+})
+
+const collegeNames = computed(() =>
+  departments.value.map((college: any) => college.code || college.name).filter(Boolean).join(', '),
+)
+
+const cycleStatus = computed(() => {
+  const total = openCycles.value.length
+  return CYCLE_STATUSES.map((label) => {
+    const count = openCycles.value.filter((cycle) => cycle.status === label).length
+    return {
+      label,
+      count,
+      share: total > 0 ? Math.round((count / total) * 100) : 0,
+      color: CYCLE_COLORS[label],
+    }
+  }).filter((item) => item.count > 0)
+})
+
+const attentionItems = computed(() => {
+  const items: Array<{ id: string; title: string; meta: string; route: string; statusClass: string }> = []
+  if (departments.value.length && deanCount.value < departments.value.length) {
+    const missing = departments.value.length - deanCount.value
+    items.push({
+      id: 'deans',
+      title: missing === 1 ? '1 college has no dean' : `${missing} colleges have no dean`,
+      meta: 'A college needs a dean before its programs can move through accreditation.',
+      route: '/superadmin/colleges',
+      statusClass: 'sa-todo-urgent',
+    })
+  }
+  if (programsNeedingChair.value.length) {
+    const count = programsNeedingChair.value.length
+    items.push({
+      id: 'chairs',
+      title: count === 1 ? '1 program has no chair' : `${count} programs have no chair`,
+      meta: 'The program chair receives the cycle after the dean acknowledges it.',
+      route: '/superadmin/colleges',
+      statusClass: 'sa-todo-warn',
+    })
+  }
+  if (superAdminStore.stats.pendingReviews > 0) {
+    items.push({
+      id: 'reviews',
+      title: `${superAdminStore.stats.pendingReviews} reviews are still open`,
+      meta: 'Evidence is waiting on review before the cycle can be called ready.',
+      route: '/superadmin/accreditation',
+      statusClass: 'sa-todo-warn',
+    })
+  }
+  if (expiredCycles.value.length) {
+    items.push({
+      id: 'validity',
+      title: expiredCycles.value.length === 1 ? '1 cycle is past its validity date' : `${expiredCycles.value.length} cycles are past their validity date`,
+      meta: 'The VPAA sets the next visit and validity when a level lapses.',
+      route: '/superadmin/accreditation',
+      statusClass: 'sa-todo-urgent',
+    })
+  }
+  if (neverSignedIn.value) {
+    items.push({
+      id: 'sign-in',
+      title: neverSignedIn.value === 1 ? '1 account has never signed in' : `${neverSignedIn.value} accounts have never signed in`,
+      meta: 'These users have a record but no successful login yet.',
+      route: '/superadmin/users',
+      statusClass: 'sa-todo-ok',
+    })
+  }
+  return items
+})
+
+const alerts = computed(() => {
+  const items: Array<{ msg: string; route: string; icon: string; color: string }> = []
+  if (neverSignedIn.value) {
+    items.push({
+      msg: `${neverSignedIn.value} user ${neverSignedIn.value === 1 ? 'account has' : 'accounts have'} never signed in`,
+      route: '/superadmin/users',
+      icon: peopleOutline,
+      color: 'var(--adams-accent-pending)',
+    })
+  }
+  if (departments.value.length && deanCount.value < departments.value.length) {
+    items.push({
+      msg: `${departments.value.length - deanCount.value} ${departments.value.length - deanCount.value === 1 ? 'college needs' : 'colleges need'} a dean`,
+      route: '/superadmin/colleges',
+      icon: businessOutline,
+      color: 'var(--adams-accent-urgent)',
+    })
+  }
+  if (programsNeedingChair.value.length) {
+    items.push({
+      msg: `${programsNeedingChair.value.length} ${programsNeedingChair.value.length === 1 ? 'program needs' : 'programs need'} a program chair`,
+      route: '/superadmin/colleges',
+      icon: documentTextOutline,
+      color: 'var(--adams-accent-info)',
+    })
+  }
+  if (superAdminStore.stats.pendingReviews > 0) {
+    items.push({
+      msg: `${superAdminStore.stats.pendingReviews} evidence ${superAdminStore.stats.pendingReviews === 1 ? 'review is' : 'reviews are'} still open`,
+      route: '/superadmin/accreditation',
+      icon: shieldCheckmarkOutline,
+      color: 'var(--adams-accent-pending)',
+    })
+  }
+  if (!openCycles.value.length && superAdminStore.stats.totalPrograms > 0) {
+    items.push({
+      msg: 'No accreditation cycle is open for the current programs',
+      route: '/superadmin/accreditation',
+      icon: documentTextOutline,
+      color: 'var(--adams-structure-primary)',
+    })
+  }
+  return items
+})
 
 const userActions = [
   {
@@ -725,11 +827,11 @@ const userActions = [
     icon: peopleCircleOutline,
     handler: () => go('/superadmin/users'),
   },
-  {
-    label: 'Roles & Permissions',
-    icon: shieldCheckmarkOutline,
-    handler: () => go('/superadmin/roles'),
-  },
+  // {
+  //   label: 'Roles & Permissions',
+  //   icon: shieldCheckmarkOutline,
+  //   handler: () => go('/superadmin/roles'),
+  // },
 ]
 
 const showModal = ref(false)
@@ -911,13 +1013,22 @@ const handleDeleteUser = async (user: any) => {
   }
 }
 
+const loadOpenCycles = async () => {
+  const payload = await getAccreditationCycles({ per_page: 200 })
+  const rows = Array.isArray(payload) ? payload : payload?.data || []
+  openCycles.value = rows
+}
+
 onMounted(async () => {
   try {
     await superAdminStore.fetchAdminOverview()
-    await syncDeanAssignmentFeed()
-    // Fetch colleges/departments from backend
-    const collegesData = await getColleges()
-    departments.value = Array.isArray(collegesData) ? collegesData : collegesData?.data || []
+    await Promise.all([
+      syncDeanAssignmentFeed(),
+      loadOpenCycles(),
+      getColleges().then((collegesData) => {
+        departments.value = Array.isArray(collegesData) ? collegesData : collegesData?.data || []
+      }),
+    ])
   } catch (error) {
     console.error('Failed to load SuperAdmin overview:', error)
   }
@@ -1313,11 +1424,21 @@ onMounted(async () => {
 
 .sa-table-header,
 .sa-table-row {
-  min-width: 720px;
+  min-width: 640px;
   display: grid;
-  grid-template-columns: 2fr 1.3fr 0.9fr 1fr 1.3fr;
+  grid-template-columns: 2fr 1.2fr 1.3fr 1.3fr;
   gap: 0.75rem;
   align-items: center;
+}
+
+.sa-todo-button {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
 }
 
 .sa-table-header {

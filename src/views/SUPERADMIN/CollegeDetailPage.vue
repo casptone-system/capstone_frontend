@@ -9,7 +9,6 @@
       <div class="college-detail-actions">
         <button class="sa-btn sa-btn-ghost" @click="backToList">Back to colleges</button>
         <button class="sa-btn sa-btn-secondary" @click="openAssignRoleModal">+ Assign Role</button>
-        <button class="sa-btn sa-btn-secondary" @click="openCreateProgramModal">+ Create Program</button>
         <button class="sa-btn sa-btn-primary" @click="editCollege" :disabled="!college.id">Edit college</button>
       </div>
     </div>

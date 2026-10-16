@@ -167,6 +167,16 @@ export const regenerateTeamCode = async (teamId: number | string) => {
   return response.data
 }
 
+export const issueTeamCode = async (teamId: number | string) => {
+  const response = await api.post(`/teams/${teamId}/codes`)
+  return response.data
+}
+
+export const revokeIssuedTeamCode = async (teamId: number | string, codeId: number | string) => {
+  const response = await api.post(`/teams/${teamId}/codes/${codeId}/revoke`)
+  return response.data
+}
+
 export const revokeTeamCode = async (teamId: number | string) => {
   const response = await api.post(`/teams/${teamId}/revoke`)
   return response.data
@@ -313,6 +323,13 @@ export const getAccreditationLevels = async (): Promise<string[]> => {
 
 export const getVPAADashboard = async () => {
   const response = await api.get('/vpaa/dashboard')
+  return unwrap(response)
+}
+
+export const notifyCollegeFollowUp = async (cycleId: number | string, message?: string) => {
+  const response = await api.post(`/accreditation-cycles/${cycleId}/notify-college`, {
+    message: message || null,
+  })
   return unwrap(response)
 }
 
@@ -492,6 +509,45 @@ export const getAreaParameters = async (areaId: number | string) => {
 
 export const getParameterRows = async (parameterId: number | string) => {
   const response = await api.get(`/parameters/${parameterId}/rows`)
+  return unwrap(response)
+}
+
+export const getLevelInstrumentAreas = async (level: string) => {
+  const response = await api.get('/vpaa/instrument/areas', { params: { level } })
+  return unwrap(response)
+}
+
+export const getLevelInstrumentParameters = async (level: string, areaCode: string) => {
+  const response = await api.get(`/vpaa/instrument/areas/${areaCode}/parameters`, { params: { level } })
+  return unwrap(response)
+}
+
+export const getLevelInstrumentRows = async (level: string, areaCode: string, parameterCode: string) => {
+  const response = await api.get(`/vpaa/instrument/areas/${areaCode}/parameters/${parameterCode}/rows`, { params: { level } })
+  return unwrap(response)
+}
+
+export const createLevelInstrumentRow = async (
+  level: string,
+  areaCode: string,
+  parameterCode: string,
+  content: string,
+) => {
+  const response = await api.post(
+    `/vpaa/instrument/areas/${areaCode}/parameters/${parameterCode}/rows`,
+    { content },
+    { params: { level } },
+  )
+  return unwrap(response)
+}
+
+export const updateLevelInstrumentRow = async (rowId: number | string, content: string) => {
+  const response = await api.patch(`/vpaa/instrument/rows/${rowId}`, { content })
+  return unwrap(response)
+}
+
+export const deleteLevelInstrumentRow = async (rowId: number | string) => {
+  const response = await api.delete(`/vpaa/instrument/rows/${rowId}`)
   return unwrap(response)
 }
 
@@ -1735,8 +1791,8 @@ export const updateReview = async (
    USERS
 =========================== */
 
-export const getUsers = async () => {
-  const response = await api.get('/admin/users')
+export const getUsers = async (params: Record<string, any> = {}) => {
+  const response = await api.get('/admin/users', { params })
   return response.data
 }
 

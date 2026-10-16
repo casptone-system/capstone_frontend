@@ -164,57 +164,77 @@
               </template>
 
               <template v-else-if="selectedSection === 'college-profile'">
-                <div class="dean-profile-header">
-                  <div class="dean-profile-header-copy">
-                    <p class="dean-summary-label">Profile</p>
-                    <h2>{{ assignedDeanDepartment || 'College Profile' }}</h2>
+                <section class="dean-college-hero">
+                  <div class="dean-college-hero-copy">
+                    <p class="dean-summary-label">Assigned college</p>
+                    <h2>{{ collegeProfile.name || assignedDeanDepartment || 'College' }}</h2>
+                    <p class="dean-college-lead">{{ collegeProfile.description || 'No college description has been recorded yet.' }}</p>
                   </div>
-                </div>
-                <div class="dean-content-grid">
-                  <div class="dean-col-left">
-                    <div class="dean-card">
-                      <div class="dean-card-header">
-                        <div class="dean-card-title-group">
-                          <div class="dean-card-icon blue"><ion-icon :icon="businessOutline" /></div>
-                          <div>
-                            <h2 class="dean-card-title">Profile Overview</h2>
-                            <p class="dean-card-sub">Assigned college information, scope, and stewardship details.</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="dean-summary-list">
-                        <div class="dean-summary-row" v-for="item in collegeProfileSummary" :key="item.label">
-                          <p>{{ item.label }}</p>
-                          <span>{{ item.value }}</span>
-                        </div>
-                      </div>
+                  <div class="dean-college-identity">
+                    <span><small>Code</small><strong>{{ collegeProfile.code || 'Not set' }}</strong></span>
+                    <span><small>Campus</small><strong>{{ collegeProfile.campus || 'Not set' }}</strong></span>
+                    <span><small>Dean</small><strong>{{ assignedDeanName }}</strong></span>
+                  </div>
+                </section>
+
+                <section class="dean-fact-grid">
+                  <article v-for="fact in collegeFacts" :key="fact.label" class="dean-fact">
+                    <small>{{ fact.label }}</small>
+                    <strong>{{ fact.value }}</strong>
+                    <p>{{ fact.note }}</p>
+                  </article>
+                </section>
+
+                <section class="dean-card">
+                  <div class="dean-card-header">
+                    <div>
+                      <h2 class="dean-card-title">Programs in this college</h2>
+                      <p class="dean-card-sub">The programs you monitor, with the chair, open accreditation level, faculty roster, and current readiness.</p>
                     </div>
                   </div>
-                  <div class="dean-col-right">
-                    <div class="dean-card">
-                      <div class="dean-card-header">
-                        <div class="dean-card-title-group">
-                          <div class="dean-card-icon teal"><ion-icon :icon="analyticsOutline" /></div>
-                          <div>
-                            <h2 class="dean-card-title">College Readiness</h2>
-                            <p class="dean-card-sub">Current institutional readiness snapshot.</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="dean-stat-strip">
-                        <div class="dean-stat" v-for="stat in collegeStats" :key="stat.label">
-                          <div class="dean-stat-icon" :style="{ background: stat.bg, color: stat.color }">
-                            <ion-icon :icon="stat.icon" />
-                          </div>
-                          <div>
-                            <p class="dean-stat-value">{{ stat.value }}</p>
-                            <p class="dean-stat-label">{{ stat.label }}</p>
-                          </div>
-                        </div>
-                      </div>
+                  <div v-if="programs.length" class="dean-data-table">
+                    <div class="dean-data-head dean-data-programs">
+                      <span>Program</span><span>Chair</span><span>Level</span><span>Faculty</span><span>Readiness</span>
+                    </div>
+                    <button
+                      v-for="prog in programs"
+                      :key="prog.id || prog.name"
+                      type="button"
+                      class="dean-data-row dean-data-programs"
+                      @click="openProgramFromInsight(prog.id)"
+                    >
+                      <span>
+                        <strong>{{ prog.name }}</strong>
+                        <small>{{ prog.code || 'No program code' }}</small>
+                      </span>
+                      <span>{{ prog.needsChairAssigned || !prog.chair ? 'Chair not assigned' : prog.chair }}</span>
+                      <span>{{ prog.accreditationLevel || 'Not set' }}</span>
+                      <span>{{ prog.facultyCount || 0 }}</span>
+                      <span class="dean-readiness-pill" :class="prog.statusClass">{{ prog.pct ?? 0 }}%</span>
+                    </button>
+                  </div>
+                  <p v-else class="dean-empty-copy">No programs are recorded under this college yet.</p>
+                </section>
+
+                <section class="dean-card">
+                  <div class="dean-card-header">
+                    <div>
+                      <h2 class="dean-card-title">Accreditation mix</h2>
+                      <p class="dean-card-sub">How the college’s programs are spread across the levels currently open in the system.</p>
                     </div>
                   </div>
-                </div>
+                  <div v-if="accreditationMix.length" class="dean-mix-list">
+                    <div v-for="item in accreditationMix" :key="item.level" class="dean-mix-row">
+                      <div>
+                        <strong>{{ item.level }}</strong>
+                        <small>{{ item.count }} program{{ item.count === 1 ? '' : 's' }}</small>
+                      </div>
+                      <div class="dean-mix-track"><span :style="{ width: item.share + '%' }"></span></div>
+                      <em>{{ item.share }}%</em>
+                    </div>
+                  </div>
+                  <p v-else class="dean-empty-copy">Levels appear here once a program has an active accreditation cycle.</p>
+                </section>
               </template>
 
               <template v-else-if="selectedSection === 'programs'">
@@ -278,16 +298,6 @@
                         </div>
 
                         <DeanAreaProgressList :areas="selectedProgram.areaProgress || []" />
-
-                        <div class="dean-folder-actions">
-                          <button 
-                            type="button" 
-                            class="dean-action-btn dean-action-notify"
-                            @click="openNotifyProgramChairModal(selectedProgram.id)"
-                          >
-                            <ion-icon :icon="mailOutline" /> Notify Chair
-                          </button>
-                        </div>
                       </div>
 
                       <div class="dean-program-management-panel">
@@ -486,49 +496,68 @@
               </template>
 
               <template v-else-if="selectedSection === 'issues'">
-                <div class="dean-card">
-                  <div class="dean-card-header">
-                    <div class="dean-card-title-group">
-                      <div class="dean-card-icon rose"><ion-icon :icon="alertCircleOutline" /></div>
-                      <div>
-                        <h2 class="dean-card-title">Issues &amp; Corrective Actions</h2>
-                        <p class="dean-card-sub">Problems requiring dean visibility, support, or escalation.</p>
-                      </div>
+                <div class="dean-filter-row" role="tablist" aria-label="Issue severity">
+                  <button
+                    v-for="filter in issueFilters"
+                    :key="filter.id"
+                    type="button"
+                    class="dean-filter-chip"
+                    :class="{ active: issueFilter === filter.id }"
+                    @click="issueFilter = filter.id"
+                  >
+                    {{ filter.label }}
+                    <span>{{ filter.count }}</span>
+                  </button>
+                </div>
+                <div v-if="visibleIssues.length" class="dean-issue-list">
+                  <article v-for="issue in visibleIssues" :key="issue.id" class="dean-issue-card" :data-severity="issue.severity">
+                    <div class="dean-issue-top">
+                      <span class="dean-severity" :data-severity="issue.severity">{{ severityLabel(issue.severity) }}</span>
+                      <span class="dean-issue-category">{{ issue.category }}</span>
                     </div>
-                  </div>
-                  <div class="dean-alert-list">
-                    <div class="dean-alert-item" v-for="issue in deanIssues" :key="issue.id">
-                      <ion-icon :icon="alertCircleOutline" :style="{ color: issue.color }" />
-                      <div class="dean-alert-body">
-                        <p class="dean-alert-msg"><strong>{{ issue.title }}</strong> · {{ issue.detail }}</p>
-                        <p class="dean-alert-time">{{ issue.assignee }} · {{ issue.deadline }}</p>
-                      </div>
+                    <h3>{{ issue.title }}</h3>
+                    <p>{{ issue.detail }}</p>
+                    <div class="dean-issue-meta">
+                      <span><small>Program</small>{{ issue.program || 'College' }}</span>
+                      <span><small>Owner</small>{{ issue.owner || 'Dean' }}</span>
+                      <span><small>Timing</small>{{ issue.due || 'Current cycle' }}</span>
                     </div>
-                  </div>
+                    <p class="dean-issue-action">{{ issue.action }}</p>
+                    <button v-if="issue.programId" type="button" class="dean-text-btn" @click="openProgramFromInsight(issue.programId)">
+                      Open in Program Monitoring
+                    </button>
+                  </article>
+                </div>
+                <div v-else class="dean-empty-panel">
+                  <h3>{{ issueFilter === 'all' ? 'No open dean actions' : 'Nothing in this group' }}</h3>
+                  <p v-if="issueFilter === 'all'">Chairs are assigned, requirements are inside their deadlines, and returned evidence has been cleared.</p>
+                  <p v-else>The other severity groups may still have items.</p>
                 </div>
               </template>
 
               <template v-else-if="selectedSection === 'activity'">
-                <div class="dean-card">
+                <section class="dean-card">
                   <div class="dean-card-header">
-                    <div class="dean-card-title-group">
-                      <div class="dean-card-icon violet"><ion-icon :icon="timeOutline" /></div>
-                      <div>
-                        <h2 class="dean-card-title">Recent Activity</h2>
-                        <p class="dean-card-sub">Relevant activity for the assigned college.</p>
-                      </div>
+                    <div>
+                      <h2 class="dean-card-title">Recent activity</h2>
+                      <p class="dean-card-sub">Evidence uploads, requirement updates, and accreditation changes recorded for this college.</p>
                     </div>
                   </div>
-                  <div class="dean-alert-list">
-                    <div class="dean-alert-item" v-for="item in activityFeed" :key="item.id">
-                      <ion-icon :icon="personCircleOutline" style="color: #4f46e5" />
-                      <div class="dean-alert-body">
-                        <p class="dean-alert-msg">{{ item.action }}</p>
-                        <p class="dean-alert-time">{{ item.time }}</p>
-                      </div>
-                    </div>
+                  <div v-if="activityGroups.length" class="dean-timeline">
+                    <section v-for="group in activityGroups" :key="group.label" class="dean-timeline-group">
+                      <h3>{{ group.label }}</h3>
+                      <article v-for="item in group.items" :key="item.id" class="dean-timeline-item">
+                        <span class="dean-timeline-kind" :data-kind="item.kind">{{ activityKindLabel(item.kind) }}</span>
+                        <div>
+                          <strong>{{ item.title }}</strong>
+                          <p>{{ item.detail }}</p>
+                          <small>{{ item.program }} · {{ formatRelative(item.occurredAt) }}</small>
+                        </div>
+                      </article>
+                    </section>
                   </div>
-                </div>
+                  <p v-else class="dean-empty-copy">Activity appears when someone uploads evidence, updates a requirement, or changes an accreditation cycle in this college.</p>
+                </section>
               </template>
 
               <template v-else-if="selectedSection === 'document-review'">
@@ -743,25 +772,136 @@
               </template>
 
               <template v-else-if="selectedSection === 'program-reports'">
-                <div class="dean-card">
-                  <div class="dean-card-header">
-                    <div class="dean-card-title-group">
-                      <div class="dean-card-icon blue"><ion-icon :icon="barChartOutline" /></div>
+                <div class="dean-report-shell">
+                  <nav class="dean-report-nav" aria-label="College reports">
+                    <button
+                      v-for="report in reportCatalog"
+                      :key="report.id"
+                      type="button"
+                      :class="{ active: activeReport === report.id }"
+                      @click="activeReport = report.id"
+                    >
+                      <strong>{{ report.title }}</strong>
+                      <span>{{ report.summary }}</span>
+                    </button>
+                  </nav>
+
+                  <section class="dean-card dean-report-panel">
+                    <div class="dean-card-header">
                       <div>
-                        <h2 class="dean-card-title">Program Reports</h2>
-                        <p class="dean-card-sub">See the latest report readiness per program.</p>
+                        <h2 class="dean-card-title">{{ activeReportMeta.title }}</h2>
+                        <p class="dean-card-sub">{{ activeReportMeta.description }}</p>
                       </div>
                     </div>
-                  </div>
-                  <div class="dean-report-list">
-                    <div class="dean-report-row" v-for="prog in programs" :key="prog.id || prog.name">
-                      <div>
-                        <p class="dean-report-name">{{ prog.name }}</p>
-                        <p class="dean-muted">Chair: {{ prog.chair || (prog.needsChairAssigned ? 'Needs a chair assigned' : 'Unassigned') }}</p>
+
+                    <div v-if="activeReport === 'readiness'" class="dean-report-body">
+                      <div v-if="programs.length" class="dean-data-table">
+                        <div class="dean-data-head dean-data-readiness">
+                          <span>Program</span><span>Level</span><span>Requirements</span><span>Readiness</span>
+                        </div>
+                        <div v-for="prog in programs" :key="prog.id || prog.name" class="dean-data-row dean-data-readiness">
+                          <span>
+                            <strong>{{ prog.name }}</strong>
+                            <small>{{ prog.chair || 'Chair not assigned' }}</small>
+                          </span>
+                          <span>{{ prog.accreditationLevel || 'Not set' }}</span>
+                          <span>{{ prog.requirementProgress?.completedTasks || 0 }}/{{ prog.requirementProgress?.totalTasks || 0 }} done</span>
+                          <span class="dean-bar-cell">
+                            <span class="dean-mini-track"><i :style="{ width: (prog.pct || 0) + '%' }"></i></span>
+                            <strong>{{ prog.pct || 0 }}%</strong>
+                          </span>
+                        </div>
                       </div>
-                      <span>{{ prog.pct ?? prog.complianceScore ?? 0 }}%</span>
+                      <p v-else class="dean-empty-copy">No programs are available for a readiness report.</p>
                     </div>
-                  </div>
+
+                    <div v-else-if="activeReport === 'areas'" class="dean-report-body">
+                      <article v-for="prog in programs" :key="prog.id || prog.name" class="dean-report-block">
+                        <header>
+                          <strong>{{ prog.name }}</strong>
+                          <span>{{ prog.accreditationLevel || 'Level not set' }}</span>
+                        </header>
+                        <div v-if="prog.areaProgress?.length" class="dean-area-report">
+                          <div v-for="area in prog.areaProgress" :key="area.id || area.code" class="dean-area-report-row">
+                            <span>{{ areaLabel(area) }}</span>
+                            <span class="dean-mini-track"><i :style="{ width: (area.progressPercent || 0) + '%' }"></i></span>
+                            <strong>{{ area.progressPercent || 0 }}%</strong>
+                          </div>
+                        </div>
+                        <p v-else class="dean-empty-copy">No areas are open on the active cycle.</p>
+                      </article>
+                      <p v-if="!programs.length" class="dean-empty-copy">No programs are available for an area report.</p>
+                    </div>
+
+                    <div v-else-if="activeReport === 'deadlines'" class="dean-report-body">
+                      <div v-if="deadlineRows.length" class="dean-data-table">
+                        <div class="dean-data-head dean-data-deadlines">
+                          <span>Requirement</span><span>Program</span><span>Status</span><span>Due</span>
+                        </div>
+                        <div v-for="row in deadlineRows" :key="row.id" class="dean-data-row dean-data-deadlines" :data-overdue="row.isOverdue ? 'yes' : 'no'">
+                          <span>
+                            <strong>{{ row.title }}</strong>
+                            <small>{{ row.area || row.priority || 'Requirement' }}</small>
+                          </span>
+                          <span>{{ row.program }}</span>
+                          <span>{{ row.status || 'Not Started' }}</span>
+                          <span>{{ row.isOverdue ? 'Overdue · ' : '' }}{{ formatWhen(row.dueDate) }}</span>
+                        </div>
+                      </div>
+                      <p v-else class="dean-empty-copy">No requirements with due dates are recorded for this college.</p>
+                    </div>
+
+                    <div v-else-if="activeReport === 'evidence'" class="dean-report-body">
+                      <div v-if="programs.length" class="dean-data-table">
+                        <div class="dean-data-head dean-data-evidence">
+                          <span>Program</span><span>On file</span><span>Approved</span><span>Returned</span><span>Draft</span>
+                        </div>
+                        <div v-for="prog in programs" :key="prog.id || prog.name" class="dean-data-row dean-data-evidence">
+                          <span><strong>{{ prog.name }}</strong></span>
+                          <span>{{ prog.documentCount || 0 }}</span>
+                          <span>{{ statusCount(prog, 'Approved') }}</span>
+                          <span>{{ statusCount(prog, 'Revision Requested') }}</span>
+                          <span>{{ statusCount(prog, 'Draft') }}</span>
+                        </div>
+                      </div>
+                      <p v-else class="dean-empty-copy">No programs are available for an evidence report.</p>
+                    </div>
+
+                    <div v-else-if="activeReport === 'coverage'" class="dean-report-body">
+                      <div v-if="programs.length" class="dean-coverage-list">
+                        <article v-for="prog in programs" :key="prog.id || prog.name" class="dean-report-block">
+                          <header>
+                            <strong>{{ prog.name }}</strong>
+                            <span>{{ prog.needsChairAssigned || !prog.chair ? 'Chair not assigned' : prog.chair }}</span>
+                          </header>
+                          <p v-if="prog.faculty?.length" class="dean-faculty-names">
+                            {{ prog.faculty.map((member) => member.name || member.email).filter(Boolean).join(', ') }}
+                          </p>
+                          <p v-else class="dean-empty-copy">No faculty are on this roster.</p>
+                        </article>
+                      </div>
+                      <p v-else class="dean-empty-copy">No programs are available for a coverage report.</p>
+                    </div>
+
+                    <div v-else class="dean-report-body">
+                      <div v-if="programs.length" class="dean-data-table">
+                        <div class="dean-data-head dean-data-standing">
+                          <span>Program</span><span>Level</span><span>Cycle</span><span>Visit</span><span>Valid until</span>
+                        </div>
+                        <div v-for="prog in programs" :key="prog.id || prog.name" class="dean-data-row dean-data-standing">
+                          <span>
+                            <strong>{{ prog.name }}</strong>
+                            <small>{{ prog.instrumentName || prog.workflowStatus || 'No instrument name' }}</small>
+                          </span>
+                          <span>{{ prog.accreditationLevel || 'Not set' }}</span>
+                          <span>{{ prog.cycleStatus || prog.workflowStatus || 'Not opened' }}</span>
+                          <span>{{ formatWhen(prog.scheduledVisit) }}</span>
+                          <span>{{ formatWhen(prog.validUntil) }}</span>
+                        </div>
+                      </div>
+                      <p v-else class="dean-empty-copy">No programs are available for an accreditation standing report.</p>
+                    </div>
+                  </section>
                 </div>
               </template>
 
@@ -771,13 +911,6 @@
             </div>
           </main>
             <DeanCreateProgramModal :visible="showCreateProgramModal" @close="showCreateProgramModal = false" @created="handleProgramCreated" />
-            <DeanNotifyProgramChairModal 
-              :visible="showNotifyModal" 
-              :programId="selectedProgramId"
-              :selectedProgramName="selectedProgram?.name"
-              @close="showNotifyModal = false"
-              @submitted="handleNotificationSubmitted"
-            />
   </AdamsAppShell>
 </template>
 
@@ -790,8 +923,8 @@ import {
   notificationsOutline, documentOutline,
   checkmarkCircleOutline, alarmOutline,
   businessOutline,
-  alertCircleOutline, timeOutline, personCircleOutline,
-  searchOutline, mailOutline, briefcaseOutline
+  alertCircleOutline, timeOutline,
+  searchOutline, briefcaseOutline
 } from 'ionicons/icons'
 
 import { onMounted, ref, computed, watch } from 'vue'
@@ -820,7 +953,6 @@ import {
   updateProgram,
 } from '@/lib/api'
 import DeanCreateProgramModal from '@/components/DeanCreateProgramModal.vue'
-import DeanNotifyProgramChairModal from '@/components/DeanNotifyProgramChairModal.vue'
 import DeanAreaProgressList from '@/components/DeanAreaProgressList.vue'
 import RoleStorageVault from '@/components/RoleStorageVault.vue'
 import AccreditationLevelStatus from '@/components/AccreditationLevelStatus.vue'
@@ -838,7 +970,6 @@ const inboxUnreadCount = computed(() => notificationStore.unreadCount)
 const { activeCall, callMessage, endCall } = useUserCalls()
 
 const showCreateProgramModal = ref(false)
-const showNotifyModal = ref(false)
 const deanAssignmentBanner = ref<string | null>(null)
 const deanAssignmentNoticeId = ref<string | number | null>(null)
 
@@ -882,21 +1013,6 @@ const faculty = ref<any[]>([])
 const facultySearch = ref('')
 const facultyProgramFilter = ref('all')
 const alerts = ref<any[]>([])
-const deanWorkflowStats = computed(() => {
-  const activePrograms = programs.value.length || 0
-  const pendingDocs = documents.value.length || 0
-  const unresolvedAlerts = alerts.value.filter((alert: any) => alert.urgency !== 'info').length || 0
-  const avgCompliance = activePrograms
-    ? Math.round(programs.value.reduce((sum, program) => sum + Number(program.pct ?? program.complianceScore ?? 0), 0) / activePrograms)
-    : 0
-
-  return {
-    programs: activePrograms,
-    documents: pendingDocs,
-    alerts: unresolvedAlerts,
-    compliance: avgCompliance,
-  }
-})
 
 const overallReadiness = computed(() => {
   if (!programs.value.length) return 0
@@ -904,85 +1020,165 @@ const overallReadiness = computed(() => {
   return Math.min(100, Math.max(0, Math.round(average)))
 })
 
-const todayTodos = [
-  {
-    id: 1,
-    title: 'Review pending accreditation progress',
-    meta: '3 programs require dean review',
-    time: 'Today',
+const collegeProfile = ref<{ name: string; code: string; campus: string; description: string }>({
+  name: '',
+  code: '',
+  campus: '',
+  description: '',
+})
+const deanIssueItems = ref<any[]>([])
+const activityEvents = ref<any[]>([])
+const issueFilter = ref('all')
+const activeReport = ref('readiness')
+
+const requirementTotals = computed(() => programs.value.reduce((totals, program) => {
+  const progress = program.requirementProgress || {}
+  totals.areas += Array.isArray(program.areaProgress) ? program.areaProgress.length : 0
+  totals.requirements += Number(progress.totalTasks || 0)
+  totals.completed += Number(progress.completedTasks || 0)
+  totals.overdue += Number(progress.overdueTasks || 0)
+  totals.documents += Number(program.documentCount || 0)
+  totals.returned += Number(program.documentStatusCounts?.['Revision Requested'] || 0)
+  totals.faculty += Number(program.facultyCount || 0)
+  if (program.needsChairAssigned || !program.chair) totals.missingChairs += 1
+  return totals
+}, { areas: 0, requirements: 0, completed: 0, overdue: 0, documents: 0, returned: 0, faculty: 0, missingChairs: 0 }))
+
+const todayTodos = computed(() => {
+  if (loading.value && !deanIssueItems.value.length) {
+    return [{
+      id: 'loading',
+      title: 'Checking the college queue',
+      meta: 'Looking at chairs, deadlines, area progress, and returned evidence.',
+      time: 'Now',
+      statusClass: 'dean-todo-ok',
+    }]
+  }
+
+  const urgent = deanIssueItems.value.filter((issue) => issue.severity === 'high').slice(0, 4)
+  if (!urgent.length) {
+    return [{
+      id: 'clear',
+      title: 'No urgent college actions',
+      meta: 'Chairs, deadlines, and returned evidence are clear right now.',
+      time: 'Today',
+      statusClass: 'dean-todo-ok',
+    }]
+  }
+
+  return urgent.map((issue) => ({
+    id: issue.id,
+    title: issue.title,
+    meta: issue.action,
+    time: issue.due || 'Now',
     statusClass: 'dean-todo-urgent',
-  },
-  {
-    id: 2,
-    title: 'Approve final faculty evidence',
-    meta: '2 submissions are ready for sign-off',
-    time: 'Today',
-    statusClass: 'dean-todo-warn',
-  },
-  {
-    id: 3,
-    title: 'Monitor at-risk compliance areas',
-    meta: '1 program needs attention',
-    time: 'Tomorrow',
-    statusClass: 'dean-todo-ok',
-  },
-]
+  }))
+})
 
 const readinessMetrics = computed(() => [
-  { label: 'Programs', value: String(deanWorkflowStats.value.programs) },
-  { label: 'Areas', value: String(Math.max(1, Math.min(12, deanWorkflowStats.value.programs + 4))) },
-  { label: 'Requirements', value: String(Math.max(20, deanWorkflowStats.value.documents * 4 + 40)) },
-  { label: 'Completed', value: String(Math.max(0, Math.round((overallReadiness.value / 100) * (Math.max(20, deanWorkflowStats.value.documents * 4 + 40))))) },
-  { label: 'Pending', value: String(Math.max(0, deanWorkflowStats.value.documents)) },
-  { label: 'Overdue', value: String(Math.max(0, Math.min(9, deanWorkflowStats.value.alerts))) },
+  { label: 'Programs', value: String(programs.value.length) },
+  { label: 'Areas', value: String(requirementTotals.value.areas) },
+  { label: 'Requirements', value: String(requirementTotals.value.requirements) },
+  { label: 'Completed', value: String(requirementTotals.value.completed) },
+  { label: 'Pending', value: String(Math.max(0, requirementTotals.value.requirements - requirementTotals.value.completed)) },
+  { label: 'Overdue', value: String(requirementTotals.value.overdue) },
 ])
 
-const collegeProfileSummary = computed(() => [
-  { label: 'Department / College', value: assignedDeanDepartment.value || collegeName.value || 'College' },
-  { label: 'Dean', value: assignedDeanName.value || 'Dean' },
-  { label: 'Programs Under Review', value: `${deanWorkflowStats.value.programs}` },
-  { label: 'Accreditation Status', value: deanWorkflowStats.value.compliance >= 80 ? 'On-track monitoring' : 'Needs attention' },
-  { label: 'Dean Oversight', value: `${deanWorkflowStats.value.documents} document${deanWorkflowStats.value.documents === 1 ? '' : 's'} pending review` },
-])
-const collegeStats = computed(() => [
-  { label: 'Programs', value: String(deanWorkflowStats.value.programs), icon: schoolOutline, color: 'var(--adams-structure-primary)', bg: 'var(--adams-primary-soft)' },
-  { label: 'Areas', value: String(Math.max(1, Math.min(12, deanWorkflowStats.value.programs + 4))), icon: analyticsOutline, color: 'var(--adams-text-primary)', bg: 'var(--adams-canvas)' },
-  { label: 'Compliance', value: `${deanWorkflowStats.value.compliance}%`, icon: checkmarkDoneOutline, color: deanWorkflowStats.value.compliance >= 80 ? 'var(--adams-accent-success)' : 'var(--adams-accent-pending)', bg: deanWorkflowStats.value.compliance >= 80 ? 'var(--adams-success-soft)' : 'var(--adams-warning-soft)' },
-  { label: 'Pending Docs', value: String(deanWorkflowStats.value.documents), icon: documentTextOutline, color: 'var(--adams-accent-pending)', bg: 'var(--adams-warning-soft)' },
-])
-const deanIssues = computed(() => {
-  const programsNeedingAttention = programs.value.filter((program) => Number(program.pct ?? program.complianceScore ?? 0) < 70)
-  const documentIssues = documents.value.slice(0, 2).map((document) => ({
-    id: `doc-${document.id}`,
-    title: `Document review: ${document.title}`,
-    detail: document.program ? `${document.program} submission requires dean review.` : 'Submission requires dean review.',
-    assignee: document.submittedBy || 'Faculty member',
-    deadline: 'Awaiting action',
-    color: '#C62828',
-  }))
-
-  const issueList = [
-    ...programsNeedingAttention.slice(0, 2).map((program, index) => ({
-      id: `program-${program.id ?? index}`,
-      title: `${program.name} readiness concern`,
-      detail: `Current compliance is ${program.pct ?? program.complianceScore ?? 0}%. Action required to improve compliance readiness.`,
-      assignee: program.chair || 'Program chair',
-      deadline: 'Due soon',
-      color: program.pct >= 40 ? '#FBC02D' : '#C62828',
-    })),
-    ...documentIssues,
-  ]
-
-  return issueList.length ? issueList : [
-    { id: 'default-issue', title: 'No active dean action required', detail: 'All monitored programs and documents are currently within acceptable review thresholds.', assignee: 'Dean office', deadline: 'On track', color: '#2E7D32' },
+const collegeFacts = computed(() => {
+  const programCount = programs.value.length
+  const chairsAssigned = Math.max(0, programCount - requirementTotals.value.missingChairs)
+  return [
+    { label: 'Programs', value: String(programCount), note: 'Programs recorded under this college' },
+    { label: 'Chairs', value: `${chairsAssigned} of ${programCount}`, note: 'Programs with a chair assigned' },
+    { label: 'Faculty', value: String(requirementTotals.value.faculty), note: 'Faculty currently on program rosters' },
+    { label: 'Readiness', value: `${overallReadiness.value}%`, note: 'Average area completion across programs' },
+    { label: 'Areas', value: String(requirementTotals.value.areas), note: 'Areas open on active accreditation cycles' },
+    { label: 'Evidence', value: String(requirementTotals.value.documents), note: requirementTotals.value.returned ? `${requirementTotals.value.returned} returned for revision` : 'Files stored for these programs' },
   ]
 })
-const activityFeed = computed(() => [
-  { id: 1, action: 'Program Chair submitted a corrected document for review.', time: '2 hours ago' },
-  { id: 2, action: 'Area compliance score was updated after evidence review.', time: 'Today' },
-  { id: 3, action: 'Dean review queue has one item requiring college-level action.', time: 'Yesterday' },
-  { id: 4, action: 'Accreditation readiness summary was refreshed for the current cycle.', time: '2 days ago' },
+
+const accreditationMix = computed(() => {
+  const counts = new Map<string, number>()
+  programs.value.forEach((program) => {
+    const level = program.accreditationLevel || 'Not set'
+    counts.set(level, (counts.get(level) || 0) + 1)
+  })
+  const total = programs.value.length || 1
+  return [...counts.entries()].map(([level, count]) => ({
+    level,
+    count,
+    share: Math.round((count / total) * 100),
+  }))
+})
+
+const issueFilters = computed(() => [
+  { id: 'all', label: 'All', count: deanIssueItems.value.length },
+  { id: 'high', label: 'Act now', count: deanIssueItems.value.filter((issue) => issue.severity === 'high').length },
+  { id: 'medium', label: 'Follow up', count: deanIssueItems.value.filter((issue) => issue.severity === 'medium').length },
+  { id: 'watch', label: 'Watch', count: deanIssueItems.value.filter((issue) => issue.severity === 'watch').length },
 ])
+
+const visibleIssues = computed(() => (
+  issueFilter.value === 'all'
+    ? deanIssueItems.value
+    : deanIssueItems.value.filter((issue) => issue.severity === issueFilter.value)
+))
+
+const activityGroups = computed(() => {
+  const groups = new Map<string, any[]>()
+  ;[...activityEvents.value]
+    .sort((left, right) => new Date(right.occurredAt || 0).getTime() - new Date(left.occurredAt || 0).getTime())
+    .forEach((item) => {
+      const label = formatDay(item.occurredAt)
+      const bucket = groups.get(label) || []
+      bucket.push(item)
+      groups.set(label, bucket)
+    })
+  return [...groups.entries()].map(([label, items]) => ({ label, items }))
+})
+
+const deadlineRows = computed(() => programs.value
+  .flatMap((program) => (Array.isArray(program.requirements) ? program.requirements : [])
+    .filter((requirement: any) => requirement.dueDate || requirement.isOverdue)
+    .map((requirement: any) => ({
+      ...requirement,
+      program: program.name,
+      programId: program.id,
+    })))
+  .sort((left: any, right: any) => {
+    if (Boolean(left.isOverdue) !== Boolean(right.isOverdue)) return left.isOverdue ? -1 : 1
+    return String(left.dueDate || '').localeCompare(String(right.dueDate || ''))
+  }))
+
+const weakAreaCount = computed(() => programs.value.reduce((sum, program) => (
+  sum + (Array.isArray(program.areaProgress) ? program.areaProgress.filter((area: any) => Number(area.progressPercent || 0) < 50).length : 0)
+), 0))
+
+const reportCatalog = computed(() => [
+  { id: 'readiness', title: 'Program readiness', summary: `${programs.value.filter((program) => Number(program.pct || 0) >= 70).length} of ${programs.value.length} programs at 70% or above` },
+  { id: 'areas', title: 'Area progress', summary: weakAreaCount.value ? `${weakAreaCount.value} areas under 50%` : 'Area completion by program' },
+  { id: 'deadlines', title: 'Requirement deadlines', summary: requirementTotals.value.overdue ? `${requirementTotals.value.overdue} overdue` : 'Due dates on open requirements' },
+  { id: 'evidence', title: 'Evidence inventory', summary: `${requirementTotals.value.documents} files on record` },
+  { id: 'coverage', title: 'Chair and faculty', summary: requirementTotals.value.missingChairs ? `${requirementTotals.value.missingChairs} programs without a chair` : 'Roster coverage by program' },
+  { id: 'standing', title: 'Accreditation standing', summary: 'Level, cycle, visit, and validity' },
+])
+
+const reportDescriptions: Record<string, string> = {
+  readiness: 'Completion against the requirements on each program’s active cycle. 70% is the college monitoring line.',
+  areas: 'AACCUP area completion for the cycle that is currently active on each program.',
+  deadlines: 'Requirements that have a due date. Overdue items are still incomplete after that date.',
+  evidence: 'Files stored for each program, using the statuses the system actually keeps: approved, returned, and draft.',
+  coverage: 'Who can move the work: the assigned chair and the faculty on each program roster.',
+  standing: 'The accreditation level, cycle status, scheduled visit, and validity date recorded for each program.',
+}
+
+const activeReportMeta = computed(() => {
+  const current = reportCatalog.value.find((report) => report.id === activeReport.value) || reportCatalog.value[0]
+  return {
+    title: current?.title || 'Report',
+    description: reportDescriptions[activeReport.value] || '',
+  }
+})
 
 const currentUser = computed(() => authStore.user)
 const getBackendAssetUrl = (path: string): string => {
@@ -1044,11 +1240,11 @@ const pageDescription = computed(() => {
     case 'programs': return 'Monitor programs under your college and intervene where needed.'
     case 'faculty': return 'Review faculty participation and assignment progress.'
     case 'department-documents': return 'Browse college evidence and department files.'
-    case 'issues': return 'Track blockers, overdue items, and required follow-up.'
-    case 'program-reports': return 'College accreditation reports and readiness summaries.'
-    case 'activity': return 'Recent activity across programs in your college.'
+    case 'issues': return 'Open items a dean can act on: missing chairs, overdue requirements, weak areas, and returned evidence.'
+    case 'program-reports': return 'Readiness, area progress, deadlines, evidence, coverage, and accreditation standing.'
+    case 'activity': return 'Evidence, requirement, and accreditation changes recorded for this college.'
     case 'notifications': return 'Tasks and action items assigned to you.'
-    case 'college-profile': return 'College profile, leadership, and institutional context.'
+    case 'college-profile': return 'The college record, its programs, and the accreditation levels currently open.'
     default: return 'Drive accreditation readiness and monitor programs in your college.'
   }
 })
@@ -1449,6 +1645,66 @@ const responsibilityCards = computed(() => [
 const selectSection = (section: string) => {
   selectedSection.value = section === 'department-documents' ? 'dashboard' : section
 }
+
+const openProgramFromInsight = (programId: number | string | null) => {
+  if (programId === null || programId === undefined || programId === '') return
+  selectedProgramId.value = programId
+  selectSection('programs')
+}
+
+const severityLabel = (severity: string) => {
+  if (severity === 'high') return 'Act now'
+  if (severity === 'medium') return 'Follow up'
+  return 'Watch'
+}
+
+const activityKindLabel = (kind: string) => {
+  if (kind === 'evidence') return 'Evidence'
+  if (kind === 'requirement') return 'Requirement'
+  if (kind === 'cycle') return 'Accreditation'
+  return 'Update'
+}
+
+const areaLabel = (area: any) => {
+  const match = String(area?.code || '').match(/area-(\d+)/i)
+  if (match) return `Area ${match[1]}`
+  return area?.label || area?.name || 'Area'
+}
+
+const statusCount = (program: any, status: string) => Number(program?.documentStatusCounts?.[status] || 0)
+
+const formatWhen = (value?: string | null) => {
+  if (!value) return 'Not set'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return new Intl.DateTimeFormat('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }).format(date)
+}
+
+const formatDay = (value?: string | null) => {
+  if (!value) return 'Undated'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return 'Undated'
+  const today = new Date()
+  const startOf = (item: Date) => new Date(item.getFullYear(), item.getMonth(), item.getDate()).getTime()
+  const dayDiff = Math.round((startOf(today) - startOf(date)) / 86400000)
+  if (dayDiff === 0) return 'Today'
+  if (dayDiff === 1) return 'Yesterday'
+  return formatWhen(value)
+}
+
+const formatRelative = (value?: string | null) => {
+  if (!value) return 'Just recorded'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  const minutes = Math.round((Date.now() - date.getTime()) / 60000)
+  if (minutes < 1) return 'Just now'
+  if (minutes < 60) return `${minutes} min ago`
+  const hours = Math.round(minutes / 60)
+  if (hours < 24) return `${hours} hr ago`
+  const days = Math.round(hours / 24)
+  if (days < 14) return `${days} day${days === 1 ? '' : 's'} ago`
+  return formatWhen(value)
+}
 const isSectionActive = (section: string) => selectedSection.value === section
 
 const progressFill = (pct: number | string | undefined) => {
@@ -1491,28 +1747,6 @@ const switchToProgramChairView = () => {
 const switchToFacultyView = () => {
   authStore.setDashboardView('faculty')
   router.push('/user/dashboard/faculty')
-}
-
-const openNotifyProgramChairModal = (programId: number | string | null) => {
-  selectedProgramId.value = programId
-  showNotifyModal.value = true
-}
-
-const handleNotificationSubmitted = async (data: any) => {
-  // Log the notification data
-  console.log('Notification submitted:', data)
-  
-  // Show success message
-  toastStore.show(
-    `Notification sent to ${data.programName} Program Chair. They will receive an in-app and email notification.`,
-    'success'
-  )
-  
-  // Close the modal
-  showNotifyModal.value = false
-  
-  // Refresh dashboard to show any updates
-  await loadDashboard()
 }
 
 const statIcons: Record<string, any> = {
@@ -1613,6 +1847,14 @@ const loadDashboard = async () => {
     }
 
     collegeName.value = deanCollegeName
+    collegeProfile.value = {
+      name: payload.college?.name || deanCollegeName,
+      code: payload.college?.code || '',
+      campus: payload.college?.campus || '',
+      description: payload.college?.description || '',
+    }
+    deanIssueItems.value = Array.isArray(payload.issues) ? payload.issues : []
+    activityEvents.value = Array.isArray(payload.activity) ? payload.activity : []
 
     stats.value = (payload.stats || []).map((item: any) => ({
       label: item.label,
@@ -1632,13 +1874,23 @@ const loadDashboard = async () => {
       return {
         id: program.id,
         name: program.name,
-        chair: program.chair || 'Pending assignment',
+        code: program.code || '',
+        chair: program.chair || '',
+        needsChairAssigned: Boolean(program.needsChairAssigned || !program.chair),
         faculty: Array.isArray(program.faculty) ? program.faculty : [],
         facultyCount: Number(program.facultyCount || (Array.isArray(program.faculty) ? program.faculty.length : 0)),
         complianceScore: pct,
         accreditationStatus: program.accreditationStatus || 'pending',
         accreditationLevel: accreditationLevel,
+        cycleStatus: program.cycleStatus || '',
+        workflowStatus: program.workflowStatus || '',
+        instrumentName: program.instrumentName || '',
+        scheduledVisit: program.scheduledVisit || '',
+        validUntil: program.validUntil || '',
         documentCount: program.documentCount || 0,
+        documentStatusCounts: program.documentStatusCounts || {},
+        requirementProgress: program.requirementProgress || {},
+        requirements: Array.isArray(program.requirements) ? program.requirements : [],
         areaProgress: Array.isArray(program.areaProgress) ? program.areaProgress : [],
         pct,
         status,
@@ -3643,18 +3895,405 @@ const handleProgramCreated = async () => {
   transition: all 0.2s ease;
 }
 
-.dean-action-notify {
-  background: linear-gradient(135deg, var(--adams-structure-primary) 0%, var(--adams-structure-secondary) 100%);
-  color: white;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+.dean-college-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(220px, 0.8fr);
+  gap: 1rem;
+  padding: 1.15rem 1.2rem;
+  border: 1px solid rgba(15, 118, 110, 0.14);
+  border-radius: 1rem;
+  background:
+    radial-gradient(circle at top right, rgba(37, 99, 235, 0.08), transparent 42%),
+    linear-gradient(135deg, rgba(15, 118, 110, 0.1), rgba(255, 255, 255, 0.7));
 }
 
-.dean-action-notify:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+.dean-college-hero h2 {
+  margin: 0.15rem 0 0.45rem;
+  font-size: clamp(1.5rem, 2vw, 2.1rem);
+  letter-spacing: -0.04em;
+  line-height: 1.05;
 }
 
-.dean-action-notify:active {
-  transform: translateY(0);
+.dean-college-lead {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--adams-text-muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.dean-college-identity {
+  display: grid;
+  gap: 0.55rem;
+  align-content: center;
+}
+
+.dean-college-identity span {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.8rem;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--adams-gridline);
+}
+
+.dean-college-identity small {
+  color: var(--adams-text-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dean-college-identity strong {
+  color: var(--adams-text-primary);
+  font-size: 0.86rem;
+  text-align: right;
+}
+
+.dean-fact-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.dean-fact {
+  padding: 0.9rem 1rem;
+  border-radius: 0.95rem;
+  border: 1px solid var(--adams-gridline);
+  background: var(--adams-canvas-panel, #fff);
+}
+
+.dean-fact small,
+.dean-issue-meta small {
+  display: block;
+  color: var(--adams-text-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dean-fact strong {
+  display: block;
+  margin: 0.25rem 0 0.2rem;
+  font-size: 1.35rem;
+  letter-spacing: -0.03em;
+}
+
+.dean-fact p,
+.dean-empty-copy {
+  margin: 0;
+  color: var(--adams-text-muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.dean-data-table {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.dean-data-head,
+.dean-data-row {
+  display: grid;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.dean-data-programs { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) 0.8fr 0.55fr 0.7fr; }
+.dean-data-readiness { grid-template-columns: minmax(0, 1.4fr) 0.8fr 0.9fr minmax(140px, 1fr); }
+.dean-data-deadlines { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) 0.8fr 0.9fr; }
+.dean-data-evidence { grid-template-columns: minmax(0, 1.6fr) repeat(4, 0.55fr); }
+.dean-data-standing { grid-template-columns: minmax(0, 1.4fr) 0.7fr 0.9fr 0.8fr 0.8fr; }
+
+.dean-data-head {
+  padding: 0 0.85rem;
+  color: var(--adams-text-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dean-data-row {
+  width: 100%;
+  padding: 0.8rem 0.85rem;
+  border: 1px solid var(--adams-gridline);
+  border-radius: 0.85rem;
+  background: var(--adams-canvas);
+  color: var(--adams-text-primary);
+  text-align: left;
+  font: inherit;
+}
+
+button.dean-data-row {
+  cursor: pointer;
+}
+
+button.dean-data-row:hover {
+  border-color: rgba(15, 118, 110, 0.35);
+  background: #fff;
+}
+
+.dean-data-row strong,
+.dean-report-block strong,
+.dean-timeline-item strong,
+.dean-issue-card h3 {
+  display: block;
+  font-size: 0.92rem;
+}
+
+.dean-data-row small,
+.dean-report-block small,
+.dean-timeline-item small {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--adams-text-muted);
+  font-size: 0.75rem;
+}
+
+.dean-data-row[data-overdue='yes'] {
+  background: #fff7f7;
+  border-color: #fecdd3;
+}
+
+.dean-readiness-pill {
+  justify-self: start;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: var(--adams-warning-soft);
+  color: var(--adams-accent-pending);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.dean-readiness-pill.on-track { background: var(--adams-success-soft); color: var(--adams-accent-success); }
+.dean-readiness-pill.at-risk,
+.dean-readiness-pill.needs-attention { background: var(--adams-danger-soft); color: var(--adams-accent-urgent); }
+
+.dean-mix-list,
+.dean-issue-list,
+.dean-report-body,
+.dean-timeline {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.dean-mix-row,
+.dean-area-report-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.8fr) minmax(0, 1fr) 3rem;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.dean-mix-row small { color: var(--adams-text-muted); }
+
+.dean-mix-track,
+.dean-mini-track {
+  display: block;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--adams-gridline);
+  overflow: hidden;
+}
+
+.dean-mix-track span,
+.dean-mini-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--adams-structure-primary);
+}
+
+.dean-mix-row em {
+  font-style: normal;
+  font-weight: 800;
+  font-size: 0.82rem;
+}
+
+.dean-filter-row,
+.dean-report-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.dean-filter-chip,
+.dean-report-nav button,
+.dean-text-btn {
+  border: 1px solid var(--adams-gridline);
+  background: #fff;
+  color: var(--adams-text-primary);
+  cursor: pointer;
+}
+
+.dean-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.dean-filter-chip span {
+  min-width: 1.3rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 999px;
+  background: var(--adams-canvas);
+  color: var(--adams-text-muted);
+  text-align: center;
+  font-size: 0.72rem;
+}
+
+.dean-filter-chip.active {
+  border-color: var(--adams-structure-primary);
+  background: var(--adams-primary-soft);
+  color: var(--adams-structure-primary);
+}
+
+.dean-issue-card,
+.dean-report-block,
+.dean-empty-panel,
+.dean-timeline-item {
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--adams-gridline);
+  border-radius: 0.95rem;
+  background: #fff;
+}
+
+.dean-issue-card { border-left: 4px solid var(--adams-gridline); }
+.dean-issue-card[data-severity='high'] { border-left-color: var(--adams-accent-urgent); }
+.dean-issue-card[data-severity='medium'] { border-left-color: var(--adams-accent-pending); }
+.dean-issue-card[data-severity='watch'] { border-left-color: var(--adams-structure-primary); }
+
+.dean-issue-top,
+.dean-report-block header,
+.dean-timeline-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.dean-timeline-item { align-items: flex-start; }
+
+.dean-severity,
+.dean-timeline-kind,
+.dean-issue-category {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dean-severity,
+.dean-timeline-kind {
+  padding: 0.18rem 0.45rem;
+  border-radius: 999px;
+  background: var(--adams-canvas);
+}
+
+.dean-severity[data-severity='high'] { background: var(--adams-danger-soft); color: var(--adams-accent-urgent); }
+.dean-severity[data-severity='medium'] { background: var(--adams-warning-soft); color: var(--adams-accent-pending); }
+.dean-severity[data-severity='watch'] { background: var(--adams-primary-soft); color: var(--adams-structure-primary); }
+.dean-issue-category { color: var(--adams-text-muted); }
+
+.dean-issue-card h3 { margin: 0.55rem 0 0.3rem; }
+.dean-issue-card p,
+.dean-timeline-item p,
+.dean-faculty-names {
+  margin: 0;
+  color: var(--adams-text-primary);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.dean-issue-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin: 0.8rem 0;
+}
+
+.dean-issue-action {
+  padding: 0.7rem 0.75rem;
+  border-radius: 0.75rem;
+  background: var(--adams-canvas);
+  color: var(--adams-text-primary);
+}
+
+.dean-text-btn {
+  margin-top: 0.75rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.dean-text-btn:hover { border-color: var(--adams-structure-primary); }
+
+.dean-empty-panel h3 { margin: 0 0 0.3rem; font-size: 1rem; }
+.dean-empty-panel p { margin: 0; color: var(--adams-text-muted); }
+
+.dean-report-shell {
+  display: grid;
+  grid-template-columns: minmax(210px, 260px) minmax(0, 1fr);
+  gap: 0.9rem;
+  align-items: start;
+}
+
+.dean-report-nav { flex-direction: column; }
+
+.dean-report-nav button {
+  display: grid;
+  gap: 0.2rem;
+  width: 100%;
+  padding: 0.75rem 0.8rem;
+  border-radius: 0.85rem;
+  text-align: left;
+}
+
+.dean-report-nav button strong { font-size: 0.86rem; }
+.dean-report-nav button span { color: var(--adams-text-muted); font-size: 0.75rem; line-height: 1.35; }
+.dean-report-nav button.active {
+  border-color: var(--adams-structure-primary);
+  background: var(--adams-primary-soft);
+}
+
+.dean-report-panel { min-width: 0; }
+.dean-area-report,
+.dean-coverage-list { display: grid; gap: 0.55rem; }
+.dean-bar-cell { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.45rem; align-items: center; }
+.dean-timeline-group { display: grid; gap: 0.55rem; }
+.dean-timeline-group h3 {
+  margin: 0.2rem 0 0;
+  color: var(--adams-text-muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.dean-timeline-kind[data-kind='evidence'] { background: var(--adams-primary-soft); color: var(--adams-structure-primary); }
+.dean-timeline-kind[data-kind='requirement'] { background: var(--adams-warning-soft); color: var(--adams-accent-pending); }
+.dean-timeline-kind[data-kind='cycle'] { background: var(--adams-success-soft); color: var(--adams-accent-success); }
+
+@media (max-width: 960px) {
+  .dean-college-hero,
+  .dean-report-shell,
+  .dean-fact-grid,
+  .dean-issue-meta,
+  .dean-data-programs,
+  .dean-data-readiness,
+  .dean-data-deadlines,
+  .dean-data-evidence,
+  .dean-data-standing {
+    grid-template-columns: 1fr;
+  }
+
+  .dean-data-head { display: none; }
 }
 </style>

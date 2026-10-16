@@ -139,25 +139,22 @@
           </button>
         </div>
         <div class="fal-modal-body">
-          <label class="fal-field-label">Search faculty</label>
-          <input v-model="facultySearch" class="fal-search-input" placeholder="Search faculty by name or email..." />
-          <div class="fal-faculty-picker">
-            <label
-              v-for="person in searchableFaculty"
+          <label class="fal-field-label">
+            {{ modalRole === 'chair' ? 'Area Chair' : 'Area Member' }}
+          </label>
+          <select v-model="modalFacultyId" class="fal-input-select">
+            <option value="">Select a program member</option>
+            <option
+              v-for="person in facultyForAssignmentOptions"
               :key="person.id"
-              class="fal-faculty-option"
-              :class="{ selected: String(modalFacultyId) === String(person.id) }"
+              :value="String(person.id)"
             >
-              <input type="radio" :value="person.id" v-model="modalFacultyId" />
-              <img v-if="person.photo" :src="person.photo" :alt="person.name" class="fal-avatar-img" />
-              <div v-else class="fal-avatar-fallback">{{ getInitials(person.name) }}</div>
-              <span>
-                <strong>{{ person.name }}</strong>
-                <small>{{ person.email }}</small>
-              </span>
-            </label>
-            <p v-if="!searchableFaculty.length" class="fal-empty-state">No faculty found in this program.</p>
-          </div>
+              {{ person.name }}{{ person.email ? ` · ${person.email}` : '' }}
+            </option>
+          </select>
+          <p v-if="!facultyForAssignmentOptions.length" class="fal-empty-state">
+            No faculty found in this program.
+          </p>
 
           <label class="fal-field-label">Area</label>
           <select v-model="modalAreaId" class="fal-input-select" disabled>
@@ -166,8 +163,8 @@
           </select>
           <p class="fal-empty-state">
             {{ modalRole === 'chair'
-              ? 'This faculty becomes the Area Chair for the selected area. Members are optional and can be added with +.'
-              : 'Members are optional. Small programs can skip this and keep only the Area Chair.' }}
+              ? 'Only program members can be assigned. This person becomes the Area Chair for the selected area.'
+              : 'Only program members can be added. Members are optional for small programs.' }}
           </p>
 
           <p v-if="modalMessage" :class="['fal-modal-message', modalMessageType]">
@@ -246,7 +243,6 @@ const isLoading = ref(false)
 
 const isAddModalOpen = ref(false)
 const modalRole = ref<'chair' | 'member'>('chair')
-const facultySearch = ref('')
 const workspaceId = computed(() => selectedWorkspaceId.value)
 const modalFacultyId = ref('')
 const modalAreaId = ref('')
@@ -282,14 +278,6 @@ const facultyForAssignmentOptions = computed(() => {
 })
 
 const lockedArea = computed(() => areas.value.find((area) => String(area.id) === String(filterArea.value || modalAreaId.value)) || areas.value[0] || null)
-
-const searchableFaculty = computed(() => {
-  const query = facultySearch.value.trim().toLowerCase()
-  return facultyForAssignmentOptions.value.filter((person) => {
-    if (!query) return true
-    return `${person.name} ${person.email}`.toLowerCase().includes(query)
-  })
-})
 
 watch([filterArea, lockedArea, isAddModalOpen], () => {
   if (lockedArea.value) {
@@ -430,7 +418,6 @@ watch(selectedWorkspaceId, (id) => {
 
 const openAddModal = (role: 'chair' | 'member', areaId?: number) => {
   modalRole.value = role
-  facultySearch.value = ''
   modalFacultyId.value = ''
   modalMessage.value = ''
   if (areaId) {

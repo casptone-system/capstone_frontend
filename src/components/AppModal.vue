@@ -1,22 +1,27 @@
 <template>
-  <div v-if="modelValue" class="modal-overlay" @click="closeModal">
-    <div class="modal-dialog" :class="`size-${size}`" @click.stop>
-      <div class="modal-header">
-        <h2 class="modal-title">{{ title }}</h2>
-        <button class="modal-close" @click="closeModal" aria-label="Close modal">
-          <ion-icon :icon="closeIcon"></ion-icon>
-        </button>
-      </div>
+  <Teleport to="body">
+    <div v-if="modelValue" class="modal-overlay" @click="closeModal">
+      <div class="modal-dialog" :class="`size-${size}`" @click.stop>
+        <div class="modal-header">
+          <div>
+            <h2 class="modal-title">{{ title }}</h2>
+            <p v-if="subtitle" class="modal-subtitle">{{ subtitle }}</p>
+          </div>
+          <button class="modal-close" @click="closeModal" aria-label="Close modal">
+            <ion-icon :icon="closeIcon"></ion-icon>
+          </button>
+        </div>
 
-      <div class="modal-body">
-        <slot></slot>
-      </div>
+        <div class="modal-body">
+          <slot></slot>
+        </div>
 
-      <div v-if="$slots.footer" class="modal-footer">
-        <slot name="footer"></slot>
+        <div v-if="$slots.footer" class="modal-footer">
+          <slot name="footer"></slot>
+        </div>
       </div>
     </div>
-  </div>
+  </Teleport>
 </template>
 
 <script lang="ts">
@@ -32,6 +37,10 @@ export default defineComponent({
       default: false,
     },
     title: {
+      type: String,
+      default: '',
+    },
+    subtitle: {
       type: String,
       default: '',
     },
@@ -83,12 +92,14 @@ export default defineComponent({
 }
 
 .modal-dialog {
-  background-color: var(--color-surface);
-  border-radius: var(--radius-2xl);
-  box-shadow: var(--shadow-2xl);
-  max-height: 90vh;
-  overflow-y: auto;
-  animation: slideUp var(--transition-base);
+  background-color: var(--color-surface, #fff);
+  border-radius: var(--radius-2xl, 1.25rem);
+  box-shadow: var(--shadow-2xl, 0 24px 70px rgba(15, 23, 42, 0.22));
+  max-height: min(90vh, 860px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp var(--transition-base, 0.18s) ease;
   width: 100%;
   max-width: 560px;
 }
@@ -122,9 +133,17 @@ export default defineComponent({
 
 .modal-title {
   margin: 0;
-  font-size: var(--text-xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text);
+  font-size: var(--text-xl, 1.25rem);
+  font-weight: var(--font-weight-bold, 800);
+  color: var(--color-text, #0f172a);
+}
+
+.modal-subtitle {
+  margin: 0.35rem 0 0;
+  color: var(--color-text-secondary, #64748b);
+  font-size: 0.86rem;
+  font-weight: 500;
+  line-height: 1.45;
 }
 
 .modal-close {
@@ -152,7 +171,9 @@ export default defineComponent({
 }
 
 .modal-body {
-  padding: var(--spacing-xl);
+  padding: var(--spacing-xl, 1.25rem);
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .modal-footer {

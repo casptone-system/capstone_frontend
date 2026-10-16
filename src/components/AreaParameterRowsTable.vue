@@ -247,6 +247,8 @@ const props = defineProps<{
   programId?: number | string | null
   areaId?: number | string | null
   parameterId?: number | string | null
+  persistContent?: (row: ParameterRow, content: string) => Promise<Partial<ParameterRow> | void>
+  deleteContent?: (row: ParameterRow) => Promise<void>
 }>()
 
 const emit = defineEmits<{
@@ -366,8 +368,10 @@ const saveContent = async (row: ParameterRow) => {
 
   try {
     error.value = ''
-    const updated = await patchParameterRowContent(row.id, content)
-    emit('updated', { ...row, ...updated, content })
+    const updated = props.persistContent
+      ? await props.persistContent(row, content)
+      : await patchParameterRowContent(row.id, content)
+    emit('updated', { ...row, ...(updated || {}), content })
     cancelEdit()
   } catch (err: any) {
     error.value = err?.response?.data?.message || 'Unable to save content.'
@@ -379,7 +383,8 @@ const removeRow = async (row: ParameterRow) => {
 
   try {
     error.value = ''
-    await deleteParameterRow(row.id)
+    if (props.deleteContent) await props.deleteContent(row)
+    else await deleteParameterRow(row.id)
     emit('removed', row)
   } catch (err: any) {
     error.value = err?.response?.data?.message || 'Unable to remove this row.'

@@ -1,6 +1,6 @@
 <template>
   <AdamsAppShell
-    role-label="Super Administrator"
+    role-label="System Admin"
     :page-title="pageTitle"
     :page-description="pageDescription"
   >
@@ -58,12 +58,9 @@ import { IonIcon } from '@ionic/vue'
 import {
   barChartOutline,
   businessOutline,
-  documentTextOutline,
-  documentsOutline,
   gridOutline,
   peopleOutline,
   settingsOutline,
-  shieldCheckmarkOutline,
 } from 'ionicons/icons'
 import AdamsAppShell from '@/components/ui/AdamsAppShell.vue'
 
@@ -87,10 +84,10 @@ const pageTitle = computed(() => {
 const pageDescription = computed(() => {
   if (route.path === '/superadmin') return 'Monitor users, colleges, accreditation activity, and system health.'
   if (route.path.startsWith('/superadmin/colleges')) return 'Manage colleges and institutes on Echague Main Campus. IOF is the current respondent unit.'
-  if (route.path.startsWith('/superadmin/users')) return 'Manage accounts, roles, access, and user status.'
+  if (route.path.startsWith('/superadmin/users')) return 'Manage accounts, roles, and access.'
   if (route.path.startsWith('/superadmin/roles')) return 'Configure roles, permissions, and access policies.'
   if (route.path.startsWith('/superadmin/activity')) return 'Review audit history and important system activity.'
-  if (route.path.startsWith('/superadmin/accreditation')) return 'Monitor institutional compliance and readiness.'
+  if (route.path.startsWith('/superadmin/accreditation')) return 'Institutional view of AACCUP cycles, from the VPAA notice through the scheduled visit.'
   if (route.path.startsWith('/superadmin/board-of-action')) return 'Upload the accreditor\'s Board of Action from the hard copy given to the university.'
   if (route.path.startsWith('/superadmin/universal-files')) return 'Upload shared PDFs into an AACCUP area. Every program chair sees them in that same group.'
   if (route.path.startsWith('/superadmin/file-requests')) return 'Read-only view of file requests between program chairs.'
@@ -104,11 +101,11 @@ const primaryItems = [
 
 const organizationItems = [
   { label: 'Colleges', route: '/superadmin/colleges', icon: businessOutline },
-  { label: 'Board of Action', route: '/superadmin/board-of-action', icon: documentTextOutline },
-  { label: 'Universal Files', route: '/superadmin/universal-files', icon: documentsOutline },
-  { label: 'File Requests', route: '/superadmin/file-requests', icon: documentTextOutline },
+  // { label: 'Board of Action', route: '/superadmin/board-of-action', icon: documentTextOutline },
+  // { label: 'Universal Files', route: '/superadmin/universal-files', icon: documentsOutline },
+  // { label: 'File Requests', route: '/superadmin/file-requests', icon: documentTextOutline },
   { label: 'Users', route: '/superadmin/users', icon: peopleOutline },
-  { label: 'Roles & Permissions', route: '/superadmin/roles', icon: shieldCheckmarkOutline },
+  // { label: 'Roles & Permissions', route: '/superadmin/roles', icon: shieldCheckmarkOutline },
 ]
 
 const systemItems = [

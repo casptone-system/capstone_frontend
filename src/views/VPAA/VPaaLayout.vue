@@ -15,15 +15,9 @@
 
       <p class="adams-nav-label">Management</p>
       <router-link :to="{ name: 'vpaa-instruments' }" custom v-slot="{ isActive, navigate }">
-        <button type="button" class="adams-nav-item" :class="{ active: isActive }" @click="navigate">
+        <button type="button" class="adams-nav-item" :class="{ active: isActive || route.name === 'vpaa-area-parameters' }" @click="navigate">
           <span class="adams-nav-icon"><ion-icon :icon="documentTextOutline" /></span>
           <span>Instruments</span>
-        </button>
-      </router-link>
-      <router-link :to="{ name: 'vpaa-area-parameters' }" custom v-slot="{ isActive, navigate }">
-        <button type="button" class="adams-nav-item" :class="{ active: isActive }" @click="navigate">
-          <span class="adams-nav-icon"><ion-icon :icon="layersOutline" /></span>
-          <span>Area Parameters</span>
         </button>
       </router-link>
 
@@ -50,12 +44,6 @@
         <button type="button" class="adams-nav-item" :class="{ active: isActive }" @click="navigate">
           <span class="adams-nav-icon"><ion-icon :icon="barChartOutline" /></span>
           <span>Reports</span>
-        </button>
-      </router-link>
-      <router-link :to="{ name: 'vpaa-file-requests' }" custom v-slot="{ isActive, navigate }">
-        <button type="button" class="adams-nav-item" :class="{ active: isActive }" @click="navigate">
-          <span class="adams-nav-icon"><ion-icon :icon="documentTextOutline" /></span>
-          <span>File Requests</span>
         </button>
       </router-link>
 
@@ -89,7 +77,6 @@ import {
   calendarOutline,
   documentTextOutline,
   gridOutline,
-  layersOutline,
   listOutline,
   notificationsOutline,
   trendingUpOutline,
@@ -105,8 +92,8 @@ const pageMeta: Record<string, { title: string; description: string }> = {
   'vpaa-accreditations': { title: 'Accreditations', description: 'Track accreditation cycles across programs.' },
   'vpaa-create-accreditation': { title: 'New Cycle', description: 'Create a new institutional accreditation cycle.' },
   'vpaa-accreditation-detail': { title: 'Accreditation Detail', description: 'Review program accreditation progress.' },
-  'vpaa-instruments': { title: 'Instruments', description: 'Manage accreditation instruments and templates.' },
-  'vpaa-area-parameters': { title: 'Area Parameters', description: 'Configure area parameters and requirements.' },
+  'vpaa-instruments': { title: 'Instruments', description: 'Edit area parameters for Preliminary Level and Levels 1–4.' },
+  'vpaa-area-parameters': { title: 'Instruments', description: 'Edit area parameters for Preliminary Level and Levels 1–4.' },
   'vpaa-schedule': { title: 'Schedule', description: 'Set accreditation visit dates and validity per program.' },
   'vpaa-readiness': { title: 'Readiness', description: 'Monitor accreditation preparation status per program.' },
   'vpaa-at-risk': { title: 'At Risk', description: 'Programs with expired validity or incomplete preparation.' },

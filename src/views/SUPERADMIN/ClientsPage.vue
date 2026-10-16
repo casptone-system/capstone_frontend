@@ -183,6 +183,7 @@
       ====================================================== -->
       <AppModal
         v-model="showForm"
+        size="lg"
         :title="
           editingCollege
             ? 'Edit College'
@@ -327,15 +328,17 @@
 
           <div class="modal-footer-actions">
 
-            <ion-button
-              fill="outline"
+            <button
+              type="button"
+              class="modal-btn modal-btn-secondary"
               @click="cancelForm"
             >
               Cancel
-            </ion-button>
+            </button>
 
-            <ion-button
-              class="sa-btn-primary"
+            <button
+              type="button"
+              class="modal-btn modal-btn-primary"
               :disabled="
                 !form.name.trim() ||
                 !form.code.trim()
@@ -347,7 +350,7 @@
                   ? 'Save Changes'
                   : 'Create College'
               }}
-            </ion-button>
+            </button>
 
           </div>
 
@@ -1250,12 +1253,13 @@ onMounted(() => {
 }
 
 
+.form-grid > .full,
 .form-grid > label.full {
   grid-column: 1 / -1;
 }
 
 
-.form-grid input,
+.form-grid input:not([type='checkbox']),
 .form-grid textarea {
   box-sizing: border-box;
 
@@ -1280,7 +1284,7 @@ onMounted(() => {
 }
 
 
-.form-grid input:focus,
+.form-grid input:not([type='checkbox']):focus,
 .form-grid textarea:focus {
   border-color: #0f766e;
 
@@ -1354,10 +1358,28 @@ onMounted(() => {
 .modal-footer-actions {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
 
   gap: 0.6rem;
 
   width: 100%;
+}
+
+.modal-btn-primary {
+  border: 1px solid #0f766e;
+  background: #0f766e;
+  color: #fff;
+}
+
+.modal-btn-primary:hover:not(:disabled) {
+  background: #115e59;
+  border-color: #115e59;
+}
+
+.modal-btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 
@@ -1642,7 +1664,7 @@ onMounted(() => {
   }
 
 
-  .modal-footer-actions ion-button {
+  .modal-footer-actions .modal-btn {
     width: 100%;
   }
 

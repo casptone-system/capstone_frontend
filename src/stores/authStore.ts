@@ -321,11 +321,9 @@ export const useAuthStore = defineStore('auth', () => {
         password,
       })
 
-      // DISABLED: 2FA code entry — backend now returns token immediately, see [2026-08-18]
-      // Check if backend returned a token directly (2FA bypassed) or a challenge token (old flow)
+      // Token = session issued (role skipped 2FA). challenge_token = OTP required.
       const token = response.data.data.token
       if (token) {
-        // New flow: backend returned token immediately (2FA is skipped)
         setToken(token, remember)
         const userData = response.data.data.user
         if (userData) {
@@ -347,8 +345,7 @@ export const useAuthStore = defineStore('auth', () => {
           resetSessionTimer()
         }
         clearLoginChallenge()
-      } else {
-        // Old flow: backend returned challenge token (2FA still enabled)
+      } else if (response.data.data.challenge_token) {
         loginChallenge.value = {
           challengeToken: response.data.data.challenge_token,
           email: response.data.data.email,
@@ -356,6 +353,8 @@ export const useAuthStore = defineStore('auth', () => {
           remember,
         }
         persistLoginChallenge()
+      } else {
+        throw new Error('Login did not return a session or verification challenge.')
       }
 
       return response.data

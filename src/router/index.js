@@ -136,12 +136,6 @@ const VPaaInstruments = () =>
     '@/views/VPAA/VPaaInstruments.vue'
   )
 
-const VPaaAreaParameters = () =>
-  import(
-    /* webpackChunkName: "vpaa-area-parameters" */
-    '@/views/VPAA/VPaaAreaParameters.vue'
-  )
-
 const VPaaSchedule = () =>
   import(
     /* webpackChunkName: "vpaa-schedule" */
@@ -532,7 +526,7 @@ const routes = [
       {
         path: 'area-parameters',
         name: 'vpaa-area-parameters',
-        component: VPaaAreaParameters,
+        redirect: { name: 'vpaa-instruments' },
       },
       {
         path: 'schedule',

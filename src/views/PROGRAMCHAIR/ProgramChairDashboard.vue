@@ -112,16 +112,52 @@
       </button>
     </template>
 
-          <section v-if="selectedSection === 'dashboard'" class="pc-card">
-            <AccreditationLevelStatus view="program-chair" title="Program accreditation by level" />
-          </section>
-
-          <section v-if="selectedSection === 'dashboard' && currentProgram?.id" class="pc-card">
-            <ProgramActiveLevelToggle :program-id="currentProgram.id" />
-          </section>
-
-          <section v-if="selectedSection === 'dashboard'" class="pc-card">
-            <SubmitToAccreditorPanel />
+          <section v-if="selectedSection === 'dashboard'" class="pc-program-context-card">
+            <div class="pc-program-context-header">
+              <div>
+                <p class="pc-program-context-label">Your program</p>
+                <h2>{{ assignedProgramName }}</h2>
+                <p class="pc-program-context-line">{{ assignedCollegeName }} · {{ assignedProgramCode }}</p>
+              </div>
+              <span class="pc-program-context-chip">{{ activeLevelLabel || 'Active level not set' }}</span>
+            </div>
+            <div class="pc-readiness">
+              <div class="pc-readiness-meta">
+                <strong>{{ dashboardReady ? `${completionRate}%` : '—' }}</strong>
+                <span>Average completion across the AACCUP areas on the active level.</span>
+              </div>
+              <div class="pc-readiness-track" aria-hidden="true">
+                <div class="pc-readiness-fill" :style="{ width: `${dashboardReady ? completionRate : 0}%` }"></div>
+              </div>
+            </div>
+            <p v-if="levelStanding" class="pc-level-standing">{{ levelStanding }}</p>
+            <div class="pc-program-context-grid">
+              <div class="pc-program-context-meta">
+                <span>Area chairs</span>
+                <strong>{{ chairCoverageLabel }}</strong>
+              </div>
+              <div class="pc-program-context-meta">
+                <span>Faculty on roster</span>
+                <strong>{{ rosterPeople.length }}</strong>
+              </div>
+              <div class="pc-program-context-meta">
+                <span>Evidence in review</span>
+                <strong>{{ documents.length }}</strong>
+              </div>
+            </div>
+            <div class="pc-program-context-faculty">
+              <p class="pc-program-context-faculty-title">Faculty who can upload evidence</p>
+              <p v-if="!rosterPeople.length" class="pc-muted">No faculty are on this program yet. Generate a team code and send it from Team & Invitations.</p>
+              <div v-else class="pc-program-context-faculty-list">
+                <span v-for="person in rosterPreview" :key="person.id" class="pc-program-context-faculty-pill">
+                  <span class="pc-program-context-faculty-avatar">{{ getInitials(person.name) }}</span>
+                  {{ person.name }}
+                </span>
+                <button v-if="rosterPeople.length > rosterPreview.length" class="pc-link-btn" type="button" @click="selectSection('team')">
+                  +{{ rosterPeople.length - rosterPreview.length }} more
+                </button>
+              </div>
+            </div>
           </section>
 
           <section v-if="selectedSection === 'dashboard'" class="pc-card pc-todo-card">
@@ -129,44 +165,37 @@
               <div class="pc-card-title-group">
                 <div class="pc-card-icon blue"><ion-icon :icon="checkmarkCircleOutline" /></div>
                 <div>
-                  <h2 class="pc-card-title">Today’s To-dos</h2>
-                  <p class="pc-card-sub">Priority program actions for the current day.</p>
+                  <h2 class="pc-card-title">What needs you</h2>
+                  <p class="pc-card-sub">Built from this program’s areas, deadlines, evidence, and requests.</p>
                 </div>
               </div>
             </div>
 
             <div class="pc-todo-list">
-              <div v-for="todo in todayTodos" :key="todo.id" class="pc-todo-item">
+              <button
+                v-for="todo in todayTodos"
+                :key="todo.id"
+                class="pc-todo-item"
+                :class="{ 'is-static': !todo.section }"
+                type="button"
+                @click="openDashboardAction(todo)"
+              >
                 <span class="pc-todo-status" :class="todo.statusClass"></span>
                 <div class="pc-todo-copy">
                   <strong>{{ todo.title }}</strong>
                   <span>{{ todo.meta }}</span>
                 </div>
                 <small>{{ todo.time }}</small>
-              </div>
+              </button>
             </div>
           </section>
 
-          <section v-if="selectedSection === 'dashboard'" class="pc-program-context-card">
-            <div v-if="assignedFaculty.length" class="pc-program-context-faculty">
-              <p class="pc-program-context-faculty-title">Faculty in this program</p>
-            </div>
-            <div class="pc-program-context-grid">
-              <div class="pc-program-context-meta">
-                <span>Program code</span>
-                <strong>{{ assignedProgramCode || '—' }}</strong>
-              </div>
-              <div class="pc-program-context-meta">
-                <span>Faculty</span>
-                <strong>{{ assignedFacultyCount }}</strong>
-              </div>
-              <div class="pc-program-context-meta">
-                <span>Shareable code</span>
-                <strong>{{ activeCode || 'Not generated yet' }}</strong>
-              </div>
-            </div>
+          <section v-if="selectedSection === 'dashboard'" class="pc-card">
+            <AccreditationLevelStatus view="program-chair" title="Program accreditation by level" />
+          </section>
 
-            
+          <section v-if="selectedSection === 'dashboard' && currentProgram?.id" class="pc-card">
+            <ProgramActiveLevelToggle :program-id="currentProgram.id" @updated="refreshAfterLevelChange" />
           </section>
 
           <section v-if="selectedSection === 'team'" class="pc-faculty-management-card">
@@ -190,47 +219,62 @@
                   <ion-icon :icon="keyOutline" /> Generate Invitation Code / Token
                 </button>
                 <p v-if="createTeamError" class="pc-error-text">{{ createTeamError }}</p>
-                <p v-if="createTeamSuccess" class="pc-success-text">{{ createTeamSuccess }}</p>
               </div>
               <div class="pc-code-display">
                 <p class="pc-code-label">Exact value to copy and send</p>
-                <div class="pc-code-digits">
+                <div v-if="activeCode" class="pc-code-digits">
                   <span v-for="(d, idx) in activeCode.split('')" :key="d + idx" class="pc-digit">{{ d }}</span>
                 </div>
+                <p v-else class="pc-code-label">No active code. Generate one to share.</p>
                 <div class="pc-code-actions">
                   <button class="pc-code-btn copy" @click.prevent="copyCode">
                     <ion-icon :icon="copyOutline" /> Copy Code / Token
                   </button>
                   <button class="pc-code-btn send" @click.prevent="submitInvitation">
-                    <ion-icon :icon="mailOutline" /> Send to Member
-                  </button>
-                  <button class="pc-code-btn regen" @click.prevent="regenCode">
-                    <ion-icon :icon="refreshOutline" /> New Value
+                    <ion-icon :icon="mailOutline" /> Send code via email
                   </button>
                   <button class="pc-code-btn regen" @click.prevent="revokeActiveCode">
                     Revoke
                   </button>
                 </div>
+                <p class="pc-code-hint">Each code works once and expires 10 minutes after it is generated.</p>
                 <p v-if="codeMessage" class="pc-code-hint">{{ codeMessage }}</p>
               </div>
               <div class="pc-invite-form">
-                <label class="pc-field-label">Invite faculty by email</label>
+                <label class="pc-field-label">Send team code via email</label>
                 <input class="pc-input" v-model="inviteEmail" placeholder="faculty@example.com" />
                 <button class="pc-btn pc-btn-primary" :disabled="inviteBusy" @click.prevent="submitInvitation">
-                  <ion-icon :icon="mailOutline" /> {{ inviteBusy ? 'Creating...' : 'Create Invitation' }}
+                  <ion-icon :icon="mailOutline" /> {{ inviteBusy ? 'Sending...' : 'Send code via email' }}
                 </button>
                 <p v-if="inviteError" class="pc-error-text">{{ inviteError }}</p>
                 <p v-if="inviteSuccess" class="pc-success-text">{{ inviteSuccess }}</p>
               </div>
               <div class="pc-recent-codes">
                 <p class="pc-recent-label">Recent Codes</p>
-                <div class="pc-recent-row" v-for="c in recentCodes" :key="c.code">
+                <div class="pc-recent-row" v-for="c in recentCodes" :key="c.id || c.code">
                   <span class="pc-recent-code">{{ c.code }}</span>
-                  <span class="pc-recent-used">{{ c.used }}</span>
                   <span :class="['pc-recent-status', c.expired ? 'expired' : 'active']">
                     {{ c.expired ? 'Expired' : 'Active' }}
                   </span>
                 </div>
+                <p v-if="!recentCodes.length" class="pc-empty-inline">No codes generated yet.</p>
+
+                <div class="pc-code-tabs" role="tablist" aria-label="Used codes">
+                  <span class="pc-code-tab active" role="tab" aria-selected="true">Used Codes</span>
+                </div>
+                <button
+                  v-for="c in usedCodes"
+                  :key="c.id || c.code"
+                  type="button"
+                  class="pc-recent-row pc-used-row"
+                  :class="{ selected: selectedUsedCodeId === c.id }"
+                  @click="indicateUsedCode(c)"
+                >
+                  <span class="pc-recent-code">{{ c.code }}</span>
+                  <span class="pc-used-by">{{ c.usedByName || 'Used' }}</span>
+                </button>
+                <p v-if="indicatedUsedBy" class="pc-used-note">{{ indicatedUsedBy }}</p>
+                <p v-if="!usedCodes.length" class="pc-empty-inline">No codes have been used yet.</p>
               </div>
               <div class="pc-recent-codes" v-if="invitations.length">
                 <p class="pc-recent-label">Recent Invitations</p>
@@ -247,20 +291,18 @@
 
             <!-- User Management Section -->
             <div class="pc-section-group" style="margin-top: 2rem; padding-top: 0.5rem;">
-              <h3 class="pc-section-title">User Management</h3>
             <div class="pc-card-header">
               <div class="pc-card-title-group">
                 <div class="pc-card-icon emerald"><ion-icon :icon="peopleOutline" /></div>
                 <div>
                   <h2 class="pc-card-title">User Management</h2>
-                  <p class="pc-card-sub">Manage users assigned to the selected program</p>
+                  <p class="pc-card-sub">Current members of this program</p>
                 </div>
               </div>
-              <button class="pc-link-btn" type="button" @click.prevent="selectSection('team')">Invite user →</button>
             </div>
 
-            <div v-if="facultyRoster.length" class="pc-faculty-roster">
-              <div v-for="member in facultyRoster" :key="member.id || member.email || member.name" class="pc-faculty-row">
+            <div v-if="currentProgramMembers.length" class="pc-faculty-roster">
+              <div v-for="member in currentProgramMembers" :key="member.id || member.email || member.name" class="pc-faculty-row">
                 <div class="pc-faculty-avatar-wrap">
                   <img v-if="member.photo" :src="member.photo" :alt="member.name || member.email || 'Faculty profile'" class="pc-faculty-avatar" />
                   <div v-else class="pc-faculty-avatar-fallback">{{ getInitials(member.name || member.email || 'F') }}</div>
@@ -272,21 +314,12 @@
                 </div>
 
                 <span class="pc-faculty-role-chip">{{ member.role || 'Faculty' }}</span>
-
-                <button class="pc-btn pc-btn-ghost pc-faculty-action-btn" @click.prevent="callUser({ name: member.name || member.email || 'Faculty member', role: member.role || 'Faculty' })">
-                  <ion-icon :icon="callOutline" /> Contact
-                </button>
               </div>
             </div>
 
-            <p v-else class="pc-empty-state">No faculty members have been assigned to this program yet.</p>
+            <p v-else class="pc-empty-state">No current members are assigned to this program yet.</p>
             </div>
           </section>
-
-          <div v-if="callMessage" class="pc-call-banner">
-            <div>{{ callMessage }}</div>
-            <button class="pc-btn pc-btn-ghost" v-if="activeCall" @click="endCall">End Call</button>
-          </div>
 
           <!-- Stat cards stay on Dashboard (and other sections that were not named for removal). -->
           <section v-if="showStatCards" class="pc-stat-strip">
@@ -313,8 +346,8 @@
                   <div class="pc-card-title-group">
                     <div class="pc-card-icon blue"><ion-icon :icon="documentTextOutline" /></div>
                     <div>
-                      <h2 class="pc-card-title">Document Review</h2>
-                      <p class="pc-card-sub">Submitted by Area In-Charges — approve or return</p>
+                      <h2 class="pc-card-title">Evidence waiting for a decision</h2>
+                      <p class="pc-card-sub">{{ documents.length ? `${documents.length} active or draft PDF${documents.length === 1 ? '' : 's'} still need approve or return.` : 'No active or draft PDFs are waiting.' }}</p>
                     </div>
                   </div>
                   <button class="pc-link-btn" type="button" @click="selectSection('review')">All Submissions →</button>
@@ -323,8 +356,8 @@
                   <div class="pc-table-header">
                     <span>Document</span><span>Area In-Charge</span><span>Submitted</span><span>Action</span>
                   </div>
-                  <p v-if="!documents.length" class="pc-muted" style="padding: 1rem;">No submitted files yet.</p>
-                  <div v-for="doc in documents" :key="doc.documentId || doc.title">
+                  <p v-if="!documents.length" class="pc-muted" style="padding: 1rem;">Nothing is in the review queue. Faculty uploads marked Active or Draft will appear here.</p>
+                  <div v-for="doc in reviewPreview" :key="doc.documentId || doc.title">
                     <div class="pc-table-row">
                       <span class="pc-doc-title-cell">
                         <ion-icon :icon="documentOutline" class="pc-doc-icon" />
@@ -376,6 +409,40 @@
 
             <!-- Right Column -->
             <div class="pc-col-right">
+
+              <div v-if="selectedSection === 'dashboard'" class="pc-card">
+                <div class="pc-card-header">
+                  <div class="pc-card-title-group">
+                    <div class="pc-card-icon amber"><ion-icon :icon="layersOutline" /></div>
+                    <div>
+                      <h2 class="pc-card-title">{{ activeLevelLabel || 'Active level' }} areas</h2>
+                      <p class="pc-card-sub">Chair, deadline, and completion for each AACCUP area.</p>
+                    </div>
+                  </div>
+                  <button class="pc-link-btn" type="button" @click="selectSection('faculty-areas')">Assign areas →</button>
+                </div>
+                <p v-if="!areas.length" class="pc-muted">Areas appear here once the active accreditation level is open.</p>
+                <div v-else class="pc-area-board">
+                  <button
+                    v-for="area in areas"
+                    :key="area.id"
+                    type="button"
+                    class="pc-area-row"
+                    @click="selectSection('faculty-areas')"
+                  >
+                    <div class="pc-area-row-copy">
+                      <strong>{{ areaBoardLabel(area) }}</strong>
+                      <span>{{ areaChairLabel(area) }} · {{ areaDeadline(area).label }}</span>
+                    </div>
+                    <div class="pc-area-row-progress">
+                      <div class="pc-readiness-track">
+                        <div class="pc-readiness-fill" :class="areaDeadline(area).kind" :style="{ width: `${Number(area.progressPercent || 0)}%` }"></div>
+                      </div>
+                      <small>{{ Number(area.progressPercent || 0) }}%</small>
+                    </div>
+                  </button>
+                </div>
+              </div>
 
                 <!-- <div v-if="selectedSection === 'team'" class="pc-card pc-invite-card">
                 <div class="pc-card-header">
@@ -588,28 +655,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { IonIcon } from '@ionic/vue'
 import {
   gridOutline, peopleOutline, keyOutline, folderOpenOutline,
   documentTextOutline, analyticsOutline, settingsOutline,
   barChartOutline, notificationsOutline,
-  documentOutline, copyOutline, mailOutline, refreshOutline,
-  checkmarkCircleOutline, hourglassOutline, callOutline,
+  documentOutline, copyOutline, mailOutline,
+  checkmarkCircleOutline, hourglassOutline,
   checkmarkDoneOutline, layersOutline, chatbubblesOutline,
   documentsOutline, paperPlaneOutline,
 } from 'ionicons/icons'
 
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
-import { useUserCalls } from '@/lib/useUserCalls'
 import {
   createTeam,
   emailTeamCode,
   getTeams,
-  regenerateTeamCode,
-  revokeTeamCode,
+  issueTeamCode,
+  revokeIssuedTeamCode,
   getProgram,
   getProgramFaculty,
   getDocuments,
@@ -647,8 +713,6 @@ const notificationStore = useNotificationStore()
 const { myAreas, selectedAreaId, programCompletionRate: assignedAreaProgramRate } = storeToRefs(facultyDashboard)
 const router = useRouter()
 const route = useRoute()
-const { activeCall, callMessage, callUser, endCall } = useUserCalls()
-
 const selectedSection = ref<'accreditation' | 'dashboard' | 'team' | 'review' | 'evidence-review' | 'submit-accreditor' | 'faculty-areas' | 'notifications' | 'revisions' | 'areas' | 'designation-files' | 'board-of-action' | 'universal-files' | 'file-requests'>('dashboard')
 const fileRequestPending = ref(0)
 const fileRequestBox = computed(() => (route.query.box === 'sent' ? 'sent' : 'incoming'))
@@ -658,10 +722,12 @@ const currentProgram = ref<any>(null)
 const teams = ref<any[]>([])
 const activeCode = ref('')
 const activeTeamId = ref<number | string | null>(null)
-const recentCodes = ref<any[]>([])
+const activeJoinCodeId = ref<number | string | null>(null)
+const nowTick = ref(Date.now())
+const selectedUsedCodeId = ref<number | string | null>(null)
+const indicatedUsedBy = ref('')
 const createTeamName = ref('')
 const createTeamError = ref('')
-const createTeamSuccess = ref('')
 const codeMessage = ref('')
 const inviteEmail = ref('')
 const inviteError = ref('')
@@ -671,6 +737,9 @@ const inviteBusy = ref(false)
 const documents = ref<any[]>([])
 const reviewBusyId = ref<number | string | null>(null)
 const areas = ref<any[]>([])
+const levelSummaries = ref<any[]>([])
+const activeLevelLabel = ref('')
+const dashboardReady = ref(false)
 const programCompletionRate = ref<number | null>(null)
 const expandedReviewVersions = ref(new Set<number | string>())
 // const programChairWorkflowPhase = computed(() => {
@@ -737,8 +806,8 @@ const pageDescription = computed(() => {
     case 'submit-accreditor': return 'Release this program\'s uploaded evidence so the accreditor can review it.'
     case 'notifications': return 'Stay current on program tasks and invitations.'
     default: return assignedProgramName.value
-      ? `Program overview for ${assignedProgramName.value}.`
-      : 'Program overview, areas, documents, and compliance monitoring.'
+      ? `What ${assignedProgramName.value} needs before the next accreditation review.`
+      : 'Program readiness, area staffing, evidence review, and faculty coverage.'
   }
 })
 
@@ -755,7 +824,9 @@ const completionRate = computed(() => {
 
 const assignedProgramName = computed(() => {
   const user = authStore.user as any
-  return currentProgram.value?.name || user?.program?.name || user?.program_name || 'No program assigned'
+  const name = String(currentProgram.value?.name || user?.program?.name || user?.program_name || '').trim()
+  if (!name || name === 'Program') return 'No program assigned'
+  return name
 })
 const assignedCollegeName = computed(() => {
   const user = authStore.user as any
@@ -766,9 +837,12 @@ const assignedCollegeName = computed(() => {
   if (user?.department) return user.department
   return 'Department not linked'
 })
-const assignedProgramCode = computed(() => currentProgram.value?.code || '—')
+const assignedProgramCode = computed(() => {
+  const code = String(currentProgram.value?.code || '').trim()
+  if (!code || code === 'PROG') return '—'
+  return code
+})
 const assignedFaculty = computed(() => Array.isArray(currentProgram.value?.faculty) ? currentProgram.value.faculty : [])
-const assignedFacultyCount = computed(() => assignedFaculty.value.length)
 const resolveUserImageUrl = (value: unknown): string | null => {
   if (!value || typeof value !== 'string') return null
 
@@ -786,29 +860,6 @@ const resolveUserImageUrl = (value: unknown): string | null => {
 
   return `${backendOrigin}/${trimmed.replace(/^\/+/, '')}`
 }
-const facultyRoster = computed(() => {
-  const rawMembers = Array.isArray(currentProgram.value?.faculty) && currentProgram.value.faculty.length
-    ? currentProgram.value.faculty
-    : Array.isArray(currentProgram.value?.members) && currentProgram.value.members.length
-      ? currentProgram.value.members
-      : []
-
-  return rawMembers.map((person: any) => ({
-    id: person.id,
-    name: person.name || person.email || 'Faculty member',
-    email: person.email || 'No email provided',
-    role: person.role || person.role_slug || person.roleSlug || 'Faculty',
-    photo: resolveUserImageUrl(
-      person.profilePhoto ||
-      person.profilePhotoPath ||
-      person.profile_photo ||
-      person.avatar ||
-      person.photo_url ||
-      person.image_url ||
-      null,
-    ),
-  }))
-})
 const getInitials = (value: string) => {
   if (!value) return 'F'
 
@@ -817,39 +868,320 @@ const getInitials = (value: string) => {
   return initials || 'F'
 }
 
-const todayTodos = [
-  {
-    id: 1,
-    title: 'Review faculty submissions pending approval',
-    meta: '4 documents need final decision',
-    time: 'Today',
-    statusClass: 'pc-todo-urgent',
-  },
-  {
-    id: 2,
-    title: 'Confirm program chair assignments',
-    meta: '2 faculty records require follow-up',
-    time: 'Today',
-    statusClass: 'pc-todo-warn',
-  },
-  {
-    id: 3,
-    title: 'Check invitation codes and team access',
-    meta: '1 code is close to expiry',
-    time: 'Tomorrow',
-    statusClass: 'pc-todo-ok',
-  },
-]
+const issuedCodes = computed(() => {
+  const rows = teams.value.flatMap((team: any) =>
+    (Array.isArray(team.join_codes) ? team.join_codes : []).map((row: any) => {
+      const usedByName = String(row?.used_by?.name || row?.usedBy?.name || '').trim()
+      const used = Boolean(row?.used_by || row?.used_at || usedByName)
+      const expiresAt = row?.expires_at ? new Date(row.expires_at).getTime() : null
+      return {
+        id: row.id,
+        teamId: team.id,
+        code: row.code,
+        used,
+        usedByName,
+        expired: !used && expiresAt !== null && expiresAt <= nowTick.value,
+        expiresAt,
+        createdAt: String(row.created_at || ''),
+      }
+    }),
+  )
 
-const stats = computed(() => [
-  { label: 'Team Members',       value: String(teams.value.reduce((sum, team) => sum + Number(team?.member_count || team?.members?.length || 0), 0)), icon: peopleOutline, color: 'var(--adams-structure-primary)', bg: 'var(--adams-success-soft)' },
-  { label: 'Accreditation Areas', value: String(areas.value.length), icon: folderOpenOutline, color: 'var(--adams-accent-info)', bg: 'var(--adams-info-soft)' },
-  { label: 'Pending Review', value: String(documents.value.length), icon: hourglassOutline, color: 'var(--adams-accent-pending)', bg: 'var(--adams-warning-soft)' },
-  { label: 'Compliance Rate', value: `${completionRate.value}%`, icon: analyticsOutline, color: 'var(--adams-accent-pending)', bg: 'var(--adams-warning-soft)' },
-  { label: 'Active Codes', value: String(recentCodes.value.filter((code) => !code.expired).length), icon: keyOutline, color: 'var(--adams-accent-info)', bg: 'var(--adams-info-soft)' },
-])
+  return rows.sort((left, right) => right.createdAt.localeCompare(left.createdAt))
+})
+
+const recentCodes = computed(() => issuedCodes.value.filter((code) => !code.used))
+const usedCodes = computed(() => issuedCodes.value.filter((code) => code.used))
+
+const currentProgramMembers = computed(() => {
+  const programId = String(
+    authStore.user?.programId || (authStore.user as any)?.program_id || currentProgram.value?.id || '',
+  )
+  const seen = new Set<string>()
+  const rows: Array<{ id: number | string; name: string; email: string; role: string; photo: string | null }> = []
+
+  for (const team of teams.value) {
+    if (programId && String(team.program_id) !== programId) continue
+    const members = Array.isArray(team.program_members) ? team.program_members : []
+    for (const person of members) {
+      const key = String(person.id || person.email || person.name)
+      if (!key || seen.has(key)) continue
+      seen.add(key)
+      rows.push({
+        id: person.id,
+        name: person.name || person.email || 'Program member',
+        email: person.email || 'No email provided',
+        role: person.role || 'Member',
+        photo: resolveUserImageUrl(person.profilePhoto || person.photo || person.profile_photo || null),
+      })
+    }
+  }
+
+  return rows
+})
+
+const indicateUsedCode = (code: { id: number | string; usedByName: string }) => {
+  selectedUsedCodeId.value = code.id
+  indicatedUsedBy.value = code.usedByName
+    ? `Used by ${code.usedByName}`
+    : 'This code has been used.'
+}
+
+const rosterPeople = computed(() => {
+  if (assignedFaculty.value.length) {
+    return assignedFaculty.value.map((person: any) => ({
+      id: person.id || person.email || person.name,
+      name: person.name || 'Faculty member',
+    }))
+  }
+  return currentProgramMembers.value.map((person) => ({ id: person.id, name: person.name }))
+})
+
+const rosterPreview = computed(() => rosterPeople.value.slice(0, 8))
+const reviewPreview = computed(() => documents.value.slice(0, 5))
+
+const chairsAssignedCount = computed(() => areas.value.filter((area) => area?.chairId || area?.chair).length)
+const chairCoverageLabel = computed(() => {
+  if (!dashboardReady.value) return '—'
+  if (!areas.value.length) return 'No open areas'
+  return `${chairsAssignedCount.value} of ${areas.value.length}`
+})
+
+const levelStanding = computed(() => {
+  if (!levelSummaries.value.length) return ''
+  const reached = levelSummaries.value
+    .filter((level) => level.access === 'reached' || level.displayStatus === 'Reached')
+    .map((level) => level.level)
+  const open = levelSummaries.value.filter((level) => level.isOpen)
+  const parts: string[] = []
+  if (activeLevelLabel.value) {
+    const current = open.find((level) => level.level === activeLevelLabel.value)
+    parts.push(current?.displayStatus
+      ? `${activeLevelLabel.value} is ${current.displayStatus}`
+      : `Working on ${activeLevelLabel.value}`)
+  }
+  if (reached.length) parts.push(`${reached.join(', ')} already reached`)
+  return parts.join(' · ')
+})
+
+const areaBoardLabel = (area: any) => {
+  const code = String(area?.code || '').trim()
+  const name = String(area?.name || area?.label || 'Area').trim()
+  return code ? `${code} · ${name}` : name
+}
+
+const areaChairLabel = (area: any) => {
+  const name = String(area?.chair?.name || '').replace(/\s+/g, ' ').trim()
+  if (name) return `Chair: ${name}`
+  if (area?.chairId) return 'Chair assigned'
+  return 'No Area Chair'
+}
+
+const areaDeadline = (area: any) => {
+  const progress = Number(area?.progressPercent || 0)
+  if (progress >= 100) return { kind: 'done', label: 'Complete' }
+  if (!area?.deadline) return { kind: 'missing', label: 'Deadline not set' }
+  const due = new Date(area.deadline).getTime()
+  if (!Number.isFinite(due)) return { kind: 'missing', label: 'Deadline not set' }
+  const formatted = new Date(area.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  if (due <= nowTick.value) return { kind: 'overdue', label: `Overdue · was ${formatted}` }
+  const days = Math.ceil((due - nowTick.value) / 86400000)
+  if (days <= 7) return { kind: 'soon', label: days <= 1 ? `Due ${formatted}` : `Due in ${days} days` }
+  return { kind: 'ok', label: `Due ${formatted}` }
+}
+
+const joinNames = (rows: any[], limit = 3) => {
+  const names = rows.map((row) => areaBoardLabel(row)).slice(0, limit)
+  const extra = rows.length - names.length
+  return extra > 0 ? `${names.join(', ')} +${extra}` : names.join(', ')
+}
 
 const inboxUnreadCount = computed(() => notificationStore.unreadCount)
+
+type DashboardAction = {
+  id: string
+  title: string
+  meta: string
+  time: string
+  statusClass: string
+  section: typeof selectedSection.value | null
+  areaId?: number
+}
+
+const todayTodos = computed<DashboardAction[]>(() => {
+  if (!dashboardReady.value) {
+    return [{
+      id: 'loading',
+      title: 'Checking this program',
+      meta: 'Loading areas, faculty, evidence, and file requests.',
+      time: 'Now',
+      statusClass: 'pc-todo-ok',
+      section: null,
+    }]
+  }
+
+  const items: DashboardAction[] = []
+  const missingChairs = areas.value.filter((area) => !area?.chairId && !area?.chair)
+  if (missingChairs.length) {
+    items.push({
+      id: 'chairs',
+      title: `${missingChairs.length} area${missingChairs.length === 1 ? '' : 's'} still need an Area Chair`,
+      meta: joinNames(missingChairs),
+      time: 'Assign',
+      statusClass: 'pc-todo-urgent',
+      section: 'faculty-areas',
+    })
+  }
+
+  const overdue = areas.value.filter((area) => areaDeadline(area).kind === 'overdue')
+  if (overdue.length) {
+    items.push({
+      id: 'overdue',
+      title: `${overdue.length} area deadline${overdue.length === 1 ? ' has' : 's have'} passed`,
+      meta: joinNames(overdue),
+      time: 'Follow up',
+      statusClass: 'pc-todo-urgent',
+      section: 'faculty-areas',
+    })
+  }
+
+  const dueSoon = areas.value.filter((area) => areaDeadline(area).kind === 'soon')
+  if (dueSoon.length) {
+    items.push({
+      id: 'soon',
+      title: `${dueSoon.length} area${dueSoon.length === 1 ? ' is' : 's are'} due within 7 days`,
+      meta: joinNames(dueSoon),
+      time: 'This week',
+      statusClass: 'pc-todo-warn',
+      section: 'faculty-areas',
+    })
+  }
+
+  const missingDeadlines = areas.value.filter((area) => (area?.chairId || area?.chair) && areaDeadline(area).kind === 'missing')
+  if (missingDeadlines.length) {
+    items.push({
+      id: 'deadlines',
+      title: `${missingDeadlines.length} staffed area${missingDeadlines.length === 1 ? '' : 's'} have no submission deadline`,
+      meta: joinNames(missingDeadlines),
+      time: 'Set date',
+      statusClass: 'pc-todo-warn',
+      section: 'faculty-areas',
+    })
+  }
+
+  if (documents.value.length) {
+    items.push({
+      id: 'review',
+      title: `${documents.value.length} evidence file${documents.value.length === 1 ? '' : 's'} waiting for your decision`,
+      meta: 'Approve what is complete, or return it with a reason the faculty can act on.',
+      time: 'Review',
+      statusClass: 'pc-todo-urgent',
+      section: 'review',
+    })
+  }
+
+  if (fileRequestPending.value > 0) {
+    items.push({
+      id: 'requests',
+      title: `${fileRequestPending.value} file request${fileRequestPending.value === 1 ? '' : 's'} from other programs`,
+      meta: 'Respond so the requesting chair can use the shared file.',
+      time: 'Respond',
+      statusClass: 'pc-todo-warn',
+      section: 'file-requests',
+    })
+  }
+
+  const expiringCodes = recentCodes.value.filter((code) => {
+    if (code.expired || !code.expiresAt) return false
+    const remaining = code.expiresAt - nowTick.value
+    return remaining > 0 && remaining <= 3 * 60 * 1000
+  })
+  if (expiringCodes.length) {
+    const minutes = Math.max(1, Math.ceil((expiringCodes[0].expiresAt - nowTick.value) / 60000))
+    items.push({
+      id: 'codes',
+      title: `${expiringCodes.length} invitation code${expiringCodes.length === 1 ? '' : 's'} expire within ${minutes} minute${minutes === 1 ? '' : 's'}`,
+      meta: 'Copy or email the code before it lapses. Unused codes last 10 minutes.',
+      time: 'Share',
+      statusClass: 'pc-todo-warn',
+      section: 'team',
+    })
+  }
+
+  if (!rosterPeople.value.length) {
+    items.push({
+      id: 'faculty',
+      title: 'No faculty are on this program yet',
+      meta: 'Generate a one-time team code and send it to the people who will upload evidence.',
+      time: 'Invite',
+      statusClass: 'pc-todo-warn',
+      section: 'team',
+    })
+  }
+
+  const myOpenAreas = myAreas.value.filter((area) => Number(area.progressPercent || 0) < 100)
+  if (myOpenAreas.length) {
+    const first = myOpenAreas[0]
+    items.push({
+      id: 'mine',
+      title: myOpenAreas.length === 1
+        ? `Your area is ${Number(first.progressPercent || 0)}% complete`
+        : `You still have work on ${myOpenAreas.length} assigned areas`,
+      meta: myOpenAreas.map((area) => `${area.displayLabel || area.label || area.name} · ${Number(area.progressPercent || 0)}%`).slice(0, 2).join(' · '),
+      time: 'Open',
+      statusClass: 'pc-todo-ok',
+      section: myOpenAreas.length === 1 ? 'areas' : 'revisions',
+      areaId: myOpenAreas.length === 1 ? Number(first.id) : undefined,
+    })
+  }
+
+  const lagging = areas.value.filter((area) => Number(area.progressPercent || 0) < 50 && (area?.chairId || area?.chair))
+  if (lagging.length && items.length < 6) {
+    items.push({
+      id: 'lagging',
+      title: `${lagging.length} staffed area${lagging.length === 1 ? ' is' : 's are'} under 50% complete`,
+      meta: joinNames(lagging),
+      time: 'Monitor',
+      statusClass: 'pc-todo-warn',
+      section: 'evidence-review',
+    })
+  }
+
+  if (inboxUnreadCount.value > 0 && items.length < 6) {
+    items.push({
+      id: 'inbox',
+      title: `${inboxUnreadCount.value} unread notification${inboxUnreadCount.value === 1 ? '' : 's'}`,
+      meta: 'Assignments, returns, and file-request updates land here.',
+      time: 'Read',
+      statusClass: 'pc-todo-ok',
+      section: 'notifications',
+    })
+  }
+
+  if (!items.length) {
+    return [{
+      id: 'clear',
+      title: 'Nothing is blocking this program right now',
+      meta: areas.value.length
+        ? 'Area chairs, deadlines, and the evidence queue are clear. Keep monitoring area completion.'
+        : 'Open the active accreditation level so the ten AACCUP areas can be staffed.',
+      time: 'Today',
+      statusClass: 'pc-todo-ok',
+      section: areas.value.length ? null : 'faculty-areas',
+    }]
+  }
+
+  return items.slice(0, 6)
+})
+
+const stats = computed(() => [
+  { label: 'Level readiness', value: dashboardReady.value ? `${completionRate.value}%` : '—', icon: analyticsOutline, color: 'var(--adams-structure-primary)', bg: 'var(--adams-success-soft)' },
+  { label: 'Area chairs', value: chairCoverageLabel.value, icon: peopleOutline, color: 'var(--adams-accent-info)', bg: 'var(--adams-info-soft)' },
+  { label: 'Waiting review', value: dashboardReady.value ? String(documents.value.length) : '—', icon: hourglassOutline, color: 'var(--adams-accent-pending)', bg: 'var(--adams-warning-soft)' },
+  { label: 'Faculty', value: dashboardReady.value ? String(rosterPeople.value.length) : '—', icon: peopleOutline, color: 'var(--adams-accent-info)', bg: 'var(--adams-info-soft)' },
+  { label: 'Overdue areas', value: dashboardReady.value ? String(areas.value.filter((area) => areaDeadline(area).kind === 'overdue').length) : '—', icon: folderOpenOutline, color: 'var(--adams-accent-urgent)', bg: 'var(--adams-danger-soft)' },
+  { label: 'File requests', value: String(fileRequestPending.value), icon: documentsOutline, color: 'var(--adams-accent-pending)', bg: 'var(--adams-warning-soft)' },
+])
 
 const switchToFacultyView = () => {
   authStore.setDashboardView('faculty')
@@ -895,6 +1227,15 @@ const openAssignedArea = (area: { id: number }) => {
   areasExpanded.value = true
   facultyDashboard.openMyArea(Number(area.id))
   selectedSection.value = 'areas'
+}
+
+const openDashboardAction = (todo: DashboardAction) => {
+  if (!todo.section) return
+  if (todo.section === 'areas' && todo.areaId) {
+    openAssignedArea({ id: todo.areaId })
+    return
+  }
+  selectSection(todo.section)
 }
 
 const loadAssignedProgram = async () => {
@@ -957,9 +1298,6 @@ const loadAssignedProgram = async () => {
     if (programData) {
       console.log('✓ Program details loaded:', programData.name || programData.title)
       currentProgram.value = programData
-      if (programData?.code) {
-        activeCode.value = programData.code
-      }
     }
 
     facultyData = Array.isArray(facultyResponse?.data)
@@ -1032,24 +1370,20 @@ const fetchTeams = async () => {
     teams.value = payload.filter((team: any) => team !== null && team !== undefined).map((team: any) => ({
       ...team,
       members: Array.isArray(team?.members) ? team.members : [],
+      program_members: Array.isArray(team?.program_members) ? team.program_members : [],
+      join_codes: Array.isArray(team?.join_codes) ? team.join_codes : [],
       area: team?.area || 'Unassigned',
       status: team?.status || 'Active',
       statusClass: team?.statusClass || 'ts-active',
       member_count: Number(team?.member_count || team?.members?.length || 0),
     }))
-    recentCodes.value = teams.value.map((team: any) => ({
-      id: team.id,
-      code: team.code,
-      used: `${Number(team.member_count || 0)} joined`,
-      expired: Boolean(team.expires_at) && new Date(team.expires_at).getTime() <= Date.now(),
-    }))
-    const current = teams.value.find((team: any) => String(team.id) === String(activeTeamId.value))
-      || teams.value.find((team: any) => team.code && !(team.expires_at && new Date(team.expires_at).getTime() <= Date.now()))
-      || teams.value[0]
-    if (current?.code) {
-      activeCode.value = current.code
-      activeTeamId.value = current.id
-    }
+    nowTick.value = Date.now()
+    const programId = authStore.user?.programId || (authStore.user as any)?.program_id
+    const programTeam = teams.value.find((team: any) => String(team.program_id) === String(programId)) || teams.value[0]
+    const active = recentCodes.value.find((code) => !code.expired)
+    activeCode.value = active?.code || ''
+    activeJoinCodeId.value = active?.id ?? null
+    activeTeamId.value = active?.teamId || programTeam?.id || null
   } catch (err: any) {
     console.warn('Failed to load Program Chair teams:', err)
     teams.value = []
@@ -1060,7 +1394,7 @@ const fetchTeams = async () => {
 
 const generateTeamCode = async () => {
   createTeamError.value = ''
-  createTeamSuccess.value = ''
+  codeMessage.value = ''
   const name = createTeamName.value.trim() || `Team ${new Date().getTime()}`
 
   if (!authStore.user?.programId) {
@@ -1069,18 +1403,18 @@ const generateTeamCode = async () => {
   }
 
   try {
-    if (activeTeamId.value) {
-      const response = await regenerateTeamCode(activeTeamId.value)
-      activeCode.value = response.data?.code || activeCode.value
-      createTeamSuccess.value = `Team code regenerated: ${activeCode.value}`
-    } else {
+    if (!activeTeamId.value) {
       const response = await createTeam({ name, program_id: authStore.user.programId })
-      activeCode.value = response.data?.code || response.code || activeCode.value
       activeTeamId.value = response.data?.id || null
-      createTeamSuccess.value = `Team created and code generated: ${activeCode.value}`
+      activeCode.value = response.data?.code || ''
+      activeJoinCodeId.value = response.data?.join_code_id || null
+    } else {
+      const response = await issueTeamCode(activeTeamId.value)
+      activeCode.value = response.data?.code || ''
+      activeJoinCodeId.value = response.data?.id || null
     }
     createTeamName.value = ''
-    codeMessage.value = 'Team created successfully.'
+    codeMessage.value = 'Code is ready to copy. It expires in 10 minutes and can be used once.'
     await fetchTeams()
   } catch (err: any) {
     createTeamError.value = err.response?.data?.message || 'Unable to generate team code.'
@@ -1088,6 +1422,10 @@ const generateTeamCode = async () => {
 }
 
 const copyCode = async () => {
+  if (!activeCode.value) {
+    codeMessage.value = 'Generate a team code first.'
+    return
+  }
   try {
     await navigator.clipboard.writeText(activeCode.value)
     codeMessage.value = 'Code copied to clipboard.'
@@ -1139,28 +1477,13 @@ const clearLegacyInvitationList = () => {
   inviteSuccess.value = 'Invitation tokens are no longer used. Faculty join with the team code.'
 }
 
-const regenCode = async () => {
-  if (!activeTeamId.value) {
-    codeMessage.value = 'Generate a team code first.'
-    return
-  }
-  try {
-    const response = await regenerateTeamCode(activeTeamId.value)
-    activeCode.value = response.data?.code || activeCode.value
-    codeMessage.value = 'New code saved. The previous code no longer works.'
-    await fetchTeams()
-  } catch (err: any) {
-    codeMessage.value = err.response?.data?.message || 'Unable to regenerate the team code.'
-  }
-}
-
 const revokeActiveCode = async () => {
-  if (!activeTeamId.value) {
-    codeMessage.value = 'There is no team code to revoke.'
+  if (!activeTeamId.value || !activeJoinCodeId.value) {
+    codeMessage.value = 'There is no active team code to revoke.'
     return
   }
   try {
-    await revokeTeamCode(activeTeamId.value)
+    await revokeIssuedTeamCode(activeTeamId.value, activeJoinCodeId.value)
     codeMessage.value = 'Team code revoked.'
     await fetchTeams()
   } catch (err: any) {
@@ -1179,12 +1502,36 @@ const applyCompletionRate = (value: unknown) => {
   }
 }
 
+const refreshAfterLevelChange = async () => {
+  statCardDataLoaded.value = false
+  await Promise.all([
+    loadProgramAreas(),
+    loadProgramDocumentsForReview(),
+    facultyDashboard.loadMyAreas(true),
+  ])
+  statCardDataLoaded.value = true
+}
+
 const loadProgramAreas = async () => {
   try {
     const payload = await getProgramChairAreas(currentProgram.value?.id || authStore.user?.programId)
     applyCompletionRate(payload?.programCompletionRate)
-    const activeLevel = (payload?.levels || []).find((level: any) => level?.isOpen && level?.cycleId === payload?.activeCycleId)
-      || (payload?.levels || []).find((level: any) => level?.isOpen)
+    activeLevelLabel.value = String(payload?.activeLevel || '')
+    levelSummaries.value = Array.isArray(payload?.levels) ? payload.levels : []
+    if (payload?.programName) {
+      const currentName = String(currentProgram.value?.name || '')
+      if (!currentProgram.value || !currentName || currentName === 'Program') {
+        currentProgram.value = {
+          ...(currentProgram.value || {}),
+          id: payload.programId || currentProgram.value?.id,
+          name: payload.programName,
+          code: currentProgram.value?.code && currentProgram.value.code !== 'PROG' ? currentProgram.value.code : (currentProgram.value?.code || ''),
+        }
+      }
+    }
+    const activeLevel = levelSummaries.value.find((level: any) => level?.isOpen && level?.cycleId === payload?.activeCycleId)
+      || levelSummaries.value.find((level: any) => level?.isOpen && level?.level === payload?.activeLevel)
+      || levelSummaries.value.find((level: any) => level?.isOpen)
     areas.value = Array.isArray(activeLevel?.areas) ? activeLevel.areas : []
   } catch (err) {
     console.warn('Unable to load program areas:', err)
@@ -1297,6 +1644,9 @@ watch(selectedSection, (section) => {
   if (!sectionsWithoutStatCards.has(section)) {
     void loadStatCardData()
   }
+  if (section === 'team') {
+    void fetchTeams()
+  }
 })
 
 const mapReviewDocument = (doc: any, area?: any) => {
@@ -1376,22 +1726,38 @@ const returnDocument = async (doc: any) => {
   }
 }
 
+let codeClock: ReturnType<typeof setInterval> | undefined
+
 onMounted(async () => {
-  await Promise.all([
-    loadAssignedProgram(),
-    facultyDashboard.loadMyAreas(),
-    getFileRequests('incoming')
-      .then((response) => {
-        fileRequestPending.value = Number(response?.meta?.pendingIncomingCount || 0)
-      })
-      .catch(() => {
-        fileRequestPending.value = 0
-      }),
-  ])
-  if (programCompletionRate.value == null) {
-    applyCompletionRate(currentProgram.value?.complianceScore ?? currentProgram.value?.compliance_score)
+  try {
+    await Promise.all([
+      loadAssignedProgram(),
+      facultyDashboard.loadMyAreas(),
+      getFileRequests('incoming')
+        .then((response) => {
+          fileRequestPending.value = Number(response?.meta?.pendingIncomingCount || 0)
+        })
+        .catch(() => {
+          fileRequestPending.value = 0
+        }),
+    ])
+    if (programCompletionRate.value == null) {
+      applyCompletionRate(currentProgram.value?.complianceScore ?? currentProgram.value?.compliance_score)
+    }
+    await loadStatCardData()
+  } finally {
+    dashboardReady.value = true
   }
-  await loadStatCardData()
+  codeClock = setInterval(() => {
+    nowTick.value = Date.now()
+    if (selectedSection.value === 'team') {
+      void fetchTeams()
+    }
+  }, 15000)
+})
+
+onUnmounted(() => {
+  if (codeClock) clearInterval(codeClock)
 })
 </script>
 
@@ -1427,6 +1793,108 @@ onMounted(async () => {
   font-size: clamp(1.5rem, 2vw, 2.2rem);
   color: var(--adams-text-primary);
   letter-spacing: -0.04em;
+}
+
+.pc-program-context-line {
+  margin: 0.35rem 0 0;
+  color: var(--adams-text-muted);
+  font-size: 0.85rem;
+}
+
+.pc-readiness {
+  margin-top: 1rem;
+}
+
+.pc-readiness-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.45rem;
+}
+
+.pc-readiness-meta strong {
+  font-size: 1.35rem;
+  color: var(--adams-text-primary);
+}
+
+.pc-readiness-meta span,
+.pc-level-standing {
+  color: var(--adams-text-muted);
+  font-size: 0.78rem;
+}
+
+.pc-level-standing {
+  margin: 0.7rem 0 0;
+}
+
+.pc-readiness-track {
+  height: 8px;
+  border-radius: 999px;
+  background: #e7eef5;
+  overflow: hidden;
+}
+
+.pc-readiness-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--adams-structure-primary);
+}
+
+.pc-readiness-fill.overdue,
+.pc-readiness-fill.missing { background: var(--adams-accent-urgent); }
+.pc-readiness-fill.soon { background: var(--adams-accent-pending); }
+.pc-readiness-fill.done,
+.pc-readiness-fill.ok { background: var(--adams-accent-success); }
+
+.pc-area-board {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.pc-area-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(120px, 0.8fr);
+  gap: 0.75rem;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--adams-gridline);
+  background: var(--adams-canvas);
+  border-radius: 0.8rem;
+  padding: 0.7rem 0.8rem;
+  cursor: pointer;
+}
+
+.pc-area-row-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.pc-area-row-copy strong {
+  font-size: 0.82rem;
+  color: var(--adams-text-primary);
+}
+
+.pc-area-row-copy span {
+  margin-top: 0.15rem;
+  color: var(--adams-text-muted);
+  font-size: 0.72rem;
+}
+
+.pc-area-row-progress {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.pc-area-row-progress small {
+  color: var(--adams-text-primary);
+  font-weight: 700;
+  font-size: 0.72rem;
 }
 
 .pc-program-context-chip {
@@ -1987,10 +2455,19 @@ onMounted(async () => {
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 0.7rem;
+  width: 100%;
+  text-align: left;
   padding: 0.7rem 0.8rem;
   border: 1px solid var(--adams-gridline);
   border-radius: 0.8rem;
   background: var(--adams-canvas);
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.pc-todo-item.is-static {
+  cursor: default;
 }
 
 .pc-todo-status {
@@ -2252,6 +2729,11 @@ onMounted(async () => {
     grid-template-columns: 1fr 1fr;
   }
 
+  .pc-program-context-grid,
+  .pc-area-row {
+    grid-template-columns: 1fr;
+  }
+
   .pc-card-header,
   .pc-call-banner,
   .pc-team-card-header {
@@ -2349,15 +2831,53 @@ onMounted(async () => {
 
 .pc-recent-label { margin: 0 0 0.5rem; font-size: 0.72rem; font-weight: 600; color: var(--adams-text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
 
+.pc-code-tabs {
+  display: flex;
+  margin: 0.85rem 0 0.35rem;
+}
+
+.pc-code-tab {
+  border: 1px solid var(--adams-canvas);
+  border-bottom: none;
+  background: var(--adams-canvas-panel);
+  color: var(--adams-text-muted);
+  border-radius: 0.45rem 0.45rem 0 0;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pc-code-tab.active {
+  background: var(--adams-success-soft);
+  color: var(--adams-accent-success);
+}
+
 .pc-recent-row {
   display: flex; align-items: center; gap: 0.75rem;
   padding: 0.45rem 0; border-bottom: 1px solid var(--adams-canvas); font-size: 0.8rem;
+  width: 100%;
 }
+
+.pc-used-row {
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.pc-used-row.selected { background: var(--adams-success-soft); }
 
 .pc-recent-code { font-weight: 700; font-family: monospace; color: var(--adams-text-primary); letter-spacing: 0.15em; }
 .pc-recent-used { color: var(--adams-text-muted); font-size: 0.72rem; flex: 1; }
+.pc-used-by { margin-left: auto; font-size: 0.75rem; font-weight: 700; color: var(--adams-text-primary); text-align: right; }
+.pc-used-note { margin: 0.35rem 0 0; font-size: 0.75rem; color: var(--adams-accent-success); font-weight: 600; }
+.pc-empty-inline { margin: 0.35rem 0 0.2rem; color: var(--adams-text-muted); font-size: 0.75rem; }
 
-.pc-recent-status { font-size: 0.68rem; font-weight: 600; padding: 0.15rem 0.45rem; border-radius: 999px; }
+.pc-recent-status { margin-left: auto; font-size: 0.68rem; font-weight: 600; padding: 0.15rem 0.45rem; border-radius: 999px; }
 .pc-recent-status.active  { background: var(--adams-success-soft); color: var(--adams-accent-success); }
 .pc-recent-status.expired { background: var(--adams-canvas); color: var(--adams-text-muted); }
 

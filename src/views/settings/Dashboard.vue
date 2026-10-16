@@ -80,7 +80,7 @@ const roleSummary = computed(() => {
   const role = String(authStore.userRole || '')
   switch (role) {
     case 'superadmin':
-      return { title: 'Super Administrator workspace', description: 'You can manage users, teams, compliance, and institutional oversight from one place.' }
+      return { title: 'System Admin workspace', description: 'You can manage users, teams, compliance, and institutional oversight from one place.' }
     case 'dean':
       return { title: 'Dean leadership view', description: 'Review program health, priorities, and approvals without leaving the dashboard.' }
     case 'program-chair':

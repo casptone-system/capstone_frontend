@@ -17,7 +17,8 @@ export type AppRole =
   | string
 
 export const roleLabels: Record<string, string> = {
-  'super-admin': 'Super Admin',
+  'super-admin': 'System Admin',
+  superadmin: 'System Admin',
   vpaa: 'VPAA/DI',
   'vpaa-di': 'VPAA/DI',
   qa: 'QA',
@@ -25,7 +26,7 @@ export const roleLabels: Record<string, string> = {
   'program-chair': 'Program Chair',
   'area-in-charge': 'Area In-Charge',
   faculty: 'Faculty',
-  admin: 'Admin',
+  admin: 'System Admin',
   staff: 'Staff',
   'new-user': 'New User',
   'new-user-no-groups': 'New User',

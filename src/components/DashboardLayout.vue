@@ -211,7 +211,7 @@ const userInitials = computed(() => {
 const roleClass = computed(() => `role-${String(props.role).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`)
 const roleLabel = computed(() => {
   const role = String(props.role || '').toLowerCase()
-  if (role.includes('super')) return 'Super Administration'
+  if (role.includes('super') || role === 'admin') return 'System Admin'
   if (role.includes('dean')) return 'Academic Leadership'
   if (role.includes('program')) return 'Program Management'
   if (role.includes('faculty')) return 'Faculty Operations'

@@ -39,12 +39,17 @@ export interface SuperAdminUserRecord {
   id: number | string
   name: string
   email: string
+  firstName?: string
+  lastName?: string
+  middleName?: string
   role: string
   roles?: string[]
   department?: string
+  collegeId?: number | string | null
   programId?: number | string | null
   teamId?: number | string | null
   status?: string
+  deletedAt?: string | null
   lockStatus?: string
   lastLogin?: string
   createdAt?: string
@@ -90,7 +95,7 @@ export const useSuperAdminStore = defineStore('super-admin', () => {
     try {
       const dashboardResponse = await getAdminDashboard()
       const dashboard = dashboardResponse?.data?.summary || dashboardResponse?.summary || dashboardResponse?.data || dashboardResponse
-      const usersResponse = await getUsers()
+      const usersResponse = await getUsers({ per_page: 200 })
       const auditResponse = await getAuditLogs({ per_page: 8 })
       const loginResponse = await getLoginHistory({ per_page: 6 })
       const reportsResponse = await getReports()
@@ -116,44 +121,58 @@ export const useSuperAdminStore = defineStore('super-admin', () => {
           ? reportsResponse.data.data
           : []
 
+      const signedInUsers = userData.filter((user: any) => user.last_login_at).length
+      const failedLogins = loginData.filter((entry: any) => String(entry.status || '').toLowerCase() === 'failed').length
+      const totalUsers = Number(dashboard?.totalUsers ?? usersResponse?.data?.meta?.total ?? userData.length) || 0
+
       stats.value = {
-        totalUsers: userData.length || 0,
-        activeUsers: Math.max(1, Math.round(userData.length * 0.8)),
-        inactiveUsers: Math.max(0, Math.round(userData.length * 0.2)),
+        totalUsers,
+        activeUsers: signedInUsers,
+        inactiveUsers: Math.max(0, userData.length - signedInUsers),
         lockedAccounts: 0,
-        pendingAccounts: 0,
-        totalPrograms: dashboard?.totalPrograms || 0,
-        totalAreas: dashboard?.totalAreas || 0,
-        totalDocuments: dashboard?.totalEvidence || 0,
-        uploadCount: dashboard?.totalEvidence || 0,
-        storageUsed: 64,
-        storageAvailable: 36,
-        activeSessions: 12,
-        failedLogins: 0,
-        auditEvents: auditData.length || 0,
-        pendingReviews: dashboard?.pendingReviews || 0,
+        pendingAccounts: Math.max(0, userData.length - signedInUsers),
+        totalPrograms: Number(dashboard?.totalPrograms || 0),
+        totalAreas: Number(dashboard?.totalAreas || 0),
+        totalDocuments: Number(dashboard?.totalEvidence || 0),
+        uploadCount: Number(dashboard?.totalEvidence || 0),
+        storageUsed: 0,
+        storageAvailable: 0,
+        activeSessions: 0,
+        failedLogins,
+        auditEvents: Number(auditResponse?.meta?.total ?? auditData.length) || 0,
+        pendingReviews: Number(dashboard?.pendingReviews || 0),
       }
 
-      users.value = userData.map((user: any) => ({
-        id: user.id,
-        name: user.name || `${user.first_name || ''} ${user.last_name || ''}`.trim(),
-        email: user.email,
-        role: user.role || user.roles?.[0] || 'faculty',
-        roles: user.roles || [],
-        department: user.department || user.program_name || user.team_name || '',
-        programId: user.programId || user.program_id || null,
-        teamId: user.teamId || user.team_id || null,
-        status: user.status || 'Active',
-        lockStatus: user.lock_status || 'Unlocked',
-        lastLogin: user.last_login_at || null,
-        createdAt: user.created_at || null,
-      }))
+      users.value = userData.map((user: any) => {
+        const deletedAt = user.deletedAt || user.deleted_at || null
+        const status = user.status || (deletedAt ? 'Inactive' : 'Active')
+
+        return {
+          id: user.id,
+          name: user.name || `${user.first_name || ''} ${user.last_name || ''}`.trim(),
+          email: user.email,
+          firstName: user.first_name || user.firstName || '',
+          lastName: user.last_name || user.lastName || '',
+          middleName: user.middle_name || user.middleName || '',
+          role: user.role || user.roles?.[0] || 'faculty',
+          roles: user.roles || [],
+          department: user.department || user.college?.name || user.program_name || user.team_name || '',
+          collegeId: user.collegeId || user.college_id || null,
+          programId: user.programId || user.program_id || null,
+          teamId: user.teamId || user.team_id || null,
+          status,
+          deletedAt,
+          lockStatus: user.lock_status || 'Unlocked',
+          lastLogin: user.last_login_at || null,
+          createdAt: user.created_at || null,
+        }
+      })
 
       auditLogs.value = auditData
       loginHistory.value = loginData
       reports.value = reportData
     } catch (err: any) {
-      error.value = err.message || 'Unable to load Super Admin overview.'
+      error.value = err.message || 'Unable to load System Admin overview.'
     } finally {
       isLoading.value = false
     }

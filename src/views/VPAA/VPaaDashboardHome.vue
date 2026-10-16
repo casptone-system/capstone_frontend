@@ -319,7 +319,9 @@ const finalReviewQueue = computed(() => {
 const criticalIssues = computed(() => {
   return vpaaStore.atRisk.slice(0, 5).map((cycle: any) => ({
     label: `${cycle.program} (${cycle.college})`,
-    detail: `${cycle.level} - ${cycle.phase}. Requires VPAA attention.`,
+    detail: Array.isArray(cycle.risk_reasons) && cycle.risk_reasons.length
+      ? cycle.risk_reasons[0]
+      : `${cycle.level || 'Level not set'} requires VPAA attention.`,
   }))
 })
 

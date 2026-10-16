@@ -109,39 +109,28 @@
             <div class="afa-section-head">
               <h4>Assign Area Chair</h4><span class="afa-required">Required</span>
             </div>
-            <div class="afa-search-field">
-              <input
-                v-model="chairQuery"
-                class="afa-search-input"
-                placeholder="Search faculty by name or email…"
-                @input="onChairSearch"
-              />
-              <div v-if="chairResults.length" class="afa-search-results">
-                <button
-                  v-for="r in chairResults"
-                  :key="String(r.id)"
-                  type="button"
-                  class="afa-user-option"
-                  @click="selectChair(r)"
-                >
-                  <span class="afa-avatar">{{ getInitials(r.name) }}</span>
-                  <span class="afa-user-copy"><strong>{{ r.name }}</strong><small>{{ r.email }}</small></span>
-                </button>
-              </div>
-            </div>
+            <select
+              class="afa-input afa-select"
+              :value="selectedChair ? String(selectedChair.id) : ''"
+              @change="onChairSelect"
+            >
+              <option value="">Select a program member</option>
+              <option
+                v-for="person in programMembers"
+                :key="String(person.id)"
+                :value="String(person.id)"
+              >
+                {{ person.name }}{{ person.email ? ` · ${person.email}` : '' }}
+              </option>
+            </select>
+            <p v-if="!programMembers.length" class="afa-muted">
+              No program members found. Invite faculty from Team &amp; Invitations first.
+            </p>
             <div v-if="selectedChair" class="afa-selected-pill">
               <span class="afa-avatar">{{ getInitials(selectedChair.name) }}</span>
               <span class="afa-user-copy"><strong>{{ selectedChair.name }}</strong><small>{{ selectedChair.email }} · Area Chair</small></span>
               <button class="afa-remove-x" title="Remove selected chair" @click="clearChair">✕</button>
             </div>
-            <button
-              v-else-if="currentUserOption"
-              type="button"
-              class="afa-self-btn"
-              @click="assignMyselfAsChair"
-            >
-              Assign myself as Area Chair
-            </button>
             <p v-if="!selectedChair && triedSave" class="afa-field-error">
               An Area Chair is required before saving.
             </p>
@@ -157,31 +146,30 @@
               Please set a submission deadline before saving.
             </p>
           </section>
-<!-- c) Set Area Members (optional) -->
+          <!-- c) Set Area Members (optional) -->
           <section class="afa-section">
             <div class="afa-section-head">
               <h4>Area Members</h4><span class="afa-optional">Optional</span>
             </div>
-            <div class="afa-search-field">
-              <input
-                v-model="memberQuery"
-                class="afa-search-input"
-                placeholder="Search faculty to add as members…"
-                @input="onMemberSearch"
-              />
-              <div v-if="memberResults.length" class="afa-search-results">
-                <button
-                  v-for="r in memberResults"
-                  :key="String(r.id)"
-                  type="button"
-                  class="afa-user-option"
-                  @click="addMember(r)"
+            <div class="afa-member-picker">
+              <select v-model="memberSelectId" class="afa-input afa-select">
+                <option value="">Select a program member to add</option>
+                <option
+                  v-for="person in availableMemberOptions"
+                  :key="String(person.id)"
+                  :value="String(person.id)"
                 >
-                  <span class="afa-avatar">{{ getInitials(r.name) }}</span>
-                  <span class="afa-user-copy"><strong>{{ r.name }}</strong><small>{{ r.email }}</small></span>
-                  <ion-icon :icon="addOutline" class="afa-add-icon" />
-                </button>
-              </div>
+                  {{ person.name }}{{ person.email ? ` · ${person.email}` : '' }}
+                </option>
+              </select>
+              <button
+                type="button"
+                class="afa-btn afa-btn-ghost afa-add-member-btn"
+                :disabled="!memberSelectId"
+                @click="addMemberFromSelect"
+              >
+                <ion-icon :icon="addOutline" /> Add
+              </button>
             </div>
             <div v-if="selectedMembers.length" class="afa-tags">
               <span v-for="m in selectedMembers" :key="String(m.id)" class="afa-tag">
@@ -189,15 +177,10 @@
                 <button class="afa-tag-remove" @click="removeMember(m)"><ion-icon :icon="closeOutline" /></button>
               </span>
             </div>
-            <button
-              v-if="currentUserOption && !isCurrentUserSelectedMember && !isCurrentUserSelectedChair"
-              type="button"
-              class="afa-self-btn"
-              @click="addMyselfAsMember"
-            >
-              Add myself as member
-            </button>
-            <p v-else-if="!selectedMembers.length" class="afa-muted">No members selected. Small programs may keep only the Area Chair.</p>
+            <p v-else class="afa-muted">No members selected. Small programs may keep only the Area Chair.</p>
+            <p v-if="!availableMemberOptions.length && programMembers.length" class="afa-muted">
+              All available program members are already selected.
+            </p>
           </section>
 
           <p v-if="modalMessage" :class="['afa-message', modalMessageType]">{{ modalMessage }}</p>
@@ -234,7 +217,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { IonIcon } from '@ionic/vue'
 import {
   folderOpenOutline,
@@ -249,7 +232,7 @@ import {
 } from 'ionicons/icons'
 import {
   getProgramChairAreas,
-  searchUsers,
+  getProgramFaculty,
   assignAreaChair,
   setAreaMembers,
   setAreaDeadline,
@@ -323,55 +306,50 @@ const triedSave = ref(false)
 const selectedChair = ref<UserOption | null>(null)
 const deadlineValue = ref('')
 const selectedMembers = ref<UserOption[]>([])
-const chairQuery = ref('')
-const memberQuery = ref('')
-const chairResults = ref<UserOption[]>([])
-const memberResults = ref<UserOption[]>([])
+const programMembers = ref<UserOption[]>([])
+const memberSelectId = ref('')
 const modalMessage = ref('')
 const modalMessageType = ref<'success' | 'error'>('success')
 const reassignConfirmOpen = ref(false)
 const pendingReassignName = ref('')
 
-const currentUserOption = computed((): UserOption | null => {
-  const user = authStore.user as any
-  if (!user?.id) return null
-  return {
-    id: user.id,
-    name: user.name || currentUserNameFallback(user),
-    email: user.email || '',
-  }
+const availableMemberOptions = computed(() => {
+  const taken = new Set(
+    selectedMembers.value.map((member) => String(member.id)).concat(
+      selectedChair.value ? [String(selectedChair.value.id)] : []
+    )
+  )
+  return programMembers.value.filter((person) => !taken.has(String(person.id)))
 })
 
-const isCurrentUserSelectedChair = computed(() =>
-  Boolean(currentUserOption.value && selectedChair.value && String(selectedChair.value.id) === String(currentUserOption.value.id))
-)
+const mapProgramMember = (person: any): UserOption => ({
+  id: person.id ?? person.user_id,
+  name: person.name || person.full_name || 'Unknown',
+  email: person.email || '',
+})
 
-const isCurrentUserSelectedMember = computed(() =>
-  Boolean(currentUserOption.value && selectedMembers.value.some((member) => String(member.id) === String(currentUserOption.value?.id)))
-)
-
-const currentUserNameFallback = (user: any) =>
-  [user.first_name, user.last_name].filter(Boolean).join(' ') || 'Me'
-
-const assignMyselfAsChair = () => {
-  if (!currentUserOption.value) return
-  selectChair(currentUserOption.value)
+const loadProgramMembers = async () => {
+  try {
+    const data = await getProgramFaculty()
+    const list = (Array.isArray(data) ? data : []).map(mapProgramMember)
+    const unique = new Map<string, UserOption>()
+    list.forEach((person) => {
+      if (!person?.id) return
+      unique.set(String(person.id), person)
+    })
+    const me = authStore.user as any
+    if (me?.id && !unique.has(String(me.id))) {
+      unique.set(String(me.id), {
+        id: me.id,
+        name: me.name || [me.first_name, me.last_name].filter(Boolean).join(' ') || 'Program Chair',
+        email: me.email || '',
+      })
+    }
+    programMembers.value = [...unique.values()].sort((a, b) => a.name.localeCompare(b.name))
+  } catch {
+    programMembers.value = []
+  }
 }
-
-const addMyselfAsMember = () => {
-  if (!currentUserOption.value) return
-  addMember(currentUserOption.value)
-}
-
-const prependCurrentUser = (results: UserOption[]) => {
-  const me = currentUserOption.value
-  if (!me) return results
-  if (results.some((person) => String(person.id) === String(me.id))) return results
-  return [me, ...results]
-}
-
-let chairTimer: ReturnType<typeof setTimeout> | null = null
-let memberTimer: ReturnType<typeof setTimeout> | null = null
 
 const statusClass = (status: string) => {
   switch (status) {
@@ -492,85 +470,52 @@ const openModal = (folder: any) => {
         email: m.user?.email || '',
       }))
     : []
-  chairQuery.value = chair?.name || ''
-  memberQuery.value = ''
-  chairResults.value = []
-  memberResults.value = []
+  memberSelectId.value = ''
   modalMessage.value = ''
   modalMessageType.value = 'success'
   triedSave.value = false
   reassignConfirmOpen.value = false
   isOpen.value = true
+  void loadProgramMembers()
 }
 
 const closeModal = () => {
   isOpen.value = false
   reassignConfirmOpen.value = false
-  if (chairTimer) clearTimeout(chairTimer)
-  if (memberTimer) clearTimeout(memberTimer)
+  memberSelectId.value = ''
 }
 
 const clearChair = () => {
   selectedChair.value = null
-  chairQuery.value = ''
-  chairResults.value = []
 }
 
-/* ---------- Debounced search ---------- */
-
-const runSearch = async (q: string) => {
-  try {
-    const data = await searchUsers(q)
-    return Array.isArray(data) ? data : []
-  } catch {
-    return []
+const onChairSelect = (event: Event) => {
+  const value = String((event.target as HTMLSelectElement).value || '')
+  if (!value) {
+    selectedChair.value = null
+    return
   }
+  const person = programMembers.value.find((member) => String(member.id) === value)
+  if (!person) return
+  selectedChair.value = person
+  selectedMembers.value = selectedMembers.value.filter((member) => String(member.id) !== value)
+  if (memberSelectId.value === value) memberSelectId.value = ''
 }
 
-const onChairSearch = () => {
-  if (chairTimer) clearTimeout(chairTimer)
-  const q = chairQuery.value.trim()
-  chairTimer = setTimeout(async () => {
-    if (q.length < 2) {
-      chairResults.value = []
-      return
-    }
-    const results = await runSearch(q)
-    chairResults.value = prependCurrentUser(results).filter(
-      (u: any) => !selectedChair.value || String(u.id) !== String(selectedChair.value.id)
-    )
-  }, 300)
-}
-
-const onMemberSearch = () => {
-  if (memberTimer) clearTimeout(memberTimer)
-  const q = memberQuery.value.trim()
-  memberTimer = setTimeout(async () => {
-    if (q.length < 2) {
-      memberResults.value = []
-      return
-    }
-    const results = await runSearch(q)
-    const ids = new Set(
-      selectedMembers.value.map((m) => String(m.id)).concat(
-        selectedChair.value ? [String(selectedChair.value.id)] : []
-      )
-    )
-    memberResults.value = prependCurrentUser(results).filter((u: any) => !ids.has(String(u.id)))
-  }, 300)
-}
-
-const selectChair = (u: UserOption) => {
-  selectedChair.value = u
-  chairQuery.value = u.name
-  chairResults.value = []
-}
-
-const addMember = (u: UserOption) => {
-  if (selectedMembers.value.some((m) => String(m.id) === String(u.id))) return
-  selectedMembers.value = [...selectedMembers.value, u]
-  memberQuery.value = ''
-  memberResults.value = []
+const addMemberFromSelect = () => {
+  if (!memberSelectId.value) return
+  const person = programMembers.value.find((member) => String(member.id) === memberSelectId.value)
+  if (!person) return
+  if (selectedChair.value && String(selectedChair.value.id) === String(person.id)) {
+    memberSelectId.value = ''
+    return
+  }
+  if (selectedMembers.value.some((member) => String(member.id) === String(person.id))) {
+    memberSelectId.value = ''
+    return
+  }
+  selectedMembers.value = [...selectedMembers.value, person]
+  memberSelectId.value = ''
 }
 
 const removeMember = (u: UserOption) => {
@@ -643,11 +588,7 @@ const saveArea = async (confirmReassign = false) => {
 
 onMounted(() => {
   loadAreas()
-})
-
-onUnmounted(() => {
-  if (chairTimer) clearTimeout(chairTimer)
-  if (memberTimer) clearTimeout(memberTimer)
+  loadProgramMembers()
 })
 </script>
 <style scoped lang="postcss">
@@ -938,6 +879,25 @@ onUnmounted(() => {
   border-radius: 999px;
 }
 
+.afa-member-picker {
+  display: flex;
+  gap: 0.55rem;
+  align-items: stretch;
+}
+.afa-member-picker .afa-select {
+  flex: 1;
+  min-width: 0;
+}
+.afa-add-member-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+.afa-select {
+  appearance: auto;
+  cursor: pointer;
+}
 .afa-search-field { position: relative; }
 .afa-search-input,
 .afa-input {
