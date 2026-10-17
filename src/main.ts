@@ -73,7 +73,9 @@ import './theme/variables.css'
 const app = createApp(App)
 const pinia = createPinia()
 
-app.use(IonicVue)
+app.config.performance = false
+
+app.use(IonicVue, { mode: 'md' })
 app.use(pinia)
 
 
