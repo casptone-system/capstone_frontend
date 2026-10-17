@@ -19,70 +19,6 @@ class WriteHtaccessPlugin {
   }
 }
 
-/**
- * Strip license banners / framework strings that fingerprint Ionic & Vue
- * in production assets (PentestTools CWE-200 tech disclosure).
- */
-class StripTechFingerprintsPlugin {
-  apply(compiler) {
-    compiler.hooks.afterEmit.tap('StripTechFingerprintsPlugin', (compilation) => {
-      const outDir = compilation.options.output.path
-      if (!outDir || !fs.existsSync(outDir)) {
-        return
-      }
-
-      const walk = (dir) => {
-        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-          const full = path.join(dir, entry.name)
-          if (entry.isDirectory()) {
-            walk(full)
-            continue
-          }
-
-          // Never ship source maps (version / path disclosure).
-          if (entry.name.endsWith('.map')) {
-            fs.unlinkSync(full)
-            continue
-          }
-
-          if (!/\.(js|css)$/i.test(entry.name)) {
-            continue
-          }
-
-          let source = fs.readFileSync(full, 'utf8')
-          const before = source.length
-
-          // Block comments (including /*! license */ kept by minifiers).
-          source = source.replace(/\/\*!?[\s\S]*?\*\//g, (block) => {
-            if (/ionic|vue\.js|vuejs|framework|copyright|\(c\)\s*ionic/i.test(block)) {
-              return ''
-            }
-            // Drop empty/noise license stubs; keep CSS non-fingerprint comments only if short.
-            if (block.length > 40) {
-              return ''
-            }
-            return ''
-          })
-
-          // Single-line Ionic/Vue banners.
-          source = source.replace(/^[\t ]*\/\/.*(ionic|vue\.js|ionicframework).*$/gim, '')
-
-          // Redact framework docs URLs that scanners use for fingerprinting.
-          source = source.replace(/https?:\/\/ionicframework\.com[^"'\\\s]*/gi, '')
-          source = source.replace(/https?:\/\/vuejs\.org[^"'\\\s]*/gi, '')
-          source = source.replace(/https?:\/\/v[0-9]+\.vuejs\.org[^"'\\\s]*/gi, '')
-
-          if (source.length !== before) {
-            fs.writeFileSync(full, source)
-          }
-        }
-      }
-
-      walk(outDir)
-    })
-  }
-}
-
 module.exports = defineConfig({
   transpileDependencies: true,
   productionSourceMap: false,
@@ -92,13 +28,16 @@ module.exports = defineConfig({
     }
   },
   configureWebpack: {
-    plugins: [new WriteHtaccessPlugin(), new StripTechFingerprintsPlugin()],
+    // Do not post-process minified JS with regex comment/URL stripping.
+    // That previously corrupted chunk-vendors (SyntaxError: Unexpected identifier '_$')
+    // and white-screened the deployed app. Terser already drops comments below.
+    plugins: [new WriteHtaccessPlugin()],
   },
   chainWebpack: (config) => {
     config.plugins.delete('preload')
     config.plugins.delete('prefetch')
 
-    // Strip license/banner comments that fingerprint Ionic/Vue in production bundles.
+    // Drop license/banner comments in production bundles (safe; done by terser AST).
     if (process.env.NODE_ENV === 'production') {
       config.optimization.minimizer('terser').tap((args) => {
         const opts = args[0] || {}
