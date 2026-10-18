@@ -2,6 +2,11 @@
 node_modules
 /dist
 
+# Never commit webpack build outputs into public/ (they get deployed as-is and fingerprint the stack).
+/public/js/
+/public/css/
+/public/**/*.map
+
 # local env files
 .env
 .env.local

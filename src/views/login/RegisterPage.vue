@@ -609,7 +609,7 @@ const handleProfilePhotoChange = (event: Event) => {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap');
+/* Fonts are bundled via src/assets/styles.css (@fontsource). */
 
 /* ── TOKENS ── */
 .login-container {

@@ -116,6 +116,7 @@ import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { normalizeRole } from '@/lib/roleRedirects'
+import { getUserPhotoUrl } from '@/lib/userDisplay'
 import { IonIcon } from '@ionic/vue'
 import AppBrandLogo from '@/components/AppBrandLogo.vue'
 
@@ -128,32 +129,7 @@ const mobileNavOpen = ref(false)
 const currentRole = computed(() => normalizeRole(String(authStore.userRole || '')))
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const userName = computed(() => authStore.userName)
-const userPhotoUrl = computed(() => {
-  const user = authStore.user as any
-  const candidate =
-    user?.profilePhoto ||
-    user?.profilePhotoPath ||
-    user?.profile_photo ||
-    user?.profile_photo_url ||
-    user?.avatar ||
-    user?.avatar_url ||
-    user?.photo_url ||
-    user?.image_url ||
-    null
-
-  if (!candidate || typeof candidate !== 'string') return null
-  const trimmed = candidate.trim()
-  if (!trimmed) return null
-  if (trimmed.startsWith('data:') || /^https?:\/\//i.test(trimmed)) return trimmed
-
-  const rawBase = process.env.VUE_APP_API_BASE_URL || '/api'
-  const backendOrigin = rawBase.replace(/\/api\/?$/, '')
-
-  if (trimmed.startsWith('/')) return `${backendOrigin}${trimmed}`
-  if (trimmed.includes('/storage/')) return trimmed
-  if (trimmed.startsWith('storage/')) return `${backendOrigin}/${trimmed.replace(/^\/+/, '')}`
-  return `${backendOrigin}/${trimmed.replace(/^\/+/, '')}`
-})
+const userPhotoUrl = computed(() => getUserPhotoUrl(authStore.user as Record<string, unknown> | null))
 
 const navItems = computed(() => {
   const items = [
