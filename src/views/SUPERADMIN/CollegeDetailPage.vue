@@ -104,7 +104,17 @@
           <p class="program-chair">Chair: {{ program.chairUser?.name || (program.needsChairAssigned || program.needs_chair_assigned ? 'Needs a chair assigned' : (program.chair || 'Unassigned')) }}</p>
           <div class="program-actions">
             <button class="sa-btn sa-btn-ghost" @click="editProgram(program)">Edit</button>
-            <button class="sa-btn sa-btn-ghost" @click="assignProgramChair(program)">Assign Chair</button>
+            <button class="sa-btn sa-btn-ghost" @click="assignProgramChair(program)">
+              {{ programHasChair(program) ? 'Change Chair' : 'Assign Chair' }}
+            </button>
+            <button
+              v-if="programHasChair(program)"
+              class="sa-btn sa-btn-ghost sa-btn-danger"
+              :disabled="isUnassigningChair"
+              @click="unassignProgramChair(program)"
+            >
+              {{ isUnassigningChair && unassigningProgramId === program.id ? 'Unassigning...' : 'Unassign Chair' }}
+            </button>
           </div>
         </div>
       </div>
@@ -467,11 +477,19 @@
         </div>
 
         <div class="form-actions">
+          <button
+            v-if="programHasChair(selectedProgramForChair)"
+            class="sa-btn sa-btn-ghost sa-btn-danger unassign-chair-btn"
+            :disabled="isUnassigningChair || isAssigningChair"
+            @click="unassignProgramChair(selectedProgramForChair)"
+          >
+            {{ isUnassigningChair ? 'Unassigning...' : 'Unassign Chair' }}
+          </button>
           <button class="sa-btn sa-btn-ghost" @click="cancelAssignChair">Cancel</button>
           <button 
             class="sa-btn sa-btn-primary" 
             @click="submitAssignChair"
-            :disabled="!assignChairForm.chair_id || isAssigningChair"
+            :disabled="!assignChairForm.chair_id || isAssigningChair || isUnassigningChair"
           >
             {{ isAssigningChair ? 'Assigning...' : 'Assign Chair' }}
           </button>
@@ -560,6 +578,8 @@ const isCreatingProgram = ref(false)
 const isChangingDean = ref(false)
 const isAssigningDean = ref(false)
 const isAssigningChair = ref(false)
+const isUnassigningChair = ref(false)
+const unassigningProgramId = ref<number | string | null>(null)
 const isChangingRole = ref(false)
 
 // Forms
@@ -915,6 +935,12 @@ const cancelAssignChair = () => {
   assignChairError.value = ''
 }
 
+const programHasChair = (program: any) => {
+  if (!program) return false
+  if (program.needsChairAssigned || program.needs_chair_assigned) return false
+  return Boolean(program.chairUser?.id || program.chair_id || program.chairId)
+}
+
 const submitAssignChair = async () => {
   if (!assignChairForm.value.chair_id || !selectedProgramForChair.value?.id) return
 
@@ -937,6 +963,44 @@ const submitAssignChair = async () => {
     assignChairError.value = error?.response?.data?.message || 'Failed to assign program chair. Please try again.'
   } finally {
     isAssigningChair.value = false
+  }
+}
+
+const unassignProgramChair = async (program: any) => {
+  if (!program?.id || !programHasChair(program)) return
+
+  const chairName = program.chairUser?.name || program.chair || 'the current chair'
+  const confirmed = window.confirm(
+    `Unassign ${chairName} from ${program.name}? The program will have no program chair until one is assigned.`
+  )
+  if (!confirmed) return
+
+  isUnassigningChair.value = true
+  unassigningProgramId.value = program.id
+  assignChairError.value = ''
+
+  try {
+    await updateProgram(program.id, {
+      chair_id: null,
+      chair: null,
+    })
+
+    await Promise.all([loadCollege(), loadUsers()])
+    toastStore.show(`${program.name} no longer has a program chair.`, 'success')
+    if (showAssignChairModal.value) {
+      cancelAssignChair()
+    }
+  } catch (error: any) {
+    console.error('Failed to unassign program chair:', error)
+    const message = error?.response?.data?.message || 'Failed to unassign program chair. Please try again.'
+    if (showAssignChairModal.value) {
+      assignChairError.value = message
+    } else {
+      toastStore.show(message, 'error')
+    }
+  } finally {
+    isUnassigningChair.value = false
+    unassigningProgramId.value = null
   }
 }
 
@@ -1304,8 +1368,23 @@ onMounted(async () => {
 
 .program-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   margin-top: 1rem;
+}
+
+.sa-btn-danger {
+  color: #b91c1c;
+}
+
+.sa-btn-danger:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.unassign-chair-btn {
+  margin-right: auto;
 }
 
 .people-grid {

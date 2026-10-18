@@ -561,6 +561,11 @@ export const submitToAccreditor = async () => {
   return response.data
 }
 
+export const unsubmitToAccreditor = async () => {
+  const response = await api.delete('/program-chair/accreditor-submission')
+  return response.data
+}
+
 export const getAccreditorColleges = async () => {
   const response = await api.get('/accreditor/evidence/colleges')
   return unwrap(response)

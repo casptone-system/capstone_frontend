@@ -141,9 +141,18 @@
             <div class="afa-section-head">
               <h4>Submission Deadline</h4><span class="afa-required">Required</span>
             </div>
-            <input v-model="deadlineValue" type="datetime-local" class="afa-input" />
+            <input
+              v-model="deadlineValue"
+              type="datetime-local"
+              class="afa-input"
+              :min="minDeadlineDateTime"
+              @change="onDeadlineChange"
+            />
             <p v-if="!deadlineValue && triedSave" class="afa-field-error">
               Please set a submission deadline before saving.
+            </p>
+            <p v-else-if="deadlineValue && !isDeadlineValid" class="afa-field-error">
+              Deadline cannot be before today.
             </p>
           </section>
           <!-- c) Set Area Members (optional) -->
@@ -453,6 +462,33 @@ const deadlineToInput = (value: string | null | undefined): string => {
   return v.replace(' ', 'T').slice(0, 16)
 }
 
+const pad2 = (n: number) => String(n).padStart(2, '0')
+
+const minDeadlineDateTime = computed(() => {
+  const now = new Date()
+  return `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}T00:00`
+})
+
+const isDeadlineValid = computed(() => {
+  if (!deadlineValue.value) return true
+  const selected = new Date(deadlineValue.value)
+  if (!Number.isFinite(selected.getTime())) return false
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const selectedDay = new Date(selected)
+  selectedDay.setHours(0, 0, 0, 0)
+  return selectedDay.getTime() >= today.getTime()
+})
+
+const onDeadlineChange = () => {
+  if (deadlineValue.value && !isDeadlineValid.value) {
+    modalMessage.value = 'Deadline cannot be before today.'
+    modalMessageType.value = 'error'
+  } else if (modalMessage.value === 'Deadline cannot be before today.') {
+    modalMessage.value = ''
+  }
+}
+
 const openModal = (folder: any) => {
   const area = getArea(folder)
   if (!area?.id) {
@@ -539,6 +575,11 @@ const saveArea = async (confirmReassign = false) => {
   }
   if (!deadlineValue.value) {
     modalMessage.value = 'Please set a submission deadline before saving.'
+    modalMessageType.value = 'error'
+    return
+  }
+  if (!isDeadlineValid.value) {
+    modalMessage.value = 'Deadline cannot be before today.'
     modalMessageType.value = 'error'
     return
   }
