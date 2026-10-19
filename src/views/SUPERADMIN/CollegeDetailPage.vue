@@ -433,6 +433,51 @@
       </div>
     </section>
 
+    <!-- Edit Program Modal -->
+    <section v-if="showEditProgramModal" class="edit-modal">
+      <div class="edit-modal-backdrop" @click="cancelEditProgram"></div>
+      <div class="edit-modal-card">
+        <div class="modal-header">
+          <div>
+            <h3>Edit Program</h3>
+            <p>Update details for {{ selectedProgramForEdit?.name || 'this program' }}.</p>
+          </div>
+          <button class="sa-btn sa-btn-ghost" @click="cancelEditProgram">Close</button>
+        </div>
+
+        <div class="form-grid">
+          <label>
+            <span>Program Name</span>
+            <input v-model="editProgramForm.name" placeholder="e.g., Bachelor of Science" required />
+          </label>
+          <label>
+            <span>Program Code</span>
+            <input v-model="editProgramForm.code" placeholder="e.g., BS-CS" required />
+          </label>
+          <div v-if="selectedProgramForEdit" class="current-chair-info">
+            <p>
+              <strong>Current Chair:</strong>
+              {{ selectedProgramForEdit.chairUser?.name || selectedProgramForEdit.chair || 'Unassigned' }}
+            </p>
+            <small>Use Change Chair / Unassign Chair on the program card to update the chair.</small>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="sa-btn sa-btn-ghost" @click="cancelEditProgram">Cancel</button>
+          <button
+            class="sa-btn sa-btn-primary"
+            @click="submitEditProgram"
+            :disabled="!editProgramForm.name.trim() || !editProgramForm.code.trim() || isEditingProgram"
+          >
+            {{ isEditingProgram ? 'Saving...' : 'Save Changes' }}
+          </button>
+        </div>
+
+        <p v-if="editProgramError" class="error-message">{{ editProgramError }}</p>
+      </div>
+    </section>
+
     <!-- Assign Program Chair Modal -->
     <section v-if="showAssignChairModal" class="edit-modal">
       <div class="edit-modal-backdrop" @click="cancelAssignChair"></div>
@@ -562,6 +607,7 @@ const college = ref<any>({})
 const users = ref<any[]>([])
 const auditLogs = ref<any[]>([])
 const selectedProgramForChair = ref<any>(null)
+const selectedProgramForEdit = ref<any>(null)
 const selectedUserForRole = ref<any>(null)
 
 // UI state
@@ -569,12 +615,14 @@ const activeTab = ref('overview')
 const showEditModal = ref(false)
 const showAssignRoleModal = ref(false)
 const showCreateProgramModal = ref(false)
+const showEditProgramModal = ref(false)
 const showChangeDeanModal = ref(false)
 const showAssignDeanModal = ref(false)
 const showAssignChairModal = ref(false)
 const showChangeRoleModal = ref(false)
 const isAssigning = ref(false)
 const isCreatingProgram = ref(false)
+const isEditingProgram = ref(false)
 const isChangingDean = ref(false)
 const isAssigningDean = ref(false)
 const isAssigningChair = ref(false)
@@ -586,6 +634,7 @@ const isChangingRole = ref(false)
 const editForm = ref({ name: '', code: '', campus: '', description: '' })
 const roleForm = ref({ role: '', user_id: '' })
 const programForm = ref({ name: '', code: '', chair_id: '' })
+const editProgramForm = ref({ name: '', code: '' })
 const changeDeanForm = ref({ user_id: '' })
 const assignDeanForm = ref({ user_id: '' })
 const assignChairForm = ref({ chair_id: '' })
@@ -599,6 +648,7 @@ const chairSearchText = ref('')
 const assignError = ref('')
 const programError = ref('')
 const programInvitationCode = ref('')
+const editProgramError = ref('')
 const changeDeanError = ref('')
 const assignDeanError = ref('')
 const assignChairError = ref('')
@@ -914,9 +964,46 @@ const handleCreateProgram = async () => {
   }
 }
 
-// Edit/Manage program chair
 const editProgram = (program: any) => {
-  console.log('Edit program:', program)
+  if (!program?.id) return
+  selectedProgramForEdit.value = program
+  editProgramForm.value = {
+    name: program.name || '',
+    code: program.code || '',
+  }
+  editProgramError.value = ''
+  showEditProgramModal.value = true
+}
+
+const cancelEditProgram = () => {
+  showEditProgramModal.value = false
+  selectedProgramForEdit.value = null
+  editProgramForm.value = { name: '', code: '' }
+  editProgramError.value = ''
+}
+
+const submitEditProgram = async () => {
+  const name = editProgramForm.value.name.trim()
+  const code = editProgramForm.value.code.trim()
+  if (!selectedProgramForEdit.value?.id || !name || !code) return
+
+  isEditingProgram.value = true
+  editProgramError.value = ''
+
+  try {
+    await updateProgram(selectedProgramForEdit.value.id, { name, code })
+    await Promise.all([loadCollege(), loadUsers()])
+    toastStore.show(`Program updated: ${name}.`, 'success')
+    cancelEditProgram()
+  } catch (error: any) {
+    console.error('Failed to update program:', error)
+    editProgramError.value = error?.response?.data?.message
+      || error?.response?.data?.errors?.code?.[0]
+      || error?.response?.data?.errors?.name?.[0]
+      || 'Failed to update program. Please try again.'
+  } finally {
+    isEditingProgram.value = false
+  }
 }
 
 const assignProgramChair = (program: any) => {
@@ -1385,6 +1472,25 @@ onMounted(async () => {
 
 .unassign-chair-btn {
   margin-right: auto;
+}
+
+.current-chair-info {
+  grid-column: 1 / -1;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+}
+
+.current-chair-info p {
+  margin: 0;
+  color: #334155;
+}
+
+.current-chair-info small {
+  display: block;
+  margin-top: 0.35rem;
+  color: #64748b;
 }
 
 .people-grid {
