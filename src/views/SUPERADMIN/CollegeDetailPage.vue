@@ -423,13 +423,6 @@
         </div>
 
         <p v-if="programError" class="error-message">{{ programError }}</p>
-        <div v-if="programInvitationCode" class="invitation-success">
-          <p><strong>Program created successfully!</strong></p>
-          <p v-if="programInvitationCode">
-            Invitation Code: <strong>{{ programInvitationCode }}</strong>
-          </p>
-          <p class="small">Share this code with program members for registration</p>
-        </div>
       </div>
     </section>
 
@@ -647,7 +640,6 @@ const chairSearchText = ref('')
 // Errors
 const assignError = ref('')
 const programError = ref('')
-const programInvitationCode = ref('')
 const editProgramError = ref('')
 const changeDeanError = ref('')
 const assignDeanError = ref('')
@@ -909,7 +901,6 @@ const assignDean = async () => {
 const openCreateProgramModal = () => {
   programForm.value = { name: '', code: '', chair_id: '' }
   programError.value = ''
-  programInvitationCode.value = ''
   showCreateProgramModal.value = true
 }
 
@@ -917,13 +908,6 @@ const cancelCreateProgram = () => {
   showCreateProgramModal.value = false
   programForm.value = { name: '', code: '', chair_id: '' }
   programError.value = ''
-  programInvitationCode.value = ''
-}
-
-const generateInvitationCode = () => {
-  const collegeCode = college.value.code?.substring(0, 3).toUpperCase() || 'COL'
-  const random = String(Math.floor(Math.random() * 1000000)).padStart(6, '0')
-  return `${collegeCode}-${random}`
 }
 
 const handleCreateProgram = async () => {
@@ -947,15 +931,9 @@ const handleCreateProgram = async () => {
     }
 
     await apiCreateProgram(payload)
-    
-    // Generate invitation code
-    programInvitationCode.value = generateInvitationCode()
-    
-    // Reload after a short delay
-    setTimeout(async () => {
-      await Promise.all([loadCollege(), loadUsers()])
-      // Keep modal open to show success message
-    }, 500)
+    await Promise.all([loadCollege(), loadUsers()])
+    toastStore.show(`Program created: ${programForm.value.name}.`, 'success')
+    cancelCreateProgram()
   } catch (error: any) {
     console.error('Failed to create program:', error)
     programError.value = error?.response?.data?.message || 'Failed to create program. Please try again.'
@@ -1669,31 +1647,6 @@ onMounted(async () => {
 .warning {
   color: #ea580c;
   font-size: 0.875rem;
-}
-
-.invitation-success {
-  background: #ecfdf5;
-  border: 1px solid #6ee7b7;
-  border-radius: 0.5rem;
-  padding: 1rem;
-  margin: 1rem 0 0;
-  color: #047857;
-}
-
-.invitation-success p {
-  margin: 0.25rem 0;
-  font-size: 0.95rem;
-}
-
-.invitation-success strong {
-  color: #065f46;
-  font-family: monospace;
-  letter-spacing: 0.05em;
-}
-
-.invitation-success .small {
-  font-size: 0.8rem;
-  color: #059669;
 }
 
 .full {
