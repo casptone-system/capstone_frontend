@@ -193,6 +193,75 @@
             </div>
           </section>
 
+          <section v-if="selectedSection === 'dashboard'" class="pc-card pc-work-dist-card">
+            <div class="pc-card-header">
+              <div class="pc-card-title-group">
+                <div class="pc-card-icon emerald"><ion-icon :icon="barChartOutline" /></div>
+                <div>
+                  <h2 class="pc-card-title">Work distribution</h2>
+                  <p class="pc-card-sub">Real area chair and member assignments across people in this program.</p>
+                </div>
+              </div>
+              <button class="pc-link-btn" type="button" @click="selectSection('faculty-areas')">Manage assignments</button>
+            </div>
+
+            <div v-if="workDistributionLoading" class="pc-todo-list">
+              <AdamsSkeleton variant="list" :rows="5" />
+            </div>
+            <template v-else-if="workDistribution">
+              <div class="pc-work-dist-summary">
+                <div>
+                  <span>Assigned people</span>
+                  <strong>{{ workDistribution.summary.assignedFacultyCount }}/{{ workDistribution.summary.facultyCount }}</strong>
+                </div>
+                <div>
+                  <span>Total assignments</span>
+                  <strong>{{ workDistribution.summary.totalAssignments }}</strong>
+                </div>
+                <div>
+                  <span>Areas with chair</span>
+                  <strong>{{ workDistribution.summary.areasWithChair }}/{{ workDistribution.summary.totalAreas }}</strong>
+                </div>
+                <div>
+                  <span>Unassigned</span>
+                  <strong>{{ workDistribution.summary.unassignedFacultyCount }}</strong>
+                </div>
+              </div>
+
+              <div class="pc-work-sex">
+                <p class="pc-work-sex-title">Sex distribution (people / assignments)</p>
+                <div class="pc-work-sex-bars">
+                  <div v-for="row in workSexRows" :key="row.key" class="pc-work-sex-row">
+                    <span>{{ row.label }}</span>
+                    <i><b :style="{ width: `${row.peoplePct}%` }"></b></i>
+                    <strong>{{ row.people }} · {{ row.assignments }}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pc-work-users">
+                <p class="pc-work-sex-title">Assignments by person</p>
+                <p v-if="!workDistribution.users.length" class="pc-muted">No faculty on this program roster yet.</p>
+                <div
+                  v-for="person in workDistribution.users"
+                  :key="person.id"
+                  class="pc-work-user-row"
+                >
+                  <div class="pc-work-user-meta">
+                    <strong>{{ person.name }}</strong>
+                    <span>{{ person.role }} · {{ person.chairAreaCount }} chair · {{ person.memberAreaCount }} member</span>
+                  </div>
+                  <div class="pc-work-user-bar-wrap">
+                    <i><b :style="{ width: `${assignmentBarWidth(person.totalAssignments)}%` }"></b></i>
+                    <em>{{ person.totalAssignments }}</em>
+                  </div>
+                  <small>{{ person.workload?.progressPercent ?? 0 }}% workload</small>
+                </div>
+              </div>
+            </template>
+            <p v-else class="pc-muted">Work distribution could not be loaded for this program.</p>
+          </section>
+
           <section v-if="selectedSection === 'dashboard'" class="pc-card">
             <AccreditationLevelStatus view="program-chair" title="Program accreditation by level" />
           </section>
@@ -688,6 +757,7 @@ import {
   getProgramChairAreaDocuments,
   getProgramChairAreaFiles,
   getProgramChairAreas,
+  getProgramChairWorkDistribution,
   getProgramChairReviewDocuments,
   approveDocumentReview,
   requestDocumentRevision,
@@ -750,6 +820,28 @@ const levelSummaries = ref<any[]>([])
 const activeLevelLabel = ref('')
 const dashboardReady = ref(false)
 const programCompletionRate = ref<number | null>(null)
+const workDistributionLoading = ref(false)
+const workDistribution = ref<{
+  users: Array<{
+    id: number | string
+    name: string
+    role: string
+    sex: string | null
+    chairAreaCount: number
+    memberAreaCount: number
+    totalAssignments: number
+    workload?: { progressPercent?: number }
+  }>
+  bySex: Record<string, { people: number; assignments: number }>
+  summary: {
+    facultyCount: number
+    assignedFacultyCount: number
+    unassignedFacultyCount: number
+    areasWithChair: number
+    totalAreas: number
+    totalAssignments: number
+  }
+} | null>(null)
 const expandedReviewVersions = ref(new Set<number | string>())
 // const programChairWorkflowPhase = computed(() => {
 //   if (!documents.value.length) return 'Planning'
@@ -948,6 +1040,26 @@ const rosterPeople = computed(() => {
 
 const rosterPreview = computed(() => rosterPeople.value.slice(0, 8))
 const reviewPreview = computed(() => documents.value.slice(0, 5))
+
+const workSexRows = computed(() => {
+  const bySex = workDistribution.value?.bySex || {}
+  const totalPeople = Math.max(1, Number(workDistribution.value?.summary?.facultyCount || 0))
+  return [
+    { key: 'male', label: 'Male', people: Number(bySex.male?.people || 0), assignments: Number(bySex.male?.assignments || 0) },
+    { key: 'female', label: 'Female', people: Number(bySex.female?.people || 0), assignments: Number(bySex.female?.assignments || 0) },
+    { key: 'unset', label: 'Unset', people: Number(bySex.unset?.people || 0), assignments: Number(bySex.unset?.assignments || 0) },
+  ].map((row) => ({
+    ...row,
+    peoplePct: Math.round((row.people / totalPeople) * 100),
+  }))
+})
+
+const maxWorkAssignments = computed(() => {
+  const values = (workDistribution.value?.users || []).map((person) => Number(person.totalAssignments || 0))
+  return Math.max(1, ...values, 1)
+})
+
+const assignmentBarWidth = (total: number) => Math.round((Number(total || 0) / maxWorkAssignments.value) * 100)
 
 const chairsAssignedCount = computed(() => areas.value.filter((area) => area?.chairId || area?.chair).length)
 const chairCoverageLabel = computed(() => {
@@ -1516,6 +1628,7 @@ const refreshAfterLevelChange = async () => {
   await Promise.all([
     loadProgramAreas(),
     loadProgramDocumentsForReview(),
+    loadWorkDistribution(),
     facultyDashboard.loadMyAreas(true),
   ])
   statCardDataLoaded.value = true
@@ -1639,6 +1752,32 @@ const showStatCards = computed(() => !sectionsWithoutStatCards.has(selectedSecti
 
 const statCardDataLoaded = ref(false)
 
+const loadWorkDistribution = async () => {
+  workDistributionLoading.value = true
+  try {
+    const payload = await getProgramChairWorkDistribution()
+    workDistribution.value = payload
+      ? {
+          users: Array.isArray(payload.users) ? payload.users : [],
+          bySex: payload.bySex || { male: { people: 0, assignments: 0 }, female: { people: 0, assignments: 0 }, unset: { people: 0, assignments: 0 } },
+          summary: {
+            facultyCount: Number(payload.summary?.facultyCount || 0),
+            assignedFacultyCount: Number(payload.summary?.assignedFacultyCount || 0),
+            unassignedFacultyCount: Number(payload.summary?.unassignedFacultyCount || 0),
+            areasWithChair: Number(payload.summary?.areasWithChair || 0),
+            totalAreas: Number(payload.summary?.totalAreas || 0),
+            totalAssignments: Number(payload.summary?.totalAssignments || 0),
+          },
+        }
+      : null
+  } catch (err) {
+    console.warn('Unable to load work distribution:', err)
+    workDistribution.value = null
+  } finally {
+    workDistributionLoading.value = false
+  }
+}
+
 const loadStatCardData = async () => {
   if (statCardDataLoaded.value || !showStatCards.value) return
   statCardDataLoaded.value = true
@@ -1646,15 +1785,19 @@ const loadStatCardData = async () => {
     fetchTeams(),
     loadProgramAreas(),
     loadProgramDocumentsForReview(),
+    loadWorkDistribution(),
   ])
 }
 
-watch(selectedSection, (section) => {
+watch(selectedSection, (section, previous) => {
   if (!sectionsWithoutStatCards.has(section)) {
     void loadStatCardData()
   }
   if (section === 'team') {
     void fetchTeams()
+  }
+  if (section === 'dashboard' && previous === 'faculty-areas') {
+    void loadWorkDistribution()
   }
 })
 
@@ -1792,6 +1935,133 @@ onUnmounted(() => {
 
 <style scoped>
 /* ── Shell ── */
+.pc-work-dist-card .pc-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.pc-work-dist-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.pc-work-dist-summary > div {
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.75rem;
+  background: rgba(148, 163, 184, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.pc-work-dist-summary span {
+  display: block;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--adams-text-muted);
+}
+
+.pc-work-dist-summary strong {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 1.25rem;
+  color: var(--adams-text-primary);
+}
+
+.pc-work-sex,
+.pc-work-users {
+  margin-top: 1.15rem;
+}
+
+.pc-work-sex-title {
+  margin: 0 0 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--adams-text-muted);
+}
+
+.pc-work-sex-row,
+.pc-work-user-row {
+  display: grid;
+  grid-template-columns: 88px 1fr auto;
+  gap: 0.65rem;
+  align-items: center;
+  margin-bottom: 0.55rem;
+}
+
+.pc-work-user-row {
+  grid-template-columns: minmax(140px, 1.2fr) minmax(120px, 1fr) auto;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.pc-work-sex-row i,
+.pc-work-user-bar-wrap i {
+  display: block;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.18);
+  overflow: hidden;
+}
+
+.pc-work-sex-row i b,
+.pc-work-user-bar-wrap i b {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #278754, #5fbf86);
+}
+
+.pc-work-user-meta {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.pc-work-user-meta strong {
+  font-size: 0.92rem;
+  color: var(--adams-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pc-work-user-meta span,
+.pc-work-user-row small {
+  font-size: 0.75rem;
+  color: var(--adams-text-muted);
+}
+
+.pc-work-user-bar-wrap {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.pc-work-user-bar-wrap em {
+  font-style: normal;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--adams-text-primary);
+}
+
+@media (max-width: 900px) {
+  .pc-work-dist-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pc-work-user-row {
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+  }
+}
+
 .pc-program-context-card {
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid rgba(148, 163, 184, 0.18);

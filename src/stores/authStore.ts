@@ -513,6 +513,12 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  const applyCurrentUser = (userData: any) => {
+    if (!userData) return
+    user.value = normalizeUserProgramContext(userData)
+    isAuthenticated.value = true
+  }
+
   const refreshCurrentUser = async () => {
     if (typeof window === 'undefined') return
 
@@ -524,8 +530,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       const response = await api.get('/me')
-      user.value = normalizeUserProgramContext(response.data.data.user)
-      isAuthenticated.value = true
+      applyCurrentUser(response.data.data.user)
       return response.data
     } catch {
       localStorage.removeItem(TOKEN_KEY)
@@ -653,6 +658,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     logout,
     restoreSession,
+    applyCurrentUser,
     refreshCurrentUser,
 
     joinTeam,

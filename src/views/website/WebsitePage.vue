@@ -51,7 +51,7 @@
                         <IonIcon :icon="notificationsOutline" /><i></i>
                     </button>
                     <div v-if="noticeOpen" class="notice-popover"><strong>You're exploring ADAMS</strong>
-                        <p>This public preview uses demonstration data. Sign in to access your institution's workspace.
+                        <p>This public explorer shows live institutional analytics from ADAMS. Sign in to manage your workspace.
                         </p><button @click="goTo('/login')">Go to login
                             <IonIcon :icon="arrowForwardOutline" />
                         </button>
@@ -265,10 +265,27 @@
                                 <div v-if="chartMessage" class="chart-empty">{{ chartMessage }}</div>
                             </div>
                         </article>
+                        <article class="chart-card">
+                            <div class="chart-title">
+                                <div><small>PEOPLE ANALYTICS</small>
+                                    <h3>Sex distribution</h3>
+                                    <p>Faculty and academic roles in the system</p>
+                                </div><span>PEOPLE <b>{{ formatNumber(sexDistribution.total) }}</b></span>
+                            </div>
+                            <div class="chart-box doughnut"><canvas ref="sexChartCanvas"
+                                    aria-label="Sex distribution doughnut chart"></canvas>
+                                <div class="doughnut-center"><b>{{ formatNumber(sexDistribution.total) }}</b><small>people</small></div>
+                                <div v-if="!sexDistribution.total && !loading" class="chart-empty">No demographic data yet.</div>
+                            </div>
+                            <div class="status-legend">
+                                <span><i style="background:#278754"></i>Male <b>{{ sexDistribution.male }}</b></span>
+                                <span><i style="background:#5b8fd5"></i>Female <b>{{ sexDistribution.female }}</b></span>
+                                <span><i style="background:#91a39a"></i>Unset <b>{{ sexDistribution.unset }}</b></span>
+                            </div>
+                        </article>
                     </div>
                     <p class="data-note">
-                        <IonIcon :icon="informationCircleOutline" /> Demo figures are illustrative. Connect public
-                        analytics endpoints to show current institutional records.
+                        <IonIcon :icon="informationCircleOutline" /> Figures refresh from live ADAMS records. Personally identifiable details are not shown in this public view.
                     </p>
                 </section>
 
@@ -528,7 +545,7 @@
                     </div>
                 </div>
                 <footer><small>
-                        <IonIcon :icon="informationCircleOutline" /> Illustrative demo profile
+                        <IonIcon :icon="informationCircleOutline" /> Live program snapshot from ADAMS
                     </small><button @click="closeProgram">Done
                         <IonIcon :icon="checkmarkOutline" />
                     </button></footer>
@@ -542,6 +559,13 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { IonIcon, IonPage } from '@ionic/vue'
 import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
+import {
+    getPublicAccreditationAreas,
+    getPublicAnalytics,
+    getPublicCycles,
+    getPublicDepartments,
+    getPublicPrograms,
+} from '@/lib/api'
 import {
     analyticsOutline, arrowForwardOutline, barChartOutline, bookOutline, businessOutline,
     checkmarkCircleOutline, checkmarkOutline, chevronDownOutline, chevronForwardOutline,
@@ -618,70 +642,40 @@ const navItems = [
     { id: 'compliance', label: 'Compliance', icon: shieldCheckmarkOutline }, { id: 'reports', label: 'Reports', icon: barChartOutline },
     { id: 'about', label: 'About ADAMS', icon: informationCircleOutline }
 ]
-const departmentsSeed = [
-    { id: 'cics', name: 'College of Information and Computing Studies', shortName: 'Information & Computing', code: 'IC', departmentCode: 'CICS' },
-    { id: 'cba', name: 'College of Business and Accountancy', shortName: 'Business & Accountancy', code: 'BA', departmentCode: 'CBA' },
-    { id: 'coe', name: 'College of Education', shortName: 'Education', code: 'ED', departmentCode: 'COE' },
-    { id: 'if', name: 'Institute of Fisheries', shortName: 'Fisheries', code: 'IF', departmentCode: 'IF' }
-]
-const cyclesSeed = [
-    { id: 'cycle-2025', name: '2025–2026 accreditation cycle' }, { id: 'cycle-2024', name: '2024–2025 accreditation cycle' }, { id: 'cycle-2023', name: '2023–2024 accreditation cycle' }
-]
-const areaDefinitions = [
-    { id: 'vmgo', name: 'Vision, Mission, Goals and Objectives', shortName: 'Vision, Mission & Goals', icon: eyeOutline, description: 'Institutional direction, goals, and shared understanding.', detail: 'Review how institutional and program goals are defined, communicated, and aligned with academic work.' },
-    { id: 'faculty', name: 'Faculty', shortName: 'Faculty', icon: peopleCircleOutline, description: 'Faculty qualifications, development, and engagement.', detail: 'Bring faculty credentials, development, performance records, and engagement evidence into view.' },
-    { id: 'curriculum', name: 'Curriculum and Instruction', shortName: 'Curriculum & Instruction', icon: bookOutline, description: 'Curriculum design, delivery, and learning outcomes.', detail: 'Connect curriculum documents, teaching evidence, assessment practices, and learning outcomes.' },
-    { id: 'students', name: 'Support to Students', shortName: 'Support to Students', icon: peopleOutline, description: 'Services that help students thrive and progress.', detail: 'Organize student services, advising, guidance, wellness, and support program evidence.' },
-    { id: 'research', name: 'Research', shortName: 'Research', icon: analyticsOutline, description: 'Research activity, outputs, and institutional impact.', detail: 'Track research policies, projects, publications, utilization, and institutional support.' },
-    { id: 'extension', name: 'Extension', shortName: 'Extension', icon: cloudUploadOutline, description: 'Community engagement and extension initiatives.', detail: 'Show how extension initiatives respond to community needs and document participation and outcomes.' },
-    { id: 'library', name: 'Library', shortName: 'Library', icon: libraryOutline, description: 'Learning resources, facilities, and library services.', detail: 'Bring together evidence of learning resources, access, staffing, facilities, and library services.' },
-    { id: 'facilities', name: 'Physical Facilities', shortName: 'Physical Facilities', icon: businessOutline, description: 'Spaces and resources that support learning.', detail: 'Review the availability, condition, accessibility, and maintenance of physical learning environments.' },
-    { id: 'laboratories', name: 'Laboratories', shortName: 'Laboratories', icon: optionsOutline, description: 'Laboratory resources, safety, and utilization.', detail: 'Organize laboratory equipment, safety practices, maintenance, and utilization evidence.' },
-    { id: 'administration', name: 'Administration', shortName: 'Administration', icon: shieldCheckmarkOutline, description: 'Leadership, planning, and quality assurance.', detail: 'Connect governance, planning, quality assurance, and administrative support records.' }
-]
-const programSeeds = [
-    ['BS Information Technology', 'BSIT', 'cics'], ['BS Computer Science', 'BSCS', 'cics'], ['BS Information Systems', 'BSIS', 'cics'], ['BS Entertainment and Multimedia Computing', 'BSEMC', 'cics'], ['Diploma in Information Technology', 'DIT', 'cics'], ['MS Information Technology', 'MSIT', 'cics'], ['MS Computer Science', 'MSCS', 'cics'],
-    ['BS Business Administration', 'BSBA', 'cba'], ['BS Accountancy', 'BSA', 'cba'], ['BS Entrepreneurship', 'BSEntrep', 'cba'], ['BS Office Administration', 'BSOA', 'cba'], ['BS Hospitality Management', 'BSHM', 'cba'], ['BS Tourism Management', 'BSTM', 'cba'], ['MBA', 'MBA', 'cba'],
-    ['BSEd English', 'BSEd-Eng', 'coe'], ['BSEd Mathematics', 'BSEd-Math', 'coe'], ['BSEd Science', 'BSEd-Sci', 'coe'], ['BSEd Filipino', 'BSEd-Fil', 'coe'], ['Bachelor of Elementary Education', 'BEEd', 'coe'], ['Bachelor of Early Childhood Education', 'BECEd', 'coe'], ['Master of Arts in Education', 'MAEd', 'coe'],
-    ['BS Fisheries', 'BSF', 'if'], ['BS Fisheries Technology', 'BSFT', 'if'], ['BS Aquaculture', 'BSAq', 'if'], ['BS Marine Biology', 'BSMB', 'if'], ['BS Coastal Resource Management', 'BSCRM', 'if'], ['MS Fisheries', 'MSF', 'if'], ['PhD Fisheries', 'PhDF', 'if']
-]
-const baseAreaScores = [94, 91, 90, 92, 89, 88, 93, 92, 90, 91]
-const monthLabels = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September']
-const institutionHistory = [75, 78, 81, 84, 86, 88, 89, 91, 92]
-
-// =====================================================
-// DEMO / MOCK DATA
-// =====================================================
-// IMPORTANT: These values are temporary demonstration data.
-// Replace this section with real API/database data.
-// Suggested endpoints: GET /api/public/analytics, /programs,
-// /departments, and /accreditation-areas.
-// Example response: { totalPrograms: 28, totalDocuments: 1248,
-// complianceRate: 92, pendingReviews: 17, programs: [], departments: [],
-// complianceHistory: [], documentStatus: [], areaPerformance: [] }
-const DEMO_DATA = {
-    departments: departmentsSeed, cycles: cyclesSeed, areas: areaDefinitions,
-    analytics: { totalPrograms: 28, totalDocuments: 1248, complianceRate: 92, pendingReviews: 17, accreditationAreas: 10, programsOnTrack: 24 },
-    programs: programSeeds.map(([name, code, departmentId], index) => {
-        const department = departmentsSeed.find(item => item.id === departmentId)
-        const compliance = index === 0 ? 92 : 89 + ((index * 3) % 7)
-        const documents = index === 0 ? 124 : 41 + (index <= 17 ? 1 : 0)
-        const pendingReviews = index === 0 ? 3 : index <= 14 ? 1 : 0
-        const approvedDocuments = Math.round(documents * .70)
-        const pendingDocuments = Math.round(documents * .14)
-        const rejectedDocuments = Math.round(documents * .04)
-        return {
-            id: `program-${index + 1}`, name, code, departmentId, departmentName: department.name,
-            departmentCode: department.departmentCode, cycleId: cyclesSeed[index % 3].id,
-            cycleName: cyclesSeed[index % 3].name.replace(' accreditation cycle', ''), compliance,
-            documents, approvedDocuments, pendingDocuments, rejectedDocuments,
-            draftDocuments: documents - approvedDocuments - pendingDocuments - rejectedDocuments,
-            pendingReviews, onTrack: index < 24,
-            areaPerformance: areaDefinitions.map((area, areaIndex) => ({ id: area.id, score: Math.max(72, Math.min(99, baseAreaScores[areaIndex] + compliance - 92 + ((index + areaIndex) % 3 - 1))) })),
-            history: institutionHistory.map((value, monthIndex) => Math.max(65, Math.min(99, value + compliance - 92 + ((index + monthIndex) % 3 - 1))))
-        }
-    })
+const areaIconByCode = {
+    'area-1': eyeOutline,
+    'area-2': peopleCircleOutline,
+    'area-3': bookOutline,
+    'area-4': peopleOutline,
+    'area-5': analyticsOutline,
+    'area-6': cloudUploadOutline,
+    'area-7': libraryOutline,
+    'area-8': businessOutline,
+    'area-9': optionsOutline,
+    'area-10': shieldCheckmarkOutline,
 }
+const areaDefinitionsFallback = [
+    { id: 'area-1', name: 'Area 1 – Vision, Mission, Goals and Objectives', shortName: 'Vision, Mission & Goals', icon: eyeOutline, description: 'Institutional direction, goals, and shared understanding.', detail: 'Review how institutional and program goals are defined, communicated, and aligned with academic work.' },
+    { id: 'area-2', name: 'Area 2 – Faculty', shortName: 'Faculty', icon: peopleCircleOutline, description: 'Faculty qualifications, development, and engagement.', detail: 'Bring faculty credentials, development, performance records, and engagement evidence into view.' },
+    { id: 'area-3', name: 'Area 3 – Curriculum and Instruction', shortName: 'Curriculum & Instruction', icon: bookOutline, description: 'Curriculum design, delivery, and learning outcomes.', detail: 'Connect curriculum documents, teaching evidence, assessment practices, and learning outcomes.' },
+    { id: 'area-4', name: 'Area 4 – Support to Students', shortName: 'Support to Students', icon: peopleOutline, description: 'Services that help students thrive and progress.', detail: 'Organize student services, advising, guidance, wellness, and support program evidence.' },
+    { id: 'area-5', name: 'Area 5 – Research', shortName: 'Research', icon: analyticsOutline, description: 'Research activity, outputs, and institutional impact.', detail: 'Track research policies, projects, publications, utilization, and institutional support.' },
+    { id: 'area-6', name: 'Area 6 – Extension and Community Involvement', shortName: 'Extension', icon: cloudUploadOutline, description: 'Community engagement and extension initiatives.', detail: 'Show how extension initiatives respond to community needs and document participation and outcomes.' },
+    { id: 'area-7', name: 'Area 7 – Library', shortName: 'Library', icon: libraryOutline, description: 'Learning resources, facilities, and library services.', detail: 'Bring together evidence of learning resources, access, staffing, facilities, and library services.' },
+    { id: 'area-8', name: 'Area 8 – Physical Plant and Facilities', shortName: 'Physical Facilities', icon: businessOutline, description: 'Spaces and resources that support learning.', detail: 'Review the availability, condition, accessibility, and maintenance of physical learning environments.' },
+    { id: 'area-9', name: 'Area 9 – Laboratories', shortName: 'Laboratories', icon: optionsOutline, description: 'Laboratory resources, safety, and utilization.', detail: 'Organize laboratory equipment, safety practices, maintenance, and utilization evidence.' },
+    { id: 'area-10', name: 'Area 10 – Administration', shortName: 'Administration', icon: shieldCheckmarkOutline, description: 'Leadership, planning, and quality assurance.', detail: 'Connect governance, planning, quality assurance, and administrative support records.' },
+]
+const areaDefinitions = computed(() => {
+    const rows = accreditationAreas.value.length ? accreditationAreas.value : areaDefinitionsFallback
+    return rows.map((area) => ({
+        ...area,
+        icon: areaIconByCode[area.id] || ribbonOutline,
+        shortName: area.shortName || area.name,
+        description: area.description || '',
+        detail: area.detail || area.description || '',
+    }))
+})
 
 const activeNavLabel = computed(() => navItems.find(item => item.id === activeNav.value)?.label || 'Overview')
 const availablePrograms = computed(() => programs.value.filter(program => selectedDepartment.value === 'all' || program.departmentId === selectedDepartment.value))
@@ -690,30 +684,75 @@ const filteredPrograms = computed(() => programs.value.filter(program =>
     (selectedProgram.value === 'all' || program.id === selectedProgram.value) &&
     (selectedCycle.value === 'all' || program.cycleId === selectedCycle.value)
 ))
-const filteredDocuments = computed(() => filteredPrograms.value.reduce((total, program) => ({
-    approved: total.approved + program.approvedDocuments, pending: total.pending + program.pendingDocuments,
-    rejected: total.rejected + program.rejectedDocuments, draft: total.draft + program.draftDocuments
-}), { approved: 0, pending: 0, rejected: 0, draft: 0 }))
-const filteredCompliance = computed(() => monthLabels.map((month, index) => ({
-    month, score: filteredPrograms.value.length ? Math.round(filteredPrograms.value.reduce((sum, program) => sum + program.history[index], 0) / filteredPrograms.value.length) : 0
-})))
-// REAL DATA: Replace these computed values with fields from /api/public/analytics.
+const hasActiveFilters = computed(() => selectedDepartment.value !== 'all' || selectedProgram.value !== 'all' || selectedCycle.value !== 'all')
+const filteredDocuments = computed(() => {
+    const institutionView = !hasActiveFilters.value
+    const summary = analyticsSummary.value?.documentStatus
+    if (institutionView && summary) {
+        return {
+            approved: Number(summary.approved || 0),
+            pending: Number(summary.pending || 0),
+            rejected: Number(summary.rejected || 0),
+            draft: Number(summary.draft || 0),
+        }
+    }
+    return filteredPrograms.value.reduce((total, program) => ({
+        approved: total.approved + Number(program.approvedDocuments || 0),
+        pending: total.pending + Number(program.pendingDocuments || 0),
+        rejected: total.rejected + Number(program.rejectedDocuments || 0),
+        draft: total.draft + Number(program.draftDocuments || 0),
+    }), { approved: 0, pending: 0, rejected: 0, draft: 0 })
+})
+const filteredCompliance = computed(() => {
+    const institutionView = !hasActiveFilters.value
+    const history = analyticsSummary.value?.complianceHistory
+    if (institutionView && Array.isArray(history) && history.length) {
+        return history.map((row) => ({ month: row.month, score: Number(row.score || 0) }))
+    }
+    const length = filteredPrograms.value[0]?.history?.length || 9
+    return Array.from({ length }, (_, index) => {
+        const scores = filteredPrograms.value
+            .map((program) => Number(program.history?.[index] ?? program.compliance ?? 0))
+            .filter((score) => Number.isFinite(score))
+        const month = analyticsSummary.value?.complianceHistory?.[index]?.month
+            || ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September'][index]
+            || `M${index + 1}`
+        return {
+            month,
+            score: scores.length ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length) : 0,
+        }
+    })
+})
 const filteredAnalytics = computed(() => {
     const records = filteredPrograms.value
-    const institutionView = selectedInstitution.value === 'all' && selectedDepartment.value === 'all' && selectedProgram.value === 'all' && selectedCycle.value === 'all'
-    const average = records.length ? Math.round(records.reduce((sum, program) => sum + program.compliance, 0) / records.length) : 0
+    const institutionView = !hasActiveFilters.value
+    const average = records.length ? Math.round(records.reduce((sum, program) => sum + Number(program.compliance || 0), 0) / records.length) : 0
     return {
-        totalPrograms: institutionView ? analyticsSummary.value?.totalPrograms ?? 0 : records.length,
-        accreditationAreas: records.length ? (accreditationAreas.value.length || 10) : 0,
+        totalPrograms: institutionView ? analyticsSummary.value?.totalPrograms ?? records.length : records.length,
+        accreditationAreas: areaDefinitions.value.length || analyticsSummary.value?.accreditationAreas || 10,
         complianceRate: institutionView ? analyticsSummary.value?.complianceRate ?? average : average,
-        documentsManaged: institutionView ? analyticsSummary.value?.totalDocuments ?? 0 : records.reduce((sum, program) => sum + program.documents, 0),
-        pendingReviews: institutionView ? analyticsSummary.value?.pendingReviews ?? 0 : records.reduce((sum, program) => sum + program.pendingReviews, 0),
-        programsOnTrack: institutionView ? analyticsSummary.value?.programsOnTrack ?? 0 : records.filter(program => program.onTrack).length
+        documentsManaged: institutionView ? analyticsSummary.value?.totalDocuments ?? 0 : records.reduce((sum, program) => sum + Number(program.documents || 0), 0),
+        pendingReviews: institutionView ? analyticsSummary.value?.pendingReviews ?? 0 : records.reduce((sum, program) => sum + Number(program.pendingReviews || 0), 0),
+        programsOnTrack: institutionView ? analyticsSummary.value?.programsOnTrack ?? 0 : records.filter(program => program.onTrack).length,
     }
 })
-const filteredAreas = computed(() => areaDefinitions.map((area, index) => {
-    const scores = filteredPrograms.value.map(program => program.areaPerformance.find(item => item.id === area.id)?.score || 0)
-    return { ...area, number: String(index + 1).padStart(2, '0'), score: scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0, documents: Math.round(filteredAnalytics.value.documentsManaged * (.065 + (index % 3) * .009)) }
+const sexDistribution = computed(() => {
+    const raw = analyticsSummary.value?.sexDistribution || {}
+    return {
+        male: Number(raw.male || 0),
+        female: Number(raw.female || 0),
+        unset: Number(raw.unset || 0),
+        total: Number(raw.total || 0),
+    }
+})
+const filteredAreas = computed(() => areaDefinitions.value.map((area, index) => {
+    const scores = filteredPrograms.value.map(program => program.areaPerformance?.find(item => item.id === area.id)?.score || 0)
+    const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : Number(area.score || 0)
+    const docs = filteredPrograms.value.reduce((sum, program) => {
+        const areaScore = program.areaPerformance?.find(item => item.id === area.id)?.score || 0
+        return sum + (program.documents && areaScore ? Math.round(program.documents / Math.max(1, program.areaPerformance?.length || 10)) : 0)
+    }, 0)
+    return { ...area, number: String(index + 1).padStart(2, '0'), score: avg, documents: docs }
 }))
 const programComplianceData = computed(() => filteredPrograms.value.map(program => ({ label: program.code, value: program.compliance, onTrack: program.onTrack })))
 const documentStatuses = computed(() => {
@@ -727,7 +766,6 @@ const documentStatuses = computed(() => {
 })
 const complianceChange = computed(() => filteredCompliance.value.at(-1)?.score - filteredCompliance.value[0]?.score || 0)
 const chartMessage = computed(() => loading.value ? 'Loading analytics...' : filteredPrograms.value.length ? '' : selectedProgram.value !== 'all' ? 'No data available for this program.' : selectedDepartment.value !== 'all' ? 'No data available for this department.' : 'No data available.')
-const hasActiveFilters = computed(() => selectedDepartment.value !== 'all' || selectedProgram.value !== 'all' || selectedCycle.value !== 'all')
 const kpiCards = computed(() => [
     { label: 'Total programs', value: formatNumber(filteredAnalytics.value.totalPrograms), context: 'ACADEMIC UNITS', trend: 'In this view', icon: schoolOutline, spark: [13, 20, 16, 27, 23, 31, 26] },
     { label: 'Accreditation areas', value: formatNumber(filteredAnalytics.value.accreditationAreas), context: 'FRAMEWORK', trend: 'Areas tracked', icon: ribbonOutline, spark: [16, 23, 19, 25, 22, 30, 27] },
@@ -750,7 +788,24 @@ const selectedAreaDetails = computed(() => accreditationAreaCards.value.find(are
 const selectedProgramDetails = computed(() => {
     const program = programs.value.find(item => item.id === selectedProgramId.value)
     if (!program) return null
-    return { ...program, areas: program.areaPerformance.map(area => ({ ...areaDefinitions.find(item => item.id === area.id), number: String(areaDefinitions.findIndex(item => item.id === area.id) + 1).padStart(2, '0'), score: area.score })), reviewProgress: Math.round(program.approvedDocuments / program.documents * 100), history: program.history.map(value => Math.max(8, Math.round(value / 100 * 42))) }
+    const defs = areaDefinitions.value
+    const docs = Number(program.documents || 0)
+    const approved = Number(program.approvedDocuments || 0)
+    return {
+        ...program,
+        areas: (program.areaPerformance || []).map((area) => {
+            const def = defs.find((item) => item.id === area.id) || {}
+            const index = defs.findIndex((item) => item.id === area.id)
+            return {
+                ...def,
+                id: area.id,
+                number: String((index >= 0 ? index : 0) + 1).padStart(2, '0'),
+                score: Number(area.score || 0),
+            }
+        }),
+        reviewProgress: docs ? Math.round(approved / docs * 100) : 0,
+        history: (program.history || []).map((value) => Math.max(8, Math.round(Number(value || 0) / 100 * 42))),
+    }
 })
 
 const features = [
@@ -781,19 +836,15 @@ const programChartCanvas = ref(null)
 const documentChartCanvas = ref(null)
 const historyChartCanvas = ref(null)
 const areaChartCanvas = ref(null)
-let programChart, documentChart, historyChart, areaChart
-const palette = { green: '#278754', greenSoft: 'rgba(39,135,84,.12)', amber: '#d5a33d', coral: '#cb6d5b', muted: '#91a39a', grid: '#e9eee9', white: '#fff' }
+const sexChartCanvas = ref(null)
+let programChart, documentChart, historyChart, areaChart, sexChart
+const palette = { green: '#278754', greenSoft: 'rgba(39,135,84,.12)', amber: '#d5a33d', coral: '#cb6d5b', muted: '#91a39a', blue: '#5b8fd5', grid: '#e9eee9', white: '#fff' }
 
-// =====================================================
-// BACKEND INTEGRATION POINT
-// Replace the mock implementations with calls such as:
-// const response = await axios.get('/api/public/analytics')
-// Return response.data and assign it to the matching state.
-// =====================================================
-async function fetchAnalytics() { return DEMO_DATA.analytics }
-async function fetchPrograms() { return DEMO_DATA.programs }
-async function fetchDepartments() { return DEMO_DATA.departments }
-async function fetchAccreditationAreas() { return DEMO_DATA.areas }
+async function fetchAnalytics() { return getPublicAnalytics() }
+async function fetchPrograms() { return getPublicPrograms() }
+async function fetchDepartments() { return getPublicDepartments() }
+async function fetchAccreditationAreas() { return getPublicAccreditationAreas() }
+async function fetchCycles() { return getPublicCycles() }
 
 function formatNumber(value) { return new Intl.NumberFormat('en-US').format(value || 0) }
 function goTo(path) { drawerOpen.value = false; router.push(path) }
@@ -814,33 +865,76 @@ function selectDepartment(id) { selectedDepartment.value = id; selectedProgram.v
 function openProgram(program) { selectedProgramId.value = program.id }
 function closeProgram() { selectedProgramId.value = null }
 function destroyCharts() {
-    [programChart, documentChart, historyChart, areaChart].forEach(chart => chart?.destroy())
-    programChart = null; documentChart = null; historyChart = null; areaChart = null
+    [programChart, documentChart, historyChart, areaChart, sexChart].forEach(chart => chart?.destroy())
+    programChart = null; documentChart = null; historyChart = null; areaChart = null; sexChart = null
 }
 async function renderCharts() {
-    if (loading.value || !filteredPrograms.value.length || !programChartCanvas.value) { destroyCharts(); return }
+    if (loading.value || !programChartCanvas.value) { destroyCharts(); return }
     const Chart = await ensureChart()
     destroyCharts()
     const grid = { color: palette.grid, drawBorder: false }
     const ticks = { color: '#89968f', font: { size: 10 }, padding: 8 }
-    programChart = new Chart(programChartCanvas.value, { type: 'bar', data: { labels: programComplianceData.value.map(item => item.label), datasets: [{ data: programComplianceData.value.map(item => item.value), backgroundColor: programComplianceData.value.map(item => item.onTrack ? palette.green : palette.amber), borderRadius: 5, maxBarThickness: 36 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => ` ${context.raw}% compliance` } } }, scales: { x: { grid: { display: false }, border: { display: false }, ticks: { ...ticks, maxRotation: 0, autoSkip: true, maxTicksLimit: 12 } }, y: { min: 60, max: 100, grid, border: { display: false }, ticks: { ...ticks, stepSize: 10, callback: value => `${value}%` } } } } })
+    const yMin = (values) => {
+        const nums = values.filter((value) => Number.isFinite(value))
+        if (!nums.length) return 0
+        return Math.max(0, Math.min(...nums) - 10)
+    }
+    if (filteredPrograms.value.length) {
+        programChart = new Chart(programChartCanvas.value, { type: 'bar', data: { labels: programComplianceData.value.map(item => item.label), datasets: [{ data: programComplianceData.value.map(item => item.value), backgroundColor: programComplianceData.value.map(item => item.onTrack ? palette.green : palette.amber), borderRadius: 5, maxBarThickness: 36 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => ` ${context.raw}% compliance` } } }, scales: { x: { grid: { display: false }, border: { display: false }, ticks: { ...ticks, maxRotation: 0, autoSkip: true, maxTicksLimit: 12 } }, y: { min: yMin(programComplianceData.value.map(item => item.value)), max: 100, grid, border: { display: false }, ticks: { ...ticks, stepSize: 10, callback: value => `${value}%` } } } } })
+    }
     documentChart = new Chart(documentChartCanvas.value, { type: 'doughnut', data: { labels: documentStatuses.value.map(item => item.label), datasets: [{ data: Object.values(filteredDocuments.value), backgroundColor: documentStatuses.value.map(item => item.color), borderColor: palette.white, borderWidth: 4, hoverOffset: 5 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '76%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => ` ${context.label}: ${formatNumber(context.raw)}` } } } } })
-    historyChart = new Chart(historyChartCanvas.value, { type: 'line', data: { labels: filteredCompliance.value.map(item => item.month), datasets: [{ data: filteredCompliance.value.map(item => item.score), borderColor: palette.green, backgroundColor: palette.greenSoft, fill: true, tension: .38, borderWidth: 2.5, pointRadius: 3, pointHoverRadius: 5, pointBackgroundColor: palette.white, pointBorderColor: palette.green, pointBorderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => ` ${context.raw}% compliance` } } }, scales: { x: { grid: { display: false }, border: { display: false }, ticks: { ...ticks, maxTicksLimit: 9, maxRotation: 0 } }, y: { min: 70, max: 100, grid, border: { display: false }, ticks: { ...ticks, stepSize: 10, callback: value => `${value}%` } } } } })
-    areaChart = new Chart(areaChartCanvas.value, { type: 'bar', data: { labels: filteredAreas.value.map(area => area.shortName), datasets: [{ data: filteredAreas.value.map(area => area.score), backgroundColor: filteredAreas.value.map((area, index) => index % 3 ? '#72aa85' : palette.green), borderRadius: 4, barThickness: 13, maxBarThickness: 13 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => ` ${context.raw}% average score` } } }, scales: { x: { min: 60, max: 100, grid, border: { display: false }, ticks: { ...ticks, stepSize: 20, callback: value => `${value}%` } }, y: { grid: { display: false }, border: { display: false }, ticks: { ...ticks, font: { size: 9 }, autoSkip: false } } } } })
+    historyChart = new Chart(historyChartCanvas.value, { type: 'line', data: { labels: filteredCompliance.value.map(item => item.month), datasets: [{ data: filteredCompliance.value.map(item => item.score), borderColor: palette.green, backgroundColor: palette.greenSoft, fill: true, tension: .38, borderWidth: 2.5, pointRadius: 3, pointHoverRadius: 5, pointBackgroundColor: palette.white, pointBorderColor: palette.green, pointBorderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => ` ${context.raw}% compliance` } } }, scales: { x: { grid: { display: false }, border: { display: false }, ticks: { ...ticks, maxTicksLimit: 9, maxRotation: 0 } }, y: { min: yMin(filteredCompliance.value.map(item => item.score)), max: 100, grid, border: { display: false }, ticks: { ...ticks, stepSize: 10, callback: value => `${value}%` } } } } })
+    areaChart = new Chart(areaChartCanvas.value, { type: 'bar', data: { labels: filteredAreas.value.map(area => area.shortName), datasets: [{ data: filteredAreas.value.map(area => area.score), backgroundColor: filteredAreas.value.map((area, index) => index % 3 ? '#72aa85' : palette.green), borderRadius: 4, barThickness: 13, maxBarThickness: 13 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => ` ${context.raw}% average score` } } }, scales: { x: { min: 0, max: 100, grid, border: { display: false }, ticks: { ...ticks, stepSize: 20, callback: value => `${value}%` } }, y: { grid: { display: false }, border: { display: false }, ticks: { ...ticks, font: { size: 9 }, autoSkip: false } } } } })
+    if (sexChartCanvas.value && sexDistribution.value.total) {
+        sexChart = new Chart(sexChartCanvas.value, {
+            type: 'doughnut',
+            data: {
+                labels: ['Male', 'Female', 'Unset'],
+                datasets: [{
+                    data: [sexDistribution.value.male, sexDistribution.value.female, sexDistribution.value.unset],
+                    backgroundColor: [palette.green, palette.blue, palette.muted],
+                    borderColor: palette.white,
+                    borderWidth: 4,
+                    hoverOffset: 5,
+                }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '76%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: (context) => ` ${context.label}: ${formatNumber(context.raw)}` } },
+                },
+            },
+        })
+    }
 }
 function handleKeydown(event) { if (event.key === 'Escape') { closeProgram(); noticeOpen.value = false; drawerOpen.value = false } }
 
 watch([selectedDepartment, selectedProgram, selectedCycle], async () => { await nextTick(); void renderCharts() }, { flush: 'post' })
 onMounted(async () => {
     document.addEventListener('keydown', handleKeydown)
-    documentChartCanvas.value.closest('.chart-card').id = 'documents'
-    historyChartCanvas.value.closest('.chart-card').id = 'compliance'
-    areaChartCanvas.value.closest('.chart-card').id = 'reports'
+    documentChartCanvas.value?.closest('.chart-card') && (documentChartCanvas.value.closest('.chart-card').id = 'documents')
+    historyChartCanvas.value?.closest('.chart-card') && (historyChartCanvas.value.closest('.chart-card').id = 'compliance')
+    areaChartCanvas.value?.closest('.chart-card') && (areaChartCanvas.value.closest('.chart-card').id = 'reports')
     try {
-        const [analytics, programData, departmentData, areaData] = await Promise.all([fetchAnalytics(), fetchPrograms(), fetchDepartments(), fetchAccreditationAreas()])
-        analyticsSummary.value = analytics; programs.value = programData; departments.value = departmentData; cycles.value = cyclesSeed; accreditationAreas.value = areaData
+        const [analytics, programData, departmentData, areaData, cycleData] = await Promise.all([
+            fetchAnalytics(),
+            fetchPrograms(),
+            fetchDepartments(),
+            fetchAccreditationAreas(),
+            fetchCycles(),
+        ])
+        analyticsSummary.value = analytics || null
+        programs.value = Array.isArray(programData) ? programData : []
+        departments.value = Array.isArray(departmentData) ? departmentData : []
+        accreditationAreas.value = Array.isArray(areaData) ? areaData : []
+        cycles.value = Array.isArray(cycleData) && cycleData.length
+            ? cycleData.map((cycle) => ({ id: String(cycle.id), name: cycle.name || `Cycle ${cycle.id}` }))
+            : [...new Map(programs.value.filter((program) => program.cycleId).map((program) => [String(program.cycleId), { id: String(program.cycleId), name: program.cycleName || `Cycle ${program.cycleId}` }])).values()]
     } catch {
-        loadError.value = 'Analytics could not be loaded. Please try again later.'
+        loadError.value = 'Live analytics could not be loaded. Please try again later.'
     } finally {
         loading.value = false
         await nextTick()
@@ -942,7 +1036,7 @@ onBeforeUnmount(() => { document.removeEventListener('keydown', handleKeydown); 
     margin: 0;
     font-size: 26px;
 }
-g
+
 .brand>span:last-child {
     display: grid
 }

@@ -156,8 +156,9 @@ import {
   searchOutline,
   settingsOutline,
 } from 'ionicons/icons'
-import api from '@/lib/api'
+import { uploadMyProfilePhoto } from '@/lib/api'
 import { useAuthStore } from '@/stores/authStore'
+import { useToastStore } from '@/stores/toastStore'
 import { getUserDisplayName, getUserInitials, getUserPhotoUrl } from '@/lib/userDisplay'
 import { debounce } from '@/lib/debounce'
 import { useSyncPoll } from '@/lib/useSyncPoll'
@@ -189,6 +190,7 @@ const emit = defineEmits<{
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const toast = useToastStore()
 const mobileOpen = ref(false)
 const profileOpen = ref(false)
 const photoFailed = ref(false)
@@ -241,6 +243,7 @@ const goSettings = async () => {
 }
 
 const pickProfilePhoto = () => {
+  profileOpen.value = false
   photoInput.value?.click()
 }
 
@@ -250,19 +253,33 @@ const onProfilePhotoSelected = async (event: Event) => {
   input.value = ''
   if (!file) return
 
-  if (!file.type.startsWith('image/')) return
-  if (file.size > 10 * 1024 * 1024) return
+  if (!file.type.startsWith('image/')) {
+    toast.show('Please select a valid image file.', 'error')
+    return
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    toast.show('Profile photo must be 10MB or smaller.', 'error')
+    return
+  }
 
   photoUploading.value = true
   profileOpen.value = false
   try {
-    const form = new FormData()
-    form.append('profile_photo', file)
-    await api.post('/me/profile-photo', form)
-    await authStore.refreshCurrentUser()
+    const response = await uploadMyProfilePhoto(file)
+    const nextUser = response?.data?.user
+    if (nextUser) {
+      authStore.applyCurrentUser(nextUser)
+    } else {
+      await authStore.refreshCurrentUser()
+    }
     photoFailed.value = false
-  } catch {
-    photoFailed.value = true
+    toast.show('Profile photo updated.', 'success')
+  } catch (error: any) {
+    const message =
+      error?.response?.data?.message ||
+      error?.response?.data?.errors?.profile_photo?.[0] ||
+      'Failed to update profile photo.'
+    toast.show(message, 'error')
   } finally {
     photoUploading.value = false
   }

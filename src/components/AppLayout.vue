@@ -42,13 +42,9 @@
           </button>
 
           <div v-if="showProfileMenu" class="profile-menu">
-            <a href="#" class="menu-item">
+            <a href="/settings" class="menu-item" @click.prevent="goToSettings">
               <ion-icon name="person-outline"></ion-icon>
-              Profile Settings
-            </a>
-            <a href="#" class="menu-item">
-              <ion-icon name="settings-outline"></ion-icon>
-              Preferences
+              Profile & Settings
             </a>
             <hr class="menu-divider">
             <button class="menu-item logout-item" @click="handleLogout">
@@ -167,6 +163,11 @@ const showManagementNav = computed(() => adminNavItems.value.length > 0)
 
 const isActiveRoute = (path: string) => {
   return route.path === path || route.path.startsWith(path + '/')
+}
+
+const goToSettings = async () => {
+  showProfileMenu.value = false
+  await router.push('/settings')
 }
 
 const handleLogout = () => {

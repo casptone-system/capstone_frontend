@@ -158,6 +158,34 @@ export const me = async () => {
   })
 }
 
+export const updateMyProfile = async (data: {
+  first_name: string
+  middle_name?: string | null
+  last_name: string
+  phone?: string | null
+  birthdate?: string | null
+  sex?: string | null
+}) => {
+  const response = await api.put('/me', data)
+  return response.data
+}
+
+export const changeMyPassword = async (data: {
+  current_password: string
+  password: string
+  password_confirmation: string
+}) => {
+  const response = await api.post('/me/password', data)
+  return response.data
+}
+
+export const uploadMyProfilePhoto = async (file: File) => {
+  const form = new FormData()
+  form.append('profile_photo', file)
+  const response = await api.post('/me/profile-photo', form)
+  return response.data
+}
+
 /* ===========================
    COLLEGES
 =========================== */
@@ -377,6 +405,38 @@ export const getAreaInCharges = async () => {
 export const getProgramFaculty = async () => {
   return dedupeRequest('GET:/program-faculty', async () => {
     const response = await api.get('/program-faculty')
+    return unwrap(response)
+  })
+}
+
+export const getPublicAnalytics = async () => {
+  const response = await api.get('/public/analytics')
+  return unwrap(response)
+}
+
+export const getPublicPrograms = async () => {
+  const response = await api.get('/public/programs')
+  return unwrap(response)
+}
+
+export const getPublicDepartments = async () => {
+  const response = await api.get('/public/departments')
+  return unwrap(response)
+}
+
+export const getPublicAccreditationAreas = async () => {
+  const response = await api.get('/public/accreditation-areas')
+  return unwrap(response)
+}
+
+export const getPublicCycles = async () => {
+  const response = await api.get('/public/cycles')
+  return unwrap(response)
+}
+
+export const getProgramChairWorkDistribution = async () => {
+  return dedupeRequest('GET:/program-chair/work-distribution', async () => {
+    const response = await api.get('/program-chair/work-distribution')
     return unwrap(response)
   })
 }
