@@ -1,14 +1,14 @@
 <template>
   <div class="accreditation-view">
-    <div v-if="loading" class="loading-state">
-      <p>Loading accreditation information...</p>
+    <div v-if="loading && !program" class="loading-state">
+      <AdamsSkeleton variant="page" />
     </div>
 
     <div v-else-if="error" class="error-state">
       <p>{{ error }}</p>
     </div>
 
-    <div v-else class="accreditation-content">
+    <div v-else class="accreditation-content" :class="{ 'adams-is-refreshing': loading }">
       <!-- Program Information -->
       <div class="info-section">
         <h3 class="section-title">Program Information</h3>
@@ -106,6 +106,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 import axios from 'axios'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 
 const authStore = useAuthStore()
 

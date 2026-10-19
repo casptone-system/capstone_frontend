@@ -38,7 +38,10 @@
         <h3>Recent Audit Logs</h3>
         <span>{{ auditMeta.total }} records</span>
       </div>
-      <div v-if="auditLogs.length" class="audit-table">
+      <div v-if="isLoading && !auditLogs.length" class="sa-empty">
+        <AdamsSkeleton variant="table" :rows="5" />
+      </div>
+      <div v-else-if="auditLogs.length" class="audit-table" :class="{ 'adams-is-refreshing': isLoading }">
         <div class="audit-row audit-row--header">
           <span>Event</span>
           <span>User</span>
@@ -67,7 +70,10 @@
         <h3>Login History</h3>
         <span>{{ loginMeta.total }} records</span>
       </div>
-      <div v-if="loginHistory.length" class="audit-table">
+      <div v-if="isLoading && !loginHistory.length" class="sa-empty">
+        <AdamsSkeleton variant="table" :rows="4" />
+      </div>
+      <div v-else-if="loginHistory.length" class="audit-table" :class="{ 'adams-is-refreshing': isLoading }">
         <div class="audit-row audit-row--login audit-row--header">
           <span>User</span>
           <span>Status</span>
@@ -94,6 +100,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import api from '@/lib/api'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 
 interface PageMeta {
   current_page: number

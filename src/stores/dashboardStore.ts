@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { getDashboard } from '@/lib/api'
+import { isFresh, SWR_TTL } from '@/lib/swrCache'
 
 export interface DashboardStats {
   totalPrograms: number
@@ -63,13 +64,20 @@ export const useDashboardStore = defineStore('dashboard', () => {
   })
 
   const fetchedAt = ref(0)
+  const refreshing = ref(false)
 
   const fetchDashboardStats = async (force = false) => {
-    if (!force && fetchedAt.value && Date.now() - fetchedAt.value < 15_000) {
+    if (!force && isFresh(fetchedAt.value, SWR_TTL.dashboard)) {
       return
     }
 
-    isLoading.value = true
+    const hasCache = fetchedAt.value > 0
+    // Stale-while-revalidate: keep old stats on screen; only blank-load on first visit.
+    if (!hasCache) {
+      isLoading.value = true
+    } else {
+      refreshing.value = true
+    }
     error.value = null
     try {
       const dashboard = await getDashboard()
@@ -96,23 +104,30 @@ export const useDashboardStore = defineStore('dashboard', () => {
         time: formatTimeAgo(item.created_at),
         created_at: item.created_at
       }))
+      fetchedAt.value = Date.now()
     } catch (err: any) {
       error.value = err.message || 'Failed to fetch dashboard stats'
-      stats.value = {
-        totalPrograms: 0,
-        totalAreas: 0,
-        complianceScore: 0,
-        pendingSubmissions: 0,
-        assignmentCompletion: 0,
-        performanceTrend: 0,
-        securityStatus: 'protected',
-        collaborationActivity: 0
+      if (!hasCache) {
+        stats.value = {
+          totalPrograms: 0,
+          totalAreas: 0,
+          complianceScore: 0,
+          pendingSubmissions: 0,
+          assignmentCompletion: 0,
+          performanceTrend: 0,
+          securityStatus: 'protected',
+          collaborationActivity: 0
+        }
+        activities.value = []
       }
-      activities.value = []
     } finally {
       isLoading.value = false
-      fetchedAt.value = Date.now()
+      refreshing.value = false
     }
+  }
+
+  const invalidateDashboard = () => {
+    fetchedAt.value = 0
   }
 
   const formatTimeAgo = (dateString: string): string => {
@@ -137,10 +152,12 @@ export const useDashboardStore = defineStore('dashboard', () => {
     stats,
     activities,
     isLoading,
+    refreshing,
     error,
     complianceStatusColor,
     securityStatusLabel,
     fetchDashboardStats,
+    invalidateDashboard,
     updateStats
   }
 })

@@ -28,10 +28,12 @@
       </button>
     </div>
 
-    <div v-if="loading" class="fma-empty">Loading…</div>
+    <div v-if="loading && !parameters.length && !rows.length" class="fma-empty">
+      <AdamsSkeleton :variant="selectedParameter ? 'table' : 'cards'" :rows="5" :count="4" />
+    </div>
     <div v-else-if="error" class="fma-empty">{{ error }}</div>
 
-    <div v-else-if="selectedParameter" class="fma-table-card">
+    <div v-else-if="selectedParameter" class="fma-table-card" :class="{ 'adams-is-refreshing': loading }">
       <AreaParameterRowsTable
         :rows="rows"
         :editable="canEditContent && editMode"
@@ -54,7 +56,7 @@
       </div>
     </div>
 
-    <div v-else-if="parameters.length" class="fma-param-list">
+    <div v-else-if="parameters.length" class="fma-param-list" :class="{ 'adams-is-refreshing': loading }">
       <button
         v-for="parameter in parameters"
         :key="parameter.id"
@@ -77,6 +79,7 @@ import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@/stores/authStore'
 import { useFacultyDashboardStore } from '@/stores/facultyDashboardStore'
 import { createParameterRow, getAreaParameters, getParameterRows } from '@/lib/api'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 import AreaParameterRowsTable from '@/components/AreaParameterRowsTable.vue'
 
 const facultyDashboard = useFacultyDashboardStore()
@@ -139,6 +142,7 @@ const loadParameters = async () => {
   error.value = ''
   selectedParameter.value = null
   rows.value = []
+  parameters.value = []
 
   try {
     const data = await getAreaParameters(selectedAreaId.value)
@@ -155,6 +159,7 @@ const openParameter = async (parameter: any) => {
   selectedParameter.value = parameter
   loading.value = true
   error.value = ''
+  rows.value = []
 
   try {
     const data = await getParameterRows(parameter.id)

@@ -8,7 +8,9 @@
       and view the uploaded evidence files.
     </p>
 
-    <p v-if="loading" class="sta-status">Checking submission status…</p>
+    <div v-if="loading && !status" class="sta-status">
+      <AdamsSkeleton variant="lines" :rows="3" height="12px" />
+    </div>
     <p v-else-if="error" class="sta-status is-error">{{ error }}</p>
     <template v-else-if="status">
       <p v-if="status.submitted" class="sta-status is-done">
@@ -45,6 +47,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 import { getAccreditorSubmission, submitToAccreditor, unsubmitToAccreditor } from '@/lib/api'
 
 type SubmissionStatus = {
@@ -95,12 +98,20 @@ const submit = async () => {
     return
   }
 
+  const previous = { ...status.value }
+  status.value = {
+    ...status.value,
+    submitted: true,
+    submittedAt: new Date().toISOString(),
+  }
+
   submitting.value = true
   error.value = ''
   try {
     const body = await submitToAccreditor()
     status.value = body?.data || status.value
   } catch (err: any) {
+    status.value = previous
     error.value = err?.response?.data?.message || 'Unable to submit this program to the accreditor.'
   } finally {
     submitting.value = false
@@ -115,12 +126,21 @@ const unsubmit = async () => {
     return
   }
 
+  const previous = { ...status.value }
+  status.value = {
+    ...status.value,
+    submitted: false,
+    submittedAt: null,
+    submittedBy: null,
+  }
+
   unsubmitting.value = true
   error.value = ''
   try {
     const body = await unsubmitToAccreditor()
     status.value = body?.data || status.value
   } catch (err: any) {
+    status.value = previous
     error.value = err?.response?.data?.message || 'Unable to unsubmit this program.'
   } finally {
     unsubmitting.value = false

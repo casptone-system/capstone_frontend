@@ -76,8 +76,10 @@
                 <p>Readiness across every college in the university.</p>
               </div>
             </div>
-            <p v-if="reportsLoading">Loading college comparison…</p>
-            <div v-else class="qa-doc-table">
+            <div v-if="reportsLoading && !colleges.length">
+              <AdamsSkeleton variant="table" :rows="5" />
+            </div>
+            <div v-else class="qa-doc-table" :class="{ 'adams-is-refreshing': reportsLoading }">
               <div class="qa-table-header qa-table-header-colleges">
                 <span>College</span><span>Programs</span><span>Completed</span><span>Readiness</span>
               </div>
@@ -98,8 +100,10 @@
                 <p>Every program in the university, with evidence completion.</p>
               </div>
             </div>
-            <p v-if="reportsLoading">Loading program readiness…</p>
-            <div v-else class="qa-doc-table">
+            <div v-if="reportsLoading && !readinessPrograms.length">
+              <AdamsSkeleton variant="table" :rows="5" />
+            </div>
+            <div v-else class="qa-doc-table" :class="{ 'adams-is-refreshing': reportsLoading }">
               <div class="qa-table-header">
                 <span>Program</span><span>College</span><span>Level</span><span>Phase</span><span>Readiness</span>
               </div>
@@ -121,8 +125,10 @@
                 <p>University-wide programs below the readiness threshold.</p>
               </div>
             </div>
-            <p v-if="reportsLoading">Loading at-risk programs…</p>
-            <div v-else class="qa-doc-table">
+            <div v-if="reportsLoading && !atRiskPrograms.length">
+              <AdamsSkeleton variant="table" :rows="5" />
+            </div>
+            <div v-else class="qa-doc-table" :class="{ 'adams-is-refreshing': reportsLoading }">
               <div class="qa-table-header">
                 <span>Program</span><span>College</span><span>Risk</span><span>Pending</span><span>Readiness</span>
               </div>
@@ -144,8 +150,10 @@
                 <p>All cycles across every college and program. View only.</p>
               </div>
             </div>
-            <p v-if="reportsLoading">Loading accreditations…</p>
-            <div v-else class="qa-doc-table">
+            <div v-if="reportsLoading && !accreditations.length">
+              <AdamsSkeleton variant="table" :rows="5" />
+            </div>
+            <div v-else class="qa-doc-table" :class="{ 'adams-is-refreshing': reportsLoading }">
               <div class="qa-table-header">
                 <span>Program</span><span>College</span><span>Level</span><span>Status</span><span>Updated</span>
               </div>
@@ -410,6 +418,7 @@ import AccreditationLevelStatus from '@/components/AccreditationLevelStatus.vue'
 import AreaEvidenceReviewPanel from '@/components/AreaEvidenceReviewPanel.vue'
 import AccreditorEvidenceBrowser from '@/components/AccreditorEvidenceBrowser.vue'
 import AdamsAppShell from '@/components/ui/AdamsAppShell.vue'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 import api from '@/lib/api'
 import { useAuthStore } from '@/stores/authStore'
 

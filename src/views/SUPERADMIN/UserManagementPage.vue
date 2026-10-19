@@ -155,7 +155,10 @@
         <div class="sa-table-header users-table">
           <span>Name</span><span>Email</span><span>Role</span><span>Status</span><span>Department</span><span>Last Login</span><span></span>
         </div>
-        <div v-if="filteredUsers.length" class="sa-table-body">
+        <div v-if="store.isLoading && !filteredUsers.length" class="sa-empty">
+          <AdamsSkeleton variant="table" :rows="6" />
+        </div>
+        <div v-else-if="filteredUsers.length" class="sa-table-body" :class="{ 'adams-is-refreshing': store.isLoading }">
           <div
             v-for="user in filteredUsers"
             :key="user.id"
@@ -177,7 +180,7 @@
             </div>
           </div>
         </div>
-        <div v-else class="sa-empty">{{ store.isLoading ? 'Loading users…' : 'No matching users found.' }}</div>
+        <div v-else class="sa-empty">No matching users found.</div>
       </div>
 
       <aside v-if="profileUser" class="profile-panel">
@@ -247,6 +250,7 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import AppModal from '@/components/AppModal.vue'
 import AdamsConfirmDialog from '@/components/ui/AdamsConfirmDialog.vue'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 import { getColleges, updateUser as updateAdminUser } from '@/lib/api'
 import { useSuperAdminStore, type SuperAdminUserRecord } from '@/stores/superAdminStore'
 import { useToastStore } from '@/stores/toastStore'

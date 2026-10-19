@@ -12,18 +12,18 @@
       </button>
     </div>
 
-    <!-- Loading state -->
-    <div v-if="loading" class="loading-state">
-      <p>Loading areas and faculty...</p>
+    <!-- Loading state (first load only — keep stale lists visible on refresh) -->
+    <div v-if="loading && !areas.length" class="loading-state">
+      <AdamsSkeleton variant="folders" :count="4" />
     </div>
 
     <!-- Empty state -->
-    <div v-else-if="areas.length === 0" class="empty-state">
+    <div v-else-if="!loading && areas.length === 0" class="empty-state">
       <p>No accreditation areas available</p>
     </div>
 
     <!-- BY AREA VIEW -->
-    <div v-else-if="viewMode === 'by-area'" class="areas-list">
+    <div v-else-if="viewMode === 'by-area'" class="areas-list" :class="{ 'adams-is-refreshing': loading }">
       <!-- Bulk Assignment Toggle -->
       <div class="bulk-assignment-toggle">
         <label class="checkbox-label">
@@ -330,6 +330,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 
 interface Member {
   id: number

@@ -15,10 +15,12 @@
       </p>
     </div>
 
-    <p v-if="loading" class="acc-empty">Loading…</p>
+    <div v-if="loading && !hasBrowseData" class="acc-empty">
+      <AdamsSkeleton :variant="step === 'rows' ? 'table' : 'cards'" :rows="5" :count="4" />
+    </div>
     <p v-else-if="error" class="acc-empty is-error">{{ error }}</p>
 
-    <div v-else-if="step === 'colleges'" class="acc-grid">
+    <div v-else-if="step === 'colleges'" class="acc-grid" :class="{ 'adams-is-refreshing': loading }">
       <p v-if="!colleges.length" class="acc-empty">
         No accreditation has been submitted yet. Uploaded evidence appears here after a program chair submits it.
       </p>
@@ -34,7 +36,7 @@
       </button>
     </div>
 
-    <div v-else-if="step === 'programs'" class="acc-grid">
+    <div v-else-if="step === 'programs'" class="acc-grid" :class="{ 'adams-is-refreshing': loading }">
       <p v-if="!programs.length" class="acc-empty">No submitted programs in this college.</p>
       <button
         v-for="program in programs"
@@ -51,7 +53,7 @@
       </button>
     </div>
 
-    <div v-else-if="step === 'areas'" class="acc-grid">
+    <div v-else-if="step === 'areas'" class="acc-grid" :class="{ 'adams-is-refreshing': loading }">
       <p v-if="!areas.length" class="acc-empty">No areas were included in this submission.</p>
       <button
         v-for="area in areas"
@@ -65,7 +67,7 @@
       </button>
     </div>
 
-    <div v-else-if="step === 'parameters'" class="acc-grid">
+    <div v-else-if="step === 'parameters'" class="acc-grid" :class="{ 'adams-is-refreshing': loading }">
       <p v-if="!parameters.length" class="acc-empty">No parameters found for this area.</p>
       <button
         v-for="parameter in parameters"
@@ -79,7 +81,7 @@
       </button>
     </div>
 
-    <div v-else class="acc-table">
+    <div v-else class="acc-table" :class="{ 'adams-is-refreshing': loading }">
       <AreaParameterRowsTable
         :rows="rows"
         :show-upload="true"
@@ -92,6 +94,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 import AreaParameterRowsTable from '@/components/AreaParameterRowsTable.vue'
 import {
   getAccreditorAreas,
@@ -130,6 +133,15 @@ const crumb = computed(() => {
   if (step.value === 'parameters') return 'Area'
   if (step.value === 'rows') return 'Parameter'
   return 'Evidence'
+})
+
+const hasBrowseData = computed(() => {
+  if (step.value === 'colleges') return colleges.value.length > 0
+  if (step.value === 'programs') return programs.value.length > 0
+  if (step.value === 'areas') return areas.value.length > 0
+  if (step.value === 'parameters') return parameters.value.length > 0
+  if (step.value === 'rows') return rows.value.length > 0
+  return false
 })
 
 const backLabel = computed(() => {

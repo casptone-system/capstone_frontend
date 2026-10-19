@@ -9,11 +9,13 @@
       <button type="button" class="pc-btn pc-btn-ghost" @click="loadStructure">Refresh</button>
     </div>
 
-    <p v-if="loading" class="pc-structure-state">Loading the accreditation structure...</p>
+    <div v-if="loading && !instrument" class="pc-structure-state">
+      <AdamsSkeleton variant="folders" :count="4" />
+    </div>
     <p v-else-if="error" class="pc-structure-error">{{ error }}</p>
     <p v-else-if="!instrument" class="pc-structure-state">No instrument has been linked to this accreditation cycle yet.</p>
 
-    <div v-else class="pc-structure-areas">
+    <div v-else class="pc-structure-areas" :class="{ 'adams-is-refreshing': loading }">
       <article v-for="area in areas" :key="area.id" class="pc-structure-area">
         <div class="pc-structure-area-header">
           <div>
@@ -66,6 +68,7 @@
 import { onMounted, ref } from 'vue'
 import { addAreaMember, assignAreaInCharge, getAccreditationCycles, getAccreditationStructure, getAreaInCharges, getProgramFaculty } from '@/lib/api'
 import { useAuthStore } from '@/stores/authStore'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 
 const authStore = useAuthStore()
 const loading = ref(false)

@@ -17,10 +17,12 @@
       </div>
     </div>
 
-    <div v-if="store.isLoading && !store.items.length" class="inbox-empty">Loading notifications...</div>
+    <div v-if="store.isLoading && !store.items.length" class="inbox-empty">
+      <AdamsSkeleton variant="list" :rows="5" />
+    </div>
     <div v-else-if="!store.items.length" class="inbox-empty">No notifications yet.</div>
 
-    <div v-else class="inbox-list">
+    <div v-else class="inbox-list" :class="{ 'adams-is-refreshing': store.isLoading }">
       <article
         v-for="item in store.items"
         :key="item.id"
@@ -64,6 +66,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 import { useNotificationStore, type InboxItem } from '@/stores/notificationStore'
 import { useToastStore } from '@/stores/toastStore'
 

@@ -459,6 +459,44 @@
   to { transform: translateX(100%); }
 }
 
+/* Keep stale UI visible while SWR / background refetch runs */
+.adams-is-refreshing {
+  position: relative;
+  transition: opacity 0.2s ease;
+  opacity: 0.92;
+}
+
+.adams-is-refreshing::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--adams-primary, #0e7a5f), transparent);
+  background-size: 40% 100%;
+  background-repeat: no-repeat;
+  animation: adams-refresh-bar 1s linear infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+@keyframes adams-refresh-bar {
+  from { background-position: -40% 0; }
+  to { background-position: 140% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adams-skeleton::after,
+  .adams-is-refreshing::after {
+    animation: none;
+  }
+
+  .adams-is-refreshing {
+    opacity: 1;
+  }
+}
+
 /* ---------- Tables ---------- */
 .adams-table,
 .sa-table,

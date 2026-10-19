@@ -159,6 +159,8 @@ import {
 import api from '@/lib/api'
 import { useAuthStore } from '@/stores/authStore'
 import { getUserDisplayName, getUserInitials, getUserPhotoUrl } from '@/lib/userDisplay'
+import { debounce } from '@/lib/debounce'
+import { useSyncPoll } from '@/lib/useSyncPoll'
 import NotificationBell from '@/components/NotificationBell.vue'
 import AppBrandLogo from '@/components/AppBrandLogo.vue'
 
@@ -211,8 +213,12 @@ watch(userPhotoUrl, () => {
   photoFailed.value = false
 })
 
+const emitSearch = debounce((value: string) => {
+  emit('update:search', value)
+}, 250)
+
 const onSearchInput = (event: Event) => {
-  emit('update:search', (event.target as HTMLInputElement).value)
+  emitSearch((event.target as HTMLInputElement).value)
 }
 
 const onNavClick = (event: MouseEvent) => {
@@ -268,6 +274,9 @@ const logout = async () => {
   await authStore.logout()
   await router.replace('/login')
 }
+
+// Phase 4 D: cross-user sync via lightweight cursor poll (no sockets).
+useSyncPoll(25_000)
 
 onMounted(() => {
   document.addEventListener('click', closeMenus)

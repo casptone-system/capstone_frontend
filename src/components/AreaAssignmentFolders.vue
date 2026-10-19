@@ -25,10 +25,10 @@
       </button>
     </div>
 
-    <p v-if="isLoading && !assignment" class="afa-muted">Loading accreditation levels…</p>
+    <AdamsSkeleton v-if="isLoading && !assignment" variant="folders" :count="4" />
 
     <!-- Level folders -->
-    <div v-else-if="!selectedLevel" class="afa-grid">
+    <div v-else-if="!selectedLevel" class="afa-grid" :class="{ 'adams-is-refreshing': isLoading }">
       <button
         v-for="level in levels"
         :key="level.level"
@@ -63,13 +63,15 @@
     <p v-else-if="!areas.length" class="afa-muted">
       Areas for this level are not available yet. Press Refresh and try again.
     </p>
-    <div v-else class="afa-grid">
+    <div v-else class="afa-grid" :class="{ 'adams-is-refreshing': isLoading }">
       <button
         v-for="folder in fixedAreas"
         :key="folder.code"
         type="button"
         class="afa-folder-card"
         :class="{ 'is-disabled': !getArea(folder)?.id }"
+        @mouseenter="prefetchAreaFiles(folder)"
+        @focus="prefetchAreaFiles(folder)"
         @click="openModal(folder)"
       >
         <div class="afa-folder-head">
@@ -241,6 +243,7 @@ import {
 } from 'ionicons/icons'
 import {
   getProgramChairAreas,
+  getProgramChairAreaFiles,
   getProgramFaculty,
   assignAreaChair,
   setAreaMembers,
@@ -249,6 +252,7 @@ import {
 import { useToastStore } from '@/stores/toastStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useFacultyDashboardStore } from '@/stores/facultyDashboardStore'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 
 interface UserOption {
   id: number | string
@@ -412,10 +416,21 @@ const formatDeadline = (iso: string) => {
   return iso.slice(0, 16).replace('T', ' ')
 }
 
+const prefetchAreaFiles = (folder: any) => {
+  const area = getArea(folder)
+  if (!area?.id) return
+  void getProgramChairAreaFiles(area.id).catch(() => null)
+}
+
 const loadAreas = async () => {
+  const hadCache = Boolean(assignment.value)
   isLoading.value = true
   try {
-    const data = await getProgramChairAreas(props.programId || undefined)
+    // Parallel bootstrap: areas list + faculty roster (deduped if already in flight).
+    const [data] = await Promise.all([
+      getProgramChairAreas(props.programId || undefined),
+      loadProgramMembers(),
+    ])
     const payload = data && !Array.isArray(data) ? data : { programId: 0, programName: '', levels: [] }
     assignment.value = payload
     if (payload.lockedToActiveLevel && payload.activeCycleId) {
@@ -427,7 +442,9 @@ const loadAreas = async () => {
       }
     }
   } catch (err: any) {
-    assignment.value = null
+    if (!hadCache) {
+      assignment.value = null
+    }
     toastStore.show(err?.response?.data?.message || 'Failed to load area assignments.', 'error')
   } finally {
     isLoading.value = false
@@ -604,17 +621,38 @@ const saveArea = async (confirmReassign = false) => {
 
   isSaving.value = true
   modalMessage.value = ''
-  try {
-    await assignAreaChair(area.id, selectedChair.value.id, { confirmReassign })
-    await setAreaDeadline(area.id, deadlineToDb(deadlineValue.value))
-    await setAreaMembers(area.id, selectedMembers.value.map((m) => m.id))
 
-    await loadAreas()
-    await facultyDashboard.loadMyAreas(true)
+  const previousAssignment = assignment.value
+    ? JSON.parse(JSON.stringify(assignment.value))
+    : null
+  const chair = selectedChair.value
+  const members = selectedMembers.value.slice()
+  const deadline = deadlineToDb(deadlineValue.value)
+
+  // Instant feedback for the acting Program Chair — patch local tree before the round-trip.
+  if (assignment.value && selectedLevel.value) {
+    const level = assignment.value.levels.find((row) => row.level === selectedLevel.value?.level)
+    const target = level?.areas?.find((row: any) => String(row.id) === String(area.id))
+    if (target) {
+      target.chair = { id: chair.id, name: chair.name, email: chair.email || '' }
+      target.chairId = chair.id
+      target.deadline = deadline || null
+      target.members = members.map((m) => ({ id: m.id, name: m.name, email: m.email || '' }))
+    }
+  }
+
+  try {
+    await assignAreaChair(area.id, chair.id, { confirmReassign })
+    await setAreaDeadline(area.id, deadline)
+    await setAreaMembers(area.id, members.map((m) => m.id))
+
     toastStore.show(`${activeFolder.value.codeLabel} saved successfully.`, 'success')
     reassignConfirmOpen.value = false
     isOpen.value = false
+    void loadAreas()
+    void facultyDashboard.loadMyAreas(true)
   } catch (err: any) {
+    if (previousAssignment) assignment.value = previousAssignment
     if (err?.response?.status === 409 && err?.response?.data?.data?.requiresConfirmation) {
       pendingReassignName.value = err.response.data.data.currentChair?.name || 'the current Area In-Charge'
       reassignConfirmOpen.value = true
@@ -628,8 +666,7 @@ const saveArea = async (confirmReassign = false) => {
 }
 
 onMounted(() => {
-  loadAreas()
-  loadProgramMembers()
+  void loadAreas()
 })
 </script>
 <style scoped lang="postcss">
@@ -646,6 +683,10 @@ onMounted(() => {
   gap: 1rem;
 }
 .afa-toolbar-copy { flex: 1; min-width: 0; }
+.afa-refreshing {
+  font-size: 0.85rem;
+  opacity: 0.75;
+}
 .afa-back {
   display: inline-flex;
   align-items: center;

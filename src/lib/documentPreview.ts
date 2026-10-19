@@ -49,6 +49,25 @@ export const openBlobInNewTab = (blob: Blob, name?: string | null, mime?: string
   window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
 }
 
+/** Open a short-lived storage URL (presigned). Prefer this for PDFs so Range requests work. */
+export const openUrlInNewTab = (url: string): void => {
+  const opened = window.open(url, '_blank', 'noopener')
+  if (!opened) {
+    throw new Error('Pop-up blocked. Allow pop-ups to preview this file.')
+  }
+}
+
+export const triggerUrlDownload = (url: string, filename?: string): void => {
+  const link = document.createElement('a')
+  link.href = url
+  if (filename) link.download = filename
+  link.rel = 'noopener'
+  link.target = '_blank'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
 export const isJsonBlob = (blob: Blob): boolean =>
   String(blob.type || '').includes('json') || String(blob.type || '').includes('text/html')
 

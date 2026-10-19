@@ -239,15 +239,20 @@ const addLink = async () => {
 
   const url = linkUrl.value.trim()
   const title = linkTitle.value.trim()
+  const previousUrls = addedLinkUrls.value.slice()
+  addedLinkUrls.value = [...addedLinkUrls.value, url]
+  linkUrl.value = ''
+  linkTitle.value = ''
+  uploadedAny.value = true
+
   addingLink.value = true
   try {
     await addEvidenceLink(props.rowId, title ? { url, title } : { url })
-    addedLinkUrls.value = [...addedLinkUrls.value, url]
-    linkUrl.value = ''
-    linkTitle.value = ''
-    uploadedAny.value = true
     emit('uploaded')
   } catch (err: any) {
+    addedLinkUrls.value = previousUrls
+    linkUrl.value = url
+    linkTitle.value = title
     linkError.value = linkErrorMessage(err)
   } finally {
     addingLink.value = false

@@ -33,9 +33,11 @@
       </div>
 
       <div class="panel-body">
-        <div v-if="loading && !items.length" class="empty-state">Loading notifications...</div>
+        <div v-if="loading && !items.length" class="empty-state">
+          <AdamsSkeleton variant="list" :rows="4" />
+        </div>
         <div v-else-if="items.length === 0" class="empty-state">No notifications yet</div>
-        <div v-else class="notification-list">
+        <div v-else class="notification-list" :class="{ 'adams-is-refreshing': loading }">
           <article
             v-for="item in items"
             :key="item.id"
@@ -115,6 +117,7 @@ import { useRouter } from 'vue-router'
 import { IonIcon } from '@ionic/vue'
 import { notificationsOutline } from 'ionicons/icons'
 import { useNotificationStore, type InboxItem } from '@/stores/notificationStore'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 import ForwardFileModal from './ForwardFileModal.vue'
 
 const store = useNotificationStore()
@@ -137,8 +140,6 @@ const isUrgentItem = (item: InboxItem) => {
 const hasUrgentUnread = computed(() =>
   items.value.some((item) => !item.read && isUrgentItem(item)),
 )
-
-let pollingInterval: ReturnType<typeof setInterval> | null = null
 
 const formatTime = (dateString?: string): string => {
   if (!dateString) return 'just now'
@@ -242,14 +243,12 @@ const onVisibilityChange = () => {
 
 onMounted(() => {
   void store.fetchNotifications()
-  pollingInterval = setInterval(() => {
-    void store.fetchBadgeCount()
-  }, 30000)
+  // Cross-user badge/domain sync: useSyncPoll in AdamsAppShell (25s /sync/cursor + ETag).
+  // Visibility refresh covers return-to-tab without a second interval.
   document.addEventListener('visibilitychange', onVisibilityChange)
 })
 
 onBeforeUnmount(() => {
-  if (pollingInterval) clearInterval(pollingInterval)
   document.removeEventListener('visibilitychange', onVisibilityChange)
 })
 </script>

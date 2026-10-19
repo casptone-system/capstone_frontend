@@ -18,9 +18,11 @@
     </header>
 
     <p v-if="error" class="sa-banner">{{ error }}</p>
-    <p v-else-if="loading" class="sa-banner sa-banner--muted">Loading accreditation cycles…</p>
+    <div v-else-if="loading && !cycles.length" class="sa-banner sa-banner--muted">
+      <AdamsSkeleton variant="page" />
+    </div>
 
-    <section class="sa-stat-strip" aria-label="Accreditation metrics">
+    <section class="sa-stat-strip" aria-label="Accreditation metrics" :class="{ 'adams-is-refreshing': loading && cycles.length }">
       <article v-for="metric in metrics" :key="metric.label" class="sa-stat">
         <div class="sa-stat-icon" :style="{ background: metric.bg, color: metric.color }">
           <ion-icon :icon="metric.icon" />
@@ -181,6 +183,7 @@ import {
 } from 'ionicons/icons'
 import { getAccreditationCycleDashboard, getAccreditationCycles, getAdminDashboard } from '@/lib/api'
 import { fetchAccreditationLevels } from '@/lib/levels'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 
 const WORKFLOW = [
   'Initial Notice',

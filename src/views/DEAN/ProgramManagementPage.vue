@@ -24,10 +24,12 @@
           </button>
         </header>
 
-        <div v-if="loading" class="program-empty">Loading program details…</div>
+        <div v-if="loading && !program" class="program-empty">
+          <AdamsSkeleton variant="page" />
+        </div>
         <div v-else-if="error" class="program-empty error">{{ error }}</div>
 
-        <div v-else class="program-workbench">
+        <div v-else class="program-workbench" :class="{ 'adams-is-refreshing': loading }">
           <div class="program-main-header">
             <p class="program-kicker">Program management</p>
             <h1>{{ program?.name || 'Program details' }}</h1>
@@ -227,6 +229,7 @@ import {
   schoolOutline,
 } from 'ionicons/icons'
 import AdamsAppShell from '@/components/ui/AdamsAppShell.vue'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 
 const route = useRoute()
 const router = useRouter()

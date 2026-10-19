@@ -14,12 +14,11 @@
         ✓ Accreditation setup updated successfully
       </div>
 
-      <div v-if="loading" class="setup-loading">
-        <div class="loading-spinner"></div>
-        Loading accreditation data...
+      <div v-if="loading && !program" class="setup-loading">
+        <AdamsSkeleton variant="page" />
       </div>
 
-      <form v-else @submit.prevent="saveSetup" class="setup-form">
+      <form v-else @submit.prevent="saveSetup" class="setup-form" :class="{ 'adams-is-refreshing': loading }">
         <!-- Program Info (Read-only) -->
         <div class="form-group">
           <label>Program</label>
@@ -128,6 +127,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 import { getAccreditationCycles, getProgram } from '@/lib/api'
 import { fetchAccreditationLevels } from '@/lib/levels'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 import axios from 'axios'
 const api = axios.create({
   baseURL: process.env.VUE_APP_API_BASE_URL || '/api',

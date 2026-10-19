@@ -18,6 +18,7 @@ import {
   getMyAreas,
 } from '@/lib/api'
 import type { AppDocument, DashboardSummary, NotificationMessage } from '@/lib'
+import { isFresh, SWR_TTL } from '@/lib/swrCache'
 
 export const formatAssignedAreaLabel = (area: any): string => {
   const code = String(area?.code || '')
@@ -106,7 +107,7 @@ export const useFacultyDashboardStore = defineStore('facultyDashboard', () => {
   const myAreasFetchedAt = ref(0)
 
   const loadMyAreas = async (force = false) => {
-    if (!force && myAreasFetchedAt.value && Date.now() - myAreasFetchedAt.value < 30_000) {
+    if (!force && isFresh(myAreasFetchedAt.value, SWR_TTL.facultyAreas)) {
       return
     }
 
@@ -433,16 +434,24 @@ export const useFacultyDashboardStore = defineStore('facultyDashboard', () => {
   }
 
   const markAllNotificationsRead = async () => {
-    try {
-      await markAllAsRead()
-    } catch {
-      console.warn('Mark all notifications read failed')
-    }
-
+    const previous = notifications.value.map((notification) => ({
+      ...notification,
+    }))
     notifications.value = notifications.value.map((notification) => ({
       ...notification,
       read: true,
     }))
+
+    try {
+      await markAllAsRead()
+    } catch {
+      notifications.value = previous
+      console.warn('Mark all notifications read failed')
+    }
+  }
+
+  const invalidateMyAreas = () => {
+    myAreasFetchedAt.value = 0
   }
 
   return {
@@ -484,6 +493,7 @@ export const useFacultyDashboardStore = defineStore('facultyDashboard', () => {
     markAllNotificationsRead,
     selectSection,
     loadMyAreas,
+    invalidateMyAreas,
     openMyArea,
     openTaskDetail,
     closeTaskDetail,

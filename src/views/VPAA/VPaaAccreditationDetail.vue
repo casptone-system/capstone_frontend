@@ -1,9 +1,11 @@
 <template>
   <div class="vpaa-page">
-    <div v-if="loading" class="vpaa-loading">Loading accreditation details…</div>
+    <div v-if="loading && !accreditation" class="vpaa-loading">
+      <AdamsSkeleton variant="page" />
+    </div>
     <div v-else-if="error" class="vpaa-error">{{ error }}</div>
 
-    <template v-else-if="accreditation">
+    <div v-else-if="accreditation" :class="{ 'adams-is-refreshing': loading }">
       <header class="vpaa-topbar">
         <div>
           <router-link :to="{ name: 'vpaa-accreditations' }" custom v-slot="{ href, navigate }">
@@ -202,7 +204,7 @@
           </div>
         </aside>
       </div>
-    </template>
+    </div>
   </div>
 </template>
 
@@ -219,6 +221,7 @@ import {
 } from 'ionicons/icons'
 import { useRoute, useRouter } from 'vue-router'
 import { getAccreditationCycle, setAccreditationSchedule } from '@/lib/api'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 
 const route = useRoute()
 const router = useRouter()

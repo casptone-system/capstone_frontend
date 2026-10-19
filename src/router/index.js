@@ -78,31 +78,31 @@ const NewUserLanding = () =>
 
 const DashboardDean = () =>
   import(
-    /* webpackChunkName: "dashboard-dean", webpackPrefetch: true */
+    /* webpackChunkName: "dashboard-dean" */
     '@/views/DEAN/DeanDashboard.vue'
   )
 
 const DashboardProgramChair = () =>
   import(
-    /* webpackChunkName: "dashboard-programchair", webpackPrefetch: true */
+    /* webpackChunkName: "dashboard-programchair" */
     '@/views/PROGRAMCHAIR/ProgramChairDashboard.vue'
   )
 
 const DashboardFaculty = () =>
   import(
-    /* webpackChunkName: "dashboard-faculty", webpackPrefetch: true */
+    /* webpackChunkName: "dashboard-faculty" */
     '@/views/FACULTY/FacultyDashboard.vue'
   )
 
 const DashboardQA = () =>
   import(
-    /* webpackChunkName: "dashboard-qa", webpackPrefetch: true */
+    /* webpackChunkName: "dashboard-qa" */
     '@/views/QA/QADashboard.vue'
   )
 
 const VPaaLayout = () =>
   import(
-    /* webpackChunkName: "vpaa-layout", webpackPrefetch: true */
+    /* webpackChunkName: "vpaa-layout" */
     '@/views/VPAA/VPaaLayout.vue'
   )
 
@@ -180,7 +180,7 @@ const VPaaActivity = () =>
 
 const SuperAdminDashboard = () =>
   import(
-    /* webpackChunkName: "dashboard-superadmin", webpackPrefetch: true */
+    /* webpackChunkName: "dashboard-superadmin" */
     '@/views/SUPERADMIN/SuperAdminDashboard.vue'
   )
 

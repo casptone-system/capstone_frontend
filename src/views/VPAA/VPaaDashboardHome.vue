@@ -31,10 +31,12 @@
       </router-link>
     </section>
 
-    <div v-if="vpaaStore.loading" class="vpaa-loading">Loading dashboard data…</div>
-    <div v-else-if="vpaaStore.error" class="vpaa-error">{{ vpaaStore.error }}</div>
+    <div v-if="vpaaStore.loading && !vpaaStore.hasData" class="vpaa-loading">
+      <AdamsSkeleton variant="page" />
+    </div>
+    <div v-else-if="vpaaStore.error && !vpaaStore.hasData" class="vpaa-error">{{ vpaaStore.error }}</div>
 
-    <section v-else class="vpaa-stat-strip">
+    <section v-else class="vpaa-stat-strip" :class="{ 'adams-is-refreshing': vpaaStore.loading }">
       <div v-for="stat in stats" :key="stat.label" class="vpaa-stat">
         <div class="vpaa-stat-icon" :style="{ background: stat.bg, color: stat.color }">
           <ion-icon :icon="stat.icon" />
@@ -240,6 +242,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useVPAADashboardStore } from '@/stores/vpaaDashboardStore'
 import AccreditationMonitorCard from '@/components/AccreditationMonitorCard.vue'
 import AccreditationLevelStatus from '@/components/AccreditationLevelStatus.vue'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()

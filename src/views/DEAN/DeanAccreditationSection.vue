@@ -30,8 +30,8 @@
 
     <template v-else>
     <!-- Loading State -->
-    <div v-if="loading" class="dean-loading-state">
-      <p>Loading accreditation cycles…</p>
+    <div v-if="loading && !cycles.length" class="dean-loading-state">
+      <AdamsSkeleton variant="folders" :count="4" />
     </div>
 
     <!-- Error State -->
@@ -46,7 +46,7 @@
     </div>
 
     <!-- Accreditation Cycles List -->
-    <div v-else class="dean-cycles-container">
+    <div v-else class="dean-cycles-container" :class="{ 'adams-is-refreshing': loading }">
       <div class="dean-program-folder-grid">
         <button
           type="button"
@@ -85,9 +85,11 @@
           <span class="dean-folder-document-count">{{ selectedDocumentCount }} document{{ selectedDocumentCount === 1 ? '' : 's' }}</span>
         </div>
 
-        <div v-if="structureLoading" class="dean-folder-detail-state">Loading areas and requirements...</div>
+        <div v-if="structureLoading && !structureAreas.length" class="dean-folder-detail-state">
+          <AdamsSkeleton variant="cards" :count="4" />
+        </div>
         <div v-else-if="structureError" class="dean-folder-detail-state error">{{ structureError }}</div>
-        <div v-else-if="structureAreas.length" class="dean-accreditation-area-grid">
+        <div v-else-if="structureAreas.length" class="dean-accreditation-area-grid" :class="{ 'adams-is-refreshing': structureLoading }">
           <article v-for="area in structureAreas" :key="area.id" class="dean-accreditation-area-card">
             <div class="dean-accreditation-area-heading">
               <div>
@@ -270,6 +272,7 @@ import {
   getAccreditationStructure,
   getDeanDocuments,
 } from '@/lib/api'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 import AreaEvidenceReviewPanel from '@/components/AreaEvidenceReviewPanel.vue'
 
 const viewMode = ref<'cycles' | 'evidence-review'>('cycles')

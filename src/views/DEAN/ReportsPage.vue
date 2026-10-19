@@ -8,10 +8,12 @@
       <div class="header-pill" v-if="programs.length">{{ programs.length }} program{{ programs.length !== 1 ? 's' : '' }}</div>
     </header>
 
-    <div v-if="loading" class="state-box">Loading dean documents…</div>
+    <div v-if="loading && !programs.length" class="state-box">
+      <AdamsSkeleton variant="page" />
+    </div>
     <div v-else-if="errorMessage" class="state-box error">{{ errorMessage }}</div>
 
-    <div v-else class="report-layout">
+    <div v-else class="report-layout" :class="{ 'adams-is-refreshing': loading }">
       <section class="toolbar-panel">
         <div class="search-box">
           <ion-icon :icon="searchOutline" />
@@ -169,6 +171,7 @@ import {
   searchOutline,
 } from 'ionicons/icons'
 import { getDeanDashboard, getDeanDocuments, getDeanReviewQueue } from '@/lib/api'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 
 const programs = ref<any[]>([])
 const documents = ref<any[]>([])

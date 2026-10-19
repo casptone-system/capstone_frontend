@@ -63,14 +63,16 @@
     </section>
 
     <section class="vpaa-accreditations">
-      <div v-if="loading" class="vpaa-loading">Loading accreditations…</div>
+      <div v-if="loading && !accreditations.length" class="vpaa-loading">
+        <AdamsSkeleton variant="cards" :count="6" />
+      </div>
       <div v-else-if="error" class="vpaa-error">{{ error }}</div>
 
       <div v-else-if="filteredAccreditations.length === 0" class="vpaa-empty-state">
         <p>No accreditations match your filters.</p>
       </div>
 
-      <div v-else class="vpaa-accreditations-grid">
+      <div v-else class="vpaa-accreditations-grid" :class="{ 'adams-is-refreshing': loading }">
         <router-link
           v-for="accreditation in paginatedAccreditations"
           :key="accreditation.id"
@@ -153,6 +155,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { getColleges, getPrograms, getAccreditationCycles } from '@/lib/api'
 import { fetchAccreditationLevels } from '@/lib/levels'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 
 const router = useRouter()
 

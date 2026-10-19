@@ -11,11 +11,13 @@
       </select>
     </header>
 
-    <p v-if="loading">Loading template...</p>
+    <div v-if="loading && !template">
+      <AdamsSkeleton variant="page" />
+    </div>
     <p v-else-if="error" class="tpl-error">{{ error }}</p>
     <p v-else-if="success" class="tpl-success">{{ success }}</p>
 
-    <div v-if="template" class="tpl-editor">
+    <div v-if="template" class="tpl-editor" :class="{ 'adams-is-refreshing': loading }">
       <label>Template name
         <input v-model="template.name" class="tpl-input" @change="save" />
       </label>
@@ -56,6 +58,7 @@
 import { onMounted, ref } from 'vue'
 import { getInstrumentTemplates, saveInstrumentTemplate } from '@/lib/api'
 import { fetchAccreditationLevels } from '@/lib/levels'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 
 const levels = ref<string[]>([])
 const selectedLevel = ref('')

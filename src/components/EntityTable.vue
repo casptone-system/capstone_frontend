@@ -8,9 +8,11 @@
       <ion-button v-if="showCreate" class="action-btn" @click="$emit('create')">{{ createLabel }}</ion-button>
     </div>
 
-    <div v-if="loading" class="empty-state">Loading...</div>
-    <div v-else-if="items.length === 0" class="empty-state">No records available.</div>
-    <div v-else class="table-shell">
+    <div v-if="loading && !items.length" class="empty-state">
+      <AdamsSkeleton variant="table" :rows="5" />
+    </div>
+    <div v-else-if="!loading && items.length === 0" class="empty-state">No records available.</div>
+    <div v-else class="table-shell" :class="{ 'adams-is-refreshing': loading }">
       <div class="table-row header">
         <span v-for="column in columns" :key="column.key">{{ column.label }}</span>
       </div>
@@ -30,6 +32,7 @@
 
 <script setup lang="ts">
 import { IonButton } from '@ionic/vue'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 
 interface Column {
   key: string

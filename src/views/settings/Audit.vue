@@ -29,13 +29,13 @@
           </ion-card-content>
         </ion-card>
 
-        <!-- Loading State -->
-        <div v-if="isLoading" class="space-y-4">
-          <ion-skeleton-text animated></ion-skeleton-text>
+        <!-- Loading State (first load only) -->
+        <div v-if="isLoading && !filteredLogs.length" class="space-y-4">
+          <AdamsSkeleton variant="list" :rows="5" />
         </div>
 
         <!-- Audit Logs Timeline -->
-        <div v-else class="space-y-3">
+        <div v-else class="space-y-3" :class="{ 'adams-is-refreshing': isLoading }">
           <ion-card
             v-for="log in filteredLogs"
             :key="log.id"
@@ -97,7 +97,6 @@ import {
   IonSelectOption,
   IonButtons,
   IonMenuButton,
-  IonSkeletonText,
 } from '@ionic/vue'
 import {
   checkmarkCircleOutline,
@@ -106,6 +105,7 @@ import {
 import { ref, computed, onMounted } from 'vue'
 import api from '@/lib/api'
 import type { AuditLog } from '@/lib'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 
 const auditLogs = ref<AuditLog[]>([])
 const selectedStatus = ref('')

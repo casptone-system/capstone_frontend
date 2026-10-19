@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { TOKEN_KEY } from '@/lib/apiClient'
 import type { Accreditation, AccreditationReview } from '@/lib'
+import { dedupeRequest } from '@/lib/requestDedupe'
 
 /* ===========================
    API CONFIGURATION
@@ -24,6 +25,87 @@ function unwrap(resp: any) {
     return body
   }
   return body
+}
+
+type EvidenceAccess = { url: string; expiresIn: number; disposition: string }
+
+const extractPresignedUrl = (body: any): EvidenceAccess | null => {
+  const data = body?.data || body
+  const url = data?.url
+  if (typeof url !== 'string' || !url) return null
+  return {
+    url,
+    expiresIn: Number(data?.expires_in || data?.expiresIn || 60),
+    disposition: String(data?.disposition || 'attachment'),
+  }
+}
+
+/** Prefer short-lived storage URL; fall back to Laravel byte proxy on local disks. */
+const fetchEvidenceBlob = async (
+  path: string,
+  params: Record<string, unknown> = {},
+): Promise<Blob> => {
+  try {
+    const signed = await api.get(path, {
+      params: { ...params, presign: 1 },
+      headers: { Accept: 'application/json' },
+    })
+    const access = extractPresignedUrl(signed.data)
+    if (access?.url) {
+      const remote = await fetch(access.url)
+      if (!remote.ok) {
+        throw new Error('The signed file URL could not be downloaded.')
+      }
+      return await remote.blob()
+    }
+  } catch {
+    // Local disks / older deployments — fall through to proxy.
+  }
+
+  const response = await api.get(path, {
+    params,
+    responseType: 'blob',
+  })
+
+  const blob: Blob = response.data
+  const contentType = String(response.headers?.['content-type'] || blob?.type || '')
+
+  if (contentType.includes('json') || contentType.includes('text/html')) {
+    const text = await blob.text()
+    try {
+      const json = JSON.parse(text)
+      const error: any = new Error(json.message || 'File is not available.')
+      error.response = { data: json, status: response.status }
+      throw error
+    } catch (err) {
+      if ((err as any)?.response) throw err
+      const error: any = new Error('File is not available.')
+      error.response = { data: { message: text }, status: response.status }
+      throw error
+    }
+  }
+
+  if (contentType && blob.type !== contentType.split(';')[0]) {
+    return new Blob([blob], { type: contentType.split(';')[0] })
+  }
+
+  return blob
+}
+
+/** Returns a direct storage URL when available (best for PDF Range preview). */
+export const resolveEvidenceUrl = async (
+  path: string,
+  params: Record<string, unknown> = {},
+): Promise<string | null> => {
+  try {
+    const signed = await api.get(path, {
+      params: { ...params, presign: 1 },
+      headers: { Accept: 'application/json' },
+    })
+    return extractPresignedUrl(signed.data)?.url || null
+  } catch {
+    return null
+  }
 }
 
 /* ===========================
@@ -70,8 +152,10 @@ export const logout = async () => {
 }
 
 export const me = async () => {
-  const response = await api.get('/me')
-  return response.data
+  return dedupeRequest('GET:/me', async () => {
+    const response = await api.get('/me')
+    return response.data
+  })
 }
 
 /* ===========================
@@ -291,8 +375,10 @@ export const getAreaInCharges = async () => {
 }
 
 export const getProgramFaculty = async () => {
-  const response = await api.get('/program-faculty')
-  return unwrap(response)
+  return dedupeRequest('GET:/program-faculty', async () => {
+    const response = await api.get('/program-faculty')
+    return unwrap(response)
+  })
 }
 
 export const addAreaMember = async (areaId: number | string, userId: number | string) => {
@@ -384,22 +470,30 @@ export const searchUsers = async (q: string, limit = 25) => {
 }
 
 export const getProgramChairAreas = async (programId?: number | string) => {
-  const response = await api.get('/program-chair/areas', {
-    params: programId ? { program_id: programId } : undefined,
+  const key = `GET:/program-chair/areas:${programId ?? 'default'}`
+  return dedupeRequest(key, async () => {
+    const response = await api.get('/program-chair/areas', {
+      params: programId ? { program_id: programId } : undefined,
+    })
+    return unwrap(response)
   })
-  return unwrap(response)
 }
 
 export const getProgramChairAreaDocuments = async (programId?: number | string) => {
-  const response = await api.get('/program-chair/area-documents', {
-    params: programId ? { program_id: programId } : undefined,
+  const key = `GET:/program-chair/area-documents:${programId ?? 'default'}`
+  return dedupeRequest(key, async () => {
+    const response = await api.get('/program-chair/area-documents', {
+      params: programId ? { program_id: programId } : undefined,
+    })
+    return unwrap(response)
   })
-  return unwrap(response)
 }
 
 export const getProgramChairAreaFiles = async (areaId: number | string) => {
-  const response = await api.get(`/program-chair/areas/${areaId}/documents`)
-  return unwrap(response)
+  return dedupeRequest(`GET:/program-chair/areas/${areaId}/documents`, async () => {
+    const response = await api.get(`/program-chair/areas/${areaId}/documents`)
+    return unwrap(response)
+  })
 }
 
 export const getProgramChairReviewDocuments = async (programId?: number | string) => {
@@ -451,13 +545,15 @@ export const setAreaMembers = async (
 }
 
 export const getMyAreas = async () => {
-  const response = await api.get('/users/me/areas')
-  const body = response.data ?? response
-  const areas = Array.isArray(body?.data) ? body.data : (Array.isArray(body) ? body : [])
-  return {
-    areas,
-    meta: body?.meta && typeof body.meta === 'object' ? body.meta : {},
-  }
+  return dedupeRequest('GET:/users/me/areas', async () => {
+    const response = await api.get('/users/me/areas')
+    const body = response.data ?? response
+    const areas = Array.isArray(body?.data) ? body.data : (Array.isArray(body) ? body : [])
+    return {
+      areas,
+      meta: body?.meta && typeof body.meta === 'object' ? body.meta : {},
+    }
+  })
 }
 
 export const getQaAreas = async (params: Record<string, unknown> = {}) => {
@@ -628,18 +724,28 @@ const filenameFromDisposition = (header: string | undefined, fallback: string) =
 const triggerPdfDownload = (blob: Blob, filename: string) => {
   const file = blob.type === 'application/pdf' ? blob : new Blob([blob], { type: 'application/pdf' })
   const url = URL.createObjectURL(file)
+  triggerUrlDownloadViaAnchor(url, filename || 'compiled-evidence.pdf')
+  window.setTimeout(() => URL.revokeObjectURL(url), 60000)
+}
+
+const triggerUrlDownloadViaAnchor = (url: string, filename: string) => {
   const anchor = document.createElement('a')
   anchor.href = url
-  anchor.download = filename || 'compiled-evidence.pdf'
+  anchor.download = filename || 'download.pdf'
+  anchor.rel = 'noopener'
+  anchor.target = '_blank'
   document.body.appendChild(anchor)
   anchor.click()
-  window.setTimeout(() => {
-    anchor.remove()
-    URL.revokeObjectURL(url)
-  }, 60000)
+  anchor.remove()
 }
 
 const downloadCompiledPdf = async (path: string, fallbackName: string, failureMessage = 'Unable to download the compiled PDF.') => {
+  const signedUrl = await resolveEvidenceUrl(path)
+  if (signedUrl) {
+    triggerUrlDownloadViaAnchor(signedUrl, fallbackName)
+    return
+  }
+
   const base = (process.env.VUE_APP_API_BASE_URL || '/api').replace(/\/$/, '')
   const token =
     window?.localStorage.getItem(TOKEN_KEY) ||
@@ -805,60 +911,18 @@ export const downloadFileRequestFile = async (
 }
 
 export const previewFileRequestFile = async (requestId: number | string, fileId: number | string): Promise<Blob> => {
-  const response = await api.get(`/file-requests/${requestId}/files/${fileId}/preview`, { responseType: 'blob' })
-  const blob: Blob = response.data
-  const contentType = String(response.headers?.['content-type'] || blob?.type || '')
-
-  if (contentType.includes('json') || contentType.includes('text/html')) {
-    const text = await blob.text()
-    let message = 'Preview is not available for this file.'
-    try {
-      message = JSON.parse(text)?.message || message
-    } catch {
-      message = 'Preview is not available for this file.'
-    }
-    throw new Error(message)
-  }
-
-  return new Blob([blob], { type: 'application/pdf' })
+  const blob = await fetchEvidenceBlob(`/file-requests/${requestId}/files/${fileId}/preview`)
+  return new Blob([blob], { type: blob.type || 'application/pdf' })
 }
 
 export const previewBoardOfAction = async (id: number | string): Promise<Blob> => {
-  const response = await api.get(`/board-of-action/${id}/preview`, { responseType: 'blob' })
-  const blob: Blob = response.data
-  const contentType = String(response.headers?.['content-type'] || blob?.type || '')
-
-  if (contentType.includes('json') || contentType.includes('text/html')) {
-    const text = await blob.text()
-    let message = 'Preview is not available for this file.'
-    try {
-      message = JSON.parse(text)?.message || message
-    } catch {
-      message = 'Preview is not available for this file.'
-    }
-    throw new Error(message)
-  }
-
-  return new Blob([blob], { type: 'application/pdf' })
+  const blob = await fetchEvidenceBlob(`/board-of-action/${id}/preview`)
+  return new Blob([blob], { type: blob.type || 'application/pdf' })
 }
 
 const universalFileBlob = async (id: number | string, action: 'preview' | 'download'): Promise<Blob> => {
-  const response = await api.get(`/universal-files/${id}/${action}`, { responseType: 'blob' })
-  const blob: Blob = response.data
-  const contentType = String(response.headers?.['content-type'] || blob?.type || '')
-
-  if (contentType.includes('json') || contentType.includes('text/html')) {
-    const text = await blob.text()
-    let message = 'This file is not available.'
-    try {
-      message = JSON.parse(text)?.message || message
-    } catch {
-      message = 'This file is not available.'
-    }
-    throw new Error(message)
-  }
-
-  return new Blob([blob], { type: 'application/pdf' })
+  const blob = await fetchEvidenceBlob(`/universal-files/${id}/${action}`)
+  return new Blob([blob], { type: blob.type || 'application/pdf' })
 }
 
 export const getUniversalFiles = async () => {
@@ -1123,52 +1187,14 @@ export const downloadDocument = async (
   id: number | string,
   version?: number
 ) => {
-  const response = await api.get(
-    `/documents/${id}/download`,
-    {
-      params: { version },
-      responseType: 'blob',
-    }
-  )
-
-  return response.data
+  return fetchEvidenceBlob(`/documents/${id}/download`, { version })
 }
 
 export const previewDocument = async (
   id: number | string,
   version?: number
 ) => {
-  const response = await api.get(
-    `/documents/${id}/preview`,
-    {
-      params: { version },
-      responseType: 'blob',
-    }
-  )
-
-  const blob: Blob = response.data
-  const contentType = String(response.headers?.['content-type'] || blob?.type || '')
-
-  if (contentType.includes('json') || contentType.includes('text/html')) {
-    const text = await blob.text()
-    try {
-      const json = JSON.parse(text)
-      const error: any = new Error(json.message || 'Preview is not available for this file.')
-      error.response = { data: json, status: response.status }
-      throw error
-    } catch (err) {
-      if ((err as any)?.response) throw err
-      const error: any = new Error('Preview is not available for this file.')
-      error.response = { data: { message: text }, status: response.status }
-      throw error
-    }
-  }
-
-  if (contentType && blob.type !== contentType.split(';')[0]) {
-    return new Blob([blob], { type: contentType.split(';')[0] })
-  }
-
-  return blob
+  return fetchEvidenceBlob(`/documents/${id}/preview`, { version })
 }
 
 export const getTeams = async (
@@ -1334,19 +1360,11 @@ export const markWorkspaceCriterionDone = async (workspaceId: number | string, r
 }
 
 export const previewWorkspaceEvidence = async (workspaceId: number | string, evidenceId: number | string) => {
-  const response = await api.get(
-    `/accreditation-workspaces/${workspaceId}/evidence/${evidenceId}/preview`,
-    { responseType: 'blob' }
-  )
-  return response.data
+  return fetchEvidenceBlob(`/accreditation-workspaces/${workspaceId}/evidence/${evidenceId}/preview`)
 }
 
 export const downloadWorkspaceEvidence = async (workspaceId: number | string, evidenceId: number | string) => {
-  const response = await api.get(
-    `/accreditation-workspaces/${workspaceId}/evidence/${evidenceId}/download`,
-    { responseType: 'blob' }
-  )
-  return response.data
+  return fetchEvidenceBlob(`/accreditation-workspaces/${workspaceId}/evidence/${evidenceId}/download`)
 }
 
 export const getWorkspaceProgress = async (id: number | string) => {
@@ -1554,34 +1572,31 @@ export const downloadRoleStorageFile = async (fileId: number | string, filename?
 export const getDashboard = async (
   params: Record<string, any> = {}
 ) => {
-  const response = await api.get(
-    '/dashboard',
-    { params }
-  )
-
-  return response.data
+  const key = `GET:/dashboard:${JSON.stringify(params)}`
+  return dedupeRequest(key, async () => {
+    const response = await api.get('/dashboard', { params })
+    return response.data
+  })
 }
 
 export const getAdminDashboard = async (
   params: Record<string, any> = {}
 ) => {
-  const response = await api.get(
-    '/admin/dashboard',
-    { params }
-  )
-
-  return response.data
+  const key = `GET:/admin/dashboard:${JSON.stringify(params)}`
+  return dedupeRequest(key, async () => {
+    const response = await api.get('/admin/dashboard', { params })
+    return response.data
+  })
 }
 
 export const getDeanDashboard = async (
   params: Record<string, any> = {}
 ) => {
-  const response = await api.get(
-    '/dean/dashboard',
-    { params }
-  )
-
-  return response.data
+  const key = `GET:/dean/dashboard:${JSON.stringify(params)}`
+  return dedupeRequest(key, async () => {
+    const response = await api.get('/dean/dashboard', { params })
+    return response.data
+  })
 }
 
 export const getDeanPrograms = async (
@@ -1630,16 +1645,64 @@ export const extractNotificationList = (payload: any): any[] => {
 }
 
 export const getNotifications = async (params: Record<string, any> = {}) => {
-  const response = await api.get('/notifications', { params: { per_page: 50, ...params } })
-  return response.data
+  const key = `GET:/notifications:${JSON.stringify({ per_page: 50, ...params })}`
+  return dedupeRequest(key, async () => {
+    const response = await api.get('/notifications', { params: { per_page: 50, ...params } })
+    return response.data
+  })
 }
 
 export const unreadCount = async () => {
-  const response = await api.get(
-    '/notifications/unread-count'
-  )
-  const body = response.data
-  return Number(body?.data?.unreadCount ?? body?.unreadCount ?? 0)
+  return dedupeRequest('GET:/notifications/unread-count', async () => {
+    const response = await api.get('/notifications/unread-count')
+    const body = response.data
+    return Number(body?.data?.unreadCount ?? body?.unreadCount ?? 0)
+  })
+}
+
+export type SyncCursorPayload = {
+  serverTime: string
+  unreadCount: number
+  cursors: {
+    notifications: string | null
+    taskNotifications: string | null
+    assignments: string | null
+    reviews: string | null
+    documents: string | null
+    comments: string | null
+    progress: string | null
+    activeLevel: string | null
+  }
+}
+
+/** Lightweight poll cursor (Phase 4 D). Supports ETag → 304. */
+export const getSyncCursor = async (etag?: string | null) => {
+  const headers: Record<string, string> = {}
+  if (etag) headers['If-None-Match'] = etag
+
+  try {
+    const response = await api.get('/sync/cursor', {
+      headers,
+      validateStatus: (status) => status === 200 || status === 304,
+    })
+
+    if (response.status === 304) {
+      return { status: 304 as const, etag: etag || response.headers?.etag || null, data: null }
+    }
+
+    const body = response.data
+    const data = (body?.data || body) as SyncCursorPayload
+    return {
+      status: 200 as const,
+      etag: (response.headers?.etag as string | undefined) || null,
+      data,
+    }
+  } catch (err: any) {
+    if (err?.response?.status === 304) {
+      return { status: 304 as const, etag: etag || null, data: null }
+    }
+    throw err
+  }
 }
 
 export const markAsRead = async (

@@ -23,14 +23,13 @@
           </ion-card-content>
         </ion-card>
 
-        <!-- Loading State -->
-        <div v-if="isLoading" class="space-y-4">
-          <ion-skeleton-text animated></ion-skeleton-text>
-          <ion-skeleton-text animated></ion-skeleton-text>
+        <!-- Loading State (first load only) -->
+        <div v-if="isLoading && !reports.length" class="space-y-4">
+          <AdamsSkeleton variant="list" :rows="4" />
         </div>
 
         <!-- Reports List -->
-        <div v-else class="space-y-3">
+        <div v-else class="space-y-3" :class="{ 'adams-is-refreshing': isLoading }">
           <ion-card v-for="report in reports" :key="report.id" class="shadow-md">
             <ion-card-header>
               <ion-card-title class="flex items-center justify-between">
@@ -94,7 +93,6 @@ import {
   IonBadge,
   IonButtons,
   IonMenuButton,
-  IonSkeletonText,
 } from '@ionic/vue'
 import {
   documentOutline,
@@ -105,6 +103,7 @@ import {
 import { ref, onMounted } from 'vue'
 import api from '@/lib/api'
 import type { Report } from '@/lib'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 
 const reports = ref<Report[]>([])
 const isLoading = ref(false)

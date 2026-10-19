@@ -7,10 +7,12 @@
     </ion-header>
 
     <ion-content :fullscreen="true" class="ion-padding">
-      <div v-if="loading" class="empty-box">Loading deadlines...</div>
+      <div v-if="loading && !tasks.length" class="empty-box">
+        <AdamsSkeleton variant="list" :rows="5" />
+      </div>
       <div v-else-if="!tasks.length" class="empty-box">No deadlines found.</div>
 
-      <div v-else class="deadline-list">
+      <div v-else class="deadline-list" :class="{ 'adams-is-refreshing': loading }">
         <ion-card v-for="task in tasks" :key="task.id">
           <ion-card-content>
             <div class="deadline-header">
@@ -47,6 +49,7 @@ import {
   IonCardContent,
 } from '@ionic/vue'
 import { getTasks } from '@/lib/api'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 
 const tasks = ref<any[]>([])
 const loading = ref(false)

@@ -429,11 +429,31 @@ const openAddModal = (role: 'chair' | 'member', areaId?: number) => {
 
 const removeAssignment = async (facultyId: number, areaId: number) => {
   if (!workspaceId.value) return
+
+  const previousAssignments = JSON.parse(JSON.stringify(assignments.value))
+  const previousWorkspaces = JSON.parse(JSON.stringify(workspaces.value))
+  assignments.value = assignments.value.filter(
+    (row) => !(Number(row.faculty_id) === Number(facultyId) && Number(row.area_id) === Number(areaId)),
+  )
+  workspaces.value = workspaces.value.map((workspace: any) => ({
+    ...workspace,
+    areas: (workspace.areas || []).map((area: any) =>
+      Number(area.id) === Number(areaId)
+        ? {
+            ...area,
+            members: (area.members || []).filter((member: any) => Number(member.id || member.user_id) !== Number(facultyId)),
+          }
+        : area,
+    ),
+  }))
+  successMessage.value[facultyId] = 'Area removed successfully.'
+
   try {
     await removeWorkspaceAreaMember(workspaceId.value, areaId, facultyId)
-    successMessage.value[facultyId] = 'Area removed successfully.'
-    await loadData()
   } catch (err: any) {
+    assignments.value = previousAssignments
+    workspaces.value = previousWorkspaces
+    delete successMessage.value[facultyId]
     errorMessage.value[facultyId] = err?.response?.data?.message || 'Failed to remove assignment'
   }
 }
@@ -446,22 +466,80 @@ const submitModalAssignment = async () => {
   }
 
   isModalLoading.value = true
+  const previousAssignments = JSON.parse(JSON.stringify(assignments.value))
+  const previousWorkspaces = JSON.parse(JSON.stringify(workspaces.value))
+  const facultyId = Number(modalFacultyId.value)
+  const areaId = Number(modalAreaId.value)
+  const person = faculty.value.find((row: any) => Number(row.id) === facultyId)
+
+  if (modalRole.value === 'chair') {
+    workspaces.value = workspaces.value.map((workspace: any) =>
+      Number(workspace.id) !== Number(workspaceId.value)
+        ? workspace
+        : {
+            ...workspace,
+            areas: (workspace.areas || []).map((row: any) =>
+              Number(row.id) === areaId
+                ? {
+                    ...row,
+                    chair: person
+                      ? { id: person.id, name: person.name || person.full_name, email: person.email || '' }
+                      : row.chair,
+                  }
+                : row,
+            ),
+          },
+    )
+    modalMessage.value = 'Faculty assigned as Area Chair.'
+  } else {
+    assignments.value = [
+      ...assignments.value,
+      {
+        faculty_id: facultyId,
+        area_id: areaId,
+        role: 'member',
+      },
+    ]
+    workspaces.value = workspaces.value.map((workspace: any) =>
+      Number(workspace.id) !== Number(workspaceId.value)
+        ? workspace
+        : {
+            ...workspace,
+            areas: (workspace.areas || []).map((row: any) =>
+              Number(row.id) === areaId
+                ? {
+                    ...row,
+                    members: [
+                      ...(row.members || []),
+                      {
+                        id: facultyId,
+                        user_id: facultyId,
+                        name: person?.name || person?.full_name || `User #${facultyId}`,
+                      },
+                    ],
+                  }
+                : row,
+            ),
+          },
+    )
+    modalMessage.value = 'Optional area member added.'
+  }
+  modalMessageType.value = 'success'
+
   try {
     if (modalRole.value === 'chair') {
       await assignWorkspaceAreaChair(workspaceId.value, modalAreaId.value, modalFacultyId.value)
-      modalMessage.value = 'Faculty assigned as Area Chair.'
     } else {
       await addWorkspaceAreaMember(workspaceId.value, modalAreaId.value, modalFacultyId.value)
-      modalMessage.value = 'Optional area member added.'
     }
-    modalMessageType.value = 'success'
-    await loadData()
     setTimeout(() => {
       isAddModalOpen.value = false
       modalFacultyId.value = ''
       modalMessage.value = ''
     }, 800)
   } catch (err: any) {
+    assignments.value = previousAssignments
+    workspaces.value = previousWorkspaces
     modalMessage.value = err?.response?.data?.message || 'Failed to add assignment'
     modalMessageType.value = 'error'
   } finally {

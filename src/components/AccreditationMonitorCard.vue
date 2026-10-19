@@ -1,8 +1,11 @@
 <template>
   <section class="acc-monitor">
-    <p v-if="loading">Loading program monitoring...</p>
+    <div v-if="loading && !items.length">
+      <AdamsSkeleton variant="cards" :count="3" />
+    </div>
     <p v-else-if="error" class="acc-monitor-error">{{ error }}</p>
     <p v-else-if="!items.length">No program accreditation workspaces yet.</p>
+    <div v-else class="acc-monitor-list" :class="{ 'adams-is-refreshing': loading }">
     <article v-for="item in items" :key="item.id" class="acc-monitor-card">
       <header>
         <h3>{{ item.program?.name || item.name }}</h3>
@@ -26,12 +29,14 @@
         </li>
       </ul>
     </article>
+    </div>
   </section>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { getAccreditationWorkspaces } from '@/lib/api'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 
 const items = ref<any[]>([])
 const loading = ref(false)

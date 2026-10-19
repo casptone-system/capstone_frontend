@@ -69,7 +69,10 @@
         //content
         <main ref="mainContent" class="main-content" @scroll="handleScroll">
             <div class="page-inner">
-                <div v-if="loading" class="loading-banner" role="status"><i></i> Loading analytics...</div>
+                <div v-if="loading && !programs.length" class="loading-banner" role="status">
+                  <AdamsSkeleton variant="lines" :rows="2" height="12px" />
+                </div>
+                <div v-else-if="loading" class="loading-banner" role="status"><i></i> Updating analytics…</div>
                 <div v-else-if="loadError" class="loading-banner error">{{ loadError }}</div>
 
                 <section id="overview" class="hero">
@@ -538,7 +541,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { IonIcon, IonPage } from '@ionic/vue'
-import { Chart, registerables } from 'chart.js'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 import {
     analyticsOutline, arrowForwardOutline, barChartOutline, bookOutline, businessOutline,
     checkmarkCircleOutline, checkmarkOutline, chevronDownOutline, chevronForwardOutline,
@@ -549,9 +552,44 @@ import {
     syncOutline, timeOutline, trendingUpOutline
 } from 'ionicons/icons'
 
-Chart.register(...registerables)
-Chart.defaults.font.family = "'Avenir Next', 'Segoe UI', sans-serif"
-Chart.defaults.color = '#78877e'
+/** Lazy Chart.js — only the controllers used on this marketing page. */
+let ChartCtor = null
+async function ensureChart() {
+    if (ChartCtor) return ChartCtor
+    const {
+        Chart,
+        BarController,
+        DoughnutController,
+        LineController,
+        CategoryScale,
+        LinearScale,
+        BarElement,
+        ArcElement,
+        LineElement,
+        PointElement,
+        Filler,
+        Tooltip,
+        Legend,
+    } = await import(/* webpackChunkName: "chartjs" */ 'chart.js')
+    Chart.register(
+        BarController,
+        DoughnutController,
+        LineController,
+        CategoryScale,
+        LinearScale,
+        BarElement,
+        ArcElement,
+        LineElement,
+        PointElement,
+        Filler,
+        Tooltip,
+        Legend,
+    )
+    Chart.defaults.font.family = "'Avenir Next', 'Segoe UI', sans-serif"
+    Chart.defaults.color = '#78877e'
+    ChartCtor = Chart
+    return ChartCtor
+}
 
 const router = useRouter()
 const mainContent = ref(null)
@@ -779,8 +817,9 @@ function destroyCharts() {
     [programChart, documentChart, historyChart, areaChart].forEach(chart => chart?.destroy())
     programChart = null; documentChart = null; historyChart = null; areaChart = null
 }
-function renderCharts() {
+async function renderCharts() {
     if (loading.value || !filteredPrograms.value.length || !programChartCanvas.value) { destroyCharts(); return }
+    const Chart = await ensureChart()
     destroyCharts()
     const grid = { color: palette.grid, drawBorder: false }
     const ticks = { color: '#89968f', font: { size: 10 }, padding: 8 }
@@ -791,7 +830,7 @@ function renderCharts() {
 }
 function handleKeydown(event) { if (event.key === 'Escape') { closeProgram(); noticeOpen.value = false; drawerOpen.value = false } }
 
-watch([selectedDepartment, selectedProgram, selectedCycle], async () => { await nextTick(); renderCharts() }, { flush: 'post' })
+watch([selectedDepartment, selectedProgram, selectedCycle], async () => { await nextTick(); void renderCharts() }, { flush: 'post' })
 onMounted(async () => {
     document.addEventListener('keydown', handleKeydown)
     documentChartCanvas.value.closest('.chart-card').id = 'documents'

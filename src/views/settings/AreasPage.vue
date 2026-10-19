@@ -7,10 +7,12 @@
     </ion-header>
 
     <ion-content :fullscreen="true" class="ion-padding">
-      <div v-if="loading" class="empty-box">Loading accreditation areas...</div>
+      <div v-if="loading && !areas.length" class="empty-box">
+        <AdamsSkeleton variant="cards" :count="4" />
+      </div>
       <div v-else-if="!areas.length" class="empty-box">No accreditation areas found.</div>
 
-      <div v-else class="area-list">
+      <div v-else class="area-list" :class="{ 'adams-is-refreshing': loading }">
         <ion-card v-for="area in areas" :key="area.id">
           <ion-card-content>
             <div class="area-header">
@@ -47,6 +49,7 @@ import {
   IonCardContent,
 } from '@ionic/vue'
 import { getAccreditationAreas } from '@/lib/api'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 
 const areas = ref<any[]>([])
 const loading = ref(false)

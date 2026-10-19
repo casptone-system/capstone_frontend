@@ -144,11 +144,14 @@ export const useNotificationStore = defineStore('notifications', () => {
 
   const fetchNotifications = async (force = false) => {
     if (Date.now() < pausedUntil) return
-    if (!force && fetchedAt.value && Date.now() - fetchedAt.value < 15_000) {
+    if (!force && fetchedAt.value && Date.now() - fetchedAt.value < 20_000) {
       return
     }
 
-    isLoading.value = true
+    const hasCache = fetchedAt.value > 0 && items.value.length > 0
+    if (!hasCache) {
+      isLoading.value = true
+    }
     error.value = null
 
     try {
@@ -180,12 +183,18 @@ export const useNotificationStore = defineStore('notifications', () => {
       unreadCount.value = Math.max(Number(inboxUnread) || inboxUnreadFromList, inboxUnreadFromList) + taskUnread
     } catch (err: any) {
       error.value = err.message || 'Failed to fetch notifications'
-      items.value = []
-      unreadCount.value = 0
+      if (!hasCache) {
+        items.value = []
+        unreadCount.value = 0
+      }
     } finally {
       isLoading.value = false
       fetchedAt.value = Date.now()
     }
+  }
+
+  const invalidateNotifications = () => {
+    fetchedAt.value = 0
   }
 
   const fetchBadgeCount = async () => {
@@ -228,6 +237,12 @@ export const useNotificationStore = defineStore('notifications', () => {
 
     if (!item || item.read) return
 
+    const previousRead = item.read
+    const previousStatus = item.status
+    item.read = true
+    if (item.source === 'task') item.status = 'viewed'
+    refreshUnreadCount()
+
     try {
       if (item.source === 'inbox') {
         await apiMarkAsRead(item.sourceId)
@@ -236,34 +251,46 @@ export const useNotificationStore = defineStore('notifications', () => {
       }
     } catch (err: any) {
       if (!isGone(err)) {
+        item.read = previousRead
+        item.status = previousStatus
+        refreshUnreadCount()
         error.value = err.message || 'Failed to mark notification as read'
         console.warn('Failed to mark notification as read', err)
       }
     }
-
-    item.read = true
-    if (item.source === 'task') item.status = 'viewed'
-    refreshUnreadCount()
   }
 
   const markAllAsRead = async () => {
-    try {
-      await apiMarkAllAsRead()
-    } catch (err: any) {
-      console.warn('Failed to mark inbox notifications as read', err)
-    }
-
-    await Promise.all(
-      items.value
-        .filter((item) => item.source === 'task' && !item.read)
-        .map((item) => taskNotificationAPI.markAsViewed(item.sourceId).catch(() => null)),
-    )
+    const snapshot = items.value.map((item) => ({
+      id: item.id,
+      read: item.read,
+      status: item.status,
+    }))
+    const unreadTasks = items.value.filter((item) => item.source === 'task' && !item.read)
+    const previousUnread = unreadCount.value
 
     items.value.forEach((item) => {
       item.read = true
       if (item.source === 'task' && item.status === 'pending') item.status = 'viewed'
     })
     unreadCount.value = 0
+
+    try {
+      await apiMarkAllAsRead()
+      await Promise.all(
+        unreadTasks.map((item) => taskNotificationAPI.markAsViewed(item.sourceId).catch(() => null)),
+      )
+    } catch (err: any) {
+      items.value.forEach((item) => {
+        const before = snapshot.find((entry) => entry.id === item.id)
+        if (!before) return
+        item.read = before.read
+        item.status = before.status
+      })
+      unreadCount.value = previousUnread
+      error.value = err?.message || 'Failed to mark all notifications as read'
+      console.warn('Failed to mark inbox notifications as read', err)
+    }
   }
 
   const dismissItem = async (item: InboxItem) => {
@@ -348,6 +375,7 @@ export const useNotificationStore = defineStore('notifications', () => {
     error,
     fetchNotifications,
     fetchBadgeCount,
+    invalidateNotifications,
     markAsRead,
     markAllAsRead,
     dismissItem,

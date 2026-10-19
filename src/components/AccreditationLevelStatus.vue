@@ -8,11 +8,13 @@
       </div>
     </header>
 
-    <p v-if="loading" class="als-empty">Loading accreditation status…</p>
+    <div v-if="loading && !programs.length" class="als-empty">
+      <AdamsSkeleton variant="list" :rows="4" />
+    </div>
     <p v-else-if="error" class="als-error">{{ error }}</p>
     <p v-else-if="!programs.length" class="als-empty">No programs are in your accreditation scope yet.</p>
 
-    <div v-else class="als-list">
+    <div v-else class="als-list" :class="{ 'adams-is-refreshing': loading }">
       <article v-for="program in programs" :key="program.programId" class="als-program">
         <div class="als-program-meta">
           <strong>{{ program.programName }}</strong>
@@ -44,6 +46,7 @@ export default {
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { getAccreditationLevelStatus } from '@/lib/api'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 
 export type AccreditationDashboardView =
   | 'dean'

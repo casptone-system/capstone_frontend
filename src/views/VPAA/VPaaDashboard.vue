@@ -75,10 +75,12 @@
             <button class="vpaa-btn primary" type="button" @click="refreshDashboard">Refresh</button>
           </section>
 
-          <div v-if="vpaaStore.loading" class="vpaa-loading">Loading dashboard data…</div>
-          <div v-else-if="vpaaStore.error" class="vpaa-error">{{ vpaaStore.error }}</div>
+          <div v-if="vpaaStore.loading && !vpaaStore.hasData" class="vpaa-loading">
+            <AdamsSkeleton variant="page" />
+          </div>
+          <div v-else-if="vpaaStore.error && !vpaaStore.hasData" class="vpaa-error">{{ vpaaStore.error }}</div>
 
-          <section v-else class="vpaa-stat-strip">
+          <section v-else class="vpaa-stat-strip" :class="{ 'adams-is-refreshing': vpaaStore.loading }">
             <div v-for="stat in stats" :key="stat.label" class="vpaa-stat">
               <div class="vpaa-stat-icon" :style="{ background: stat.bg, color: stat.color }">
                 <ion-icon :icon="stat.icon" />
@@ -90,7 +92,7 @@
             </div>
           </section>
 
-          <div v-if="!vpaaStore.loading && !vpaaStore.error" class="vpaa-content-grid">
+          <div v-if="vpaaStore.hasData || (!vpaaStore.loading && !vpaaStore.error)" class="vpaa-content-grid" :class="{ 'adams-is-refreshing': vpaaStore.loading }">
             <div class="vpaa-col-left">
               <div class="vpaa-card">
                 <div class="vpaa-card-header">
@@ -206,6 +208,7 @@ import {
 } from 'ionicons/icons'
 import { useAuthStore } from '@/stores/authStore'
 import AppBrandLogo from '@/components/AppBrandLogo.vue'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 import { useVPAADashboardStore } from '@/stores/vpaaDashboardStore'
 import { useRouter } from 'vue-router'
 

@@ -84,6 +84,13 @@ const selectLevel = async (option: LevelOption) => {
     return
   }
 
+  const previousCycleId = activeCycleId.value
+  activeCycleId.value = option.cycleId
+  emit('updated', {
+    activeCycleId: option.cycleId,
+    activeLevel: option.level,
+  })
+
   saving.value = true
   error.value = ''
   try {
@@ -94,6 +101,11 @@ const selectLevel = async (option: LevelOption) => {
       activeLevel: data?.activeLevel ?? option.level,
     })
   } catch (err: any) {
+    activeCycleId.value = previousCycleId
+    emit('updated', {
+      activeCycleId: previousCycleId,
+      activeLevel: levels.value.find((row) => row.cycleId === previousCycleId)?.level ?? null,
+    })
     error.value = err?.response?.data?.message || 'Unable to update the active level.'
   } finally {
     saving.value = false

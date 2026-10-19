@@ -53,6 +53,18 @@ module.exports = defineConfig({
         return args
       })
     }
+
+    // ANALYZE=true npm run build → dist/report.html (webpack-bundle-analyzer)
+    if (process.env.ANALYZE === 'true') {
+      const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
+      config.plugin('webpack-bundle-analyzer').use(BundleAnalyzerPlugin, [
+        {
+          analyzerMode: 'static',
+          openAnalyzer: false,
+          reportFilename: 'report.html',
+        },
+      ])
+    }
   },
   devServer: {
     historyApiFallback: true,

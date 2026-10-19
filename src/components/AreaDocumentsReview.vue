@@ -16,7 +16,9 @@
       </button>
     </div>
 
-    <p v-if="loading && !tree" class="adr-muted">Loading area documents…</p>
+    <div v-if="loading && !tree" class="adr-muted">
+      <AdamsSkeleton variant="folders" :count="6" />
+    </div>
     <p v-else-if="error" class="adr-error">{{ error }}</p>
 
     <div v-else-if="!selectedLevel" class="adr-grid">
@@ -127,10 +129,10 @@
         <button type="button" class="adr-btn ghost" @click="resetFilters">Reset</button>
       </div>
 
-      <p v-if="docsLoading" class="adr-muted">Loading documents…</p>
-      <p v-else-if="filteredDocuments.length === 0" class="adr-muted">No documents match these filters.</p>
+      <div v-if="docsLoading && !documents.length" class="adr-muted"><AdamsSkeleton variant="table" :rows="4" /></div>
+      <p v-else-if="!docsLoading && filteredDocuments.length === 0" class="adr-muted">No documents match these filters.</p>
 
-      <div v-else class="adr-docs">
+      <div v-else-if="filteredDocuments.length" class="adr-docs" :class="{ 'adams-is-refreshing': docsLoading }">
         <article v-for="doc in filteredDocuments" :key="fileKey(doc)" class="adr-doc">
           <div class="adr-doc-main">
             <span class="adr-file-icon">{{ fileIcon(doc) }}</span>
@@ -213,8 +215,10 @@ import {
   previewDocument,
   previewWorkspaceEvidence,
   requestRevisionReview,
+  resolveEvidenceUrl,
 } from '@/lib/api'
-import { openBlobInNewTab, previewKindFromMeta } from '@/lib/documentPreview'
+import { openBlobInNewTab, openUrlInNewTab, previewKindFromMeta, triggerUrlDownload } from '@/lib/documentPreview'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 import { useToastStore } from '@/stores/toastStore'
 
 type AreaReview = {
@@ -499,6 +503,15 @@ const toggleVersions = async (id: string) => {
 const openPreview = async (doc: any, version?: any) => {
   try {
     const current = version || latestVersion(doc)
+    const path = isWorkspaceEvidence(doc)
+      ? `/accreditation-workspaces/${doc.workspaceId}/evidence/${doc.id}/preview`
+      : `/documents/${doc.id}/preview`
+    const params = isWorkspaceEvidence(doc) ? {} : { version: current?.version }
+    const signedUrl = await resolveEvidenceUrl(path, params)
+    if (signedUrl) {
+      openUrlInNewTab(signedUrl)
+      return
+    }
     const blob = isWorkspaceEvidence(doc)
       ? await previewWorkspaceEvidence(doc.workspaceId, doc.id)
       : await previewDocument(doc.id, current?.version)
@@ -512,13 +525,23 @@ const openPreview = async (doc: any, version?: any) => {
 const download = async (doc: any, version?: any) => {
   try {
     const current = version || latestVersion(doc)
+    const filename = current?.originalName || current?.original_name || doc.title || 'document'
+    const path = isWorkspaceEvidence(doc)
+      ? `/accreditation-workspaces/${doc.workspaceId}/evidence/${doc.id}/download`
+      : `/documents/${doc.id}/download`
+    const params = isWorkspaceEvidence(doc) ? {} : { version: current?.version }
+    const signedUrl = await resolveEvidenceUrl(path, params)
+    if (signedUrl) {
+      triggerUrlDownload(signedUrl, filename)
+      return
+    }
     const blob = isWorkspaceEvidence(doc)
       ? await downloadWorkspaceEvidence(doc.workspaceId, doc.id)
       : await downloadDocument(doc.id, current?.version)
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = current?.originalName || current?.original_name || doc.title || 'document'
+    link.download = filename
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -528,14 +551,38 @@ const download = async (doc: any, version?: any) => {
   }
 }
 
+const patchSelectedReview = (patch: Record<string, unknown>) => {
+  if (!selectedArea.value?.review) return
+  selectedArea.value = {
+    ...selectedArea.value,
+    review: { ...selectedArea.value.review, ...patch },
+  }
+  if (selectedLevel.value) {
+    selectedLevel.value = {
+      ...selectedLevel.value,
+      areas: selectedLevel.value.areas.map((area) =>
+        area.id === selectedArea.value?.id ? selectedArea.value : area,
+      ),
+    }
+  }
+}
+
 const approveAreaReview = async () => {
   if (!selectedArea.value?.review?.id) return
   reviewBusy.value = true
+
+  const previousReview = { ...selectedArea.value.review }
+  patchSelectedReview({
+    currentStatus: 'Approved',
+    canApprove: false,
+    canRequestRevision: false,
+  })
+
   try {
     await approveReview(selectedArea.value.review.id)
     toastStore.show('Area review approved.', 'success')
-    await loadTree()
   } catch (err: any) {
+    patchSelectedReview(previousReview)
     toastStore.show(err?.response?.data?.message || 'Unable to approve this area review.', 'error')
   } finally {
     reviewBusy.value = false
@@ -545,13 +592,24 @@ const approveAreaReview = async () => {
 const requestAreaRevision = async () => {
   if (!selectedArea.value?.review?.id || !revisionComment.value.trim()) return
   reviewBusy.value = true
+
+  const previousReview = { ...selectedArea.value.review }
+  const comment = revisionComment.value.trim()
+  patchSelectedReview({
+    currentStatus: 'Revision Requested',
+    canApprove: false,
+    canRequestRevision: false,
+  })
+  revisionOpen.value = false
+  revisionComment.value = ''
+
   try {
-    await requestRevisionReview(selectedArea.value.review.id, { comment: revisionComment.value.trim() })
+    await requestRevisionReview(selectedArea.value.review.id, { comment })
     toastStore.show('Revision requested.', 'success')
-    revisionOpen.value = false
-    revisionComment.value = ''
-    await loadTree()
   } catch (err: any) {
+    patchSelectedReview(previousReview)
+    revisionOpen.value = true
+    revisionComment.value = comment
     toastStore.show(err?.response?.data?.message || 'Unable to request revision.', 'error')
   } finally {
     reviewBusy.value = false

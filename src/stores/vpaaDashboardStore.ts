@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { getVPAADashboard } from '@/lib/api'
 
 const uniqueByProgram = (items: any[]) => {
@@ -43,6 +43,8 @@ export const useVPAADashboardStore = defineStore('vpaaDashboard', () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
 
+  const hasData = computed(() => Boolean(generatedAt.value) || accreditations.value.length > 0)
+
   const fetchDashboard = async () => {
     loading.value = true
     error.value = null
@@ -85,32 +87,33 @@ export const useVPAADashboardStore = defineStore('vpaaDashboard', () => {
       recentActivity.value = Array.isArray(payload.recent_activity) ? payload.recent_activity : []
     } catch (err: any) {
       error.value = err?.response?.data?.message || err?.message || 'Unable to load the VPAA dashboard.'
-      summary.value = {
-        active_accreditations: 0,
-        upcoming_accreditations: 0,
-        ready_programs: 0,
-        at_risk_programs: 0,
-        expired_validity: 0,
-        overall_readiness: 0,
-        evidence_ready: 0,
-        evidence_on_track: 0,
-        evidence_behind: 0,
-        evidence_not_started: 0,
-        visits_within_60_days: 0,
-        validity_expiring_90_days: 0,
-        critical_programs: 0,
-        high_programs: 0,
-        watch_programs: 0,
+      // Keep stale dashboard on refresh failure (SWR). Only blank on first load.
+      if (!generatedAt.value && accreditations.value.length === 0) {
+        summary.value = {
+          active_accreditations: 0,
+          upcoming_accreditations: 0,
+          ready_programs: 0,
+          at_risk_programs: 0,
+          expired_validity: 0,
+          overall_readiness: 0,
+          evidence_ready: 0,
+          evidence_on_track: 0,
+          evidence_behind: 0,
+          evidence_not_started: 0,
+          visits_within_60_days: 0,
+          validity_expiring_90_days: 0,
+          critical_programs: 0,
+          high_programs: 0,
+          watch_programs: 0,
+        }
+        upcoming.value = []
+        atRisk.value = []
+        colleges.value = []
+        alerts.value = []
+        readiness.value = { overall: 0, programs: [] }
+        notifications.value = []
+        recentActivity.value = []
       }
-      generatedAt.value = null
-      accreditations.value = []
-      upcoming.value = []
-      atRisk.value = []
-      colleges.value = []
-      alerts.value = []
-      readiness.value = { overall: 0, programs: [] }
-      notifications.value = []
-      recentActivity.value = []
     } finally {
       loading.value = false
     }
@@ -127,6 +130,7 @@ export const useVPAADashboardStore = defineStore('vpaaDashboard', () => {
     notifications,
     recentActivity,
     generatedAt,
+    hasData,
     loading,
     error,
     fetchDashboard,

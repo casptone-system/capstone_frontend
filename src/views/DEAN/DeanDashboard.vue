@@ -137,10 +137,12 @@
               <button class="dean-btn dean-btn-ghost" v-if="activeCall" @click="endCall">End Call</button>
             </div>
 
-            <div v-if="loading" class="dean-empty-state">Loading dean dashboard…</div>
-            <div v-else-if="error" class="dean-empty-state error">{{ error }}</div>
+            <div v-if="loading && !hasDeanDashboardData" class="dean-skeleton-wrap">
+              <AdamsSkeleton variant="page" />
+            </div>
+            <div v-else-if="error && !hasDeanDashboardData" class="dean-empty-state error">{{ error }}</div>
 
-            <div v-else class="dean-panel-shell">
+            <div v-else class="dean-panel-shell" :class="{ 'adams-is-refreshing': loading }">
               
 
               <template v-if="selectedSection === 'dashboard'">
@@ -308,13 +310,13 @@
                           </div>
                         </div>
 
-                        <div v-if="programDetailLoading" class="dean-program-panel-empty">
-                          Loading program details…
+                        <div v-if="programDetailLoading && !programDetail" class="dean-program-panel-empty">
+                          <AdamsSkeleton variant="lines" :rows="5" height="12px" />
                         </div>
                         <div v-else-if="programDetailError" class="dean-program-panel-empty error">
                           {{ programDetailError }}
                         </div>
-                        <div v-else class="dean-program-panel-body">
+                        <div v-else class="dean-program-panel-body" :class="{ 'adams-is-refreshing': programDetailLoading }">
                           <div class="dean-program-share-box">
                             <div class="dean-program-share-copy">
                               <span>Program code</span>
@@ -676,7 +678,7 @@
                   <div class="dean-document-toolbar">
                     <div class="dean-search-wrap">
                       <ion-icon :icon="searchOutline" class="dean-inline-search" />
-                      <input v-model="documentSearch" type="text" placeholder="Search documents, faculty, programs..." @input="loadDeanDocumentList" />
+                      <input v-model="documentSearch" type="text" placeholder="Search documents, faculty, programs..." @input="onDocumentSearchInput" />
                     </div>
 
                     <select v-model="documentStatusFilter" @change="loadDeanDocumentList">
@@ -932,6 +934,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { useToastStore } from '@/stores/toastStore'
 import { useUserCalls } from '@/lib/useUserCalls'
+import { debounce } from '@/lib/debounce'
 import {
   approveInvitationToken,
   createProgramInvitation,
@@ -959,6 +962,7 @@ import AccreditationLevelStatus from '@/components/AccreditationLevelStatus.vue'
 import DeanAccreditationSection from '@/views/DEAN/DeanAccreditationSection.vue'
 import NotificationInbox from '@/components/NotificationInbox.vue'
 import AdamsAppShell from '@/components/ui/AdamsAppShell.vue'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 import { useNotificationStore } from '@/stores/notificationStore'
 
 const authStore = useAuthStore()
@@ -981,6 +985,10 @@ const stats = ref<Array<{ label: string; value: string; icon: any; color: string
 const programs = ref<any[]>([])
 const workspaceProgress = ref<any[]>([])
 const documents = ref<any[]>([])
+/** First-load skeleton only — keep stale dashboard visible while refreshing. */
+const hasDeanDashboardData = computed(
+  () => stats.value.length > 0 || programs.value.length > 0 || Boolean(assignedDean.value),
+)
 const deanWorkflowPhase = computed(() => {
   if (!programs.value.length) return 'Planning'
   if (overallReadiness.value >= 85) return 'Ready'
@@ -1632,6 +1640,10 @@ const loadDeanDocumentList = async () => {
     console.warn('Unable to load dean documents.', error)
   }
 }
+
+const onDocumentSearchInput = debounce(() => {
+  void loadDeanDocumentList()
+}, 300)
 const responsibilityCards = computed(() => [
   { id: 'overview', title: 'Overview', description: 'Department summary and dashboard status.', action: 'dashboard', icon: gridOutline, colorClass: 'teal' },
   { id: 'college-profile', title: 'My College', description: 'College profile, readiness, and assigned scope.', action: 'college-profile', icon: businessOutline, colorClass: 'blue' },
@@ -1729,11 +1741,15 @@ const viewDocument = (doc: any) => {
 
 const requestRevision = async (doc: any) => {
   if (!doc?.id) return
+
+  const previousStatus = doc.status
+  doc.status = 'Revision Requested'
+
   try {
     await updateDocument(doc.id, { status: 'Revision Requested' })
-    await loadDashboard()
     toastStore.show(`Revision requested for ${doc.title || 'this document'}.`, 'info')
   } catch (err: any) {
+    doc.status = previousStatus
     console.warn('Request revision failed', err)
     toastStore.show('Unable to request revision for this document.', 'error')
   }

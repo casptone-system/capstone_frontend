@@ -380,9 +380,22 @@ const submitDocument = async () => {
     })
 
     if (response.data.success || response.status === 200) {
-      submitSuccess.value = `Document "${formData.value.title}" submitted successfully!`
+      const created = response.data?.data || response.data
+      const title = formData.value.title
+      if (created && typeof created === 'object') {
+        submittedDocuments.value = [
+          {
+            id: created.id || -Date.now(),
+            title,
+            status: created.status || 'pending',
+            ...created,
+          },
+          ...submittedDocuments.value,
+        ]
+      }
+      submitSuccess.value = `Document "${title}" submitted successfully!`
       resetForm()
-      await loadSubmittedDocuments()
+      void loadSubmittedDocuments()
 
       setTimeout(() => {
         submitSuccess.value = ''
@@ -424,12 +437,15 @@ const downloadDocument = async (doc: any) => {
 const deleteDocument = async (docId: number) => {
   if (!confirm('Are you sure you want to delete this document?')) return
 
+  const previous = submittedDocuments.value.slice()
+  submittedDocuments.value = submittedDocuments.value.filter((doc: any) => doc.id !== docId)
+
   try {
     await api.delete(`/area-documents/${docId}`)
     submitSuccess.value = 'Document deleted successfully'
-    await loadSubmittedDocuments()
     setTimeout(() => { submitSuccess.value = '' }, 3000)
   } catch (err: any) {
+    submittedDocuments.value = previous
     submitError.value = err.response?.data?.message || 'Failed to delete document'
   }
 }

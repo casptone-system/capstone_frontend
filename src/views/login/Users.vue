@@ -19,12 +19,11 @@
             </div>
           </div>
 
-          <div v-if="isLoading" class="card-stack">
-            <ion-skeleton-text animated style="height: 120px"></ion-skeleton-text>
-            <ion-skeleton-text animated style="height: 120px"></ion-skeleton-text>
+          <div v-if="isLoading && !users.length" class="card-stack">
+            <AdamsSkeleton variant="table" :rows="5" />
           </div>
 
-          <div v-else class="table-card">
+          <div v-else class="table-card" :class="{ 'adams-is-refreshing': isLoading }">
             <div class="table-head">
               <div>
                 <h3>User directory</h3>
@@ -103,11 +102,12 @@
 </template>
 
 <script setup lang="ts">
-import { IonPage, IonContent, IonButton, IonSkeletonText } from '@ionic/vue'
+import { IonPage, IonContent, IonButton } from '@ionic/vue'
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import DashboardLayout from '@/components/DashboardLayout.vue'
 import EntityModal from '@/components/EntityModal.vue'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 import api from '@/lib/api'
 
 interface UserRecord {

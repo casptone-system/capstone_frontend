@@ -1,6 +1,8 @@
 <template>
   <section class="uf">
-    <p v-if="loading" class="uf-status">Loading universal files…</p>
+    <div v-if="loading && !files.length" class="uf-status">
+      <AdamsSkeleton variant="list" :rows="4" />
+    </div>
     <template v-else>
       <p v-if="error" class="uf-status is-error">{{ error }}</p>
       <form v-if="mode === 'manage'" class="uf-form" @submit.prevent="submit">
@@ -43,7 +45,7 @@
         :icon="documentsOutline"
       />
 
-      <div v-else class="uf-groups">
+      <div v-else class="uf-groups" :class="{ 'adams-is-refreshing': loading }">
         <section v-for="group in groups" :key="group.code" class="uf-group">
           <h3>{{ group.name }} <span>{{ group.files.length }}</span></h3>
           <div class="uf-cards">
@@ -84,6 +86,7 @@ import { computed, onMounted, ref } from 'vue'
 import { documentsOutline } from 'ionicons/icons'
 import AdamsConfirmDialog from '@/components/ui/AdamsConfirmDialog.vue'
 import AdamsEmptyState from '@/components/ui/AdamsEmptyState.vue'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 import PdfFileCard from '@/components/PdfFileCard.vue'
 import {
   deleteUniversalFile,

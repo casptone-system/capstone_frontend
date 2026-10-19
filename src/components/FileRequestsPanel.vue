@@ -10,8 +10,10 @@
       </button>
     </div>
 
-    <p v-if="loading" class="fr-status">Loading file requests…</p>
-    <p v-else-if="error" class="fr-status is-error">{{ error }}</p>
+    <div v-if="loading && !requests.length" class="fr-status">
+      <AdamsSkeleton variant="list" :rows="4" />
+    </div>
+    <p v-else-if="error && !requests.length" class="fr-status is-error">{{ error }}</p>
     <template v-else>
       <p v-if="formError && decliningId === null && uploadingId === null && !showCreate" class="fr-status is-error">{{ formError }}</p>
 
@@ -22,7 +24,7 @@
         :icon="documentsOutline"
       />
 
-      <ul v-else class="fr-list">
+      <ul v-else class="fr-list" :class="{ 'adams-is-refreshing': loading }">
       <li v-for="item in requests" :key="item.id" class="fr-row">
         <div class="fr-copy">
           <strong>{{ item.title }}</strong>
@@ -152,6 +154,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { documentsOutline } from 'ionicons/icons'
 import AdamsEmptyState from '@/components/ui/AdamsEmptyState.vue'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 import AppModal from '@/components/AppModal.vue'
 import FileRequestThumbnail from '@/components/FileRequestThumbnail.vue'
 import {
@@ -318,6 +321,33 @@ const submitCreate = async () => {
     return
   }
   saving.value = true
+  const pendingId = -Date.now()
+  const college = colleges.value.find((item) => String(item.collegeId) === collegeId.value)
+  const program = college?.programs?.find((item) => item.id === selectedProgramId.value)
+  const optimistic: FileRequestRow = {
+    id: pendingId,
+    title: title.value.trim(),
+    description: description.value.trim() || null,
+    neededBy: neededBy.value || null,
+    status: 'pending',
+    declineReason: null,
+    fromProgram: null,
+    toProgram: program
+      ? { id: program.id, name: program.name, code: program.code, collegeName: college?.collegeName || null }
+      : null,
+    files: [],
+    canFulfill: false,
+    canDecline: false,
+    canCancel: true,
+    canRemoveFiles: false,
+  } as FileRequestRow
+
+  const previous = requests.value.slice()
+  if (box.value === 'sent') {
+    requests.value = [optimistic, ...requests.value]
+  }
+  showCreate.value = false
+
   try {
     await createFileRequest({
       recipient_program_id: selectedProgramId.value,
@@ -325,13 +355,14 @@ const submitCreate = async () => {
       description: description.value.trim() || undefined,
       needed_by: neededBy.value || undefined,
     })
-    showCreate.value = false
     if (box.value === 'sent') {
-      await load()
+      void load()
     } else {
       box.value = 'sent'
     }
   } catch (err: any) {
+    requests.value = previous
+    showCreate.value = true
     formError.value = apiError(err, 'Unable to send this request.')
   } finally {
     saving.value = false
@@ -366,12 +397,34 @@ const submitUpload = async (item: FileRequestRow) => {
   if (!uploadFiles.value.length) return
   busyId.value = item.id
   formError.value = ''
+
+  const payloadFiles = uploadFiles.value.slice()
+  const previous = requests.value.slice()
+  const placeholderFiles = payloadFiles.map((file, index) => ({
+    id: -Date.now() - index,
+    originalName: file.name,
+  }))
+  requests.value = requests.value.map((row) =>
+    row.id === item.id
+      ? {
+          ...row,
+          status: 'fulfilled',
+          files: [...(row.files || []), ...placeholderFiles],
+          canFulfill: false,
+          canDecline: false,
+        }
+      : row,
+  )
+  uploadingId.value = null
+  uploadFiles.value = []
+
   try {
-    await fulfillFileRequest(item.id, uploadFiles.value)
-    uploadingId.value = null
-    uploadFiles.value = []
-    await load()
+    await fulfillFileRequest(item.id, payloadFiles)
+    void load()
   } catch (err: any) {
+    requests.value = previous
+    uploadingId.value = item.id
+    uploadFiles.value = payloadFiles
     formError.value = apiError(err, 'Unable to upload these files.')
   } finally {
     busyId.value = null
@@ -388,11 +441,29 @@ const startDecline = (item: FileRequestRow) => {
 const submitDecline = async (item: FileRequestRow) => {
   busyId.value = item.id
   formError.value = ''
+
+  const reason = declineReason.value.trim()
+  const previous = requests.value.slice()
+  requests.value = requests.value.map((row) =>
+    row.id === item.id
+      ? {
+          ...row,
+          status: 'declined',
+          declineReason: reason,
+          canFulfill: false,
+          canDecline: false,
+        }
+      : row,
+  )
+  decliningId.value = null
+
   try {
-    await declineFileRequest(item.id, declineReason.value.trim())
-    decliningId.value = null
-    await load()
+    await declineFileRequest(item.id, reason)
+    void load()
   } catch (err: any) {
+    requests.value = previous
+    decliningId.value = item.id
+    declineReason.value = reason
     formError.value = apiError(err, 'Unable to decline this request.')
   } finally {
     busyId.value = null
@@ -402,10 +473,14 @@ const submitDecline = async (item: FileRequestRow) => {
 const cancel = async (item: FileRequestRow) => {
   busyId.value = item.id
   formError.value = ''
+
+  const previous = requests.value.slice()
+  requests.value = requests.value.filter((row) => row.id !== item.id)
+
   try {
     await cancelFileRequest(item.id)
-    await load()
   } catch (err: any) {
+    requests.value = previous
     formError.value = apiError(err, 'Unable to cancel this request.')
   } finally {
     busyId.value = null
@@ -415,10 +490,18 @@ const cancel = async (item: FileRequestRow) => {
 const removeFile = async (item: FileRequestRow, file: RequestFile) => {
   busyId.value = item.id
   formError.value = ''
+
+  const previous = requests.value.slice()
+  requests.value = requests.value.map((row) =>
+    row.id === item.id
+      ? { ...row, files: (row.files || []).filter((entry) => entry.id !== file.id) }
+      : row,
+  )
+
   try {
     await removeFileRequestFile(item.id, file.id)
-    await load()
   } catch (err: any) {
+    requests.value = previous
     formError.value = apiError(err, 'Unable to remove this file.')
   } finally {
     busyId.value = null

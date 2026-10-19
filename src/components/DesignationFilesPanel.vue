@@ -1,10 +1,12 @@
 <template>
     <section class="designation-files">
-      <p v-if="loading" class="designation-files-status">Loading designation files...</p>
+      <div v-if="loading && !files.length" class="designation-files-status">
+        <AdamsSkeleton variant="list" :rows="3" />
+      </div>
       <p v-else-if="error" class="designation-files-status is-error">{{ error }}</p>
       <p v-else-if="!files.length" class="designation-files-status">No designation files yet.</p>
 
-      <ul v-else class="designation-files-list">
+      <ul v-else class="designation-files-list" :class="{ 'adams-is-refreshing': loading }">
         <li v-for="file in files" :key="file.id" class="designation-file-card">
           <div class="designation-file-copy">
             <strong>{{ file.role_label }} · {{ file.area_label }}</strong>
@@ -25,6 +27,7 @@
   <script setup lang="ts">
   import { onMounted, ref } from 'vue'
   import { downloadDesignationFile, getDesignationFiles } from '@/lib/api'
+  import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 
   type DesignationFileItem = {
     id: number

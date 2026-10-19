@@ -14,8 +14,11 @@
       </label>
     </div>
 
-    <p v-if="loading" class="boa-status">Loading Board of Action documents…</p>
-    <p v-else-if="error" class="boa-status is-error">{{ error }}</p>
+    <div v-if="loading && !loaded" class="boa-status">
+      <AdamsSkeleton variant="table" :rows="5" />
+    </div>
+    <template v-else>
+    <p v-if="error" class="boa-status is-error">{{ error }}</p>
 
     <AdamsEmptyState
       v-else-if="mode === 'read' && !programs.length"
@@ -38,7 +41,7 @@
       :icon="documentTextOutline"
     />
 
-    <div v-else class="boa-groups">
+    <div v-else class="boa-groups" :class="{ 'adams-is-refreshing': loading }">
       <p v-if="previewError" class="boa-status is-error">{{ previewError }}</p>
       <section v-for="group in visibleGroups" :key="group.key" class="boa-college">
         <h2 v-if="mode === 'manage'">{{ group.label }}</h2>
@@ -106,6 +109,7 @@
         </article>
       </section>
     </div>
+    </template>
 
     <AdamsConfirmDialog
       :model-value="!!deleteTarget"
@@ -124,6 +128,7 @@ import { computed, onMounted, ref } from 'vue'
 import { documentTextOutline } from 'ionicons/icons'
 import AdamsConfirmDialog from '@/components/ui/AdamsConfirmDialog.vue'
 import AdamsEmptyState from '@/components/ui/AdamsEmptyState.vue'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 import PdfFileCard from '@/components/PdfFileCard.vue'
 import {
   deleteBoardOfAction,
@@ -283,21 +288,68 @@ const submitEditor = async () => {
 
   saving.value = true
   formError.value = ''
+  const draft = editor.value
   const form = new FormData()
-  form.append('title', editor.value.title)
-  form.append('notes', editor.value.notes)
-  form.append('file', editor.value.file)
-  if (!editor.value.documentId) form.append('program_id', String(editor.value.programId))
+  form.append('title', draft.title)
+  form.append('notes', draft.notes)
+  form.append('file', draft.file)
+  if (!draft.documentId) form.append('program_id', String(draft.programId))
+
+  const previousColleges = JSON.parse(JSON.stringify(colleges.value)) as BoardCollege[]
+  const now = new Date().toISOString()
+  colleges.value = colleges.value.map((college) => ({
+    ...college,
+    programs: college.programs.map((program) => {
+      if (program.id !== draft.programId) return program
+      if (draft.documentId) {
+        return {
+          ...program,
+          status: 'on_file',
+          onFileDate: now.slice(0, 10),
+          documents: program.documents.map((document) =>
+            document.id === draft.documentId
+              ? {
+                  ...document,
+                  title: draft.title || document.title,
+                  notes: draft.notes || document.notes,
+                  displayTitle: draft.title || document.displayTitle,
+                  uploadedAt: now,
+                  originalName: draft.file?.name || document.originalName,
+                }
+              : document,
+          ),
+        }
+      }
+      const placeholder: BoardDocument = {
+        id: -Date.now(),
+        programId: program.id,
+        title: draft.title || null,
+        displayTitle: draft.title || draft.file?.name || 'Board of Action',
+        notes: draft.notes || null,
+        uploadedAt: now,
+        currentVersion: 1,
+        originalName: draft.file?.name || null,
+      }
+      return {
+        ...program,
+        status: 'on_file',
+        onFileDate: now.slice(0, 10),
+        documents: [...program.documents, placeholder],
+      }
+    }),
+  }))
+  editor.value = null
 
   try {
-    if (editor.value.documentId) {
-      await replaceBoardOfAction(editor.value.documentId, form)
+    if (draft.documentId) {
+      await replaceBoardOfAction(draft.documentId, form)
     } else {
       await uploadBoardOfAction(form)
     }
-    editor.value = null
-    await loadManage()
+    void loadManage()
   } catch (err: any) {
+    colleges.value = previousColleges
+    editor.value = draft
     formError.value = messageFrom(err, 'The Board of Action file could not be saved.')
   } finally {
     saving.value = false
@@ -306,13 +358,30 @@ const submitEditor = async () => {
 
 const confirmDelete = async () => {
   if (!deleteTarget.value) return
-  const id = deleteTarget.value.id
+  const target = deleteTarget.value
+  const id = target.id
   deleteTarget.value = null
   formError.value = ''
+
+  const previousColleges = JSON.parse(JSON.stringify(colleges.value)) as BoardCollege[]
+  colleges.value = colleges.value.map((college) => ({
+    ...college,
+    programs: college.programs.map((program) => {
+      if (!program.documents.some((document) => document.id === id)) return program
+      const documents = program.documents.filter((document) => document.id !== id)
+      return {
+        ...program,
+        documents,
+        status: documents.length ? 'on_file' : 'missing',
+        onFileDate: documents.length ? program.onFileDate : null,
+      }
+    }),
+  }))
+
   try {
     await deleteBoardOfAction(id)
-    await loadManage()
   } catch (err: any) {
+    colleges.value = previousColleges
     error.value = messageFrom(err, 'The Board of Action document could not be deleted.')
   }
 }

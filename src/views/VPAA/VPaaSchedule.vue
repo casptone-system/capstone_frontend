@@ -9,11 +9,13 @@
     </header>
 
     <section class="vpaa-content">
-      <div v-if="loading" class="vpaa-state">Loading accreditation cycles…</div>
+      <div v-if="loading && !rows.length" class="vpaa-state">
+        <AdamsSkeleton variant="table" :rows="6" />
+      </div>
       <div v-else-if="error" class="vpaa-state error">{{ error }}</div>
       <div v-else-if="rows.length === 0" class="vpaa-state">No accreditation cycles yet. Create a cycle to set its schedule.</div>
 
-      <div v-else class="vpaa-schedule-card">
+      <div v-else class="vpaa-schedule-card" :class="{ 'adams-is-refreshing': loading }">
         <div class="vpaa-calendar-legend">
           <div class="vpaa-legend-item">
             <span class="vpaa-legend-color accreditation"></span> Scheduled visit
@@ -60,6 +62,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { getAccreditationCycles, setAccreditationSchedule } from '@/lib/api'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 
 type ScheduleRow = {
   id: number

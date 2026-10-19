@@ -7,9 +7,12 @@
     </div>
 
     <div v-if="!selectedAreaId" class="aer-area-list">
-      <div v-if="loadingAreas" class="aer-empty">Loading areas…</div>
+      <div v-if="loadingAreas && !areas.length" class="aer-empty">
+        <AdamsSkeleton variant="cards" :count="4" />
+      </div>
       <div v-else-if="error" class="aer-empty aer-error">{{ error }}</div>
       <div v-else-if="!areas.length" class="aer-empty">No areas available to review yet.</div>
+      <div v-else class="aer-area-list-inner" :class="{ 'adams-is-refreshing': loadingAreas }">
       <button
         v-for="area in areas"
         :key="area.id"
@@ -23,6 +26,7 @@
           <template v-if="area.progressPercent !== undefined"> · {{ area.progressPercent }}% complete</template>
         </span>
       </button>
+      </div>
     </div>
 
     <template v-else>
@@ -36,10 +40,12 @@
         </div>
       </div>
 
-      <div v-if="loading" class="aer-empty">Loading…</div>
+      <div v-if="loading && !parameters.length && !rows.length" class="aer-empty">
+        <AdamsSkeleton :variant="selectedParameter ? 'table' : 'cards'" :rows="5" :count="4" />
+      </div>
       <div v-else-if="error" class="aer-empty aer-error">{{ error }}</div>
 
-      <div v-else-if="selectedParameter" class="aer-table-card">
+      <div v-else-if="selectedParameter" class="aer-table-card" :class="{ 'adams-is-refreshing': loading }">
         <AreaParameterRowsTable
           :rows="rows"
           :show-upload="true"
@@ -70,6 +76,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { getAreaParameters, getParameterRows, getReviewAreas } from '@/lib/api'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 import AreaParameterRowsTable from '@/components/AreaParameterRowsTable.vue'
 
 const areas = ref<any[]>([])

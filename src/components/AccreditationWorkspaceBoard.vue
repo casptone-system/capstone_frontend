@@ -20,7 +20,7 @@
     </form>
     <p class="ws-hint">Folder name becomes <strong>{{ level }} · {{ deadline || 'date' }}</strong>. Area folders come from the QA/VPAA template for that level.</p>
 
-    <p v-if="loading">Loading accreditation folders...</p>
+    <div v-if="loading && !workspaces.length"><AdamsSkeleton variant="folders" :count="4" /></div>
     <p v-else-if="error" class="ws-error">{{ error }}</p>
     <p v-else-if="success" class="ws-success">{{ success }}</p>
 
@@ -156,6 +156,7 @@ import {
   removeWorkspaceAreaMember,
 } from '@/lib/api'
 import { fetchAccreditationLevels } from '@/lib/levels'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 import { useAuthStore } from '@/stores/authStore'
 
 const authStore = useAuthStore()
@@ -245,11 +246,31 @@ const createFolder = async () => {
 const assignChair = async (workspaceId: number, areaId: number) => {
   const chairId = chairDraft.value[areaId]
   if (!chairId) return
+  const person = faculty.value.find((row) => Number(row.id) === Number(chairId))
+  const previous = JSON.parse(JSON.stringify(workspaces.value))
+  workspaces.value = workspaces.value.map((workspace: any) =>
+    Number(workspace.id) !== Number(workspaceId)
+      ? workspace
+      : {
+          ...workspace,
+          areas: (workspace.areas || []).map((area: any) =>
+            Number(area.id) === Number(areaId)
+              ? {
+                  ...area,
+                  chair: person
+                    ? { id: person.id, name: person.name, email: person.email || '' }
+                    : { id: chairId, name: `User #${chairId}` },
+                }
+              : area,
+          ),
+        },
+  )
+  success.value = 'Area Chair assigned successfully.'
   try {
     await assignWorkspaceAreaChair(workspaceId, areaId, chairId)
-    success.value = 'Area Chair assigned successfully.'
-    await load()
   } catch (err: any) {
+    workspaces.value = previous
+    success.value = ''
     error.value = err?.response?.data?.message || 'Unable to assign Area Chair.'
   }
 }
@@ -269,20 +290,68 @@ const onMemberSelect = async (workspaceId: number, areaId: number, event: Event)
   const userId = String((event.target as HTMLSelectElement).value || '')
   memberDraft.value[areaId] = userId
   if (!userId) return
+  const person = faculty.value.find((row) => Number(row.id) === Number(userId))
+  const previous = JSON.parse(JSON.stringify(workspaces.value))
+  workspaces.value = workspaces.value.map((workspace: any) =>
+    Number(workspace.id) !== Number(workspaceId)
+      ? workspace
+      : {
+          ...workspace,
+          areas: (workspace.areas || []).map((area: any) =>
+            Number(area.id) === Number(areaId)
+              ? {
+                  ...area,
+                  members: [
+                    ...(area.members || []),
+                    {
+                      userId: Number(userId),
+                      id: Number(userId),
+                      name: person?.name || `User #${userId}`,
+                      email: person?.email || '',
+                    },
+                  ],
+                }
+              : area,
+          ),
+        },
+  )
+  success.value = 'Optional area member added.'
+  memberPicker.value = null
+  memberDraft.value[areaId] = ''
   try {
     await addWorkspaceAreaMember(workspaceId, areaId, Number(userId))
-    success.value = 'Optional area member added.'
-    memberPicker.value = null
-    memberDraft.value[areaId] = ''
-    await load()
   } catch (err: any) {
+    workspaces.value = previous
+    success.value = ''
     error.value = err?.response?.data?.message || 'Unable to add member.'
   }
 }
 
 const removeMember = async (workspaceId: number, areaId: number, userId: number) => {
-  await removeWorkspaceAreaMember(workspaceId, areaId, userId)
-  await load()
+  const previous = JSON.parse(JSON.stringify(workspaces.value))
+  workspaces.value = workspaces.value.map((workspace: any) =>
+    Number(workspace.id) !== Number(workspaceId)
+      ? workspace
+      : {
+          ...workspace,
+          areas: (workspace.areas || []).map((area: any) =>
+            Number(area.id) === Number(areaId)
+              ? {
+                  ...area,
+                  members: (area.members || []).filter(
+                    (member: any) => Number(member.userId || member.id) !== Number(userId),
+                  ),
+                }
+              : area,
+          ),
+        },
+  )
+  try {
+    await removeWorkspaceAreaMember(workspaceId, areaId, userId)
+  } catch (err: any) {
+    workspaces.value = previous
+    error.value = err?.response?.data?.message || 'Unable to remove member.'
+  }
 }
 
 const openParameter = (workspace: any, area: any, parameter: any) => {

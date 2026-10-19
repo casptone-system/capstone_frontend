@@ -171,7 +171,10 @@
               </div>
             </div>
 
-            <div class="pc-todo-list">
+            <div v-if="!dashboardReady" class="pc-todo-list">
+              <AdamsSkeleton variant="list" :rows="4" />
+            </div>
+            <div v-else class="pc-todo-list">
               <button
                 v-for="todo in todayTodos"
                 :key="todo.id"
@@ -323,15 +326,18 @@
 
           <!-- Stat cards stay on Dashboard (and other sections that were not named for removal). -->
           <section v-if="showStatCards" class="pc-stat-strip">
-            <div class="pc-stat" v-for="stat in stats" :key="stat.label">
-              <div class="pc-stat-icon" :style="{ background: stat.bg, color: stat.color }">
-                <ion-icon :icon="stat.icon" />
+            <AdamsSkeleton v-if="!dashboardReady" variant="stats" :count="4" />
+            <template v-else>
+              <div class="pc-stat" v-for="stat in stats" :key="stat.label">
+                <div class="pc-stat-icon" :style="{ background: stat.bg, color: stat.color }">
+                  <ion-icon :icon="stat.icon" />
+                </div>
+                <div>
+                  <p class="pc-stat-value">{{ stat.value }}</p>
+                  <p class="pc-stat-label">{{ stat.label }}</p>
+                </div>
               </div>
-              <div>
-                <p class="pc-stat-value">{{ stat.value }}</p>
-                <p class="pc-stat-label">{{ stat.label }}</p>
-              </div>
-            </div>
+            </template>
           </section>
 
           <!-- Content Grid -->
@@ -686,12 +692,15 @@ import {
   approveDocumentReview,
   requestDocumentRevision,
   previewDocument,
+  resolveEvidenceUrl,
   getFileRequests,
 } from '@/lib/api'
+import { openBlobInNewTab, openUrlInNewTab } from '@/lib/documentPreview'
 import AccreditationLevelStatus from '@/components/AccreditationLevelStatus.vue'
 import ProgramChairAccreditationSetup from './ProgramChairAccreditationSetup.vue'
 import NotificationInbox from '@/components/NotificationInbox.vue'
 import AdamsAppShell from '@/components/ui/AdamsAppShell.vue'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 //import AreaAssignmentCard from '@/components/AreaAssignmentCard.vue'
 import AccreditationWorkspaceBoard from '@/components/AccreditationWorkspaceBoard.vue'
 import AreaDocumentsReview from '@/components/AreaDocumentsReview.vue'
@@ -1679,9 +1688,15 @@ const toggleReviewVersions = (id: number | string) => {
 
 const previewReviewVersion = async (doc: any, version?: any) => {
   try {
+    const signedUrl = await resolveEvidenceUrl(`/documents/${doc.documentId}/preview`, {
+      version: version?.version,
+    })
+    if (signedUrl) {
+      openUrlInNewTab(signedUrl)
+      return
+    }
     const blob = await previewDocument(doc.documentId, version?.version)
-    const url = URL.createObjectURL(blob)
-    window.open(url, '_blank', 'noopener')
+    openBlobInNewTab(blob)
   } catch (err: any) {
     window.alert(err?.response?.data?.message || err?.message || 'Preview is not available for this file.')
   }
@@ -1690,12 +1705,19 @@ const previewReviewVersion = async (doc: any, version?: any) => {
 const approveDocument = async (doc: any) => {
   if (!doc.documentId) return
   reviewBusyId.value = doc.documentId
+
+  const previousDocs = documents.value.slice()
+  const previousRate = programCompletionRate.value
+  const index = documents.value.findIndex((item) => item.documentId === doc.documentId)
+  if (index >= 0) documents.value.splice(index, 1)
+
   try {
     const response = await approveDocumentReview(doc.documentId)
-    documents.value = documents.value.filter((item) => item.documentId !== doc.documentId)
     applyCompletionRate(response?.programCompletionRate)
-    await facultyDashboard.loadMyAreas(true)
+    void facultyDashboard.loadMyAreas(true)
   } catch (err: any) {
+    documents.value = previousDocs
+    programCompletionRate.value = previousRate
     console.error('Unable to approve document:', err)
     const message = err?.response?.data?.message || err?.message || 'Approval failed.'
     window.alert(message)
@@ -1712,12 +1734,19 @@ const returnDocument = async (doc: any) => {
   const comment = reason.trim() || 'Returned for revision by Program Chair.'
 
   reviewBusyId.value = doc.documentId
+
+  const previousDocs = documents.value.slice()
+  const previousRate = programCompletionRate.value
+  const index = documents.value.findIndex((item) => item.documentId === doc.documentId)
+  if (index >= 0) documents.value.splice(index, 1)
+
   try {
     const response = await requestDocumentRevision(doc.documentId, { comment })
-    documents.value = documents.value.filter((item) => item.documentId !== doc.documentId)
     applyCompletionRate(response?.programCompletionRate)
-    await facultyDashboard.loadMyAreas(true)
+    void facultyDashboard.loadMyAreas(true)
   } catch (err: any) {
+    documents.value = previousDocs
+    programCompletionRate.value = previousRate
     console.error('Unable to return document for revision:', err)
     const message = err?.response?.data?.message || err?.message || 'Document return failed.'
     window.alert(message)

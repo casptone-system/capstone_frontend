@@ -3,11 +3,13 @@
     <div class="rct-wrap">
       <p v-if="rowLabel" class="rct-row-label">{{ rowLabel }}</p>
 
-      <div v-if="loading" class="rct-empty">Loading comments…</div>
+      <div v-if="loading && !comments.length" class="rct-empty">
+        <AdamsSkeleton variant="list" :rows="3" />
+      </div>
       <div v-else-if="error" class="rct-empty rct-error">{{ error }}</div>
       <div v-else-if="!comments.length" class="rct-empty">No comments yet. Be the first to leave feedback.</div>
 
-      <div v-else class="rct-thread">
+      <div v-else class="rct-thread" :class="{ 'adams-is-refreshing': loading }">
         <div
           v-for="comment in comments"
           :key="comment.id"
@@ -50,17 +52,19 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import AppModal from '@/components/AppModal.vue'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 import { getRowComments, markRowCommentsRead, postRowComment } from '@/lib/api'
 
 type RowComment = {
-  id: number
+  id: number | string
   body: string
-  source: string
-  authorId: number | null
-  authorName: string | null
-  authorRole: string | null
-  isOwn: boolean
+  source?: string
+  authorId?: number | null
+  authorName?: string | null
+  authorRole?: string | null
+  isOwn?: boolean
   createdAt: string | null
+  pending?: boolean
 }
 
 const props = defineProps<{
@@ -117,14 +121,31 @@ const submit = async () => {
   const body = draft.value.trim()
   if (!body || !props.rowId) return
 
+  const tempId = `temp-${Date.now()}`
+  const optimistic: RowComment = {
+    id: tempId,
+    body,
+    createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    authorName: 'You',
+    authorId: null,
+    authorRole: null,
+    isOwn: true,
+    source: 'local',
+    pending: true,
+  }
+  const previous = comments.value.slice()
+  comments.value = [...comments.value, optimistic]
+  draft.value = ''
+
   posting.value = true
   try {
     error.value = ''
     const created = await postRowComment(props.rowId, body)
-    comments.value = [...comments.value, created]
-    draft.value = ''
+    comments.value = comments.value.map((row) => (row.id === tempId ? created : row))
     emit('posted', created)
   } catch (err: any) {
+    comments.value = previous
+    draft.value = body
     error.value = err?.response?.data?.message || 'Unable to post this comment.'
   } finally {
     posting.value = false

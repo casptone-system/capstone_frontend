@@ -1,16 +1,20 @@
 <template>
   <section class="fac-acc">
-    <p v-if="loading">Loading assigned accreditation folders...</p>
+    <div v-if="loading && !areaFolders.length">
+      <AdamsSkeleton variant="folders" :count="3" />
+    </div>
     <p v-else-if="error" class="fac-acc-error">{{ error }}</p>
     <p v-else-if="!areaFolders.length">No accreditation folder has been assigned to you yet.</p>
 
-    <article v-for="folder in areaFolders" :key="folder.key" class="fac-acc-card">
-      <button type="button" class="fac-acc-folder" @click="openArea(folder)">
-        <strong>{{ folder.workspace.level }}</strong>
-        <span>{{ folder.area.name }}</span>
-        <small>Deadline: {{ folder.workspace.deadline || 'Not set' }}</small>
-      </button>
-    </article>
+    <div v-else class="fac-acc-folders" :class="{ 'adams-is-refreshing': loading }">
+      <article v-for="folder in areaFolders" :key="folder.key" class="fac-acc-card">
+        <button type="button" class="fac-acc-folder" @click="openArea(folder)">
+          <strong>{{ folder.workspace.level }}</strong>
+          <span>{{ folder.area.name }}</span>
+          <small>Deadline: {{ folder.workspace.deadline || 'Not set' }}</small>
+        </button>
+      </article>
+    </div>
 
     <div v-if="selectedArea && !selectedParameter" class="fac-acc-panel">
       <h3>{{ selectedWorkspace.level }} · {{ selectedArea.name }} · {{ selectedWorkspace.deadline || 'No deadline' }}</h3>
@@ -71,6 +75,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { getAccreditationWorkspaces, markWorkspaceCriterionDone, uploadWorkspaceEvidence } from '@/lib/api'
+import AdamsSkeleton from '@/components/ui/AdamsSkeleton.vue'
 
 const workspaces = ref<any[]>([])
 const selectedWorkspace = ref<any>(null)
@@ -127,18 +132,59 @@ const refreshSelected = async () => {
   selectedParameter.value = selectedArea.value?.parameters?.find((parameter: any) => parameter.id === selectedParameter.value?.id) || null
 }
 
+const patchCriterion = (criterionId: number, patch: Record<string, unknown>) => {
+  if (!selectedParameter.value) return
+  selectedParameter.value = {
+    ...selectedParameter.value,
+    criteria: (selectedParameter.value.criteria || []).map((criterion: any) =>
+      criterion.id === criterionId ? { ...criterion, ...patch } : criterion,
+    ),
+  }
+  if (selectedArea.value) {
+    selectedArea.value = {
+      ...selectedArea.value,
+      parameters: (selectedArea.value.parameters || []).map((parameter: any) =>
+        parameter.id === selectedParameter.value?.id ? selectedParameter.value : parameter,
+      ),
+    }
+  }
+}
+
 const upload = async (event: Event, criterionId: number) => {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file || !selectedWorkspace.value) return
-  await uploadWorkspaceEvidence(selectedWorkspace.value.id, criterionId, file)
-  await refreshSelected()
+
+  const previousFiles = (selectedParameter.value?.criteria || [])
+    .find((criterion: any) => criterion.id === criterionId)?.files?.slice() || []
+  const placeholder = { id: -Date.now(), name: file.name, pending: true }
+  patchCriterion(criterionId, { files: [...previousFiles, placeholder] })
+
+  try {
+    await uploadWorkspaceEvidence(selectedWorkspace.value.id, criterionId, file)
+    void refreshSelected()
+  } catch (err: any) {
+    patchCriterion(criterionId, { files: previousFiles })
+    error.value = err?.response?.data?.message || 'Unable to upload this file.'
+  } finally {
+    if (input) input.value = ''
+  }
 }
 
 const markDone = async (criterionId: number) => {
   if (!selectedWorkspace.value) return
-  await markWorkspaceCriterionDone(selectedWorkspace.value.id, criterionId)
-  await refreshSelected()
+
+  const previous = (selectedParameter.value?.criteria || [])
+    .find((criterion: any) => criterion.id === criterionId)
+  patchCriterion(criterionId, { done: true, status: 'done' })
+
+  try {
+    await markWorkspaceCriterionDone(selectedWorkspace.value.id, criterionId)
+    void refreshSelected()
+  } catch (err: any) {
+    if (previous) patchCriterion(criterionId, previous)
+    error.value = err?.response?.data?.message || 'Unable to mark this criterion done.'
+  }
 }
 
 onMounted(load)
