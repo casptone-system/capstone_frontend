@@ -78,7 +78,7 @@
           <div v-if="showExpiredNotice" class="login-success warning" role="status"> Your session expired for security
             reasons. Please sign in again to continue. </div>
           <div class="form-options"> <label class="checkbox"> <input v-model="rememberMe" type="checkbox" />
-              <span>Remember me</span> </label> 
+              <span>Keep me signed in on this device</span> </label> 
               <router-link to="/forgot-password" class="forgot-password"> Forgot
               password? </router-link> </div> 
               <app-button type="submit" variant="primary" block size="lg"
@@ -153,7 +153,7 @@ const toastStore = useToastStore()
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
-const rememberMe = ref(false)
+const rememberMe = ref(true)
 const isLoading = ref(false)
 // const isSocialLoading = ref(false)
 const loginError = ref('')

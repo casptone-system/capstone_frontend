@@ -16,6 +16,8 @@ export const useAuthStore = defineStore('auth', () => {
   let activityListenersAttached = false
   let activityHandler: (() => void) | null = null
   const CHALLENGE_KEY = 'auth_challenge'
+  const DEVICE_TOKEN_KEY = 'auth_device_token'
+  const REMEMBER_KEY = 'auth_remember'
 
   const clearInactivityTimer = () => {
     if (inactivityTimer !== null) {
@@ -54,8 +56,20 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  const isPersistentSession = () => {
+    if (typeof window === 'undefined') return false
+    return window.localStorage.getItem(REMEMBER_KEY) === '1'
+      || Boolean(window.localStorage.getItem(TOKEN_KEY))
+  }
+
   const resetSessionTimer = () => {
     if (!isAuthenticated.value || typeof window === 'undefined') return
+
+    // Trusted / "keep me signed in" sessions stay open until logout or token revoke.
+    if (isPersistentSession()) {
+      clearInactivityTimer()
+      return
+    }
 
     clearInactivityTimer()
     inactivityTimer = window.setTimeout(() => {
@@ -67,6 +81,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const attachActivityListeners = () => {
     if (typeof window === 'undefined' || activityListenersAttached) return
+    if (isPersistentSession()) return
 
     activityHandler = () => {
       if (isAuthenticated.value) {
@@ -291,6 +306,22 @@ export const useAuthStore = defineStore('auth', () => {
   // ======================
   // LOGIN
   // ======================
+  const getDeviceToken = () => {
+    if (typeof window === 'undefined') return ''
+    return window.localStorage.getItem(DEVICE_TOKEN_KEY) || ''
+  }
+
+  const setDeviceToken = (deviceToken: string | null | undefined) => {
+    if (typeof window === 'undefined') return
+    if (!deviceToken) return
+    window.localStorage.setItem(DEVICE_TOKEN_KEY, deviceToken)
+  }
+
+  const removeDeviceToken = () => {
+    if (typeof window === 'undefined') return
+    window.localStorage.removeItem(DEVICE_TOKEN_KEY)
+  }
+
   const setToken = (token: string, remember: boolean) => {
     if (typeof window === 'undefined') return
 
@@ -299,8 +330,10 @@ export const useAuthStore = defineStore('auth', () => {
 
     if (remember) {
       window.localStorage.setItem(TOKEN_KEY, token)
+      window.localStorage.setItem(REMEMBER_KEY, '1')
     } else {
       window.sessionStorage.setItem(TOKEN_KEY, token)
+      window.localStorage.removeItem(REMEMBER_KEY)
     }
   }
 
@@ -309,9 +342,43 @@ export const useAuthStore = defineStore('auth', () => {
 
     window.localStorage.removeItem(TOKEN_KEY)
     window.sessionStorage.removeItem(TOKEN_KEY)
+    window.localStorage.removeItem(REMEMBER_KEY)
   }
 
-  const login = async (email: string, password: string, remember = false) => {
+  const applyAuthenticatedSession = async (payload: any, remember: boolean) => {
+    const token = payload?.token
+    if (!token) {
+      throw new Error('Authentication did not return a session.')
+    }
+
+    setToken(token, remember)
+    setDeviceToken(payload?.device_token)
+
+    const userData = payload?.user
+    if (userData) {
+      user.value = normalizeUserProgramContext(userData)
+    } else {
+      await restoreSession()
+    }
+
+    if (user.value) {
+      const savedView = getStoredDashboardView()
+      const available = getAvailableDashboardViews()
+      if (savedView && !available.includes(savedView)) {
+        clearDashboardView()
+      }
+      if (!dashboardView.value || !available.includes(dashboardView.value)) {
+        setDefaultDashboardViewForRole()
+      }
+      isAuthenticated.value = true
+      attachActivityListeners()
+      resetSessionTimer()
+    }
+
+    clearLoginChallenge()
+  }
+
+  const login = async (email: string, password: string, remember = true) => {
     isLoading.value = true
     error.value = null
 
@@ -319,32 +386,14 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await api.post('/login', {
         email,
         password,
+        device_token: getDeviceToken() || undefined,
+        trust_device: remember,
       })
 
-      // Token = session issued (role skipped 2FA). challenge_token = OTP required.
+      // Token = session issued (role skipped 2FA or trusted device). challenge_token = OTP required.
       const token = response.data.data.token
       if (token) {
-        setToken(token, remember)
-        const userData = response.data.data.user
-        if (userData) {
-          user.value = normalizeUserProgramContext(userData)
-        } else {
-          await restoreSession()
-        }
-        if (user.value) {
-          const savedView = getStoredDashboardView()
-          const available = getAvailableDashboardViews()
-          if (savedView && !available.includes(savedView)) {
-            clearDashboardView()
-          }
-          if (!dashboardView.value || !available.includes(dashboardView.value)) {
-            setDefaultDashboardViewForRole()
-          }
-          isAuthenticated.value = true
-          attachActivityListeners()
-          resetSessionTimer()
-        }
-        clearLoginChallenge()
+        await applyAuthenticatedSession(response.data.data, remember)
       } else if (response.data.data.challenge_token) {
         loginChallenge.value = {
           challengeToken: response.data.data.challenge_token,
@@ -383,33 +432,9 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await api.post('/auth/verify-2fa', {
         challenge_token: loginChallenge.value.challengeToken,
         code,
+        trust_device: loginChallenge.value.remember,
       })
-      const token = response.data?.data?.token
-      if (!token) {
-        throw new Error('Verification did not return a session.')
-      }
-
-      setToken(token, loginChallenge.value.remember)
-      const userData = response.data.data.user
-      if (userData) {
-        user.value = normalizeUserProgramContext(userData)
-      } else {
-        await restoreSession()
-      }
-      if (user.value) {
-        const savedView = getStoredDashboardView()
-        const available = getAvailableDashboardViews()
-        if (savedView && !available.includes(savedView)) {
-          clearDashboardView()
-        }
-        if (!dashboardView.value || !available.includes(dashboardView.value)) {
-          setDefaultDashboardViewForRole()
-        }
-        isAuthenticated.value = true
-        attachActivityListeners()
-        resetSessionTimer()
-      }
-      clearLoginChallenge()
+      await applyAuthenticatedSession(response.data?.data, loginChallenge.value.remember)
       return response.data
     } catch (err: any) {
       const responseMessage = err.response?.data?.message
@@ -507,7 +532,7 @@ export const useAuthStore = defineStore('auth', () => {
       resetSessionTimer()
       return response.data
     } catch {
-      localStorage.removeItem(TOKEN_KEY)
+      removeToken()
       user.value = null
       isAuthenticated.value = false
     }
@@ -533,7 +558,7 @@ export const useAuthStore = defineStore('auth', () => {
       applyCurrentUser(response.data.data.user)
       return response.data
     } catch {
-      localStorage.removeItem(TOKEN_KEY)
+      removeToken()
       user.value = null
       isAuthenticated.value = false
     }
@@ -589,7 +614,7 @@ export const useAuthStore = defineStore('auth', () => {
   // ======================
   // LOGOUT
   // ======================
-  const logout = async () => {
+  const logout = async (options?: { forgetDevice?: boolean }) => {
     isLoading.value = true
 
     try {
@@ -599,6 +624,9 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     removeToken()
+    if (options?.forgetDevice) {
+      removeDeviceToken()
+    }
 
     clearLoginChallenge()
     clearDashboardView()

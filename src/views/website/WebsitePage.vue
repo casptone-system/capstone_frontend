@@ -2,10 +2,8 @@
     <ion-page class="adams-shell">
         <aside class="sidebar" :class="{ 'sidebar-open': drawerOpen }">
             <a class="brand" href="#overview" @click.prevent="navigateTo('overview')">
-               
                 <span>
                     <img src="@/assets/text.png" alt="Archiving logo" class="adams_logo" />
-                    <label>Accreditation management</label>
                 </span>
             </a>
             <div class="sidebar-label">PUBLIC EXPLORER</div>
@@ -190,19 +188,6 @@
                             <IonIcon :icon="closeOutline" />
                         </button>
                     </div>
-                    <div class="kpis">
-                        <article v-for="(metric, index) in kpiCards" :key="metric.label" class="kpi"
-                            :class="`kpi-${index}`">
-                            <div class="kpi-head"><span>
-                                    <IonIcon :icon="metric.icon" />
-                                </span><small>{{ metric.context }}</small></div><strong>{{ metric.value
-                                }}</strong><label>{{ metric.label }}</label>
-                            <div class="kpi-foot"><small>
-                                    <IonIcon :icon="arrowForwardOutline" /> {{ metric.trend }}
-                                </small><span class="spark"><i v-for="height in metric.spark" :key="height"
-                                        :style="{ height: `${height}px` }"></i></span></div>
-                        </article>
-                    </div>
                     <div class="charts">
                         <article class="chart-card wide">
                             <div class="chart-title">
@@ -240,28 +225,27 @@
                             <div class="chart-title">
                                 <div><small>HISTORICAL PERFORMANCE</small>
                                     <h3>Compliance progress</h3>
-                                    <p>Monthly performance, January–September</p>
+                                    <p>Monthly performance by program, January–September</p>
                                 </div><span class="trend">
                                     <IonIcon :icon="trendingUpOutline" /> {{ complianceChange }} pts
                                 </span>
                             </div>
                             <div class="chart-box line"><canvas ref="historyChartCanvas"
-                                    aria-label="Monthly compliance progress line chart"></canvas>
+                                    aria-label="Monthly compliance progress by program line chart"></canvas>
                                 <div v-if="chartMessage" class="chart-empty">{{ chartMessage }}</div>
                             </div>
                         </article>
                         <article class="chart-card">
                             <div class="chart-title">
-                                <div><small>ACCREDITATION FRAMEWORK</small>
-                                    <h3>Area performance</h3>
-                                    <p>Average score across areas</p>
-                                </div><button aria-label="Explore accreditation areas"
-                                    @click="navigateTo('accreditation')">
+                                <div><small>PROGRAM LEVEL</small>
+                                    <h3>Performance by program</h3>
+                                    <p>Compliance score for each program</p>
+                                </div><button aria-label="Explore programs" @click="navigateTo('programs')">
                                     <IonIcon :icon="arrowForwardOutline" />
                                 </button>
                             </div>
-                            <div class="chart-box horizontal"><canvas ref="areaChartCanvas"
-                                    aria-label="Accreditation area performance bar chart"></canvas>
+                            <div class="chart-box horizontal"><canvas ref="programLevelChartCanvas"
+                                    aria-label="Program level performance bar chart"></canvas>
                                 <div v-if="chartMessage" class="chart-empty">{{ chartMessage }}</div>
                             </div>
                         </article>
@@ -348,20 +332,40 @@
                             <div class="panel-heading">
                                 <div>
                                     <h3>Department performance</h3>
-                                    <p>Average compliance by college</p>
+                                    <p>Select a department to view its programs</p>
                                 </div><span>DEPARTMENTS</span>
                             </div>
-                            <div class="department-list"><button v-for="department in departmentPerformance"
-                                    :key="department.id" @click="selectDepartment(department.id)"><i
-                                        :class="`dept-color-${department.index % 4}`">{{ department.code
-                                        }}</i><span><b>{{ department.shortName }}</b><small>{{ department.programCount
-                                            }} programs · {{ formatNumber(department.documents) }}
-                                            documents</small><em><u
-                                                :style="{ width: `${department.compliance}%` }"></u></em></span><strong>{{
-                                        department.compliance }}<small>%</small></strong></button>
+                            <div class="department-list">
+                                <div v-for="department in departmentPerformance" :key="department.id" class="dept-item"
+                                    :class="{ open: selectedDepartment === department.id }">
+                                    <button type="button" @click="selectDepartment(department.id)">
+                                        <i :class="`dept-color-${department.index % 4}`">{{ department.code }}</i>
+                                        <span>
+                                            <b>{{ department.shortName }}</b>
+                                            <small>{{ department.programCount }} programs · {{
+                                                formatNumber(department.documents) }} documents</small>
+                                            <em><u :style="{ width: `${department.compliance}%` }"></u></em>
+                                        </span>
+                                        <strong>{{ department.compliance }}<small>%</small></strong>
+                                        <IonIcon class="dept-chevron" :icon="chevronForwardOutline" />
+                                    </button>
+                                    <div v-if="selectedDepartment === department.id" class="dept-programs">
+                                        <button v-for="program in department.programs" :key="program.id" type="button"
+                                            @click.stop="openProgram(program)">
+                                            <span>
+                                                <b>{{ program.name }}</b>
+                                                <small>{{ program.code }} · {{ program.compliance }}% compliance</small>
+                                            </span>
+                                            <IonIcon :icon="chevronForwardOutline" />
+                                        </button>
+                                        <div v-if="!department.programs.length" class="dept-empty">No programs in this
+                                            department.</div>
+                                    </div>
+                                </div>
                                 <div v-if="!departmentPerformance.length && !loading" class="dept-empty">No data
                                     available for this department.</div>
-                            </div><button v-if="selectedDepartment !== 'all'" class="all-departments"
+                            </div>
+                            <button v-if="selectedDepartment !== 'all'" class="all-departments" type="button"
                                 @click="selectDepartment('all')">Show all departments
                                 <IonIcon :icon="arrowForwardOutline" />
                             </button>
@@ -636,11 +640,14 @@ const accreditationAreas = ref([])
 const analyticsSummary = ref(null)
 
 const navItems = [
-    { id: 'overview', label: 'Overview', icon: gridOutline }, { id: 'analytics', label: 'Analytics', icon: analyticsOutline },
-    { id: 'programs', label: 'Programs', icon: schoolOutline }, { id: 'departments', label: 'Departments', icon: businessOutline },
-    { id: 'accreditation', label: 'Accreditation', icon: ribbonOutline }, { id: 'documents', label: 'Documents', icon: documentTextOutline },
-    { id: 'compliance', label: 'Compliance', icon: shieldCheckmarkOutline }, { id: 'reports', label: 'Reports', icon: barChartOutline },
-    { id: 'about', label: 'About ADAMS', icon: informationCircleOutline }
+    { id: 'overview', label: 'Overview', icon: gridOutline },
+    { id: 'analytics', label: 'Analytics', icon: analyticsOutline },
+    { id: 'programs', label: 'Programs', icon: schoolOutline },
+    { id: 'departments', label: 'Departments', icon: businessOutline },
+    { id: 'documents', label: 'Documents', icon: documentTextOutline },
+    { id: 'compliance', label: 'Compliance', icon: shieldCheckmarkOutline },
+    { id: 'reports', label: 'Reports', icon: barChartOutline },
+    { id: 'about', label: 'About ADAMS', icon: informationCircleOutline },
 ]
 const areaIconByCode = {
     'area-1': eyeOutline,
@@ -766,23 +773,36 @@ const documentStatuses = computed(() => {
 })
 const complianceChange = computed(() => filteredCompliance.value.at(-1)?.score - filteredCompliance.value[0]?.score || 0)
 const chartMessage = computed(() => loading.value ? 'Loading analytics...' : filteredPrograms.value.length ? '' : selectedProgram.value !== 'all' ? 'No data available for this program.' : selectedDepartment.value !== 'all' ? 'No data available for this department.' : 'No data available.')
-const kpiCards = computed(() => [
-    { label: 'Total programs', value: formatNumber(filteredAnalytics.value.totalPrograms), context: 'ACADEMIC UNITS', trend: 'In this view', icon: schoolOutline, spark: [13, 20, 16, 27, 23, 31, 26] },
-    { label: 'Accreditation areas', value: formatNumber(filteredAnalytics.value.accreditationAreas), context: 'FRAMEWORK', trend: 'Areas tracked', icon: ribbonOutline, spark: [16, 23, 19, 25, 22, 30, 27] },
-    { label: 'Compliance rate', value: `${filteredAnalytics.value.complianceRate}%`, context: 'READINESS SCORE', trend: `${complianceChange.value >= 0 ? '+' : ''}${complianceChange.value} pts this year`, icon: trendingUpOutline, spark: [12, 15, 19, 18, 24, 27, 32] },
-    { label: 'Documents managed', value: formatNumber(filteredAnalytics.value.documentsManaged), context: 'EVIDENCE LIBRARY', trend: 'Across selected programs', icon: documentTextOutline, spark: [12, 21, 17, 26, 24, 30, 34] },
-    { label: 'Pending reviews', value: formatNumber(filteredAnalytics.value.pendingReviews), context: 'REVIEW QUEUE', trend: 'Awaiting reviewer action', icon: timeOutline, spark: [27, 19, 23, 16, 20, 13, 17] },
-    { label: 'Programs on track', value: formatNumber(filteredAnalytics.value.programsOnTrack), context: 'STATUS', trend: 'Meeting readiness targets', icon: checkmarkCircleOutline, spark: [14, 17, 23, 21, 27, 25, 32] }
-])
+const programHistorySeries = computed(() => {
+    const months = filteredCompliance.value.map((item) => item.month)
+    const length = months.length || 9
+    return filteredPrograms.value.map((program) => ({
+        id: program.id,
+        label: program.code || program.name,
+        data: Array.from({ length }, (_, index) => Number(program.history?.[index] ?? program.compliance ?? 0)),
+    }))
+})
 const visiblePrograms = computed(() => {
     const query = searchTerm.value.trim().toLowerCase()
     return filteredPrograms.value.filter(program => !query || `${program.name} ${program.code} ${program.departmentName}`.toLowerCase().includes(query))
 })
 const emptyProgramMessage = computed(() => selectedProgram.value !== 'all' ? 'No data available for this program.' : selectedDepartment.value !== 'all' ? 'No data available for this department.' : 'No programs match your search.')
 const departmentPerformance = computed(() => departments.value.map((department, index) => {
-    const records = filteredPrograms.value.filter(program => program.departmentId === department.id)
-    return { ...department, index, programCount: records.length, documents: records.reduce((sum, program) => sum + program.documents, 0), compliance: records.length ? Math.round(records.reduce((sum, program) => sum + program.compliance, 0) / records.length) : 0 }
-}).filter(department => department.programCount && (selectedDepartment.value === 'all' || department.id === selectedDepartment.value)))
+    const records = programs.value.filter((program) =>
+        program.departmentId === department.id
+        && (selectedCycle.value === 'all' || program.cycleId === selectedCycle.value)
+    )
+    return {
+        ...department,
+        index,
+        programCount: records.length,
+        documents: records.reduce((sum, program) => sum + Number(program.documents || 0), 0),
+        compliance: records.length
+            ? Math.round(records.reduce((sum, program) => sum + Number(program.compliance || 0), 0) / records.length)
+            : 0,
+        programs: records,
+    }
+}).filter((department) => department.programCount))
 const accreditationAreaCards = computed(() => filteredAreas.value)
 const selectedAreaDetails = computed(() => accreditationAreaCards.value.find(area => area.id === selectedArea.value) || null)
 const selectedProgramDetails = computed(() => {
@@ -835,10 +855,11 @@ const benefits = [
 const programChartCanvas = ref(null)
 const documentChartCanvas = ref(null)
 const historyChartCanvas = ref(null)
-const areaChartCanvas = ref(null)
+const programLevelChartCanvas = ref(null)
 const sexChartCanvas = ref(null)
-let programChart, documentChart, historyChart, areaChart, sexChart
+let programChart, documentChart, historyChart, programLevelChart, sexChart
 const palette = { green: '#278754', greenSoft: 'rgba(39,135,84,.12)', amber: '#d5a33d', coral: '#cb6d5b', muted: '#91a39a', blue: '#5b8fd5', grid: '#e9eee9', white: '#fff' }
+const programLineColors = ['#278754', '#5b8fd5', '#d5a33d', '#cb6d5b', '#7a6bb5', '#3d9b8f', '#c47a3a', '#5a7d9a', '#8f6b4a', '#4a8f6b']
 
 async function fetchAnalytics() { return getPublicAnalytics() }
 async function fetchPrograms() { return getPublicPrograms() }
@@ -861,12 +882,16 @@ function handleScroll() {
     activeNav.value = current
 }
 function clearFilters() { selectedDepartment.value = 'all'; selectedProgram.value = 'all'; selectedCycle.value = 'all' }
-function selectDepartment(id) { selectedDepartment.value = id; selectedProgram.value = 'all' }
+function selectDepartment(id) {
+    selectedDepartment.value = selectedDepartment.value === id ? 'all' : id
+    selectedProgram.value = 'all'
+    if (selectedDepartment.value !== 'all') navigateTo('programs')
+}
 function openProgram(program) { selectedProgramId.value = program.id }
 function closeProgram() { selectedProgramId.value = null }
 function destroyCharts() {
-    [programChart, documentChart, historyChart, areaChart, sexChart].forEach(chart => chart?.destroy())
-    programChart = null; documentChart = null; historyChart = null; areaChart = null; sexChart = null
+    [programChart, documentChart, historyChart, programLevelChart, sexChart].forEach(chart => chart?.destroy())
+    programChart = null; documentChart = null; historyChart = null; programLevelChart = null; sexChart = null
 }
 async function renderCharts() {
     if (loading.value || !programChartCanvas.value) { destroyCharts(); return }
@@ -883,8 +908,77 @@ async function renderCharts() {
         programChart = new Chart(programChartCanvas.value, { type: 'bar', data: { labels: programComplianceData.value.map(item => item.label), datasets: [{ data: programComplianceData.value.map(item => item.value), backgroundColor: programComplianceData.value.map(item => item.onTrack ? palette.green : palette.amber), borderRadius: 5, maxBarThickness: 36 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => ` ${context.raw}% compliance` } } }, scales: { x: { grid: { display: false }, border: { display: false }, ticks: { ...ticks, maxRotation: 0, autoSkip: true, maxTicksLimit: 12 } }, y: { min: yMin(programComplianceData.value.map(item => item.value)), max: 100, grid, border: { display: false }, ticks: { ...ticks, stepSize: 10, callback: value => `${value}%` } } } } })
     }
     documentChart = new Chart(documentChartCanvas.value, { type: 'doughnut', data: { labels: documentStatuses.value.map(item => item.label), datasets: [{ data: Object.values(filteredDocuments.value), backgroundColor: documentStatuses.value.map(item => item.color), borderColor: palette.white, borderWidth: 4, hoverOffset: 5 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '76%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => ` ${context.label}: ${formatNumber(context.raw)}` } } } } })
-    historyChart = new Chart(historyChartCanvas.value, { type: 'line', data: { labels: filteredCompliance.value.map(item => item.month), datasets: [{ data: filteredCompliance.value.map(item => item.score), borderColor: palette.green, backgroundColor: palette.greenSoft, fill: true, tension: .38, borderWidth: 2.5, pointRadius: 3, pointHoverRadius: 5, pointBackgroundColor: palette.white, pointBorderColor: palette.green, pointBorderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => ` ${context.raw}% compliance` } } }, scales: { x: { grid: { display: false }, border: { display: false }, ticks: { ...ticks, maxTicksLimit: 9, maxRotation: 0 } }, y: { min: yMin(filteredCompliance.value.map(item => item.score)), max: 100, grid, border: { display: false }, ticks: { ...ticks, stepSize: 10, callback: value => `${value}%` } } } } })
-    areaChart = new Chart(areaChartCanvas.value, { type: 'bar', data: { labels: filteredAreas.value.map(area => area.shortName), datasets: [{ data: filteredAreas.value.map(area => area.score), backgroundColor: filteredAreas.value.map((area, index) => index % 3 ? '#72aa85' : palette.green), borderRadius: 4, barThickness: 13, maxBarThickness: 13 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => ` ${context.raw}% average score` } } }, scales: { x: { min: 0, max: 100, grid, border: { display: false }, ticks: { ...ticks, stepSize: 20, callback: value => `${value}%` } }, y: { grid: { display: false }, border: { display: false }, ticks: { ...ticks, font: { size: 9 }, autoSkip: false } } } } })
+    if (programHistorySeries.value.length) {
+        const historyScores = programHistorySeries.value.flatMap((series) => series.data)
+        historyChart = new Chart(historyChartCanvas.value, {
+            type: 'line',
+            data: {
+                labels: filteredCompliance.value.map((item) => item.month),
+                datasets: programHistorySeries.value.map((series, index) => {
+                    const color = programLineColors[index % programLineColors.length]
+                    const single = programHistorySeries.value.length === 1
+                    return {
+                        label: series.label,
+                        data: series.data,
+                        borderColor: color,
+                        backgroundColor: single ? palette.greenSoft : 'transparent',
+                        fill: single,
+                        tension: 0.38,
+                        borderWidth: 2.5,
+                        pointRadius: programHistorySeries.value.length > 6 ? 0 : 3,
+                        pointHoverRadius: 5,
+                        pointBackgroundColor: palette.white,
+                        pointBorderColor: color,
+                        pointBorderWidth: 2,
+                    }
+                }),
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: programHistorySeries.value.length > 1,
+                        position: 'bottom',
+                        labels: { boxWidth: 10, boxHeight: 10, padding: 12, font: { size: 10 } },
+                    },
+                    tooltip: { callbacks: { label: (context) => ` ${context.dataset.label}: ${context.raw}%` } },
+                },
+                scales: {
+                    x: { grid: { display: false }, border: { display: false }, ticks: { ...ticks, maxTicksLimit: 9, maxRotation: 0 } },
+                    y: { min: yMin(historyScores), max: 100, grid, border: { display: false }, ticks: { ...ticks, stepSize: 10, callback: (value) => `${value}%` } },
+                },
+            },
+        })
+    }
+    if (programLevelChartCanvas.value && programComplianceData.value.length) {
+        programLevelChart = new Chart(programLevelChartCanvas.value, {
+            type: 'bar',
+            data: {
+                labels: programComplianceData.value.map((item) => item.label),
+                datasets: [{
+                    data: programComplianceData.value.map((item) => item.value),
+                    backgroundColor: programComplianceData.value.map((item) => item.onTrack ? palette.green : palette.amber),
+                    borderRadius: 4,
+                    barThickness: 13,
+                    maxBarThickness: 13,
+                }],
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: (context) => ` ${context.raw}% compliance` } },
+                },
+                scales: {
+                    x: { min: 0, max: 100, grid, border: { display: false }, ticks: { ...ticks, stepSize: 20, callback: (value) => `${value}%` } },
+                    y: { grid: { display: false }, border: { display: false }, ticks: { ...ticks, font: { size: 9 }, autoSkip: false } },
+                },
+            },
+        })
+    }
     if (sexChartCanvas.value && sexDistribution.value.total) {
         sexChart = new Chart(sexChartCanvas.value, {
             type: 'doughnut',
@@ -917,7 +1011,7 @@ onMounted(async () => {
     document.addEventListener('keydown', handleKeydown)
     documentChartCanvas.value?.closest('.chart-card') && (documentChartCanvas.value.closest('.chart-card').id = 'documents')
     historyChartCanvas.value?.closest('.chart-card') && (historyChartCanvas.value.closest('.chart-card').id = 'compliance')
-    areaChartCanvas.value?.closest('.chart-card') && (areaChartCanvas.value.closest('.chart-card').id = 'reports')
+    programLevelChartCanvas.value?.closest('.chart-card') && (programLevelChartCanvas.value.closest('.chart-card').id = 'reports')
     try {
         const [analytics, programData, departmentData, areaData, cycleData] = await Promise.all([
             fetchAnalytics(),
@@ -2639,20 +2733,27 @@ onBeforeUnmount(() => { document.removeEventListener('keydown', handleKeydown); 
     padding: 0 12px
 }
 
-.department-list>button {
+.dept-item {
+    border-bottom: 1px solid #eff2ef
+}
+
+.dept-item>button {
     display: flex;
     align-items: center;
     width: 100%;
     gap: 9px;
     padding: 12px 4px;
     border: 0;
-    border-bottom: 1px solid #eff2ef;
     background: transparent;
     text-align: left;
     cursor: pointer
 }
 
-.department-list>button>i {
+.dept-item.open>button {
+    background: #f5f8f5
+}
+
+.dept-item>button>i {
     display: grid;
     flex: 0 0 31px;
     place-items: center;
@@ -2666,14 +2767,14 @@ onBeforeUnmount(() => { document.removeEventListener('keydown', handleKeydown); 
     font-weight: 700
 }
 
-.department-list>button>span {
+.dept-item>button>span {
     display: grid;
     flex: 1;
     min-width: 0;
     gap: 3px
 }
 
-.department-list>button>span>b {
+.dept-item>button>span>b {
     overflow: hidden;
     color: #495b4e;
     font-size: 9px;
@@ -2681,12 +2782,12 @@ onBeforeUnmount(() => { document.removeEventListener('keydown', handleKeydown); 
     white-space: nowrap
 }
 
-.department-list>button>span>small {
+.dept-item>button>span>small {
     color: #9aa49d;
     font-size: 7px
 }
 
-.department-list>button>span>em {
+.dept-item>button>span>em {
     height: 3px;
     margin-top: 3px;
     overflow: hidden;
@@ -2694,21 +2795,81 @@ onBeforeUnmount(() => { document.removeEventListener('keydown', handleKeydown); 
     background: #edf0ed
 }
 
-.department-list>button>span>em u {
+.dept-item>button>span>em u {
     display: block;
     height: 100%;
     border-radius: 4px;
     background: #4b9b64
 }
 
-.department-list>button>strong {
+.dept-item>button>strong {
     color: #43584a;
     font-size: 12px
 }
 
-.department-list>button>strong small {
+.dept-item>button>strong small {
     font-size: 8px;
     font-weight: 400
+}
+
+.dept-chevron {
+    flex: 0 0 auto;
+    color: #9aa49d;
+    font-size: 14px;
+    transition: transform .2s ease
+}
+
+.dept-item.open .dept-chevron {
+    transform: rotate(90deg)
+}
+
+.dept-programs {
+    display: grid;
+    gap: 2px;
+    padding: 0 4px 10px 44px
+}
+
+.dept-programs>button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 8px;
+    border: 0;
+    border-radius: 6px;
+    background: #f7faf7;
+    text-align: left;
+    cursor: pointer
+}
+
+.dept-programs>button:hover {
+    background: #eef5ef
+}
+
+.dept-programs>button>span {
+    display: grid;
+    gap: 2px;
+    min-width: 0
+}
+
+.dept-programs>button>span>b {
+    overflow: hidden;
+    color: #3f5345;
+    font-size: 9px;
+    text-overflow: ellipsis;
+    white-space: nowrap
+}
+
+.dept-programs>button>span>small {
+    color: #8f9b93;
+    font-size: 7px
+}
+
+.dept-programs>button ion-icon {
+    flex: 0 0 auto;
+    color: #9aa49d;
+    font-size: 12px
 }
 
 .dept-color-1 {
