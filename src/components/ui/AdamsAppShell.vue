@@ -243,8 +243,10 @@ const goSettings = async () => {
 }
 
 const pickProfilePhoto = () => {
-  profileOpen.value = false
+  // Keep the click in the same user-gesture turn; closing the menu first
+  // can cancel the file picker in Chromium.
   photoInput.value?.click()
+  profileOpen.value = false
 }
 
 const onProfilePhotoSelected = async (event: Event) => {

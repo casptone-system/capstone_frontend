@@ -3,13 +3,22 @@ export const resolveUserImageUrl = (value: unknown, userId?: number | string | n
 
   const trimmed = value.trim()
   if (!trimmed) return null
-  if (trimmed.startsWith('data:') || /^https?:\/\//i.test(trimmed)) return trimmed
+  if (trimmed.startsWith('data:')) return trimmed
 
   const rawBase = process.env.VUE_APP_API_BASE_URL || '/api'
   const backendOrigin = rawBase.replace(/\/api\/?$/, '')
   const apiBase = rawBase.endsWith('/api') || rawBase.endsWith('/api/')
     ? rawBase.replace(/\/$/, '')
     : `${backendOrigin}/api`
+
+  // Always route profile photos through the configured API base so local /api
+  // proxy stays same-origin (CSP-safe) and production uses VUE_APP_API_BASE_URL.
+  const photoMatch = trimmed.match(/\/users\/([^/?#]+)\/profile-photo(?:\?([^#]*))?/i)
+  if (photoMatch) {
+    const id = userId != null && userId !== '' ? String(userId) : photoMatch[1]
+    const query = photoMatch[2] ? `?${photoMatch[2]}` : ''
+    return `${apiBase}/users/${id}/profile-photo${query}`
+  }
 
   // Prefer the durable API photo endpoint over ephemeral /storage/ paths.
   if (
@@ -22,9 +31,7 @@ export const resolveUserImageUrl = (value: unknown, userId?: number | string | n
     return `${apiBase}/users/${userId}/profile-photo`
   }
 
-  if (trimmed.includes('/profile-photo')) {
-    return trimmed.startsWith('/') ? `${backendOrigin}${trimmed}` : `${backendOrigin}/${trimmed.replace(/^\/+/, '')}`
-  }
+  if (/^https?:\/\//i.test(trimmed)) return trimmed
 
   if (trimmed.startsWith('/')) return `${backendOrigin}${trimmed}`
   if (trimmed.includes('/storage/')) {
@@ -49,7 +56,6 @@ export const getUserPhotoUrl = (user: Record<string, unknown> | null | undefined
     user.image_url ||
     null
 
-  // Full API URLs / absolute URLs win.
   if (typeof preferred === 'string' && preferred.trim()) {
     const resolved = resolveUserImageUrl(preferred, userId)
     if (resolved) return resolved

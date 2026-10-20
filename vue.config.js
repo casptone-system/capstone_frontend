@@ -73,7 +73,7 @@ module.exports = defineConfig({
     // Local UI uses same-origin /api via proxy — production CSP need not allow http://localhost.
     headers: {
       'Content-Security-Policy':
-        "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; frame-src 'self' blob:; media-src 'self' blob:; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws://127.0.0.1:8080 ws://localhost:8080; worker-src 'self' blob:",
+        "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; frame-src 'self' blob: https://*.supabase.co; media-src 'self' blob: https://*.supabase.co; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co; font-src 'self' data:; connect-src 'self' ws://127.0.0.1:8080 ws://localhost:8080 https://*.supabase.co; worker-src 'self' blob:",
       'X-Content-Type-Options': 'nosniff',
       'X-Frame-Options': 'DENY',
       'Referrer-Policy': 'strict-origin-when-cross-origin',
